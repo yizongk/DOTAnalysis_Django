@@ -43,7 +43,8 @@ https://stackoverflow.com/questions/21102707/xampp-apache-shuts-down-unexpectedl
 https://stackoverflow.com/questions/34133019/setting-up-windows-authentication-for-apache
 https://stackoverflow.com/questions/10105816/apache-2-ldap-active-directory-automatic-login-authentication-process
     But this really need 64 bit mod_auth_sspi.so for my 64 bit system. Hard to find 64 bit. But there is a 64 bit mod_authnz_sspi.sp from https://www.apachehaus.net/modules/mod_authnz_sspi/
-    https://mid.as/active-directory-integration/configuring-apache
+    THIS IS THE ONE TO FOLLOW on mod_authnz_sspi.so:
+        https://mid.as/active-directory-integration/configuring-apache
     And according to this link, mod_auth_sspi.so is for Apache 2.2 and mod_authnz_sspi.so is for Apache 2.4. I have Apache 2.4.
 https://community.apachefriends.org/viewtopic.php?p=249529&sid=71a47a96a003daa42f5c9e16f4290cd9
 
@@ -119,3 +120,104 @@ https://stackoverflow.com/questions/3631556/django-no-such-table-django-session/
     Fixed by running the following at the root of the Django project:
     python manage.py makemigrations
     python manage.py migrate
+
+
+
+# OVERALL Instructions
+1. Install python (Check the Add to Path option), XAMPP, Visual C++ Build Tools (Required before installing mod-wsgi from python pip)
+2. Set MOD_WSGI_APACHE_ROOTDIR env with your apache root dir from your Xampp installation (Typically C:/xampp/apache), and remember to use FORWARD SLASH //// not back slash, otherwise you will run into error when you install mod-wsgi and then run mod_wsgi-express module_config
+3. Install Django 2.2.14, mod-wsgi 4.7.1
+4. run mod_wsgi-express module-config to get two important variable values
+    * wsgi_module path
+    * WSGIPythonHome
+5. Copy the wsgi_module path to C:/xampp/apache/modules/ as mod_wsgi.so, like so:
+```
+    cp {wsgi_module path} C:/xampp/apache/modules/mod_wsgi.so
+```
+6. Make a back up of C:\xampp\apache\conf\httpd.conf
+7. Open the httpd.conf and add the following to the bottom of the file:
+```
+    LoadModule wsgi_module modules/mod_wsgi.so
+    <IfModule wsgi_module>
+        WSGIScriptAlias / "..../PMU_DjangoWebApps/PMU_DjangoWebApps/wsgi.py"
+        WSGIPythonHome "{Your WSGIPythonHome variable value}"
+        <Directory "{Path to one level before your django project}/PMU_DjangoWebApps">
+            <Files wsgi.py>
+                Allow from all
+                Require all granted
+            </Files>
+        </Directory>
+    </IfModule>
+```
+8. Open up your wsgi.py and add the following, to fix some include errors that will come up otherwise:
+```
+    ...
+    import os
+    ...
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if BASE_DIR not in sys.path:
+        sys.path.append(BASE_DIR)
+    ...
+```
+9. Add NTLM athentication to Apache
+    * Download mod_authnz_sspi
+    ```
+        cp the Apache24/bin/sspipkgs to C:/xampp/apache/bin
+        cp the Apache24/modules/mod_authnz_sspi.so to C:/xampp/apache/modules
+    ```
+    * Configure httpd.conf
+        * Make sure that the following modules are uncommented (If it doesn't exists, add them to the https.conf)
+        ```
+            LoadModule authnz_sspi_module modules/mod_authnz_sspi.so
+            LoadModule authn_core_module modules/mod_authn_core.so
+            LoadModule authz_core_module modules/mod_authz_core.so
+        ```
+        * Add the following to the bottom of the conf, right before where you included LoadModule * wsgi_module modules/mod_wsgi.so
+        ```
+            LoadModule authnz_sspi_module modules/mod_authnz_sspi.so
+        ```
+        * Replace the content of <Files wsgi.py> </Files> with:
+        ```
+            Order deny,allow
+            Allow from all
+
+            AuthName "DOT Intranet"
+            AuthType SSPI
+            SSPIAuth On
+            SSPIAuthoritative Off
+            SSPIOfferBasic Off
+            SSPIOmitDomain On
+            Require valid-user
+        ```
+10. Add middleware to Django project to grab from REMOTE_USER env that Apache sets for its NTLM authentication
+    * Add the following to settings.py
+    ```
+        MIDDLEWARE = [
+            '...',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.auth.middleware.RemoteUserMiddleware',
+            '...',
+        ]
+    ```
+    * In settings.py, replace ModelBackend with RemoteUserBackend in the AUTHENTICATION_BACKENDS
+    ```
+        AUTHENTICATION_BACKENDS = [
+            'django.contrib.auth.backends.RemoteUserBackend',
+        ]
+    ```
+    * To use, add the following codes to your webapp's Views.py
+    ```
+        def get_cur_client(request):
+            cur_client = request.META['REMOTE_USER']
+            return cur_client
+
+        def index(request):
+            cur_client = get_cur_client(request)
+            return HttpResponse("Hello {}! You are at the PerInd Index".format(cur_client))
+    ```
+11. Run the following commands to prep the Django authen_user table, and database? Not sure what it does, but it does avoid "no such table: auth_user" error. Be at the Project's root_dir.
+```
+    python manage.py makemigrations
+    python manage.py migrate
+```
+12. You should now be good to go, go start up apache in the xampp control panel, and got to 127.0.0.1 on your browser and test it out!
