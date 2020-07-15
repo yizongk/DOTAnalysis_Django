@@ -86,8 +86,18 @@ WSGI_APPLICATION = 'PMU_DjangoWebApps.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        SQLServerHost,
+        'NAME' :        SQLServerDbName,
+        'USER' :        SQLServerUID,       # SQLServerUID imported from secret_settings.py
+        'PASSWORD' :    SQLServerPWD,       # SQLServerPWD imported from secret_settings.py
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
     }
 }
 

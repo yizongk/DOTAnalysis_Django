@@ -121,6 +121,8 @@ https://stackoverflow.com/questions/3631556/django-no-such-table-django-session/
     python manage.py makemigrations
     python manage.py migrate
 
+Documenation on mod_authn_ntlm, which is similar to mod_authnz_sspi. mod_authnz_sspi is compiled from development source code (https://sourceforge.net/p/mod-auth-sspi/code/HEAD/tree/branches/mod_authnz_sspi/mod_authnz_sspi/) and no good documenation. The documentation of mod_authn_ntlm offers clues to mod_authnz_sspi.
+https://github.com/TQsoft-GmbH/mod_authn_ntlm
 
 
 # OVERALL Instructions
@@ -184,7 +186,7 @@ https://stackoverflow.com/questions/3631556/django-no-such-table-django-session/
             AuthName "DOT Intranet"
             AuthType SSPI
             SSPIAuth On
-            SSPIAuthoritative Off
+            SSPIAuthoritative On
             SSPIOfferBasic Off
             SSPIOmitDomain On
             Require valid-user

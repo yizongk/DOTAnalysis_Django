@@ -8,3 +8,9 @@ Includes:
 To install the python dependencies
 
 python -m pip install -r PMU_DjangoWebApps/python_dependencies.txt
+
+# Database
+Need SQL Server Account, need to be of the following rolse:
+* db_datareader
+* db_datawriter
+* db_ddladmin (For DDL privilege, such as CREATE, DROP, ALTER TRUNCATE, and RENAME)
