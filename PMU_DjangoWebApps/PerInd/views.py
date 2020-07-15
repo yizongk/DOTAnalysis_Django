@@ -9,4 +9,33 @@ def get_cur_client(request):
 
 def index(request):
     cur_client = get_cur_client(request)
-    return HttpResponse("Hello {}! You are at the PerInd Index".format(cur_client))
+    return HttpResponse("""
+    <!DOCTPYE html>
+    <html>
+
+    <head>
+        <title>Home Page - Performance Indicator Portal</title>
+    </head>
+
+    <body>
+        <div>
+            <ul>
+                <li><a href="/PerInd/about">About</a></li>
+                <li><a href="/PerInd/contact">Contact</a></li>
+                <li><a href="/PerInd/webgrid">WebGrid - Will remove from this list in prod</a></li>
+            </ul>
+            <p class="nav navbar-text navbar-right">Hello, {}!</p>
+        </div>
+    </body>
+
+    </html>
+    """.format(cur_client))
+
+def about(request):
+    return HttpResponse("This will be the ABOUT page")
+
+def contact(request):
+    return HttpResponse("This will be the CONTACT page")
+
+def webgrid(request):
+    return HttpResponse("This will be WEBGRID PAGE")
