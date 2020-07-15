@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from django.views.generic import TemplateView
 # Create your views here.
 
 def get_cur_client(request):
@@ -30,12 +31,22 @@ def index(request):
 
     </html>
     """.format(cur_client))
-
+'''
 def about(request):
     return HttpResponse("This will be the ABOUT page")
 
 def contact(request):
     return HttpResponse("This will be the CONTACT page")
-
+'''
 def webgrid(request):
     return HttpResponse("This will be WEBGRID PAGE")
+
+class HomePageView(TemplateView):
+    template_name = 'home.html'
+
+ 
+class AboutPageView(TemplateView):
+    template_name = 'about.html'
+    
+class ContactPageView(TemplateView):
+    template_name = 'contact.html'
