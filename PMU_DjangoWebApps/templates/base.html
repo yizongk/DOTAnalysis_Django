@@ -41,25 +41,25 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent" " >
                 <ul class="navbar-nav mr-auto" >
                     <li class="nav-item" >
-                        <a class="nav-link" href="{% url 'home' %}" style="color:darkgrey; font-size: 15px;">PAM Home </a>
+                        <a class="nav-link" href="{% url 'home' %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PAM Home </a>
                     </li>
                     <li class="nav-item">
 
-                        <a class="nav-link" href="{% url 'about' %}" style="color:darkgrey; font-size: 15px;">About </a>
+                        <a class="nav-link" href="{% url 'about' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">About </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact' %}" style="color:darkgrey; font-size: 15px;">Contact <span class="sr-only">(current)</span></a>
+                        <a class="nav-link" href="{% url 'contact' %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact <span class="sr-only">(current)</span></a>
                     </li>
 
                 </ul>
-                <p class="nav navbar-text navbar-right">Hello, {{user.username}}</p>
+                <p class="nav navbar-text navbar-right" style=" font-family:sans-serif;">Hello, {{user.username}}</p>
             </div>
         </nav>
     </body>
 
     {% block content %}{% endblock %}
 
-    <footer>
+    <footer style=" font-family:sans-serif; font-size: 15px">
         <p>
             &copy;
             <script>document.write(new Date().getFullYear())</script> - DOT Performance Asset & Management
