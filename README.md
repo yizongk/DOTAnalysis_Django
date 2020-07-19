@@ -23,3 +23,22 @@ python manage.py table1 table2 > out_model_name.py
 
 python manage.py inspectdb Category Data_Summary_Type Data_Type Indicator_Data Indicator_List Unit User_Permissions Users Val_Multiplier Year_Month > models.py
 ```
+
+# Notes on django tags functions on template htmls
+It seems like you can't comment them out with <-- -->. Ex.
+```
+<!-- {% extends 'template.base.html' %} -->
+```
+Would still get procesed by django.
+
+Only get rid of it, is by delete the line of {extends} or add some invalid character to {extends} so it will be treated by normal html:
+```
+{% extends 'template.base.html' %}
+to
+{#% extends 'template.base.html' %}
+```
+Which will display "{#% extends 'template.base.html' %}" on the html when rendered on the broswer
+
+# Notes on django tag '{ extends }'
+Where ever you have this line, it's where the parent template starts rendering.
+So if your {extends} is on line 2 of the html, the resulting html will have a line one with something, and then at line two is where the template is rendered.
