@@ -1,35 +1,38 @@
-<!-- templates/template.home.html-->
 {% extends 'template.base.html' %}
+<!-- templates/template.home.html-->
 {% block content %}
 <!DOCTYPE html>
 <html>
 
 <head>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"> -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 </head>
 
 <div class="jumbotron" style=" font-family:sans-serif;">
-    <h1>Performance and</h1>
-    <h1>Asset Management Unit</h1>
-    <p class="lead">Welcome to our website!</p>
+    <h1>Performance Indicator Portal</h1>
+    <p class="lead">Welcome!</p>
     <p class="lead">We track DOT's various Indicators and create PowerBI reports for consumption.</p>
 </div>
 
 <div class="row" style=" font-family:sans-serif; font-size: 20px">
     <div class="col-md-4">
-        <h2 style=" font-size: 30px">Performance Indicator Portal: Data Entry</h2>
+        <h2 style=" font-size: 30px">For Data Entry</h2>
         <p style=" font-size: 15px">
-            If you are here to enter data for Indicator Titles, please click the button.
+            If you are here to enter data for Indicator Titles, please click the button to access WebGrid.
         </p>
         <p><button type="button" class="btn btn-primary"  style=" font-family:sans-serif; font-size: 15px">Head Over &raquo;</button></p>
     </div>
+    <div class="col-md-4">
+        <h2 style=" font-size: 30px">For Dashboard Reports</h2>
+        <p style=" font-size: 15px">
+            Please click the this button.
+        </p>
+        <p><button type="button" class="btn btn-primary"  style=" font-family:sans-serif; font-size: 15px" href="#" onClick="MyWindow=window.open('https://app.powerbigov.us/groups/663659b7-5b41-48b1-9d00-4c7170319cca/reports/52721a1a-9737-48f2-bbce-3acedf782629/ReportSection?openDashboardSource=SubscribeOthers&ctid=21c62253-c3dd-4661-9659-cd01aff2d452','_blank'); return false;">Head Over &raquo;</button></p>
+    </div>
 </div>
-
-
-
 
 </html>
 {% endblock content %}
