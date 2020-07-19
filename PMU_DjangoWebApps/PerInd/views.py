@@ -1,8 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from django.views.generic import TemplateView
 # Create your views here.
 
+'''
 def get_cur_client(request):
     cur_client = request.META['REMOTE_USER']
     return cur_client
@@ -39,3 +41,16 @@ def contact(request):
 
 def webgrid(request):
     return HttpResponse("This will be WEBGRID PAGE")
+'''
+
+class HomePageView(TemplateView):
+    template_name = 'template.home.html'
+
+class AboutPageView(TemplateView):
+    template_name = 'template.about.html'
+    
+class ContactPageView(TemplateView):
+    template_name = 'template.contact.html'
+
+class WebGridPageView(TemplateView):
+    template_name = 'PerInd.template.webgrid.html'
