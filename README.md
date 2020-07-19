@@ -14,3 +14,12 @@ Need SQL Server Account, need to be of the following rolse:
 * db_datareader
 * db_datawriter
 * db_ddladmin (For DDL privilege, such as CREATE, DROP, ALTER TRUNCATE, and RENAME)
+
+Notes on generating the database model from existing database
+https://dev.to/idrisrampurawala/creating-django-models-of-an-existing-db-288m
+Command is like so:
+```
+python manage.py table1 table2 > out_model_name.py
+
+python manage.py inspectdb Category Data_Summary_Type Data_Type Indicator_Data Indicator_List Unit User_Permissions Users Val_Multiplier Year_Month > models.py
+```

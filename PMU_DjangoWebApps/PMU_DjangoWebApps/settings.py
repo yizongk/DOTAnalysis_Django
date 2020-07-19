@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
