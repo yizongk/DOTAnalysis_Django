@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 # Create your views here.
 
+'''
 def get_cur_client(request):
     cur_client = request.META['REMOTE_USER']
     return cur_client
@@ -31,22 +32,25 @@ def index(request):
 
     </html>
     """.format(cur_client))
-'''
+
 def about(request):
     return HttpResponse("This will be the ABOUT page")
 
 def contact(request):
     return HttpResponse("This will be the CONTACT page")
-'''
+
 def webgrid(request):
     return HttpResponse("This will be WEBGRID PAGE")
+'''
 
 class HomePageView(TemplateView):
-    template_name = 'home.html'
+    template_name = 'template.home.html'
 
- 
 class AboutPageView(TemplateView):
-    template_name = 'about.html'
+    template_name = 'template.about.html'
     
 class ContactPageView(TemplateView):
-    template_name = 'contact.html'
+    template_name = 'template.contact.html'
+
+class WebGridPageView(TemplateView):
+    template_name = 'PerInd.template.webgrid.html'
