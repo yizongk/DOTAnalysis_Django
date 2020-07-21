@@ -17,6 +17,9 @@ class Category(models.Model):
         managed = False
         db_table = 'Category'
 
+    def __str__(self):
+        return self.category_name
+
 
 class DataSummaryType(models.Model):
     data_summary_id = models.AutoField(db_column='Data_Summary_ID', primary_key=True)  # Field name made lowercase.
@@ -25,6 +28,9 @@ class DataSummaryType(models.Model):
     class Meta:
         managed = False
         db_table = 'Data_Summary_Type'
+
+    def __str__(self):
+        return self.summary_type
 
 
 class DataType(models.Model):
@@ -35,6 +41,9 @@ class DataType(models.Model):
         managed = False
         db_table = 'Data_Type'
 
+    def __str__(self):
+        return self.data_type
+
 
 class Unit(models.Model):
     unit_id = models.AutoField(db_column='Unit_ID', primary_key=True)  # Field name made lowercase.
@@ -43,6 +52,9 @@ class Unit(models.Model):
     class Meta:
         managed = False
         db_table = 'Unit'
+
+    def __str__(self):
+        return self.unit_type
 
 
 class Users(models.Model):
@@ -68,6 +80,9 @@ class ValMultiplier(models.Model):
         managed = False
         db_table = 'Val_Multiplier'
 
+    def __str__(self):
+        return self.multiplier_scale
+
 
 class YearMonth(models.Model):
     year_month_id = models.AutoField(db_column='Year_Month_ID', primary_key=True)  # Field name made lowercase.
@@ -81,12 +96,12 @@ class YearMonth(models.Model):
 
 class UserPermissions(models.Model):
     user_permission_id = models.AutoField(db_column='User_Permission_ID', primary_key=True)  # Field name made lowercase.
-    user_id = models.IntegerField(db_column='User_ID', blank=True, null=True)  # Field name made lowercase.
-    category_id = models.IntegerField(db_column='Category_ID', blank=True, null=True)  # Field name made lowercase.
+    # user_id = models.IntegerField(db_column='User_ID', blank=True, null=True)  # Field name made lowercase.
+    # category_id = models.IntegerField(db_column='Category_ID', blank=True, null=True)  # Field name made lowercase.
     read_right = models.BooleanField(db_column='Read_Right', blank=True, null=True)  # Field name made lowercase.
     write_right = models.BooleanField(db_column='Write_Right', blank=True, null=True)  # Field name made lowercase.
-    # user_id = models.ForeignKey(to=Users, on_delete=models.CASCADE)  # Field name made lowercase.
-    # category_id = models.ForeignKey(to=Category, on_delete=models.CASCADE)  # Field name made lowercase.
+    user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -96,35 +111,38 @@ class UserPermissions(models.Model):
 class IndicatorList(models.Model):
     indicator_id = models.AutoField(db_column='Indicator_ID', primary_key=True)  # Field name made lowercase.
     old_indicator_title = models.CharField(db_column='Old_Indicator_Title', max_length=255)  # Field name made lowercase.
-    new_indicator_title = models.CharField(db_column='New_Indicator_Title', max_length=255)  # Field name made lowercase.
-    category_id = models.IntegerField(db_column='Category_ID')  # Field name made lowercase.
-    unit_id = models.IntegerField(db_column='Unit_ID')  # Field name made lowercase.
-    data_type_id = models.IntegerField(db_column='Data_Type_ID')  # Field name made lowercase.
-    val_multiplier_id = models.IntegerField(db_column='Val_Multiplier_ID')  # Field name made lowercase.
+    indicator_title = models.CharField(db_column='Indicator_Title', max_length=255)  # Field name made lowercase.
+    # category_id = models.IntegerField(db_column='Category_ID')  # Field name made lowercase.
+    # unit_id = models.IntegerField(db_column='Unit_ID')  # Field name made lowercase.
+    # data_type_id = models.IntegerField(db_column='Data_Type_ID')  # Field name made lowercase.
+    # val_multiplier_id = models.IntegerField(db_column='Val_Multiplier_ID')  # Field name made lowercase.
     active = models.BooleanField(db_column='Active', blank=True, null=True)  # Field name made lowercase.
-    summary_type_id = models.IntegerField(db_column='Summary_Type_ID')  # Field name made lowercase.
-    # category_id = models.ForeignKey(to=Category, on_delete=models.CASCADE)  # Field name made lowercase.
-    # unit_id = models.ForeignKey(to=Unit, on_delete=models.CASCADE)  # Field name made lowercase.
-    # data_type_id = models.ForeignKey(to=DataType, on_delete=models.CASCADE)  # Field name made lowercase.
-    # val_multiplier_id = models.ForeignKey(to=ValMultiplier, on_delete=models.CASCADE)  # Field name made lowercase.
-    # summary_type_id = models.ForeignKey(to=DataSummaryType, on_delete=models.CASCADE)  # Field name made lowercase.
+    # summary_type_id = models.IntegerField(db_column='Summary_Type_ID')  # Field name made lowercase.
+    category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    unit = models.ForeignKey(to=Unit, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    data_type = models.ForeignKey(to=DataType, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    val_multiplier = models.ForeignKey(to=ValMultiplier, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    summary_type = models.ForeignKey(to=DataSummaryType, on_delete=models.DO_NOTHING)  # Field name made lowercase.
 
     class Meta:
         managed = False
         db_table = 'Indicator_List'
 
+    def __str__(self):
+        return self.indicator_title
+
 
 class IndicatorData(models.Model):
     record_id = models.AutoField(db_column='Record_ID', primary_key=True)  # Field name made lowercase.
-    indicator_id = models.IntegerField(db_column='Indicator_ID')  # Field name made lowercase.
-    year_month_id = models.IntegerField(db_column='Year_Month_ID')  # Field name made lowercase.
+    # indicator_id = models.IntegerField(db_column='Indicator_ID')  # Field name made lowercase.
+    # year_month_id = models.IntegerField(db_column='Year_Month_ID')  # Field name made lowercase.
     val = models.FloatField(db_column='Val', blank=True, null=True)  # Field name made lowercase.
     created_date = models.DateTimeField(db_column='Created_Date')  # Field name made lowercase.
     updated_date = models.DateTimeField(db_column='Updated_Date')  # Field name made lowercase.
-    update_user_id = models.IntegerField(db_column='Update_User_ID')  # Field name made lowercase.
-    # indicator_id = models.ForeignKey(to=IndicatorList, on_delete=models.CASCADE)  # Field name made lowercase.
-    # year_month_id = models.ForeignKey(to=YearMonth, on_delete=models.CASCADE)  # Field name made lowercase.
-    # update_user_id = models.ForeignKey(to=Users, on_delete=models.CASCADE)  # Field name made lowercase.
+    # update_user_id = models.IntegerField(db_column='Update_User_ID')  # Field name made lowercase.
+    indicator = models.ForeignKey(to=IndicatorList, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    year_month = models.ForeignKey(to=YearMonth, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    update_user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)  # Field name made lowercase.
 
     class Meta:
         managed = False
