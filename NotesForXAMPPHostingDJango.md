@@ -216,6 +216,15 @@ https://github.com/TQsoft-GmbH/mod_authn_ntlm
         def index(request):
             cur_client = get_cur_client(request)
             return HttpResponse("Hello {}! You are at the PerInd Index".format(cur_client))
+
+        ... In Class view
+        class WebGridPageView(generic.ListView):
+            template_name = 'PerInd.template.webgrid.html'
+            context_object_name = 'indicator_data_entries'
+
+            def get_queryset(self):
+                # return Users.objects.order_by('-user_id')[:5]
+                print("This is the user logged in: {}".format(self.request.user))
     ```
 11. Run the following commands to prep the Django authen_user table, and database? Not sure what it does, but it does avoid "no such table: auth_user" error. Be at the Project's root_dir.
 ```
