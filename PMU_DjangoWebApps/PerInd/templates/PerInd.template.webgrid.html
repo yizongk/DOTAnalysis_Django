@@ -1,3 +1,92 @@
 {% extends 'template.base.html' %}
 <!-- Will contain the template for the WebGrid html -->
-This will be WEBGRID PAGE
+
+
+{% block content %}
+
+<div>Permission: @ViewBag.Permission</div>
+<div class="status_info led_light">Database Status: @if (@ViewBag.success == true) {<div class='led_green'></div>} else {<div class='led_red'></div>}</div>
+<div class="status_info err_msg">@(ViewBag.success == false ? "Error: " + @ViewBag.err + "<br>Please try reloading the page again!<br>If this continues, find out who to contact in the Contact Page.": "")</div>
+
+<div class="table">
+<table class="table">
+    <tr>
+        <th>Record Id</th>
+        <th>City wide value</th>
+        <th>Created date</th>
+        <th>UPdated date</th>
+        <th>Indicator Title</th>
+        <th>Year</th>
+        <th>Month</th>
+        <th>Last updated by</th>
+    </tr>
+    {% for entry in indicator_data_entries %}
+    <tr>
+        <td>{{ entry.record_id }}</td>
+        <td>{{ entry.val }}</td>
+        <td>{{ entry.created_date }}</td>
+        <td>{{ entry.updated_date }}</td>
+        <td>{{ entry.indicator }}</td>
+        <td>{{ entry.year_month.yyyy }}</td>
+        <td>{{ entry.year_month.mm }}</td>
+        <td>{{ entry.update_user }}</td>
+    </tr>
+    {% endfor %}
+
+
+</table>
+</div>
+
+{% endblock content %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %}
+{% block content %}
+<ul>
+{% for entry in indicator_data_entries %}
+    <li>{{ entry.record_id }}</li>
+    <li>{{ entry.val }}</li>
+    <li>{{ entry.created_date }}</li>
+    <li>{{ entry.updated_date }}</li>
+    <li>{{ entry.indicator }}</li>
+    <li>{{ entry.year_month }}</li>
+    <li>{{ entry.update_user }}</li>
+{% empty %}
+    <li>No entry yet</li>
+{% endfor %}
+</ul>
+{% endblock content %}
+
+
+
+{% block content %}
+This will be WEBGRID PAGE!!
+
+Some latest_user_list:
+
+{% if latest_user_list %}
+<ul>
+    {% for each in latest_user_list %}
+        <li>{{ each.login }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>
+    No users availiable.
+</p>
+{% endif %}
+{% endblock content %}
+{% endcomment %}

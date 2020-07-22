@@ -24,7 +24,7 @@
             
             <!-- <div class="navbar-header">
         <div class="navbar-header pull-left">-->
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'home_view' %}">
                 {% load static %}
                 <img src="{% static "PMU_DjangoWebApps/logo.jpg" %}" alt="My image" style="height:30px; width: 50px">
 
@@ -44,13 +44,13 @@
                         <a class="nav-link" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PMU_Home  </a>
                     </li>
                     <li class="nav-item" >
-                        <a class="nav-link" href="{% url 'home' %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PerInd_Portal  </a>
+                        <a class="nav-link" href="{% url 'home_view' %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PerInd_Portal  </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'about' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">About  </a>
+                        <a class="nav-link" href="{% url 'about_view' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">About  </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact' %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
+                        <a class="nav-link" href="{% url 'contact_view' %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
                     </li>
 
                 </ul>

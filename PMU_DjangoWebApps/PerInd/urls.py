@@ -8,9 +8,10 @@ urlpatterns = [
     #path('about', views.about, name='about'),
     #path('contact', views.contact, name='contact'),
     
-    path('', HomePageView.as_view(), name='home'),
-    path('about', AboutPageView.as_view(), name='about'),
-    path('contact', ContactPageView.as_view(), name='contact'),
-    path('webgrid', WebGridPageView.as_view(), name='webgrid'),
+    path('', HomePageView.as_view(), name='home_view'),
+    path('about', AboutPageView.as_view(), name='about_view'),
+    path('contact', ContactPageView.as_view(), name='contact_view'),
+    path('webgrid', WebGridPageView.as_view(), name='webgrid_view'),
+    # path('webgrid', views.webgrid_view, name='webgrid_view'),
 
 ]
