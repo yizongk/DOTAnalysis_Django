@@ -4,9 +4,9 @@
 
 {% block content %}
 
-<div>Permission: @ViewBag.Permission</div>
-<div class="status_info led_light">Database Status: @if (@ViewBag.success == true) {<div class='led_green'></div>} else {<div class='led_red'></div>}</div>
-<div class="status_info err_msg">@(ViewBag.success == false ? "Error: " + @ViewBag.err + "<br>Please try reloading the page again!<br>If this continues, find out who to contact in the Contact Page.": "")</div>
+<div>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
+<div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'>good</div>{% else %}<div class='led_red'>bad</div>{% endif %}</div>
+<div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>If this continues, find out who to contact in the Contact Page. {% else %}{% endif %}</div>
 
 <div class="table">
 <table class="table">

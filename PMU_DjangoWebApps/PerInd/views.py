@@ -55,10 +55,20 @@ def get_user_category_pk_list(username):
     try:
         user_permissions_list = UserPermissions.objects.all()
         user_permissions_list = user_permissions_list.filter(user__login=username)
-        return [x.category.category_id for x in user_permissions_list]
+        return {
+            "success": True,
+            "data": [x.category.category_id for x in user_permissions_list],
+            "err": '',
+            "category_names": [x.category.category_name for x in user_permissions_list],
+        }
     except Exception as e:
         print("Exception: get_user_category_pk_list(): {}".format(e))
-        return False
+        return {
+            "success": False,
+            "data": None,
+            "err": "Exception: get_user_category_pk_list(): {}".format(e),
+            "category_names": [],
+        }
 
 class HomePageView(TemplateView):
     template_name = 'template.home.html'
@@ -69,17 +79,42 @@ class AboutPageView(TemplateView):
 class ContactPageView(TemplateView):
     template_name = 'template.contact.html'
 
+# Method Flowchart (the order of execution) for generic.ListView
+#     setup()
+#     dispatch()
+#     http_method_not_allowed()
+#     get_template_names()
+#     get_queryset()
+#     get_context_object_name()
+#     get_context_data()
+#     get()
+#     render_to_response()
 class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
+    req_success = False
+    category_permissions = []
+    err_msg = ""
 
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
-        indicator_data_entries = IndicatorData.objects.all()
+        try:
+            indicator_data_entries = IndicatorData.objects.all()
+        except Exception as e:
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
 
-        # Filter for only authorized Categories of Indicator Data
-        category_pk_list = get_user_category_pk_list(self.request.user)
+        # Filter for only authorized Categories of Indicator Data, and log the category_permissions
+        tmp_result = get_user_category_pk_list(self.request.user)
+        self.req_success = tmp_result["success"]
+        if tmp_result["success"] == False:
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(tmp_result['err'])
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+        category_pk_list = tmp_result["data"]
+        self.category_permissions = tmp_result["category_names"]
         indicator_data_entries = indicator_data_entries.filter(indicator__category__pk__in=category_pk_list)
 
         # Filter for only Active indicator
@@ -89,3 +124,21 @@ class WebGridPageView(generic.ListView):
         # Sort it asc or desc on sort_by
 
         return indicator_data_entries
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        try:
+            context = super().get_context_data(**kwargs)
+
+            # Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+            context["category_permissions"] = self.category_permissions
+            return context
+        except Exception as e:
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context["req_success"] = False
+            context["err_msg"] = self.err_msg
+            context["category_permissions"] = self.category_permissions
+            print(self.err_msg)
+            return context
