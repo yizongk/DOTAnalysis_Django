@@ -14,7 +14,7 @@
         <th>Record Id</th>
         <th>City wide value</th>
         <th>Created date</th>
-        <th>UPdated date</th>
+        <th>Updated date</th>
         <th>Indicator Title</th>
         <th>Year</th>
         <th>Month</th>
@@ -23,7 +23,7 @@
     {% for entry in indicator_data_entries %}
     <tr>
         <td>{{ entry.record_id }}</td>
-        <td>{{ entry.val }}</td>
+        <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData", data-column="val">{{ entry.val }}</td>
         <td>{{ entry.created_date }}</td>
         <td>{{ entry.updated_date }}</td>
         <td>{{ entry.indicator }}</td>
@@ -39,54 +39,73 @@
 
 {% endblock content %}
 
+{% block custom_js %}
+<script>
+    $(document).ready(function(){
+        $(document).on("dblclick", ".editable", function(){
+            var value = $(this).text();
+            var input = "<input type='text' class='input-data' value='"+value+"' class='form-control'>";
+            $(this).html(input);
+            $(this).removeClass("editable");
+        });
 
+        // $(document).on("blur", ".input-data", function(){
+        //     var value = $(this).val();
+        //     var td = $(this).parent("td");
+        //     $(this).remove();
+        //     td.html(value);
+        //     td.addClass("editable");
+        // });
 
+        $(document).on("keypress", ".input-data", function(e){
+            var key = e.which;
+            // console.log(key)
+            if(key==13){ // 13 is the return key, aka 'ENTER' key
+                var value = $(this).val();
+                var td = $(this).parent("td");
+                $(this).remove();
+                td.html(value);
+                td.addClass("editable");
+                // @TODO: If sendToServer() fails, need to know original value to write back to.
+                sendToServer(td.data("id"), value, td.data("table"), td.data("column"));
+            }
+        });
 
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
 
+        function sendToServer(id, value, table, column){
+            console.log(id, value, table, column);
 
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
 
-
-
-
-
-
-
-
-
-{% comment %}
-{% block content %}
-<ul>
-{% for entry in indicator_data_entries %}
-    <li>{{ entry.record_id }}</li>
-    <li>{{ entry.val }}</li>
-    <li>{{ entry.created_date }}</li>
-    <li>{{ entry.updated_date }}</li>
-    <li>{{ entry.indicator }}</li>
-    <li>{{ entry.year_month }}</li>
-    <li>{{ entry.update_user }}</li>
-{% empty %}
-    <li>No entry yet</li>
-{% endfor %}
-</ul>
-{% endblock content %}
-
-
-
-{% block content %}
-This will be WEBGRID PAGE!!
-
-Some latest_user_list:
-
-{% if latest_user_list %}
-<ul>
-    {% for each in latest_user_list %}
-        <li>{{ each.login }}</li>
-    {% endfor %}
-</ul>
-{% else %}
-<p>
-    No users availiable.
-</p>
-{% endif %}
-{% endblock content %}
-{% endcomment %}
+            $.ajax({
+                url: "/PerInd/save_perind_data_api",
+                type: "POST",
+                data: {
+                    id: id,
+                    value: value,
+                    table: table,
+                    column: column,
+                },
+            })
+            .done(function(response){
+                console.log(response)
+            })
+            .fail(function(){
+                console.log("Ajax Post: Error Occured.")
+                alert("Ajax Post: Error Occured.")
+            });
+        };
+    })
+</script>
+{% endblock %}

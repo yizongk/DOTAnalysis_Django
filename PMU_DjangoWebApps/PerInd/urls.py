@@ -13,5 +13,6 @@ urlpatterns = [
     path('contact', ContactPageView.as_view(), name='contact_view'),
     path('webgrid', WebGridPageView.as_view(), name='webgrid_view'),
     # path('webgrid', views.webgrid_view, name='webgrid_view'),
+    path('save_perind_data_api', views.SavePerIndDataApi, name='save_perind_data_api'),
 
 ]

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 from django.views.generic import TemplateView
 from django.views import generic
@@ -142,3 +142,46 @@ class WebGridPageView(generic.ListView):
             context["category_permissions"] = self.category_permissions
             print(self.err_msg)
             return context
+
+def SavePerIndDataApi(request):
+    id = request.POST.get('id', '')
+    table = request.POST.get('table', '')
+    column = request.POST.get('column', '')
+    value = request.POST.get('value', '')
+
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('BEWARE: UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UNAUTHENTICATE USER!",
+        })
+
+    # @TODO Make sure the remote user has permission to the posted record id
+
+    if table == "IndicatorData":
+        row = IndicatorData.objects.get(record_id=id)
+        print( row.record_id )
+        print( row.val )
+        print( row.created_date )
+        print( row.updated_date )
+        print( row.indicator )
+        print( row.year_month )
+        print( row.update_user )
+        print( remote_user )
+
+        # if column=="val":
+        #     row.val = value
+
+        # @TODO Update last updated by to current remote user
+
+        # @TODO Update updated date to current time
+
+        # row.save()
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "",
+        })
