@@ -49,7 +49,7 @@ https://stackoverflow.com/questions/5100539/django-csrf-check-failing-with-an-aj
 
 stackoverflow over two working answer, one is to include the CSRF cookie in the POST data body, like (Both will expose your cookie value when you inspect the POST call in dev tools of Firefox of any browser, but first method will also expose the cookie value on the html doc, as it is hardcoded on there):
 
-First solution:
+## First solution: ##
 ```
 $.ajax({
     data: {
@@ -58,7 +58,7 @@ $.ajax({
         csrfmiddlewaretoken: '{{ csrf_token }}'
     },
 ```
-Second Solution:
+## Second Solution: ##
 
 and the second solution is similar to Django official doc's solution:
 
@@ -83,7 +83,11 @@ $.ajaxSetup({
 });
 ```
 
-Note that if you are using Django official doc's answer (Our 2nd solution) regarding .ajaxSetup, it will not work if in your Settings.py you have: (Delete the line! or set it to False!)
+Note that if you are using Django official doc's answer (Our 2nd solution, https://docs.djangoproject.com/en/2.2/ref/csrf/) regarding .ajaxSetup, it will not work if in your Settings.py you have: (Delete the line! or set it to False!)
 ```
 CSRF_USE_SESSIONS = True
+```
+Interestingly, from the same Django official doc, the other option of setting is CSRF_COOKIE_HTTPONLY. And if set to true, it won't affect our 2nd solution. But CSRF_USE_SESSIONS = True will affect.
+```
+CSRF_COOKIE_HTTPONLY = True // Will not cause our 2nd solution to not work.
 ```
