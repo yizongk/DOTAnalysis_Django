@@ -111,3 +111,7 @@ Alias /static/ "path_to_your_static_dir"
 </Directory>
 ```
 Because your Apache aliased /static/ to "path_to_your_static_dir", and you have set the permission for that dir for the web app, your static file will not be returned to the Django template!
+
+# For issues with "None of the “sha384” hashes in the integrity attribute match the content of the subresource."
+It has to do with the JS or css script that you are including with remote url links
+https://stackoverflow.com/questions/32039568/what-are-the-integrity-and-crossorigin-attributes
