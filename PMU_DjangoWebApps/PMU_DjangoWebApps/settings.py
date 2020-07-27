@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    # 'django.contrib.staticfiles',  # @TODO Not sure where this is needed, need to read more on https://docs.djangoproject.com/en/3.0/ref/contrib/staticfiles/, and https://docs.djangoproject.com/en/3.0/howto/static-files/
     'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
 ]
 
@@ -140,11 +140,14 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
+# https://docs.djangoproject.com/en/3.0/howto/static-files/
+# https://docs.djangoproject.com/en/3.0/howto/static-files/deployment/
+# https://docs.djangoproject.com/en/3.0/howto/deployment/wsgi/modwsgi/#serving-files    Serving with Apache and mod_wsgi
 
-STATIC_URL = '/static/'
+# STATIC_ROOT = BASE_DIR.replace("\\", '/') + '/static/'  # For deploying Django static file to production. Copies django static files to where STATIC_ROOT specifies
+STATIC_URL = '/static/' # Where Django template looks for static files, whouls be same as the STATIC_ROOT minus the project root dir.
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-    '/var/www/static/',
-]
+# STATICFILES_DIRS = [
+#     # os.path.join(BASE_DIR, "static"),
+#     BASE_DIR.replace("\\", '/'),
+# ]

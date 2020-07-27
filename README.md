@@ -91,3 +91,23 @@ Interestingly, from the same Django official doc, the other option of setting is
 ```
 CSRF_COOKIE_HTTPONLY = True // Will not cause our 2nd solution to not work.
 ```
+
+# Serving static files by Apache
+In your settings.py, make sure you have
+```
+STATIC_URL = '/static/'
+```
+In django templates, when you do
+```
+{% load static %}  // This loads the relate url (root + STATIC_URL), so result is like www.website.com/static/
+<img src="{% static 'PMU_DjangoWebApps/logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
+```
+Then that /<img/> tag will ask Apache for www.website.com/static/PMU_DjangoWebApps/logo.jpg
+Add the following config with your other Django config in your apache/conf/httpd.conf
+```
+Alias /static/ "path_to_your_static_dir"
+<Directory "path_to_your_static_dir">
+    Require all granted
+</Directory>
+```
+Because your Apache aliased /static/ to "path_to_your_static_dir", and you have set the permission for that dir for the web app, your static file will not be returned to the Django template!
