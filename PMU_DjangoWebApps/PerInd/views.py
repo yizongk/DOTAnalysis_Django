@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import TemplateView
 from django.views import generic
 from .models import *
+from datetime import datetime
 # Create your views here.
 
 def get_cur_client(request):
@@ -71,6 +72,7 @@ def get_user_category_pk_list(username):
         }
 
 # Given a record id, checks if user has permission to edit the record
+# @TODO IMPLEMENT THIS LOL
 def user_has_permission_to_edit(username, record_id):
     try:
         return {
@@ -174,7 +176,7 @@ def SavePerIndDataApi(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('BEWARE: UNAUTHENTICATE USER!')
+        print('Warning: UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
             "post_msg": "UNAUTHENTICATE USER!",
@@ -184,7 +186,7 @@ def SavePerIndDataApi(request):
     # Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
-        print("BEWARE: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
+        print("Warning: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
             "post_msg": "USER '{}' has no permission to edit record #{}!".format(remote_user, id),
@@ -193,25 +195,48 @@ def SavePerIndDataApi(request):
 
     if table == "IndicatorData":
         row = IndicatorData.objects.get(record_id=id)
-        print( row.record_id )
-        print( row.val )
-        print( row.created_date )
-        print( row.updated_date )
-        print( row.indicator )
-        print( row.year_month )
-        print( row.update_user )
-        print( remote_user )
+        # print( row.record_id )
+        # print( row.val )
+        # print( row.created_date )
+        # print( row.updated_date )
+        # print( row.indicator )
+        # print( row.year_month )
+        # print( row.update_user )
+        # print( remote_user )
 
-        # if column=="val":
-        #     row.val = new_value
+        if column=="val":
+            try:
+                row.val = new_value
+                # @TODO Update last updated by to current remote user, also make sure it's active user
+                user_obj = Users.objects.get(login=remote_user, active_user=True) # Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                print( "user_id: '{}'".format(user_obj.user_id) )
+                print( "first_name: '{}'".format(user_obj.first_name) )
+                print( "last_name: '{}'".format(user_obj.last_name) )
+                print( "login: '{}'".format(user_obj.login) )
+                print( "active_user: '{}'".format(user_obj.active_user) )
+                row.update_user = user_obj
+                # @TODO Update updated date to current time
+                updated_timestamp = datetime.now()
+                row.updated_date = updated_timestamp
+                updated_timestamp_str_response = updated_timestamp.strftime("%B %d, %Y, %I:%M %p")
+                row.save()
 
-        # @TODO Update last updated by to current remote user
+                return JsonResponse({
+                    "post_success": True,
+                    "post_msg": "",
+                    "value_saved": "",
+                    "updated_timestamp": updated_timestamp_str_response,
+                    "updated_by": remote_user,
+                })
+            except Exception as e:
+                print("Error: SavePerIndDataApi(): Something went wrong while trying to save to the database: {}".format(e))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: SavePerIndDataApi(): Something went wrong while trying to save to the database: {}".format(e),
+                })
 
-        # @TODO Update updated date to current time
-
-        # row.save()
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": "",
-        })
+    print("Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    return JsonResponse({
+        "post_success": False,
+        "post_msg": "Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+    })

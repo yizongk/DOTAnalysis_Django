@@ -13,10 +13,10 @@
     <thead>
         <tr>
             <th>City wide value</th>
-            <th>Updated date</th>
             <th>Indicator Title</th>
             <th>Year</th>
             <th>Month</th>
+            <th>Updated date</th>
             <th>Last updated by</th>
             <th>Category</th>
         </tr>
@@ -139,7 +139,6 @@
             .done(function(json_response){
                 console.log("JSON RESPONSE", json_response);
                 if( json_response["post_success"] == false ) {
-                    // @TODO: set origin value, and output error message, also set the status light to red
                     td_node.html(old_val);
                     console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
                     alert(`Something went wrong trying to update City Wide Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
@@ -148,7 +147,6 @@
                     setDatabaseStatus(good=false, msg=json_response["post_msg"]);
                 } else { // Api call successful
                     td_node.html(new_value);
-                    // @TODO: Update last updated date and updated by
                     $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
                     $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
                     setDatabaseStatus(good=true, msg="");
