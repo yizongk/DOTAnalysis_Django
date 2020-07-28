@@ -10,28 +10,30 @@
 
 <div class="table">
 <table class="table">
-    <tr>
-        <th>Record Id</th>
-        <th>City wide value</th>
-        <th>Created date</th>
-        <th>Updated date</th>
-        <th>Indicator Title</th>
-        <th>Year</th>
-        <th>Month</th>
-        <th>Last updated by</th>
-    </tr>
-    {% for entry in indicator_data_entries %}
-    <tr>
-        <td>{{ entry.record_id }}</td>
-        <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
-        <td>{{ entry.created_date }}</td>
-        <td>{{ entry.updated_date }}</td>
-        <td>{{ entry.indicator }}</td>
-        <td>{{ entry.year_month.yyyy }}</td>
-        <td>{{ entry.year_month.mm }}</td>
-        <td>{{ entry.update_user }}</td>
-    </tr>
-    {% endfor %}
+    <thead>
+        <tr>
+            <th>City wide value</th>
+            <th>Updated date</th>
+            <th>Indicator Title</th>
+            <th>Year</th>
+            <th>Month</th>
+            <th>Last updated by</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in indicator_data_entries %}
+        <tr>
+            <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">{{ entry.year_month.mm }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
+            <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 
 
 </table>
@@ -43,10 +45,11 @@
 <script>
     $(document).ready(function(){
         $(document).on("dblclick", ".editable", function(){
-            var old_value = $(this).text();
-            var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";
-            $(this).html(input);
-            $(this).removeClass("editable");
+            // var old_value = $(this).text();
+            // var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";
+            // $(this).html(input);
+            // $(this).removeClass("editable");
+            enterCellEditMode($(this))
         });
 
         // $(document).on("blur", ".input-data", function(){
@@ -81,6 +84,9 @@
             $("body").removeClass("loading");
         });
 
+        
+        // @TODO:(MOVING THIS TO THE BACKEND VIEW) Make sure CityWideValue can be converted to a float before sending Ajax call, else output error message, and reset old value
+
         function setDatabaseStatus(good, msg) {
             // Set status light and error message to red and response error msg
             if ( good == true ) {
@@ -92,13 +98,24 @@
             }
         }
 
+        function finishCellEditMode(td_node) {
+            td_node.addClass("editable");
+        }
+
+        function enterCellEditMode(td_node) {
+            var old_value = td_node.text();
+            var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";
+            td_node.html(input);
+            td_node.removeClass("editable");
+        }
+
         function csrfSafeMethod(method) {
             // these HTTP methods do not require CSRF protection
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
 
         function sendToServer(id, new_value, table, column, td_node, old_val){
-            console.log(id, new_value, table, column, td_node, old_val);
+            // console.log(id, new_value, table, column, td_node, old_val);
 
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -120,7 +137,7 @@
                 },
             })
             .done(function(json_response){
-                // console.log("JSON RESPONSE", json_response);
+                console.log("JSON RESPONSE", json_response);
                 if( json_response["post_success"] == false ) {
                     // @TODO: set origin value, and output error message, also set the status light to red
                     td_node.html(old_val);
@@ -131,17 +148,19 @@
                     setDatabaseStatus(good=false, msg=json_response["post_msg"]);
                 } else { // Api call successful
                     td_node.html(new_value);
-                    // Update last updated date and updated by
+                    // @TODO: Update last updated date and updated by
+                    $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
+                    $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
                     setDatabaseStatus(good=true, msg="");
                 }
-                td_node.addClass("editable");
+                finishCellEditMode(td_node);
 
                 return true;
             })
             .fail(function(){
                 td_node.html(old_val);
                 setDatabaseStatus(good=false, msg="");
-                td_node.addClass("editable");
+                finishCellEditMode(td_node);
                 
                 console.log("Ajax Post: Error Occured.");
                 alert("Ajax Post: Error Occured.");
