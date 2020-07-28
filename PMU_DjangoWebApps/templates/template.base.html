@@ -17,6 +17,11 @@
         <link rel="stylesheet" href="//maxcdn.bootstfrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"> <!-- @TODO: This is cauing the warning "This page uses the non standard property “zoom”, on firefox" -->
         <!-- New for testing ^-->
+
+        <!-- <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/button.css' %}" /> -->
+        <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/status_led.css' %}" />
+        <!-- <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/loadingModal.css' %}" /> -->
+
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Performance Indicator Portal</title>
@@ -27,7 +32,7 @@
         <nav class="navbar navbar-expand-lg navbar-inverse">
             
             <a class="navbar-brand" href="{% url 'home_view' %}">
-                <img src="{% static 'PMU_DjangoWebApps/logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
+                <img src="{% static 'PMU_DjangoWebApps/images/logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
                
             </a>
 
