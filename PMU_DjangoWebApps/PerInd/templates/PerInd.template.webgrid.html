@@ -23,7 +23,7 @@
     {% for entry in indicator_data_entries %}
     <tr>
         <td>{{ entry.record_id }}</td>
-        <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData", data-column="val">{{ entry.val }}</td>
+        <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
         <td>{{ entry.created_date }}</td>
         <td>{{ entry.updated_date }}</td>
         <td>{{ entry.indicator }}</td>
@@ -42,9 +42,10 @@
 {% block custom_js %}
 <script>
     $(document).ready(function(){
+        $("body").addClass("loading");
         $(document).on("dblclick", ".editable", function(){
-            var value = $(this).text();
-            var input = "<input type='text' class='input-data' value='"+value+"' class='form-control'>";
+            var old_value = $(this).text();
+            var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";
             $(this).html(input);
             $(this).removeClass("editable");
         });
@@ -57,27 +58,48 @@
         //     td.addClass("editable");
         // });
 
+        // @TODO: I need a way to cancel
+        // @TODO: Change the enter key to a button yes or cancel
         $(document).on("keypress", ".input-data", function(e){
             var key = e.which;
             // console.log(key)
             if(key==13){ // 13 is the return key, aka 'ENTER' key
-                var value = $(this).val();
+                // HEHEHEHEHEHEHE, need to move this chucnk of code to ajax call back, or amek ajax block 
+                var old_val = $(this).attr("value")
+                var new_value = $(this).val();
                 var td = $(this).parent("td");
                 $(this).remove();
-                td.html(value);
-                td.addClass("editable");
-                // @TODO: If sendToServer() fails, need to know original value to write back to.
-                sendToServer(td.data("id"), value, td.data("table"), td.data("column"));
+                sendToServer( td.data("id"), new_value, td.data("table"), td.data("column"), td, old_val );
             }
         });
+
+        $(document).ajaxStart(function() {
+            // @TODO Set loading modal
+            $("body").addClass("loading");
+        })
+        .ajaxStop(function() {
+            // @TODO Remove loading modal
+            $("body").removeClass("loading");
+        });
+
+        function setDatabaseStatus(good, msg) {
+            // Set status light and error message to red and response error msg
+            if ( good == true ) {
+                $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
+                $('.status_info.err_msg').html("");
+            } else {
+                $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
+                $('.status_info.err_msg').html("Error: " + msg);
+            }
+        }
 
         function csrfSafeMethod(method) {
             // these HTTP methods do not require CSRF protection
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
 
-        function sendToServer(id, value, table, column){
-            console.log(id, value, table, column);
+        function sendToServer(id, new_value, table, column, td_node, old_val){
+            console.log(id, new_value, table, column, td_node, old_val);
 
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -93,17 +115,38 @@
                 type: "POST",
                 data: {
                     id: id,
-                    value: value,
+                    new_value: new_value,
                     table: table,
                     column: column,
                 },
             })
-            .done(function(response){
-                console.log(response)
+            .done(function(json_response){
+                // console.log("JSON RESPONSE", json_response);
+                if( json_response["post_success"] == false ) {
+                    // @TODO: set origin value, and output error message, also set the status light to red
+                    td_node.html(old_val);
+                    console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong trying to update City Wide Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+
+                    // Set status light and error message to red and response error msg
+                    setDatabaseStatus(good=false, msg=json_response["post_msg"]);
+                } else { // Api call successful
+                    td_node.html(new_value);
+                    // Update last updated date and updated by
+                    setDatabaseStatus(good=true, msg="");
+                }
+                td_node.addClass("editable");
+
+                return true;
             })
             .fail(function(){
-                console.log("Ajax Post: Error Occured.")
-                alert("Ajax Post: Error Occured.")
+                td_node.html(old_val);
+                setDatabaseStatus(good=false, msg="");
+                td_node.addClass("editable");
+                
+                console.log("Ajax Post: Error Occured.");
+                alert("Ajax Post: Error Occured.");
+                return false;
             });
         };
     })

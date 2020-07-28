@@ -70,6 +70,21 @@ def get_user_category_pk_list(username):
             "category_names": [],
         }
 
+# Given a record id, checks if user has permission to edit the record
+def user_has_permission_to_edit(username, record_id):
+    try:
+        return {
+            "success": True,
+            "data": None,
+            "err": '',
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "data": None,
+            "err": 'Exception: user_has_permission_to_edit(): {}'.format(e),
+        }
+
 class HomePageView(TemplateView):
     template_name = 'template.home.html'
 
@@ -147,8 +162,14 @@ def SavePerIndDataApi(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
     column = request.POST.get('column', '')
-    value = request.POST.get('value', '')
+    new_value = request.POST.get('new_value', '')
 
+    return JsonResponse({
+        "post_success": False,
+        "post_msg": "This is a test!",
+    })
+
+    # Authenticate User
     remote_user = None
     if request.user.is_authenticated:
         remote_user = request.user.username
@@ -160,6 +181,15 @@ def SavePerIndDataApi(request):
         })
 
     # @TODO Make sure the remote user has permission to the posted record id
+    # Authenticate permission for user
+    user_perm_chk = user_has_permission_to_edit(remote_user, id)
+    if user_perm_chk["success"] == False:
+        print("BEWARE: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "USER '{}' has no permission to edit record #{}!".format(remote_user, id),
+        })
+
 
     if table == "IndicatorData":
         row = IndicatorData.objects.get(record_id=id)
@@ -173,7 +203,7 @@ def SavePerIndDataApi(request):
         print( remote_user )
 
         # if column=="val":
-        #     row.val = value
+        #     row.val = new_value
 
         # @TODO Update last updated by to current remote user
 
