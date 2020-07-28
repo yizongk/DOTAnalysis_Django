@@ -42,7 +42,6 @@
 {% block custom_js %}
 <script>
     $(document).ready(function(){
-        $("body").addClass("loading");
         $(document).on("dblclick", ".editable", function(){
             var old_value = $(this).text();
             var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";

@@ -21,7 +21,7 @@
 
         <!-- <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/button.css' %}" /> -->
         <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/status_led.css' %}" />
-        <!-- <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/loadingModal.css' %}" /> -->
+        <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/loadingModal.css' %}" />
 
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,6 +66,7 @@
 
         {% block content %}{% endblock %}
         {% block custom_js %}{% endblock %}
-        <div class="modal">{# temporary holder div for implementing the display of 'Loading' logo for div that needs loading #}</div>
+
+        <div class="modal"></div>
     </body>
 </html>

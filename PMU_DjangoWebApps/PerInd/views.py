@@ -164,10 +164,10 @@ def SavePerIndDataApi(request):
     column = request.POST.get('column', '')
     new_value = request.POST.get('new_value', '')
 
-    return JsonResponse({
-        "post_success": False,
-        "post_msg": "This is a test!",
-    })
+    # return JsonResponse({
+    #     "post_success": False,
+    #     "post_msg": "This is a test!",
+    # })
 
     # Authenticate User
     remote_user = None
