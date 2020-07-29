@@ -4,6 +4,11 @@ from django.http import HttpResponse, JsonResponse
 from django.views.generic import TemplateView
 from django.views import generic
 from .models import *
+
+from django.views.generic import ListView
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 # Create your views here.
 
 def get_cur_client(request):
@@ -89,18 +94,30 @@ class ContactPageView(TemplateView):
 #     get_context_data()
 #     get()
 #     render_to_response()
-class WebGridPageView(generic.ListView):
-    template_name = 'PerInd.template.webgrid.html'
-    context_object_name = 'indicator_data_entries'
-    req_success = False
-    category_permissions = []
-    err_msg = ""
 
-    def get_queryset(self):
+
+
+
+class WebGridPageView(generic.ListView):
+     #model = IndicatorData
+     #paginate_by = 10
+     template_name = 'PerInd.template.webgrid.html'
+     context_object_name = 'indicator_data_entries'
+
+     #paginator = Paginator(indicator_data_entries, 3)
+
+     req_success = False
+     category_permissions = []
+     err_msg = ""
+   
+   
+     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
         try:
             indicator_data_entries = IndicatorData.objects.all()
+            #paginator = Paginator(indicator_data_entries, 3)
+            
         except Exception as e:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
@@ -125,7 +142,7 @@ class WebGridPageView(generic.ListView):
 
         return indicator_data_entries
 
-    def get_context_data(self, **kwargs):
+     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         try:
             context = super().get_context_data(**kwargs)
@@ -142,7 +159,8 @@ class WebGridPageView(generic.ListView):
             context["category_permissions"] = self.category_permissions
             print(self.err_msg)
             return context
-
+    
+    
 def SavePerIndDataApi(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
@@ -185,3 +203,21 @@ def SavePerIndDataApi(request):
             "post_success": True,
             "post_msg": "",
         })
+
+'''
+def Index(request):
+    entries_list = IndicatorData.objects.all()
+    paginator = Paginator(entries_list, 25) # Show 25 contacts per page.
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+	    posts = paginator.page(1)
+    except EmptyPage:
+	    posts = paginator.page(paginator.num_pages)
+    context = {
+        "page" : page,
+        "posts" : posts
+	}
+    return render(request, "PerInd.template.webgrid.html", context)
+    '''

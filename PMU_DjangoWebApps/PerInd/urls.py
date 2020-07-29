@@ -9,6 +9,7 @@ urlpatterns = [
     #path('contact', views.contact, name='contact'),
     
     path('', HomePageView.as_view(), name='home_view'),
+    #path('', Index),
     path('about', AboutPageView.as_view(), name='about_view'),
     path('contact', ContactPageView.as_view(), name='contact_view'),
     path('webgrid', WebGridPageView.as_view(), name='webgrid_view'),

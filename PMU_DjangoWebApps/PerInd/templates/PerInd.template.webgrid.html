@@ -1,50 +1,53 @@
 {% extends 'template.base.html' %}
 <!-- Will contain the template for the WebGrid html -->
-
-
 {% block content %}
+
 
 <div>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
 <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'>good</div>{% else %}<div class='led_red'>bad</div>{% endif %}</div>
 <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>If this continues, find out who to contact in the Contact Page. {% else %}{% endif %}</div>
 
 <div class="table">
-<table class="table">
-    <tr>
-        <th>Record Id</th>
-        <th>City wide value</th>
-        <th>Created date</th>
-        <th>Updated date</th>
-        <th>Indicator Title</th>
-        <th>Year</th>
-        <th>Month</th>
-        <th>Last updated by</th>
-    </tr>
-    {% for entry in indicator_data_entries %}
-    <tr>
-        <td>{{ entry.record_id }}</td>
-        <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData", data-column="val">{{ entry.val }}</td>
-        <td>{{ entry.created_date }}</td>
-        <td>{{ entry.updated_date }}</td>
-        <td>{{ entry.indicator }}</td>
-        <td>{{ entry.year_month.yyyy }}</td>
-        <td>{{ entry.year_month.mm }}</td>
-        <td>{{ entry.update_user }}</td>
-    </tr>
-    {% endfor %}
+    <table class="table">
+        <tr>
+            <th>Record Id</th>
+            <th>City wide value</th>
+            <th>Created date</th>
+            <th>Updated date</th>
+            <th>Indicator Title</th>
+            <th>Year</th>
+            <th>Month</th>
+            <th>Last updated by</th>
+        </tr>
+     
+        {% for entry in indicator_data_entries %}
+        <tr>
+            <td>{{ entry.record_id }}</td>
+            <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" , data-column="val">{{ entry.val }}</td>
+            <td>{{ entry.created_date }}</td>
+            <td>{{ entry.updated_date }}</td>
+            <td>{{ entry.indicator }}</td>
+            <td>{{ entry.year_month.yyyy }}</td>
+            <td>{{ entry.year_month.mm }}</td>
+            <td>{{ entry.update_user }}</td>
+        </tr>
+        {% endfor %}
 
 
-</table>
+    </table>
 </div>
 
-{% endblock content %}
 
-{% block custom_js %}
+
+</div>
+    {% endblock content %}
+
+    {% block custom_js %}
 <script>
-    $(document).ready(function(){
-        $(document).on("dblclick", ".editable", function(){
+    $(document).ready(function () {
+        $(document).on("dblclick", ".editable", function () {
             var value = $(this).text();
-            var input = "<input type='text' class='input-data' value='"+value+"' class='form-control'>";
+            var input = "<input type='text' class='input-data' value='" + value + "' class='form-control'>";
             $(this).html(input);
             $(this).removeClass("editable");
         });
@@ -57,10 +60,10 @@
         //     td.addClass("editable");
         // });
 
-        $(document).on("keypress", ".input-data", function(e){
+        $(document).on("keypress", ".input-data", function (e) {
             var key = e.which;
             // console.log(key)
-            if(key==13){ // 13 is the return key, aka 'ENTER' key
+            if (key == 13) { // 13 is the return key, aka 'ENTER' key
                 var value = $(this).val();
                 var td = $(this).parent("td");
                 $(this).remove();
@@ -76,11 +79,11 @@
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
 
-        function sendToServer(id, value, table, column){
+        function sendToServer(id, value, table, column) {
             console.log(id, value, table, column);
 
             $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
+                beforeSend: function (xhr, settings) {
                     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
                         // Only send the token to relative URLs i.e. locally.
                         xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
@@ -98,14 +101,16 @@
                     column: column,
                 },
             })
-            .done(function(response){
-                console.log(response)
-            })
-            .fail(function(){
-                console.log("Ajax Post: Error Occured.")
-                alert("Ajax Post: Error Occured.")
-            });
+                .done(function (response) {
+                    console.log(response)
+                })
+                .fail(function () {
+                    console.log("Ajax Post: Error Occured.")
+                    alert("Ajax Post: Error Occured.")
+                });
         };
     })
 </script>
-{% endblock %}
+
+
+    {% endblock %}
