@@ -4,30 +4,36 @@
 
 <!DOCTYPE html>
 <html>
-<head>
+    <head>
   
-    <!-- New for testing v-->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <!-- New for testing ^-->
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Indicator Portal</title>
+        <!-- New for testing v-->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script> <!-- For getting CSRF Token from cookie on the front end -->
+        <!-- @TODO: Need to try to use one bootstrap.min.css, probably the latest version, and make adjustment -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" href="//maxcdn.bootstfrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+        <!-- @TODO: The following bootstrap.min.css is causing the warning "This page uses the non standard property “zoom”, on firefox" -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <!-- New for testing ^-->
 
+        <!-- <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/button.css' %}" /> -->
+        <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/status_led.css' %}" />
+        <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/loadingModal.css' %}" />
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Performance Indicator Portal</title>
+        <link rel="shortcut icon" type="image/png" href="{% static 'favicon/favicon.ico' %}"/>
+    </head>
 
     <body>
         <nav class="navbar navbar-expand-lg navbar-inverse">
             
-            <!-- <div class="navbar-header">
-        <div class="navbar-header pull-left">-->
-            <a class="navbar-brand" href="{% url 'home' %}">
-                {% load static %}
-                <img src="{% static "PMU_DjangoWebApps/logo.jpg" %}" alt="My image" style="height:30px; width: 50px">
-
+            <a class="navbar-brand" href="{% url 'home_view' %}">
+                <img src="{% static 'PMU_DjangoWebApps/images/logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
                
             </a>
 
@@ -44,22 +50,23 @@
                         <a class="nav-link" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PMU_Home  </a>
                     </li>
                     <li class="nav-item" >
-                        <a class="nav-link" href="{% url 'home' %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PerInd_Portal  </a>
+                        <a class="nav-link" href="{% url 'home_view' %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">PerInd_Portal  </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'about' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">About  </a>
+                        <a class="nav-link" href="{% url 'about_view' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">About  </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact' %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
+                        <a class="nav-link" href="{% url 'contact_view' %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
                     </li>
 
                 </ul>
                 <p class="nav navbar-text navbar-right" style=" font-family:sans-serif;">Hello, {{user.username}}</p>
             </div>
         </nav>
+
+        {% block content %}{% endblock %}
+        {% block custom_js %}{% endblock %}
+
+        <div class="modal"></div>
     </body>
-
-    {% block content %}{% endblock %}
-
-    <div class="modal">{% comment %} temporary holder div for implementing the display of 'Loading' logo for div that needs loading {% endcomment %}</div>
 </html>
