@@ -103,7 +103,7 @@ class WebGridPageView(generic.ListView):
      template_name = 'PerInd.template.webgrid.html'
      context_object_name = 'indicator_data_entries'
 
-     paginate_by = 10
+     paginate_by = 12
 
      req_success = False
      category_permissions = []
