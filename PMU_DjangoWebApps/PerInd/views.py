@@ -162,6 +162,7 @@ class WebGridPageView(generic.ListView):
             indicator_data_entries = IndicatorData.objects.filter(
                 indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
                 indicator__active=True, # Filters for active Indicator titles
+                year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
         except Exception as e:
             self.req_success = False
@@ -169,9 +170,7 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Filter for only last four year
         # Filter for only searched indicator title
-
         # Sort it asc or desc on sort_by
 
         self.req_success = True
