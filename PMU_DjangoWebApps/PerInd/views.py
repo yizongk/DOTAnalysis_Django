@@ -54,7 +54,7 @@ def webgrid(request):
     return render(request, 'PerInd.template.webgrid.html', context)
 '''
 
-def get_user_category_pk_list(username):
+def get_user_category_permissions(username):
     try:
         user_permissions_list = UserPermissions.objects.all() #@TODO optimize this, use objects.get(...)
         user_permissions_list = user_permissions_list.filter(user__login=username)
@@ -65,10 +65,10 @@ def get_user_category_pk_list(username):
             "category_names": [x.category.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        print("Exception: get_user_category_pk_list(): {}".format(e))
+        print("Exception: get_user_category_permissions(): {}".format(e))
         return {
             "success": False,
-            "err": "Exception: get_user_category_pk_list(): {}".format(e),
+            "err": "Exception: get_user_category_permissions(): {}".format(e),
             "pk_list": [],
             "category_names": [],
         }
@@ -76,7 +76,7 @@ def get_user_category_pk_list(username):
 # Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
     try:
-        category_info = get_user_category_pk_list(username)
+        category_info = get_user_category_permissions(username)
         category_id_permission_list = category_info["pk_list"]
         record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) # Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
         record_category_id = record_category_info["indicator__category__category_id"]
@@ -94,7 +94,7 @@ def user_has_permission_to_edit(username, record_id):
                     "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
                 }
         elif category_info["success"] == False:
-            raise # re-raise the error that happend in get_user_category_pk_list(), because ["success"] is only False when an exception happens in get_user_category_pk_list()
+            raise # re-raise the error that happend in get_user_category_permissions(), because ["success"] is only False when an exception happens in get_user_category_permissions()
         else: # Else successful query, but no permissions results found
             return {
                 "success": False,
@@ -141,30 +141,40 @@ class WebGridPageView(generic.ListView):
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
+        # try:
+        #     indicator_data_entries = IndicatorData.objects.all()
+        # except Exception as e:
+        #     self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+        #     print(self.err_msg)
+        #     return IndicatorData.objects.none()
+
+        # Get list authorized Categories of Indicator Data, and log the category_permissions
+        user_cat_permissions = get_user_category_permissions(self.request.user)
+        if user_cat_permissions["success"] == False:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+        category_pk_list = user_cat_permissions["pk_list"]
+        self.category_permissions = user_cat_permissions["category_names"]
+
         try:
-            indicator_data_entries = IndicatorData.objects.all()
+            indicator_data_entries = IndicatorData.objects.filter(
+                indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
+                indicator__active=True, # Filters for active Indicator titles
+            )
         except Exception as e:
+            self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Filter for only authorized Categories of Indicator Data, and log the category_permissions
-        tmp_result = get_user_category_pk_list(self.request.user)
-        self.req_success = tmp_result["success"]
-        if tmp_result["success"] == False:
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(tmp_result['err'])
-            print(self.err_msg)
-            return IndicatorData.objects.none()
-        category_pk_list = tmp_result["pk_list"]
-        self.category_permissions = tmp_result["category_names"]
-        indicator_data_entries = indicator_data_entries.filter(indicator__category__pk__in=category_pk_list)
-
-        # Filter for only Active indicator
         # Filter for only last four year
         # Filter for only searched indicator title
 
         # Sort it asc or desc on sort_by
 
+        self.req_success = True
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
