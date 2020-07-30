@@ -131,12 +131,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Take a look at README.md for some info on TIME_ZONE
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 
 USE_L10N = True
 
+# Take a look at README.md for some info on USE_TZ
 USE_TZ = True
 
 

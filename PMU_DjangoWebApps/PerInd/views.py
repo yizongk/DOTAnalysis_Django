@@ -5,6 +5,8 @@ from django.views.generic import TemplateView
 from django.views import generic
 from .models import *
 from datetime import datetime
+from django.utils import timezone
+import pytz # For converting datetime objects from one timezone to another timezone
 # Create your views here.
 
 def get_cur_client(request):
@@ -75,6 +77,12 @@ def get_user_category_pk_list(username):
 # @TODO IMPLEMENT THIS LOL
 def user_has_permission_to_edit(username, record_id):
     try:
+        category_permission_info = get_user_category_pk_list(username)
+        if category_permission_info["success"] and len(category_permission_info["data"]) != 0:
+            print(category_permission_info["data"])
+        else:
+            raise ValueError( "Permission denied: '{}' does not have permission to edit {} Category.".format(username,'') )
+
         return {
             "success": True,
             "data": None,
@@ -195,37 +203,29 @@ def SavePerIndDataApi(request):
 
     if table == "IndicatorData":
         row = IndicatorData.objects.get(record_id=id)
-        # print( row.record_id )
-        # print( row.val )
-        # print( row.created_date )
-        # print( row.updated_date )
-        # print( row.indicator )
-        # print( row.year_month )
-        # print( row.update_user )
-        # print( remote_user )
 
         if column=="val":
             try:
                 row.val = new_value
-                # @TODO Update last updated by to current remote user, also make sure it's active user
+
+                # Update [last updated by] to current remote user, also make sure it's active user
                 user_obj = Users.objects.get(login=remote_user, active_user=True) # Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
-                print( "user_id: '{}'".format(user_obj.user_id) )
-                print( "first_name: '{}'".format(user_obj.first_name) )
-                print( "last_name: '{}'".format(user_obj.last_name) )
-                print( "login: '{}'".format(user_obj.login) )
-                print( "active_user: '{}'".format(user_obj.active_user) )
                 row.update_user = user_obj
-                # @TODO Update updated date to current time
-                updated_timestamp = datetime.now()
+
+                # Update [updated date] to current time
+                # updated_timestamp = datetime.now() # Give 'naive' local time, which happens to be EDT on my home dev machine
+                updated_timestamp = timezone.now() # Give 'time zone awared' datetime, but backend is UTC
                 row.updated_date = updated_timestamp
-                updated_timestamp_str_response = updated_timestamp.strftime("%B %d, %Y, %I:%M %p")
+
+                local_updated_timestamp_str_response = updated_timestamp.astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
+
                 row.save()
 
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                     "value_saved": "",
-                    "updated_timestamp": updated_timestamp_str_response,
+                    "updated_timestamp": local_updated_timestamp_str_response,
                     "updated_by": remote_user,
                 })
             except Exception as e:
