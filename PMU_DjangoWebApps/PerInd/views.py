@@ -5,6 +5,8 @@ from django.views.generic import TemplateView
 from django.views import generic
 from .models import *
 from datetime import datetime
+from django.utils import timezone
+import pytz # For converting datetime objects from one timezone to another timezone
 # Create your views here.
 
 def get_cur_client(request):
@@ -52,38 +54,61 @@ def webgrid(request):
     return render(request, 'PerInd.template.webgrid.html', context)
 '''
 
-def get_user_category_pk_list(username):
+def get_user_category_permissions(username):
     try:
-        user_permissions_list = UserPermissions.objects.all()
+        user_permissions_list = UserPermissions.objects.all() #@TODO optimize this, use objects.get(...)
         user_permissions_list = user_permissions_list.filter(user__login=username)
         return {
             "success": True,
-            "data": [x.category.category_id for x in user_permissions_list],
+            "pk_list": [x.category.category_id for x in user_permissions_list],
             "err": '',
             "category_names": [x.category.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        print("Exception: get_user_category_pk_list(): {}".format(e))
+        print("Exception: get_user_category_permissions(): {}".format(e))
         return {
             "success": False,
-            "data": None,
-            "err": "Exception: get_user_category_pk_list(): {}".format(e),
+            "err": "Exception: get_user_category_permissions(): {}".format(e),
+            "pk_list": [],
             "category_names": [],
         }
 
 # Given a record id, checks if user has permission to edit the record
-# @TODO IMPLEMENT THIS LOL
 def user_has_permission_to_edit(username, record_id):
     try:
-        return {
-            "success": True,
-            "data": None,
-            "err": '',
-        }
-    except Exception as e:
+        category_info = get_user_category_permissions(username)
+        category_id_permission_list = category_info["pk_list"]
+        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) # Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_id = record_category_info["indicator__category__category_id"]
+        record_category_name = record_category_info["indicator__category__category_name"]
+        if len(category_id_permission_list) != 0:
+            if record_category_id in category_id_permission_list:
+                return {
+                    "success": True,
+                    "err": "",
+                }
+            else:
+                print( "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name) )
+                return {
+                    "success": False,
+                    "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
+                }
+        elif category_info["success"] == False:
+            raise # re-raise the error that happend in get_user_category_permissions(), because ["success"] is only False when an exception happens in get_user_category_permissions()
+        else: # Else successful query, but no permissions results found
+            return {
+                "success": False,
+                "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
+            }
+
         return {
             "success": False,
-            "data": None,
+            "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
+        }
+    except Exception as e:
+        print("Exception: user_has_permission_to_edit(): {}".format(e))
+        return {
+            "success": False,
             "err": 'Exception: user_has_permission_to_edit(): {}'.format(e),
         }
 
@@ -116,30 +141,39 @@ class WebGridPageView(generic.ListView):
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
+        # try:
+        #     indicator_data_entries = IndicatorData.objects.all()
+        # except Exception as e:
+        #     self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+        #     print(self.err_msg)
+        #     return IndicatorData.objects.none()
+
+        # Get list authorized Categories of Indicator Data, and log the category_permissions
+        user_cat_permissions = get_user_category_permissions(self.request.user)
+        if user_cat_permissions["success"] == False:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+        category_pk_list = user_cat_permissions["pk_list"]
+        self.category_permissions = user_cat_permissions["category_names"]
+
         try:
-            indicator_data_entries = IndicatorData.objects.all()
+            indicator_data_entries = IndicatorData.objects.filter(
+                indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
+                indicator__active=True, # Filters for active Indicator titles
+                year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+            )
         except Exception as e:
+            self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Filter for only authorized Categories of Indicator Data, and log the category_permissions
-        tmp_result = get_user_category_pk_list(self.request.user)
-        self.req_success = tmp_result["success"]
-        if tmp_result["success"] == False:
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(tmp_result['err'])
-            print(self.err_msg)
-            return IndicatorData.objects.none()
-        category_pk_list = tmp_result["data"]
-        self.category_permissions = tmp_result["category_names"]
-        indicator_data_entries = indicator_data_entries.filter(indicator__category__pk__in=category_pk_list)
-
-        # Filter for only Active indicator
-        # Filter for only last four year
         # Filter for only searched indicator title
-
         # Sort it asc or desc on sort_by
 
+        self.req_success = True
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
@@ -166,11 +200,6 @@ def SavePerIndDataApi(request):
     column = request.POST.get('column', '')
     new_value = request.POST.get('new_value', '')
 
-    # return JsonResponse({
-    #     "post_success": False,
-    #     "post_msg": "This is a test!",
-    # })
-
     # Authenticate User
     remote_user = None
     if request.user.is_authenticated:
@@ -182,50 +211,42 @@ def SavePerIndDataApi(request):
             "post_msg": "UNAUTHENTICATE USER!",
         })
 
-    # @TODO Make sure the remote user has permission to the posted record id
     # Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
         print("Warning: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "USER '{}' has no permission to edit record #{}!".format(remote_user, id),
+            "post_msg": "USER '{}' has no permission to edit record #{}: SavePerIndDataApi(): {}".format(remote_user, id, user_perm_chk["err"]),
         })
 
 
     if table == "IndicatorData":
         row = IndicatorData.objects.get(record_id=id)
-        # print( row.record_id )
-        # print( row.val )
-        # print( row.created_date )
-        # print( row.updated_date )
-        # print( row.indicator )
-        # print( row.year_month )
-        # print( row.update_user )
-        # print( remote_user )
 
         if column=="val":
             try:
                 row.val = new_value
-                # @TODO Update last updated by to current remote user, also make sure it's active user
+
+                # Update [last updated by] to current remote user, also make sure it's active user
                 user_obj = Users.objects.get(login=remote_user, active_user=True) # Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
-                print( "user_id: '{}'".format(user_obj.user_id) )
-                print( "first_name: '{}'".format(user_obj.first_name) )
-                print( "last_name: '{}'".format(user_obj.last_name) )
-                print( "login: '{}'".format(user_obj.login) )
-                print( "active_user: '{}'".format(user_obj.active_user) )
                 row.update_user = user_obj
-                # @TODO Update updated date to current time
-                updated_timestamp = datetime.now()
+
+                # Update [updated date] to current time
+                # updated_timestamp = datetime.now() # Give 'naive' local time, which happens to be EDT on my home dev machine
+                updated_timestamp = timezone.now() # Give 'time zone awared' datetime, but backend is UTC
                 row.updated_date = updated_timestamp
-                updated_timestamp_str_response = updated_timestamp.strftime("%B %d, %Y, %I:%M %p")
+
+                local_updated_timestamp_str_response = updated_timestamp.astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
+
                 row.save()
 
+                print("Api Log: SavePerIndDataApi(): User '{}' has successfully update '{}' to [{}].[{}] for record id '{}'".format(remote_user, new_value, table, column, id))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                     "value_saved": "",
-                    "updated_timestamp": updated_timestamp_str_response,
+                    "updated_timestamp": local_updated_timestamp_str_response,
                     "updated_by": remote_user,
                 })
             except Exception as e:

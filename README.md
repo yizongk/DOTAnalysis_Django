@@ -115,3 +115,20 @@ Because your Apache aliased /static/ to "path_to_your_static_dir", and you have 
 # For issues with "None of the “sha384” hashes in the integrity attribute match the content of the subresource."
 It has to do with the JS or css script that you are including with remote url links
 https://stackoverflow.com/questions/32039568/what-are-the-integrity-and-crossorigin-attributes
+
+# Note about datetime stored in the SQL Server database
+https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-TIME_ZONE, Take a look at "TIME_ZONE" section.
+https://docs.djangoproject.com/en/3.0/topics/i18n/timezones/, Take a look at "Overview" section and "Naive and aware datetime objects" section.
+
+Because I am using USE_TZ = True in the settings.py, everything Django stores into the database is in UTC time format.
+And since I am using TIME_ZONE = 'America/New_York' along side USE_TZ = True, "America/New_York" (EDT time) is the default time zone that Django will use to display datetimes in templates and to interpret datetimes entered in forms.
+So the WebApp WebGrid ('Updated date' column) will show the time in Eastern Daylight Time (EDT) or AKA America/New_York, but SQL Server stores the datetime as UTC. So you should use django.utils.timezone.now() instead of datetime.datetime.now(), cuz timezone is "aware" and datetime is "naive". Otherwise, you will need to convert datetime.datetime.now() to the "America/New_York" timezone.
+
+https://stackoverflow.com/questions/11909071/using-strftime-on-a-django-datetime-produces-a-utc-time-in-the-string
+Since django.utils.timezone.now() returns a datetime that is 'aware' and not 'naive', so if you were to access directly to pieces of the django.utils.timezone.now(), like %M (Such as .strftime()), it will return UTC time format, and so you got to convert it to "America/New_York".
+
+To convert, you need to something like this (The following will return New York timezone in a readable format):
+```
+from django.utils import timezone
+local_timestamp_str = timezone.now().astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
+```
