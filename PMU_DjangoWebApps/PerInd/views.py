@@ -206,20 +206,3 @@ def SavePerIndDataApi(request):
             "post_msg": "",
         })
 
-'''
-def page(request):
-    entries_list = IndicatorData.objects.all()
-    paginator = Paginator(entries_list, 25) # Show 25 contacts per page.
-    page = request.GET.get('page')
-    try:
-        posts = paginator.page(page)
-    except PageNotAnInteger:
-	    posts = paginator.page(1)
-    except EmptyPage:
-	    posts = paginator.page(paginator.num_pages)
-    context = {
-        "page" : page,
-        "posts" : posts
-	}
-    return render(request, "PerInd.template.webgrid.html", context)
-    '''
