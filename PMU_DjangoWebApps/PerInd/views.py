@@ -56,11 +56,11 @@ def webgrid(request):
 
 def get_user_category_pk_list(username):
     try:
-        user_permissions_list = UserPermissions.objects.all()
+        user_permissions_list = UserPermissions.objects.all() #@TODO optimize this, use objects.get(...)
         user_permissions_list = user_permissions_list.filter(user__login=username)
         return {
             "success": True,
-            "data": [x.category.category_id for x in user_permissions_list],
+            "pk_list": [x.category.category_id for x in user_permissions_list],
             "err": '',
             "category_names": [x.category.category_name for x in user_permissions_list],
         }
@@ -68,30 +68,47 @@ def get_user_category_pk_list(username):
         print("Exception: get_user_category_pk_list(): {}".format(e))
         return {
             "success": False,
-            "data": None,
             "err": "Exception: get_user_category_pk_list(): {}".format(e),
+            "pk_list": [],
             "category_names": [],
         }
 
 # Given a record id, checks if user has permission to edit the record
-# @TODO IMPLEMENT THIS LOL
 def user_has_permission_to_edit(username, record_id):
     try:
-        category_permission_info = get_user_category_pk_list(username)
-        if category_permission_info["success"] and len(category_permission_info["data"]) != 0:
-            print(category_permission_info["data"])
-        else:
-            raise ValueError( "Permission denied: '{}' does not have permission to edit {} Category.".format(username,'') )
+        category_info = get_user_category_pk_list(username)
+        category_id_permission_list = category_info["pk_list"]
+        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) # Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_id = record_category_info["indicator__category__category_id"]
+        record_category_name = record_category_info["indicator__category__category_name"]
+        if len(category_id_permission_list) != 0:
+            if record_category_id in category_id_permission_list:
+                return {
+                    "success": True,
+                    "err": "",
+                }
+            else:
+                print( "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name) )
+                return {
+                    "success": False,
+                    "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
+                }
+        elif category_info["success"] == False:
+            raise # re-raise the error that happend in get_user_category_pk_list(), because ["success"] is only False when an exception happens in get_user_category_pk_list()
+        else: # Else successful query, but no permissions results found
+            return {
+                "success": False,
+                "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
+            }
 
         return {
-            "success": True,
-            "data": None,
-            "err": '',
+            "success": False,
+            "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
         }
     except Exception as e:
+        print("Exception: user_has_permission_to_edit(): {}".format(e))
         return {
             "success": False,
-            "data": None,
             "err": 'Exception: user_has_permission_to_edit(): {}'.format(e),
         }
 
@@ -138,7 +155,7 @@ class WebGridPageView(generic.ListView):
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(tmp_result['err'])
             print(self.err_msg)
             return IndicatorData.objects.none()
-        category_pk_list = tmp_result["data"]
+        category_pk_list = tmp_result["pk_list"]
         self.category_permissions = tmp_result["category_names"]
         indicator_data_entries = indicator_data_entries.filter(indicator__category__pk__in=category_pk_list)
 
@@ -174,11 +191,6 @@ def SavePerIndDataApi(request):
     column = request.POST.get('column', '')
     new_value = request.POST.get('new_value', '')
 
-    # return JsonResponse({
-    #     "post_success": False,
-    #     "post_msg": "This is a test!",
-    # })
-
     # Authenticate User
     remote_user = None
     if request.user.is_authenticated:
@@ -190,14 +202,13 @@ def SavePerIndDataApi(request):
             "post_msg": "UNAUTHENTICATE USER!",
         })
 
-    # @TODO Make sure the remote user has permission to the posted record id
     # Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
         print("Warning: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "USER '{}' has no permission to edit record #{}!".format(remote_user, id),
+            "post_msg": "USER '{}' has no permission to edit record #{}: SavePerIndDataApi(): {}".format(remote_user, id, user_perm_chk["err"]),
         })
 
 
@@ -221,6 +232,7 @@ def SavePerIndDataApi(request):
 
                 row.save()
 
+                print("Api Log: SavePerIndDataApi(): User '{}' has successfully update '{}' to [{}].[{}] for record id '{}'".format(remote_user, new_value, table, column, id))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
