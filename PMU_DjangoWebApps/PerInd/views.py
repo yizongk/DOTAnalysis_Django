@@ -7,7 +7,6 @@ from .models import *
 from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # Create your views here.
 
