@@ -6,7 +6,7 @@
 
 <div>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
 <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div>
-<div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>If this continues, find out who to contact in the Contact Page. {% else %}{% endif %}</div>
+<div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
 
 <div class="table">
 <table class="table">
@@ -141,7 +141,7 @@
                 if( json_response["post_success"] == false ) {
                     td_node.html(old_val);
                     console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong trying to update City Wide Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong trying to update City Wide Value.\nPlease contact ykuang@dot.nyc.gov with a screenshot if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
 
                     // Set status light and error message to red and response error msg
                     setDatabaseStatus(good=false, msg=json_response["post_msg"]);
