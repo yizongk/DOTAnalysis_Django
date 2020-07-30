@@ -7,32 +7,32 @@
 <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
 
 <div class="table">
-<table class="table">
-    <thead>
-        <tr>
-            <th>City wide value</th>
-            <th>Indicator Title</th>
-            <th>Year</th>
-            <th>Month</th>
-            <th>Updated date</th>
-            <th>Last updated by</th>
-            <th>Category</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for entry in indicator_data_entries %}
-        <tr>
-            <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">{{ entry.year_month.mm }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
-            <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>City wide value</th>
+                <th>Indicator Title</th>
+                <th>Year</th>
+                <th>Month</th>
+                <th>Updated date</th>
+                <th>Last updated by</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in indicator_data_entries %}
+            <tr>
+                <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">{{ entry.year_month.mm }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     <!-- Paginations-->
     {% if is_paginated %}
     {% if page_obj.has_previous %}
