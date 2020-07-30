@@ -132,3 +132,56 @@ To convert, you need to something like this (The following will return New York 
 from django.utils import timezone
 local_timestamp_str = timezone.now().astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
 ```
+
+# Note on python manage.py migrate and makemigrations
+https://stackoverflow.com/questions/30195699/should-django-migrations-live-in-source-control
+On Prod, never do makemigrations. You should only apply the migrations.
+
+# Note on overriding queryset or ust getqueryset() for Django class view ListView
+https://stackoverflow.com/questions/19707237/use-get-queryset-method-or-set-queryset-variable
+Quoted from the link
+> "When you set queryset, the queryset is created only once, when you start your server. On the other hand, the get_queryset method is called for every request.
+>
+> That means that get_queryset is useful if you want to adjust the query dynamically. For example, you could return objects that belong to the current user"
+
+# Note Django Class view ListView and Pagination
+https://docs.djangoproject.com/en/3.0/topics/pagination/
+
+https://stackoverflow.com/questions/5907575/how-do-i-use-pagination-with-django-class-based-generic-listviews
+
+Note, thet ```model = models.Car``` is shorthand for setting queryset = models.car.objects.all()
+Pagination is built in! So you don't need to do:
+```
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+```
+And you have to do is populate get_queryset() and add paginate_by:
+```
+class WebGridPageView(generic.ListView):
+    context_object_name = 'indicator_data_entries'
+
+    paginate_by = 12
+
+    def get_queryset(self):
+        return IndicatorData.objects.all()
+```
+And in the front end:
+```
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+```
+So long, in the ListView that, you have queryset attribute set to something and set paginate_by attribute to something, it will work! model attribute and get_queryset() both will set the queryset attribute
