@@ -7,6 +7,8 @@ from .models import *
 from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 # Create your views here.
 
 def get_cur_client(request):
@@ -134,6 +136,9 @@ class ContactPageView(TemplateView):
 class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
+
+    paginate_by = 12
+
     req_success = False
     category_permissions = []
     err_msg = ""

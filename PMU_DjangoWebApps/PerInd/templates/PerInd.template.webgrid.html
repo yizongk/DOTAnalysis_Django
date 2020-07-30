@@ -1,7 +1,5 @@
 {% extends 'template.base.html' %}
 <!-- Will contain the template for the WebGrid html -->
-
-
 {% block content %}
 
 <div>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
@@ -34,11 +32,33 @@
         </tr>
         {% endfor %}
     </tbody>
-
-
 </table>
-</div>
+    <!-- Paginations-->
+    {% if is_paginated %}
+    {% if page_obj.has_previous %}
 
+    <a class="btn btn-outline-info" href="?page=1">First</a>
+    <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {%for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+    <a class=" btn btn-info" href="?page= {{ num }}">{{ num }}</a>
+    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+    <a class=" btn btn-outline-info" href="?page= {{ num }}">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+
+    <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
+    <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}">Last</a>
+
+    {% endif %}
+
+    {% endif %}
+    <!--end pagination-->
+</div>
 {% endblock content %}
 
 {% block custom_js %}
@@ -67,6 +87,7 @@
             // console.log(key)
             if(key==13){ // 13 is the return key, aka 'ENTER' key
                 // HEHEHEHEHEHEHE, need to move this chucnk of code to ajax call back, or amek ajax block 
+                // @TODO move this to Ajax call anyway, even though Ajax blocks with the loading icon right now, so why not? Send $(this) to sendToServer() as an arguement
                 var old_val = $(this).attr("value")
                 var new_value = $(this).val();
                 var td = $(this).parent("td");
