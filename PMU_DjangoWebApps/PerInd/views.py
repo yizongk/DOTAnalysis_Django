@@ -99,12 +99,11 @@ class ContactPageView(TemplateView):
 
 
 class WebGridPageView(generic.ListView):
-     #model = IndicatorData
-     #paginate_by = 10
+     model = IndicatorData
      template_name = 'PerInd.template.webgrid.html'
      context_object_name = 'indicator_data_entries'
 
-     #paginator = Paginator(indicator_data_entries, 3)
+     paginate_by = 10
 
      req_success = False
      category_permissions = []
@@ -116,7 +115,10 @@ class WebGridPageView(generic.ListView):
         # print("This is the user logged in!!!: {}".format(self.request.user))
         try:
             indicator_data_entries = IndicatorData.objects.all()
-            #paginator = Paginator(indicator_data_entries, 3)
+           # paginator = Paginator(indicator_data_entries, 3)
+           # page = self.request.GET.get('page')
+            #posts = paginator.page(page)
+           
             
         except Exception as e:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -205,7 +207,7 @@ def SavePerIndDataApi(request):
         })
 
 '''
-def Index(request):
+def page(request):
     entries_list = IndicatorData.objects.all()
     paginator = Paginator(entries_list, 25) # Show 25 contacts per page.
     page = request.GET.get('page')
