@@ -112,11 +112,59 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
+    def sort_data(request):
+         col = request.GET.get('order_by')
+         print("here!!",col)
+         indicator_data_entries = IndicatorData.objects.all().order_by(col)
 
+
+
+
+
+         '''
+         if( sortdir == "DESC" )
+            {
+                switch (sort)
+                {
+                    case "Indicator Title":
+                        data = data.OrderByDescending( i => i.Indicator_List.New_Indicator_Title );
+                        break;
+                    case "YYYY":
+                        data = data.OrderByDescending( i => i.Year_Month.YYYY );
+                        break;
+                    case "MM":
+                        data = data.OrderByDescending( i => i.Year_Month.MM );
+                        break;
+                    default:
+                        data = data.OrderByDescending( i => i.Indicator_List.New_Indicator_Title );
+                        break;
+                }
+            }
+            // Defaults to ASC
+            else
+            {
+                switch (sort)
+                {
+                    case "Indicator Title":
+                        data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
+                        break;
+                    case "YYYY":
+                        data = data.OrderBy(i => i.Year_Month.YYYY);
+                        break;
+                    case "MM":
+                        data = data.OrderBy(i => i.Year_Month.MM);
+                        break;
+                    default:
+                        data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
+                        break;
+                }
+            }
+            '''
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
         try:
+           
             indicator_data_entries = IndicatorData.objects.all()
         except Exception as e:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
