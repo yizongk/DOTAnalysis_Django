@@ -111,7 +111,7 @@ class UserPermissions(models.Model):
 class IndicatorList(models.Model):
     indicator_id = models.AutoField(db_column='Indicator_ID', primary_key=True)  # Field name made lowercase.
     old_indicator_title = models.CharField(db_column='Old_Indicator_Title', max_length=255)  # Field name made lowercase.
-    new_indicator_title = models.CharField(db_column='New_Indicator_Title', max_length=255)  # Field name made lowercase.
+    indicator_title = models.CharField(db_column='Indicator_Title', max_length=255)  # Field name made lowercase.
     # category_id = models.IntegerField(db_column='Category_ID')  # Field name made lowercase.
     # unit_id = models.IntegerField(db_column='Unit_ID')  # Field name made lowercase.
     # data_type_id = models.IntegerField(db_column='Data_Type_ID')  # Field name made lowercase.
@@ -130,7 +130,7 @@ class IndicatorList(models.Model):
         
 
     def __str__(self):
-        return self.new_indicator_title
+        return self.indicator_title
 
 
 class IndicatorData(models.Model):

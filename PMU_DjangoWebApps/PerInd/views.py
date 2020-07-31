@@ -112,54 +112,7 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
-    def sort_data(request):
-         col = request.GET.get('order_by')
-         print("here!!",col)
-         indicator_data_entries = IndicatorData.objects.all().order_by(col)
-
-
-
-
-
-         '''
-         if( sortdir == "DESC" )
-            {
-                switch (sort)
-                {
-                    case "Indicator Title":
-                        data = data.OrderByDescending( i => i.Indicator_List.New_Indicator_Title );
-                        break;
-                    case "YYYY":
-                        data = data.OrderByDescending( i => i.Year_Month.YYYY );
-                        break;
-                    case "MM":
-                        data = data.OrderByDescending( i => i.Year_Month.MM );
-                        break;
-                    default:
-                        data = data.OrderByDescending( i => i.Indicator_List.New_Indicator_Title );
-                        break;
-                }
-            }
-            // Defaults to ASC
-            else
-            {
-                switch (sort)
-                {
-                    case "Indicator Title":
-                        data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
-                        break;
-                    case "YYYY":
-                        data = data.OrderBy(i => i.Year_Month.YYYY);
-                        break;
-                    case "MM":
-                        data = data.OrderBy(i => i.Year_Month.MM);
-                        break;
-                    default:
-                        data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
-                        break;
-                }
-            }
-            '''
+  
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
@@ -288,3 +241,24 @@ def SavePerIndDataApi(request):
         "post_success": False,
         "post_msg": "Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
+
+def sort_data(request):
+    order = request.GET.get('order')
+
+    all_entries = IndicatorData.objects.all()
+
+    if(order == 'descInd'):
+        #Indicator_Title
+        all_entries = all_entries.order_by('-Indicator_Title')
+
+    else:
+        all_entries = all_entries.order_by('Indicator_Title')
+
+    return all_entries
+         
+
+
+
+
+
+       
