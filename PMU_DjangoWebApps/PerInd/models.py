@@ -147,4 +147,4 @@ class IndicatorData(models.Model):
     class Meta:
         managed = False
         db_table = 'Indicator_Data'
-        ordering = ['record_id']
+        ordering = ['indicator__indicator_title', 'year_month__yyyy', 'year_month__mm']
