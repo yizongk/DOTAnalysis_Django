@@ -174,8 +174,8 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Filter for only searched indicator title
-        # Sort it asc or desc on sort_by
+        # @TODO Filter for only searched indicator title
+        # @TODO Sort it asc or desc on sort_by
 
         self.req_success = True
         return indicator_data_entries
