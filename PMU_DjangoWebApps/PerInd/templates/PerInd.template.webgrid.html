@@ -81,13 +81,7 @@
         $(document).on("keypress", ".input-data", function(e){
             var key = e.which;
             if(key==13){ // 13 is the return key, aka 'ENTER' key
-                // HEHEHEHEHEHEHE, need to move this chucnk of code to ajax call back, or amek ajax block 
-                // @TODO move this to Ajax call anyway, even though Ajax blocks with the loading icon right now, so why not? Send $(this) to sendToServer() as an arguement
-                var old_val = $(this).attr("value")
-                var new_value = $(this).val();
-                var td = $(this).parent("td");
-                $(this).remove();
-                sendToServer( td.data("id"), new_value, td.data("table"), td.data("column"), td, old_val );
+                sendToServer(this);
             }
         });
 
@@ -97,9 +91,6 @@
         .ajaxStop(function() {
             $("body").removeClass("loading");
         });
-
-        
-        // @TODO:(MOVING THIS TO THE BACKEND VIEW) Make sure CityWideValue can be converted to a float before sending Ajax call, else output error message, and reset old value
 
         function setDatabaseStatus(good, msg) {
             // Set status light and error message to red and response error msg
@@ -128,8 +119,16 @@
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
 
-        function sendToServer(id, new_value, table, column, td_node, old_val){
+        function sendToServer(node){
             // console.log(id, new_value, table, column, td_node, old_val);
+            var old_val = $(node).attr("value")
+            var new_value = $(node).val();
+            var td_node = $(node).parent("td");
+            $(node).remove();
+
+            id = td_node.data("id")
+            table = td_node.data("table")
+            column = td_node.data("column")
 
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -171,15 +170,16 @@
             }) // @TODO FOR TOMORROW< FIX THIS, when you turn off server, but still edit webgrid, make sure somehow the response is like server offline or not found!
             .fail(function(jqXHR){
                 td_node.html(old_val);
-                for (var x in jqXHR) {
-                    console.log(`Property check-> ${x}: ${jqXHR[x]}`)
-                }
-                var errorMessage = jqXHR.status + ': ' + jqXHR.responseXML
+                // for (var x in jqXHR) {
+                //     console.log(`Property check-> ${x}: ${jqXHR[x]}`)
+                // }
+                // var errorMessage = jqXHR.status + ': ' + jqXHR.responseXML
+                var errorMessage = "Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov"
                 setDatabaseStatus(good=false, msg=errorMessage);
                 finishCellEditMode(td_node);
                 
-                console.log("Ajax Post: Error Occured.");
-                alert("Ajax Post: Error Occured.");
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
                 return false;
             });
         };

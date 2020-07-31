@@ -57,8 +57,7 @@ def webgrid(request):
 
 def get_user_category_permissions(username):
     try:
-        user_permissions_list = UserPermissions.objects.all() #@TODO optimize this, use objects.get(...)
-        user_permissions_list = user_permissions_list.filter(user__login=username)
+        user_permissions_list = UserPermissions.objects.filter(user__login=username)
         return {
             "success": True,
             "pk_list": [x.category.category_id for x in user_permissions_list],
@@ -209,21 +208,31 @@ def SavePerIndDataApi(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: UNAUTHENTICATE USER!')
+        print('Warning: SavePerIndDataApi(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "UNAUTHENTICATE USER!",
+            "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
         })
 
     # Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
-        print("Warning: USER '{}' has no permission to edit record #{}!".format(remote_user, id))
+        print("Warning: SavePerIndDataApi(): USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "USER '{}' has no permission to edit record #{}: SavePerIndDataApi(): {}".format(remote_user, id, user_perm_chk["err"]),
+            "post_msg": "SavePerIndDataApi():\n\nUSER '{}' has no permission to edit record #{}: SavePerIndDataApi(): {}".format(remote_user, id, user_perm_chk["err"]),
         })
 
+
+    # Make sure new_value is convertable to float
+    try:
+        new_value = float(new_value)
+    except Exception as e:
+        print("Warning: SavePerIndDataApi(): Unable to convert new_value '{}' as float type, did not save the value".format(new_value))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Warning: SavePerIndDataApi():\n\nUnable to convert new_value '{}' as float type, did not save the value".format(new_value),
+        })
 
     if table == "IndicatorData":
         row = IndicatorData.objects.get(record_id=id)
@@ -257,11 +266,11 @@ def SavePerIndDataApi(request):
                 print("Error: SavePerIndDataApi(): Something went wrong while trying to save to the database: {}".format(e))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: SavePerIndDataApi(): Something went wrong while trying to save to the database: {}".format(e),
+                    "post_msg": "Error: SavePerIndDataApi():\n\nSomething went wrong while trying to save to the database: {}".format(e),
                 })
 
     print("Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
-        "post_msg": "Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+        "post_msg": "Warning: SavePerIndDataApi():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })

@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    # 'django.contrib.staticfiles',  # @TODO Not sure where this is needed, need to read more on https://docs.djangoproject.com/en/3.0/ref/contrib/staticfiles/, and https://docs.djangoproject.com/en/3.0/howto/static-files/
     'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
 ]
 
