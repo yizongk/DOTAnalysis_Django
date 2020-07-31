@@ -12,12 +12,12 @@
             <tr>
                 <th>City wide value</th>
 
-                <th><a href="?order=indicator{% if dir == 'descInd' %} ?dir=ascInd {% else %}?dir=descInd {% endif %}" name="sortClick" data-value="indicator" value="indicator" onclick="return call_sort(indicator,dir)">
+                <th data-SortDir="asc"><a href="{% if SortDir == 'desc' %} ?SortDir=asc {% else %} ?SortDir=desc  {% endif %}" name="sortClick" data-value="indicator" value="indicator" >
     Indicator Title
     <!---<form action="actionURL" method="GET"><button type="submit">sort</button></form></th>-->
 
-<th><a href="?order=year_month">Year</a></th>
-                <th><a href="?order=year_month?dir=descMn">Month</a></th>
+<th><a href="?SortDir=asc">Year</a></th>
+                <th>Month<button href="?SortBy=year_month?SortDir=asc">^</button><button href="?SortBy=year_month?SortDir=desc">v</button></th>
                 <th>Updated date</th>
                 <th>Last updated by</th>
                 <th>Category</th>
@@ -44,58 +44,7 @@
 {% endblock content %}
 
 {% block custom_js %}
-<script>
-    //new script for sorting
-    function call_sort(data, order) {
-        if (order == "descInd") {
-            switch (data) {
-                case "Indicator Title":
 
-                    //data = data.OrderByDescending(i => i.Indicator_List.New_Indicator_Title);
-                   
-                    //pass column name and direction to views function 'sort_data'
-                    data = "Indicator_Title"
-                    dir="decInd"
-
-                    $.ajax({
-                        data: "Indicator_Title",
-                        order: "descInd",
-                        //success: function (data) { $('#target').html(data) }
-                    });
-                    break;
-                case "YYYY":
-                    // data = data.OrderByDescending(i => i.Year_Month.YYYY);
-                    break;
-                case "MM":
-                    //data = data.OrderByDescending(i => i.Year_Month.MM);
-                    break;
-                default:
-                    // data = data.OrderByDescending(i => i.Indicator_List.New_Indicator_Title);
-                    break;
-            }
-        }
-        // Defaults to ASC
-        else {
-            switch (data) {
-                case "Indicator Title":
-                    //data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
-                    break;
-                case "YYYY":
-                    // data = data.OrderBy(i => i.Year_Month.YYYY);
-                    break;
-                case "MM":
-                    // data = data.OrderBy(i => i.Year_Month.MM);
-                    break;
-                default:
-                    // data = data.OrderBy(i => i.Indicator_List.New_Indicator_Title);
-                    break;
-            }
-        }
-
-        return data;
-    }
-
-</script>
 
 <script>
     $(document).ready(function () {

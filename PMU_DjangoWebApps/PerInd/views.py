@@ -112,6 +112,8 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
+    SortDir =  "asc"
+    SortBy = "indicator"
   
     def get_queryset(self):
         # return Users.objects.order_by('-user_id')[:5]
@@ -140,23 +142,31 @@ class WebGridPageView(generic.ListView):
         # Filter for only searched indicator title
 
         # Sort it asc or desc on sort_by
-        try:
-            sortby=self.kwargs.get('order')
-            indicator_data_entries = IndicatorData.order_by('-'+str(sortby))
+        direction= self.request.GET.get('SortDir')
+        if direction == "asc":
+            indicator_data_entries = IndicatorData.objects.all().order_by('-indicator')
+        else:
+            indicator_data_entries = IndicatorData.objects.all().order_by('indicator')
+        
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
+        
         try:
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
+            context["SortDir"] = self.SortDir
+            context["SortBy"] = self.SortBy
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context["SortDir"] = self.SortDir
+            context["SortBy"] = self.SortBy
             context["req_success"] = False
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions
@@ -244,19 +254,6 @@ def SavePerIndDataApi(request):
         "post_msg": "Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
-def sort_data(request):
-    order = request.GET.get('order')
-
-    all_entries = IndicatorData.objects.all()
-
-    if(order == 'descInd'):
-        #Indicator_Title
-        all_entries = all_entries.order_by('-Indicator_Title')
-
-    else:
-        all_entries = all_entries.order_by('Indicator_Title')
-
-    return all_entries
          
 
 
