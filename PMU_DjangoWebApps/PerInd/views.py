@@ -140,7 +140,9 @@ class WebGridPageView(generic.ListView):
         # Filter for only searched indicator title
 
         # Sort it asc or desc on sort_by
-
+        try:
+            sortby=self.kwargs.get('order')
+            indicator_data_entries = IndicatorData.order_by('-'+str(sortby))
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
