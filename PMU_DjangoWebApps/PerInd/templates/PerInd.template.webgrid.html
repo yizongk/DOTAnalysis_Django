@@ -24,7 +24,36 @@
             <tr>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
-                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">{{ entry.year_month.mm }}</td>
+                <!-- <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">{{ entry.year_month.mm }}</td> -->
+                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">
+                {% if entry.year_month.mm == 1 %}
+                    Jan
+                {% elif entry.year_month.mm == 2 %}
+                    Feb
+                {% elif entry.year_month.mm == 3 %}
+                    Mar
+                {% elif entry.year_month.mm == 4 %}
+                    Apr
+                {% elif entry.year_month.mm == 5 %}
+                    May
+                {% elif entry.year_month.mm == 6 %}
+                    Jun
+                {% elif entry.year_month.mm == 7 %}
+                    Jul
+                {% elif entry.year_month.mm == 8 %}
+                    Aug
+                {% elif entry.year_month.mm == 9 %}
+                    Sep
+                {% elif entry.year_month.mm == 10 %}
+                    Oct
+                {% elif entry.year_month.mm == 11 %}
+                    Nov
+                {% elif entry.year_month.mm == 12 %}
+                    Dec
+                {% else %}
+                    Unrecognized Month
+                {% endif %}
+                </td>
                 <td class="editable" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
