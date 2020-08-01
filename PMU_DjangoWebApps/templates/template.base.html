@@ -23,6 +23,8 @@
         <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/status_led.css' %}" />
         <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/loadingModal.css' %}" />
 
+        {% block custom_css %}{% endblock %}
+
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Performance Indicator Portal</title>
