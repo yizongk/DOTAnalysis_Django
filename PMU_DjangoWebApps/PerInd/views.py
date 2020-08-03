@@ -112,13 +112,13 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
-    req_sort_dir =  "asc"
+    req_sort_dir =  "ascInd"
     req_sort_by = "indicator"
   
     def get_queryset(self):
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
-        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'ascInd' or temp_sort_dir == 'descInd' or temp_sort_dir == 'descYY' or temp_sort_dir == 'ascYY' or temp_sort_dir == 'descMM' or temp_sort_dir == 'ascMM'):
             self.req_sort_dir = temp_sort_dir
 
         temp_sort_by = self.request.GET.get('SortDir')
@@ -154,10 +154,18 @@ class WebGridPageView(generic.ListView):
         # Sort it asc or desc on sort_by
         #Need to make sure
         try:
-            if self.req_sort_dir == "asc":
+            if self.req_sort_dir == "ascInd":
                 indicator_data_entries = indicator_data_entries.order_by('indicator')
-            else:
+            elif self.req_sort_dir == "descInd":
                 indicator_data_entries = indicator_data_entries.order_by('-indicator')
+            elif self.req_sort_dir == "descYY":
+                indicator_data_entries = indicator_data_entries.order_by('-year_month__yyyy')
+            elif self.req_sort_dir == "ascYY":
+                indicator_data_entries = indicator_data_entries.order_by('year_month__yyyy')
+            elif self.req_sort_dir == "ascMM":
+                indicator_data_entries = indicator_data_entries.order_by('year_month__mm')
+            else:
+                indicator_data_entries = indicator_data_entries.order_by('-year_month__mm')
         except Exception as e:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)

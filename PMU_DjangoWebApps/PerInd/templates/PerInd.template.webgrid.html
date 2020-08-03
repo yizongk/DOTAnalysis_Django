@@ -11,9 +11,9 @@
         <thead>
             <tr>
                 <th>City wide value</th>
-                <th data-SortDir="asc"><a href="{% if sort_dir == 'desc' %} ?SortDir=asc {% elif sort_dir == 'asc' %} ?SortDir=desc {% else %} ?SortDir=asc {% endif %}" name="sortClick" data-value="indicator" value="indicator">Indicator Title</th>
-                <th><a href="?SortDir=asc">Year</a></th>
-                <th>Month<button href="?SortBy=year_month?SortDir=asc">^</button><button href="?SortBy=year_month?SortDir=desc">v</button></th>
+                <th data-SortDir="ascInd"><a href="{% if sort_dir == 'descInd' %} ?SortDir=ascInd {% elif sort_dir == 'ascInd' %} ?SortDir=descInd {% else %} ?SortDir=ascInd {% endif %}" name="sortClick" data-value="indicator" value="indicator">Indicator Title</th>
+                <th data-SortDir="ascYY"><a href="{% if sort_dir == 'descYY' %} ?SortDir=ascYY {% elif sort_dir == 'ascYY' %} ?SortDir=descYY {% else %} ?SortDir=ascYY {% endif %}">Year</a></th>
+                <th data-SortDir="ascMM"><a href="{% if sort_dir == 'descMM' %} ?SortDir=ascMM {% elif sort_dir == 'ascMM' %} ?SortDir=descMM {% else %} ?SortDir=ascMM {% endif %}">Month</a></th>
                 <th>Updated date</th>
                 <th>Last updated by</th>
                 <th>Category</th>
