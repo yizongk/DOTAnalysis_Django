@@ -10,9 +10,9 @@
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>Indicator Title</th>
-                    <th>Year</th>
-                    <th>Month</th>
+                    <th data-SortDir="ascInd"><a href="{% if sort_dir == 'descInd' %} ?SortDir=ascInd {% elif sort_dir == 'ascInd' %} ?SortDir=descInd {% else %} ?SortDir=ascInd {% endif %}">Indicator Title</th>
+                    <th data-SortDir="ascYY"><a href="{% if sort_dir == 'descYY' %} ?SortDir=ascYY {% elif sort_dir == 'ascYY' %} ?SortDir=descYY {% else %} ?SortDir=ascYY {% endif %}">Year</th>
+                    <th data-SortDir="ascMM"><a href="{% if sort_dir == 'descMM' %} ?SortDir=ascMM {% elif sort_dir == 'ascMM' %} ?SortDir=descMM {% else %} ?SortDir=ascMM {% endif %}">Month</th>
                     <th>Indicator Value</th>
                     <th>Updated Date</th>
                     <th>Last Updated By</th>
@@ -64,26 +64,26 @@
         </table>
         <!-- Paginations-->
         {% if is_paginated %}
-        {% if page_obj.has_previous %}
+            {% if page_obj.has_previous %}
 
-        <a class="btn btn-outline-info" href="?page=1">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-        {% endif %}
+                <a class="btn btn-outline-info" href="?page=1">First</a>
+                <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
 
-        {%for num in page_obj.paginator.page_range %}
-        {% if page_obj.number == num %}
-        <a class=" btn btn-info" href="?page= {{ num }}">{{ num }}</a>
-        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class=" btn btn-outline-info" href="?page= {{ num }}">{{ num }}</a>
-        {% endif %}
-        {% endfor %}
+            {%for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <a class=" btn btn-info" href="?page= {{ num }}">{{ num }}</a>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a class=" btn btn-outline-info" href="?page= {{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
 
-        {% if page_obj.has_next %}
+            {% if page_obj.has_next %}
 
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
-        <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}">Last</a>
+                <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
+                <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}">Last</a>
 
-        {% endif %}
+            {% endif %}
 
         {% endif %}
         <!--end pagination-->
@@ -92,6 +92,8 @@
 {% endblock content %}
 
 {% block custom_js %}
+
+
 <script>
     $(document).ready(function(){
         $(document).on("dblclick", ".editable", function(){
@@ -108,7 +110,7 @@
 
         // @TODO: I need a way to cancel
         // @TODO: Change the enter key to a button yes or cancel
-        $(document).on("keypress", ".input-data", function(e){
+        $(document).on("keypress", ".input-data", function (e) {
             var key = e.which;
             if(key==13){ // 13 is the return key, aka 'ENTER' key
                 sendToServer(this);
@@ -124,7 +126,7 @@
 
         function setDatabaseStatus(good, msg) {
             // Set status light and error message to red and response error msg
-            if ( good == true ) {
+            if (good == true) {
                 $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
                 $('.status_info.err_msg').html("");
             } else {
@@ -139,7 +141,7 @@
 
         function enterCellEditMode(td_node) {
             var old_value = td_node.text();
-            var input = "<input type='text' class='input-data' value='"+old_value+"' class='form-control'>";
+            var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
             td_node.html(input);
             td_node.removeClass("editable");
         }
@@ -161,7 +163,7 @@
             column = td_node.data("column")
 
             $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
+                beforeSend: function (xhr, settings) {
                     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
                         // Only send the token to relative URLs i.e. locally.
                         xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
@@ -179,20 +181,20 @@
                     column: column,
                 },
             })
-            .done(function(json_response){
+            .done(function (json_response) {
                 console.log("JSON RESPONSE", json_response);
-                if( json_response["post_success"] == false ) {
+                if (json_response["post_success"] == false) {
                     td_node.html(old_val);
                     console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong trying to update City Wide Value.\nPlease contact ykuang@dot.nyc.gov with a screenshot if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
 
                     // Set status light and error message to red and response error msg
-                    setDatabaseStatus(good=false, msg=json_response["post_msg"]);
+                    setDatabaseStatus(good = false, msg = json_response["post_msg"]);
                 } else { // Api call successful
                     td_node.html(new_value);
                     $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
                     $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
-                    setDatabaseStatus(good=true, msg="");
+                    setDatabaseStatus(good = true, msg = "");
                 }
                 finishCellEditMode(td_node);
 

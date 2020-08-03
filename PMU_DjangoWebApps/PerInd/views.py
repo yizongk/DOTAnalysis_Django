@@ -140,16 +140,18 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
-
+    req_sort_dir =  "ascInd"
+    req_sort_by = "indicator"
+  
     def get_queryset(self):
-        # return Users.objects.order_by('-user_id')[:5]
-        # print("This is the user logged in!!!: {}".format(self.request.user))
-        # try:
-        #     indicator_data_entries = IndicatorData.objects.all()
-        # except Exception as e:
-        #     self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
-        #     print(self.err_msg)
-        #     return IndicatorData.objects.none()
+        # Collect GET url parameter info
+        temp_sort_dir = self.request.GET.get('SortDir')
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'ascInd' or temp_sort_dir == 'descInd' or temp_sort_dir == 'descYY' or temp_sort_dir == 'ascYY' or temp_sort_dir == 'descMM' or temp_sort_dir == 'ascMM'):
+            self.req_sort_dir = temp_sort_dir
+
+        temp_sort_by = self.request.GET.get('SortDir')
+        if (temp_sort_by is not None and temp_sort_by != ''):
+            self.req_sort_by = temp_sort_by
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -157,6 +159,7 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
             print(self.err_msg)
+            self.req_success = False
             return IndicatorData.objects.none()
         category_pk_list = user_cat_permissions["pk_list"]
         self.category_permissions = user_cat_permissions["category_names"]
@@ -171,26 +174,50 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
+            self.req_success = False
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
         # @TODO Sort it asc or desc on sort_by
+        try:
+            if self.req_sort_dir == "ascInd":
+                indicator_data_entries = indicator_data_entries.order_by('indicator')
+            elif self.req_sort_dir == "descInd":
+                indicator_data_entries = indicator_data_entries.order_by('-indicator')
+            elif self.req_sort_dir == "descYY":
+                indicator_data_entries = indicator_data_entries.order_by('-year_month__yyyy')
+            elif self.req_sort_dir == "ascYY":
+                indicator_data_entries = indicator_data_entries.order_by('year_month__yyyy')
+            elif self.req_sort_dir == "ascMM":
+                indicator_data_entries = indicator_data_entries.order_by('year_month__mm')
+            else:
+                indicator_data_entries = indicator_data_entries.order_by('-year_month__mm')
+        except Exception as e:
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            self.req_success = False
+            return IndicatorData.objects.none()
 
         self.req_success = True
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
+        
         try:
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
+            context["sort_dir"] = self.req_sort_dir
+            context["sort_by"] = self.req_sort_by
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context["sort_dir"] = self.req_sort_dir
+            context["sort_by"] = self.req_sort_by
             context["req_success"] = False
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions

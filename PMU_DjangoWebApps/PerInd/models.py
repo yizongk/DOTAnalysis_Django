@@ -127,6 +127,7 @@ class IndicatorList(models.Model):
     class Meta:
         managed = False
         db_table = 'Indicator_List'
+        
 
     def __str__(self):
         return self.indicator_title
