@@ -112,18 +112,27 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
-    SortDir =  "asc"
-    SortBy = "indicator"
+    req_sort_dir =  "asc"
+    req_sort_by = "indicator"
   
     def get_queryset(self):
+        # Collect GET url parameter info
+        temp_sort_dir = self.request.GET.get('SortDir')
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
+            self.req_sort_dir = temp_sort_dir
+
+        temp_sort_by = self.request.GET.get('SortDir')
+        if (temp_sort_by is not None and temp_sort_by != ''):
+            self.req_sort_by = temp_sort_by
+
         # return Users.objects.order_by('-user_id')[:5]
         # print("This is the user logged in!!!: {}".format(self.request.user))
         try:
-           
             indicator_data_entries = IndicatorData.objects.all()
         except Exception as e:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
+            self.req_success = False
             return IndicatorData.objects.none()
 
         # Filter for only authorized Categories of Indicator Data, and log the category_permissions
@@ -132,6 +141,7 @@ class WebGridPageView(generic.ListView):
         if tmp_result["success"] == False:
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(tmp_result['err'])
             print(self.err_msg)
+            self.req_success = False
             return IndicatorData.objects.none()
         category_pk_list = tmp_result["data"]
         self.category_permissions = tmp_result["category_names"]
@@ -142,12 +152,18 @@ class WebGridPageView(generic.ListView):
         # Filter for only searched indicator title
 
         # Sort it asc or desc on sort_by
-        direction= self.request.GET.get('SortDir')
-        if direction == "asc":
-            indicator_data_entries = IndicatorData.objects.all().order_by('-indicator')
-        else:
-            indicator_data_entries = IndicatorData.objects.all().order_by('indicator')
-        
+        #Need to make sure
+        try:
+            if self.req_sort_dir == "asc":
+                indicator_data_entries = indicator_data_entries.order_by('indicator')
+            else:
+                indicator_data_entries = indicator_data_entries.order_by('-indicator')
+        except Exception as e:
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            self.req_success = False
+            return IndicatorData.objects.none()
+
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
@@ -157,16 +173,16 @@ class WebGridPageView(generic.ListView):
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
-            context["SortDir"] = self.SortDir
-            context["SortBy"] = self.SortBy
+            context["sort_dir"] = self.req_sort_dir
+            context["sort_by"] = self.req_sort_by
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            context["SortDir"] = self.SortDir
-            context["SortBy"] = self.SortBy
+            context["sort_dir"] = self.req_sort_dir
+            context["sort_by"] = self.req_sort_by
             context["req_success"] = False
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions

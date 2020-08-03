@@ -11,12 +11,8 @@
         <thead>
             <tr>
                 <th>City wide value</th>
-
-                <th data-SortDir="asc"><a href="{% if SortDir == 'desc' %} ?SortDir=asc {% else %} ?SortDir=desc  {% endif %}" name="sortClick" data-value="indicator" value="indicator" >
-    Indicator Title
-    <!---<form action="actionURL" method="GET"><button type="submit">sort</button></form></th>-->
-
-<th><a href="?SortDir=asc">Year</a></th>
+                <th data-SortDir="asc"><a href="{% if sort_dir == 'desc' %} ?SortDir=asc {% elif sort_dir == 'asc' %} ?SortDir=desc {% else %} ?SortDir=asc {% endif %}" name="sortClick" data-value="indicator" value="indicator">Indicator Title</th>
+                <th><a href="?SortDir=asc">Year</a></th>
                 <th>Month<button href="?SortBy=year_month?SortDir=asc">^</button><button href="?SortBy=year_month?SortDir=desc">v</button></th>
                 <th>Updated date</th>
                 <th>Last updated by</th>
