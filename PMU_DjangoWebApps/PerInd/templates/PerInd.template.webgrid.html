@@ -11,18 +11,18 @@
             <thead>
                 <tr>
                     <th>
-                        <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
-                        Indicator Title
+                        <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
-                        Year
+                        <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
-                        Month
+                        <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>Indicator Value</th>
