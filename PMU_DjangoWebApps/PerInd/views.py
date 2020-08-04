@@ -142,6 +142,11 @@ class WebGridPageView(generic.ListView):
     err_msg = ""
     req_sort_dir =  "asc"
     req_sort_by = "indicator__indicator_title"
+    
+    titles=""
+    years=""
+    months=""
+    
   
     def get_queryset(self):
         # Collect GET url parameter info
@@ -169,6 +174,11 @@ class WebGridPageView(generic.ListView):
                 indicator__active=True, # Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
+            #add unique titles to the list
+            self.titles=indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
+            self.years=indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
+            self.months=indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
+
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -176,6 +186,7 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
+
         try:
             if self.req_sort_dir == "asc":
                 indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
@@ -202,6 +213,9 @@ class WebGridPageView(generic.ListView):
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
+            context["uniq_titles"] = self.titles
+            context["uniq_years"] = self.years
+            context["uniq_months"] = self.months
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
             context["req_success"] = self.req_success
@@ -210,6 +224,9 @@ class WebGridPageView(generic.ListView):
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context["uniq_years"] = self.years
+            context["uniq_months"] = self.months
+            context["uniq_titles"] = self.titles
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
             context["req_success"] = False
