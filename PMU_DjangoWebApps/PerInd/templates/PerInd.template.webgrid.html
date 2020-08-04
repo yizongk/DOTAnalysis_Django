@@ -21,7 +21,7 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for each in uniq_titles %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">{{ each.indicator__indicator_title }}</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox"> {{ each.indicator__indicator_title }}</input></a>
                     {% endfor %}
                 </div>
             </div>
