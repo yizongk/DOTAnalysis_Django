@@ -23,6 +23,7 @@
                     {% for each in uniq_titles %}
                     <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox"> {{ each.indicator__indicator_title }}</input></a>
                     {% endfor %}
+                    <button type="button" class="btn btn-info">Filter</button>
                 </div>
             </div>
             <div class="dropdown">
@@ -32,7 +33,9 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                     {% for each in uniq_years %}
                     <a data-unique_title="ind" class="dropdown-item" href="#">{{ each.year_month__yyyy}}</a>
+                    
                     {% endfor %}
+
                 </div>
             </div>
             <div class="dropdown">
