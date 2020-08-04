@@ -140,18 +140,20 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
-    req_sort_dir =  "ascInd"
-    req_sort_by = "indicator"
+    req_sort_dir =  "asc"
+    req_sort_by = "indicator__indicator_title"
   
     def get_queryset(self):
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
-        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'ascInd' or temp_sort_dir == 'descInd' or temp_sort_dir == 'descYY' or temp_sort_dir == 'ascYY' or temp_sort_dir == 'descMM' or temp_sort_dir == 'ascMM'):
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
             self.req_sort_dir = temp_sort_dir
 
-        temp_sort_by = self.request.GET.get('SortDir')
+        temp_sort_by = self.request.GET.get('SortBy')
         if (temp_sort_by is not None and temp_sort_by != ''):
             self.req_sort_by = temp_sort_by
+
+        # print("dir: '{}', by: '{}'".format(self.req_sort_dir, self.req_sort_by))
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -159,7 +161,6 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
             print(self.err_msg)
-            self.req_success = False
             return IndicatorData.objects.none()
         category_pk_list = user_cat_permissions["pk_list"]
         self.category_permissions = user_cat_permissions["category_names"]
@@ -174,28 +175,24 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            self.req_success = False
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
         # @TODO Sort it asc or desc on sort_by
         try:
-            if self.req_sort_dir == "ascInd":
-                indicator_data_entries = indicator_data_entries.order_by('indicator')
-            elif self.req_sort_dir == "descInd":
-                indicator_data_entries = indicator_data_entries.order_by('-indicator')
-            elif self.req_sort_dir == "descYY":
-                indicator_data_entries = indicator_data_entries.order_by('-year_month__yyyy')
-            elif self.req_sort_dir == "ascYY":
-                indicator_data_entries = indicator_data_entries.order_by('year_month__yyyy')
-            elif self.req_sort_dir == "ascMM":
-                indicator_data_entries = indicator_data_entries.order_by('year_month__mm')
+            if self.req_sort_dir == "asc":
+                indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
+            elif self.req_sort_dir == "desc":
+                indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
             else:
-                indicator_data_entries = indicator_data_entries.order_by('-year_month__mm')
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
         except Exception as e:
+            self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            self.req_success = False
             return IndicatorData.objects.none()
 
         self.req_success = True

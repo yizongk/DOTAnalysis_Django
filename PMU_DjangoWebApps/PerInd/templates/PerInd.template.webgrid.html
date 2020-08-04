@@ -10,9 +10,21 @@
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th data-SortDir="ascInd"><a href="{% if sort_dir == 'descInd' %} ?SortDir=ascInd {% elif sort_dir == 'ascInd' %} ?SortDir=descInd {% else %} ?SortDir=ascInd {% endif %}">Indicator Title</th>
-                    <th data-SortDir="ascYY"><a href="{% if sort_dir == 'descYY' %} ?SortDir=ascYY {% elif sort_dir == 'ascYY' %} ?SortDir=descYY {% else %} ?SortDir=ascYY {% endif %}">Year</th>
-                    <th data-SortDir="ascMM"><a href="{% if sort_dir == 'descMM' %} ?SortDir=ascMM {% elif sort_dir == 'ascMM' %} ?SortDir=descMM {% else %} ?SortDir=ascMM {% endif %}">Month</th>
+                    <th>
+                        <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
+                        Indicator Title
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
+                        Year
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% elif sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% else %}SortDir=asc{% endif %}">
+                        Month
+                        </a>
+                    </th>
                     <th>Indicator Value</th>
                     <th>Updated Date</th>
                     <th>Last Updated By</th>
@@ -63,6 +75,7 @@
             </tbody>
         </table>
         <!-- Paginations-->
+                <!-- @TODO need to add template url for this entire page to link with. -->
         {% if is_paginated %}
             {% if page_obj.has_previous %}
 
