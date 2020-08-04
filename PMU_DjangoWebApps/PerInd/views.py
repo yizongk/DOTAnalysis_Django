@@ -153,8 +153,6 @@ class WebGridPageView(generic.ListView):
         if (temp_sort_by is not None and temp_sort_by != ''):
             self.req_sort_by = temp_sort_by
 
-        # print("dir: '{}', by: '{}'".format(self.req_sort_dir, self.req_sort_by))
-
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
         if user_cat_permissions["success"] == False:
@@ -178,7 +176,6 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
-        # @TODO Sort it asc or desc on sort_by
         try:
             if self.req_sort_dir == "asc":
                 indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
