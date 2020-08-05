@@ -185,3 +185,11 @@ And in the front end:
 </div>
 ```
 So long, in the ListView that, you have queryset attribute set to something and set paginate_by attribute to something, it will work! model attribute and get_queryset() both will set the queryset attribute
+
+# Compatibility with browsers
+Works on the following:
+* Firefox v.68.6.0esr (64-bit)
+* Edge 44.17763.831.0
+* Chrome 84.0.4147.105 (64-bit)
+Doesn't work on the following:
+* Internet Explorer 11.973.17763.0CO

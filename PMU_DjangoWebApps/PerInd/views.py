@@ -117,7 +117,7 @@ class HomePageView(TemplateView):
 
 class AboutPageView(TemplateView):
     template_name = 'template.about.html'
-    
+
 class ContactPageView(TemplateView):
     template_name = 'template.contact.html'
 
@@ -142,7 +142,7 @@ class WebGridPageView(generic.ListView):
     err_msg = ""
     req_sort_dir =  "asc"
     req_sort_by = "indicator__indicator_title"
-  
+
     def get_queryset(self):
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
@@ -197,7 +197,7 @@ class WebGridPageView(generic.ListView):
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
-        
+
         try:
             context = super().get_context_data(**kwargs)
 
