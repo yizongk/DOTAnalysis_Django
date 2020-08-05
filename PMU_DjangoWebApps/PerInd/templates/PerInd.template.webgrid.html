@@ -156,22 +156,22 @@
             {% if is_paginated %}
             {% if page_obj.has_previous %}
 
-            <a class="btn btn-outline-info" href="?page=1&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">First</a>
-            <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">Previous</a>
+            <a class="btn btn-outline-info" href="?page=1&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">First</a>
+            <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">Previous</a>
             {% endif %}
 
             {%for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
-            <a class=" btn btn-info" href="?page= {{ num }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">{{ num }}</a>
+            <a class=" btn btn-info" href="?page= {{ num }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">{{ num }}</a>
             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            <a class=" btn btn-outline-info" href="?page= {{ num }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">{{ num }}</a>
+            <a class=" btn btn-outline-info" href="?page= {{ num }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">{{ num }}</a>
             {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
 
-            <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">Next</a>
-            <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}">Last</a>
+            <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">Next</a>
+            <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}&SortBy={{ sort_by }}&SortDir={{ sort_dir }}&title_list= {{ title_list }}">Last</a>
 
             {% endif %}
 
