@@ -4,7 +4,10 @@
     <div>
         Instructions:
         <div>
-            The column in blue is editable! Double click on any of the cell to enter edit mode. Once you are done, press 'Enter' key to save the value! Give it a try!
+            1. The column in blue is editable!<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;* Double click on any of the cell to enter Edit Mode.<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* Once you are done, press 'Enter' key to save the value, or press 'ESC' key to cancel your edit.<br>
+            2. The blue column names are sortable, click it to sort it by Ascending or Descending.
         </div>
     </div>
     <div><br>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
@@ -16,21 +19,21 @@
             <thead>
                 <tr>
                     <th>
-                        <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
-                        Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        <a class="blue-text" href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
-                        Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        <a class="blue-text" href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>
-                        <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
-                        Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        <a class="blue-text" href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
-                    <th class="blue-text">Indicator Value</th>
+                    <th>Indicator Value</th>
                     <th>Updated Date</th>
                     <th>Last Updated By</th>
                     <th>Category</th>
@@ -115,20 +118,13 @@
             enterCellEditMode($(this))
         });
 
-        // $(document).on("blur", ".input-data", function(){
-        //     var value = $(this).val();
-        //     var td = $(this).parent("td");
-        //     $(this).remove();
-        //     td.html(value);
-        //     td.addClass("editable");
-        // });
-
-        // @TODO: I need a way to cancel
-        // @TODO: Change the enter key to a button yes or cancel
-        $(document).on("keypress", ".input-data", function (e) {
+        $(document).on("keyup", ".input-data", function (e) {
             var key = e.which;
-            if(key==13){ // 13 is the return key, aka 'ENTER' key
+            if(key===13){ // 13 is the return key, aka 'ENTER' key
                 sendToServer(this);
+            }
+            if(key===27){ // 27 is the ESC key
+                cancelEditMode(this);
             }
         });
 
@@ -159,6 +155,13 @@
             var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
             td_node.html(input);
             td_node.removeClass("editable");
+        }
+
+        function cancelEditMode(node) {
+            var old_val = $(node).attr("value")
+            var td_node = $(node).parent("td");
+            td_node.html(old_val);
+            finishCellEditMode(td_node);
         }
 
         function csrfSafeMethod(method) {
