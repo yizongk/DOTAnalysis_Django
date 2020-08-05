@@ -100,9 +100,9 @@ STATIC_URL = '/static/'
 In django templates, when you do
 ```
 {% load static %}  // This loads the relate url (root + STATIC_URL), so result is like www.website.com/static/
-<img src="{% static 'PMU_DjangoWebApps/logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
+<img src="{% static 'PMU_DjangoWebApps/dot_logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
 ```
-Then that /<img/> tag will ask Apache for www.website.com/static/PMU_DjangoWebApps/logo.jpg
+Then that /<img/> tag will ask Apache for www.website.com/static/PMU_DjangoWebApps/dot_logo.jpg
 Add the following config with your other Django config in your apache/conf/httpd.conf
 ```
 Alias /static/ "path_to_your_static_dir"
