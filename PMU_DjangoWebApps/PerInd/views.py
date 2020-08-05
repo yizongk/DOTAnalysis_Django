@@ -7,7 +7,7 @@ from .models import *
 from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
-
+from django.db.models import Q
 # Create your views here.
 
 def get_cur_client(request):
@@ -148,10 +148,56 @@ class WebGridPageView(generic.ListView):
     months=""
     
     title_list = []
-  
+    yr_list = []
+    mn_list = []
+    filterStatus = False
+
+    urlParam = ""
+    
     def get_queryset(self):
         
+        title_list = self.request.GET.get('title_list')
+        yr_list = self.request.GET.getlist('yr_list')
+        mn_list = self.request.GET.getlist('yr_list')
 
+        tempTitle = self.request.GET.getlist('title_list')
+        tempYear = self.request.GET.getlist('yr_list')
+        tempMonth = self.request.GET.getlist('mn_list')
+        tempSortBy = self.request.GET.getlist('SortBy')
+        tempSortDir = self.request.GET.getlist('SortDir')
+        tempPage = self.request.GET.getlist('page')
+        temp=""
+        filt = "&title_list="
+        temp2=""
+        filt2 = "&yr_list="
+        temp3=""
+        filt3 = "&mn_list="
+        #if (tempSortBy is not None and tempSortBy != '' and tempSortDir is not None and tempSortDir != '' ):
+        if(tempSortBy and tempSortDir):
+            self.urlParam = self.urlParam+"&SortBy="+str(tempSortBy)+"&SortDir="+str(tempSortDir)
+        if(tempTitle): 
+            #tempTitle = set(tempTitle)
+            for each in range(len(tempTitle)):
+                temp = temp + filt + tempTitle[each]
+                #self.urlParam=self.urlParam.join("&title_list="+str(each))
+            
+            #self.urlParam=self.urlParam.join("&title_list="+str(tempTitle))
+            self.urlParam=self.urlParam+temp
+        if(tempYear): 
+            
+            for each in range(len(tempYear)):
+                temp2 = temp2 + filt2 + tempYear[each]
+              
+            self.urlParam=self.urlParam+temp2
+        if(tempMonth): 
+            
+            for each in range(len(tempMonth)):
+                temp3 = temp3 + filt3 + tempMonth[each]
+            self.urlParam=self.urlParam+temp3
+        
+        
+
+        #urlParam = urlParam+temp
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -189,9 +235,56 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
+        yr_list = self.request.GET.getlist('yr_list')
+        if len(yr_list) >= 1:
+            #filterStatus = True
+            try:
+            #filter the queryset for each title in the list:
+                my_filter_qs1 = Q()
+                for i in yr_list:
+                    my_filter_qs1 = my_filter_qs1 | Q(year_month__yyyy=i)
+                indicator_data_entries = indicator_data_entries.filter(my_filter_qs1)
+               # for i in title_list:
+                #    indicator_data_entries = indicator_data_entries.filter(indicator__indicator_title=i)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): yr_list: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        title_list = self.request.GET.getlist('title_list')
+        if len(title_list) >= 1:
+            #filterStatus = True
+            try:
+            #filter the queryset for each title in the list:
+                my_filter_qs = Q()
+                for i in title_list:
+                    my_filter_qs = my_filter_qs | Q(indicator__indicator_title=i)
+                indicator_data_entries = indicator_data_entries.filter(my_filter_qs)
+               # for i in title_list:
+                #    indicator_data_entries = indicator_data_entries.filter(indicator__indicator_title=i)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): title_list: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        
        
-       
+        mn_list = self.request.GET.getlist('mn_list')
+        if len(mn_list) >= 1:
             
+            try:
+            
+                my_filter_qs2 = Q()
+                for i in mn_list:
+                    my_filter_qs2 = my_filter_qs2 | Q(year_month__mm=i)
+                indicator_data_entries = indicator_data_entries.filter(my_filter_qs2)
+               # for i in title_list:
+                #    indicator_data_entries = indicator_data_entries.filter(indicator__indicator_title=i)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): mn_list: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
 
         try:
             if self.req_sort_dir == "asc":
@@ -210,18 +303,8 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
          #if our list is not empty which means a filter form was filled out
-        title_list = self.request.GET.getlist('title_list')
-        if len(title_list) >= 1:
-            try:
-            #filter the queryset for each title in the list:
-                for i in title_list:
-                    indicator_data_entries = indicator_data_entries.filter(indicator__indicator_title=i)
-            except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): title_list: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
-
+        
+      
         self.req_success = True
         return indicator_data_entries
 
@@ -233,6 +316,10 @@ class WebGridPageView(generic.ListView):
 
             # Add my own variables to the context for the front end to shows
             context["title_list"] = self.title_list
+            context["yr_list"] = self.yr_list
+            context["mn_list"] = self.mn_list
+            context["urlParam"] = self.urlParam
+            context["filterStatus"] = self.filterStatus
             context["uniq_titles"] = self.titles
             context["uniq_years"] = self.years
             context["uniq_months"] = self.months
@@ -244,13 +331,17 @@ class WebGridPageView(generic.ListView):
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            
+            context = super().get_context_data(**kwargs)
             context["uniq_years"] = self.years
+            context["mn_list"] = self.mn_list
+            context["urlParam"] = self.urlParam
+            context["filterStatus"] = self.filterStatus
             context["uniq_months"] = self.months
             context["uniq_titles"] = self.titles
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
             context["title_list"] = self.title_list
+            context["yr_list"] = self.yr_list
             context["req_success"] = False
             context["err_msg"] = self.err_msg
             context["category_permissions"] = self.category_permissions
