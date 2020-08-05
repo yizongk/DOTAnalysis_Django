@@ -21,7 +21,7 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for each in uniq_titles %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox"> {{ each.indicator__indicator_title }}</input></a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox"/> {{ each.indicator__indicator_title }}</a>
                     {% endfor %}
                     <button type="button" class="btn btn-info">Filter</button>
                 </div>
@@ -32,10 +32,10 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                     {% for each in uniq_years %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">{{ each.year_month__yyyy}}</a>
-                    
-                    {% endfor %}
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> {{ each.year_month__yyyy}}</a>
 
+                    {% endfor %}
+                    <button type="button" class="btn btn-info">Filter</button>
                 </div>
             </div>
             <div class="dropdown">
@@ -44,35 +44,37 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
                     {% for each in uniq_months %}
+
                     {% if each.year_month__mm == 1 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Jan</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Jan</a>
                     {% elif each.year_month__mm == 2 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Feb</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Feb</a>
                     {% elif each.year_month__mm == 3 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Mar</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Mar</a>
                     {% elif each.year_month__mm == 4 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Apr</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Apr</a>
                     {% elif each.year_month__mm == 5 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">May</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> May</a>
                     {% elif each.year_month__mm == 6 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Jun</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Jun</a>
                     {% elif each.year_month__mm == 7 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Jul</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Jul</a>
                     {% elif each.year_month__mm == 8 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Aug</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Aug</a>
                     {% elif each.year_month__mm == 9 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Sep</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Sep</a>
                     {% elif each.year_month__mm == 10 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Oct</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Oct</a>
                     {% elif each.year_month__mm == 11 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Nov</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Nov</a>
                     {% elif each.year_month__mm == 12 %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#">Dec</a>
+                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox" /> Dec</a>
                     {% else %}
                     Unrecognized Month
                     {% endif %}
 
                     {% endfor %}
+                    <button type="button" class="btn btn-info">Filter</button>
                 </div>
             </div>
         </div>
