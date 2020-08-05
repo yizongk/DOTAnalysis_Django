@@ -19,12 +19,14 @@
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                      Title
                 </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                    {% for each in uniq_titles %}
-                    <a data-unique_title="ind" class="dropdown-item" href="#"><input type="checkbox"/> {{ each.indicator__indicator_title }}</a>
-                    {% endfor %}
-                    <button type="button" class="btn btn-info">Filter</button>
-                </div>
+                <form>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                        {% for each in uniq_titles %}
+                        <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="title_list" value="{{ each.indicator__indicator_title }}"/> {{ each.indicator__indicator_title }}</a>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-info">Filter</button>
+                    </div>
+                </form>
             </div>
             <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -147,8 +147,11 @@ class WebGridPageView(generic.ListView):
     years=""
     months=""
     
+    title_list = []
   
     def get_queryset(self):
+        
+
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -186,6 +189,18 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
+        #if our list is not empty which means a filter form was filled out
+        title_list = self.request.GET.getlist('title_list')
+        if len(title_list) >= 1:
+            try:
+            #filter the queryset for each title in the list:
+                for i in title_list:
+                    indicator_data_entries = indicator_data_entries.filter(indicator__indicator_title=i)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): title_list: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
 
         try:
             if self.req_sort_dir == "asc":
@@ -213,6 +228,7 @@ class WebGridPageView(generic.ListView):
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
+            context["title_list"] = self.title_list
             context["uniq_titles"] = self.titles
             context["uniq_years"] = self.years
             context["uniq_months"] = self.months
@@ -224,6 +240,7 @@ class WebGridPageView(generic.ListView):
             return context
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context["title_list"] = self.title_list
             context["uniq_years"] = self.years
             context["uniq_months"] = self.months
             context["uniq_titles"] = self.titles
