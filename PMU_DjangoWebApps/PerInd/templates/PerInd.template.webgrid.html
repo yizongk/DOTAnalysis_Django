@@ -90,16 +90,17 @@
             <thead>
                 <tr>
                     <th>
-                        <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        <a href="?{{ IndicatorAnchorParam }}">
+                            <!--<a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">-->
                             Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
 
                     <th>
-
-                        <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
-                            Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
-                        </a>
+                        <a href="?{{YYYYAnchorParam}}">
+                            <!--<a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">-->
+                                Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                            </a>
                     </th>
                     <th>
                         <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
@@ -162,12 +163,12 @@
         {% if page_obj.has_previous %}
         {% if filterStatus == True %}
         {% for each in title_list %}
-        <a class="btn btn-outline-info" href="?page=1{{ urlParam }}">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}{{ urlParam }}">Previous</a>
+        <a class="btn btn-outline-info" href="?page=1&{{ urlParam }}">First</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ urlParam }}">Previous</a>
         {% endfor %}
         {% elif filterStatus == False %}
         <a class="btn btn-outline-info" href="?page=1{{ urlParam }}">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}{{ urlParam }}">Previous</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ urlParam }}">Previous</a>
         {% endif %}
         {% endif %}
         {% endif %}
@@ -175,16 +176,16 @@
         {% if filterStatus == True %}
         {% for each in title_list %}
         {% if page_obj.number == num %}
-        <a class=" btn btn-info" href="?page={{ num }}{{ urlParam }}">{{ num }}</a>
+        <a class=" btn btn-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class=" btn btn-outline-info" href="?page={{ num }}{{ urlParam }}">{{ num }}</a>
+        <a class=" btn btn-outline-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
         {% endif %}
         {% endfor %}
         {% elif filterStatus == False %}
         {% if page_obj.number == num %}
-        <a class=" btn btn-info" href="?page={{ num }}{{ urlParam }}">{{ num }}</a>
+        <a class=" btn btn-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class=" btn btn-outline-info" href="?page={{ num }}{{ urlParam }}">{{ num }}</a>
+        <a class=" btn btn-outline-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
         {% endif %}
         {% endif %}
         {% endfor %}
@@ -193,12 +194,12 @@
         {% if page_obj.has_next %}
         {% if filterStatus == True %}
         {% for each in title_list %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}{{ urlParam }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}{{ urlParam }}">Last</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ urlParam }}">Next</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}&{{ urlParam }}">Last</a>
         {% endfor %}
         {% elif filterStatus == False %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}{{ urlParam }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}{{ urlParam }}">Last</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ urlParam }}">Next</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}&{{ urlParam }}">Last</a>
         {% endif %}
         {% endif %}
         <!--end pagination-->

@@ -140,6 +140,7 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
+
     req_sort_dir =  "asc"
     req_sort_by = "indicator__indicator_title"
     
@@ -152,60 +153,84 @@ class WebGridPageView(generic.ListView):
     mn_list = []
     filterStatus = False
 
+    IndicatorAnchorParam = ""
+    YYYYAnchorParam=""
+    MMAnchorParam=""
+    
     urlParam = ""
     
+    tempTile =""
+    tempYear = ""
+    tempMonth = ""
     def get_queryset(self):
-        
-        title_list = self.request.GET.get('title_list')
-        yr_list = self.request.GET.getlist('yr_list')
-        mn_list = self.request.GET.getlist('yr_list')
-
+    
+       
         tempTitle = self.request.GET.getlist('title_list')
         tempYear = self.request.GET.getlist('yr_list')
         tempMonth = self.request.GET.getlist('mn_list')
-        tempSortBy = self.request.GET.getlist('SortBy')
-        tempSortDir = self.request.GET.getlist('SortDir')
-        tempPage = self.request.GET.getlist('page')
+        tempSortBy = self.request.GET.get('SortBy')
+        tempSortDir = self.request.GET.get('SortDir')
+        
         temp=""
         filt = "&title_list="
         temp2=""
         filt2 = "&yr_list="
         temp3=""
         filt3 = "&mn_list="
-        #if (tempSortBy is not None and tempSortBy != '' and tempSortDir is not None and tempSortDir != '' ):
-        if(tempSortBy and tempSortDir):
-            self.urlParam = self.urlParam+"&SortBy="+str(tempSortBy)+"&SortDir="+str(tempSortDir)
-        if(tempTitle): 
-            #tempTitle = set(tempTitle)
-            for each in range(len(tempTitle)):
-                temp = temp + filt + tempTitle[each]
-                #self.urlParam=self.urlParam.join("&title_list="+str(each))
-            
-            #self.urlParam=self.urlParam.join("&title_list="+str(tempTitle))
-            self.urlParam=self.urlParam+temp
-        if(tempYear): 
-            
-            for each in range(len(tempYear)):
-                temp2 = temp2 + filt2 + tempYear[each]
-              
-            self.urlParam=self.urlParam+temp2
-        if(tempMonth): 
-            
-            for each in range(len(tempMonth)):
-                temp3 = temp3 + filt3 + tempMonth[each]
-            self.urlParam=self.urlParam+temp3
-        
-        
+        string = ""
+      
 
-        #urlParam = urlParam+temp
+        self.IndicatorAnchorParam="SortBy=indicator__indicator_title&SortDir=asc"
+        self.YYYYAnchorParam="SortBy=year_month__yyyy&SortDir=desc"
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
             self.req_sort_dir = temp_sort_dir
+            
 
         temp_sort_by = self.request.GET.get('SortBy')
         if (temp_sort_by is not None and temp_sort_by != ''):
             self.req_sort_by = temp_sort_by
+           
+        #if(tempSortBy and tempSortDir):
+            #self.urlParam = self.urlParam+"&SortBy="+tempSortBy+"&SortDir="+tempSortDir
+            #self.urlParam = self.urlParam+"&SortBy="+str(tempSortBy)+"&SortDir="+str(tempSortDir)
+
+            #{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}
+        if(self.req_sort_by == "indicator__indicator_title" and self.req_sort_dir=="asc"):
+            self.IndicatorAnchorParam="SortBy=indicator__indicator_title&SortDir=desc"
+           
+        elif(self.req_sort_by == "indicator__indicator_title" and self.req_sort_dir=="desc"):
+            self.IndicatorAnchorParam="SortBy=indicator__indicator_title&SortDir=asc"
+           
+        elif(self.req_sort_by == "year_month__yyyy" and self.req_sort_dir=="asc"):
+            self.YYYYAnchorParam="SortBy=year_month__yyyy&SortDir=desc"
+           
+        elif(self.req_sort_by == "year_month__yyyy" and self.req_sort_dir=="desc"):
+            self.YYYYAnchorParam="SortBy=year_month__yyyy&SortDir=asc"
+            
+   
+            
+        for each in range(len(tempTitle)):
+            temp = temp + filt + tempTitle[each]
+              
+        self.urlParam=self.urlParam+temp
+        #if(tempYear): 
+            
+        for each in range(len(tempYear)):
+            temp2 = temp2 + filt2 + tempYear[each]
+              
+        self.urlParam=self.urlParam+temp2
+        #if(tempMonth): 
+            
+        for each in range(len(tempMonth)):
+            temp3 = temp3 + filt3 + tempMonth[each]
+        self.urlParam=self.urlParam+temp3
+        
+        
+
+        self.urlParam = self.urlParam+"&"+self.IndicatorAnchorParam+self.YYYYAnchorParam
+        
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -235,6 +260,9 @@ class WebGridPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         # @TODO Filter for only searched indicator title
+
+
+        #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
         yr_list = self.request.GET.getlist('yr_list')
         if len(yr_list) >= 1:
             #filterStatus = True
@@ -309,13 +337,15 @@ class WebGridPageView(generic.ListView):
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
-        
+       
         try:
             context = super().get_context_data(**kwargs)
 
             # Add my own variables to the context for the front end to shows
             context["title_list"] = self.title_list
+            context["IndicatorAnchorParam "]=self.IndicatorAnchorParam 
+            context["YYYYAnchorParam "]=self.YYYYAnchorParam 
+            context["MMAnchorParam "]=self.MMAnchorParam
             context["yr_list"] = self.yr_list
             context["mn_list"] = self.mn_list
             context["urlParam"] = self.urlParam
@@ -332,6 +362,9 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.err_msg = "Exception: get_context_data(): {}".format(e)
             context = super().get_context_data(**kwargs)
+            context["IndicatorAnchorParam "]=self.IndicatorAnchorParam 
+            context["YYYYAnchorParam "]=self.YYYYAnchorParam 
+            context["MMAnchorParam "]=self.MMAnchorParam
             context["uniq_years"] = self.years
             context["mn_list"] = self.mn_list
             context["urlParam"] = self.urlParam
