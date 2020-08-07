@@ -7,14 +7,13 @@
        
     }
 
-   
 </style>
 <div class="container">
     <div>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
     <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div>
     <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     <!--Dropdown-->
-    <div>URLPARAM: {{ urlParam }}</div>
+    <div>CURRENT CONTEXT PARAM: {{ ctx_filter_sort_param }}</div>
     <div class="container">
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -23,7 +22,7 @@
             <form>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for each in uniq_titles %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="title_list" value="{{ each.indicator__indicator_title }}" /> {{ each.indicator__indicator_title }}</a>
+                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" /> {{ each.indicator__indicator_title }}</a>
                     {% endfor %}
                     <button type="submit" class="btn btn-info">Filter</button>
                 </div>
@@ -36,7 +35,7 @@
             <form>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                     {% for each in uniq_years %}
-                    <a data-unique_title="yr" class="dropdown-item"><input type="checkbox" name="yr_list" value="{{ each.year_month__yyyy }}" /> {{ each.year_month__yyyy}}</a>
+                    <a data-unique_title="yr" class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" /> {{ each.year_month__yyyy}}</a>
                     {% endfor %}
                     <button type="submit" class="btn btn-info">Filter</button>
                 </div>
@@ -51,29 +50,29 @@
                     {% for each in uniq_months %}
 
                     {% if each.year_month__mm == 1 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Jan</a>
+                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jan</a>
                     {% elif each.year_month__mm == 2 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Feb</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Feb</a>
                     {% elif each.year_month__mm == 3 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Mar</a>
+                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Mar</a>
                     {% elif each.year_month__mm == 4 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Apr</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Apr</a>
                     {% elif each.year_month__mm == 5 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> May</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> May</a>
                     {% elif each.year_month__mm == 6 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Jun</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jun</a>
                     {% elif each.year_month__mm == 7 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Jul</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jul</a>
                     {% elif each.year_month__mm == 8 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Aug</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Aug</a>
                     {% elif each.year_month__mm == 9 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Sep</a>
+                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Sep</a>
                     {% elif each.year_month__mm == 10 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Oct</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Oct</a>
                     {% elif each.year_month__mm == 11 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Nov</a>
+                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Nov</a>
                     {% elif each.year_month__mm == 12 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="mn_list" value="{{ each.year_month__mm }}"/> Dec</a>
+                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Dec</a>
                     {% else %}
                     Unrecognized Month
                     {% endif %}
@@ -90,20 +89,21 @@
             <thead>
                 <tr>
                     <th>
-                        <a href="?{{ IndicatorAnchorParam }}">
-                            <!--<a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">-->
+                        <!-- <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
+                        <a href="?{{ title_sort_anchor_GET_param }}">
                             Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
 
                     <th>
-                        <a href="?{{YYYYAnchorParam}}">
-                            <!--<a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">-->
-                                Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
-                            </a>
+                        <!-- <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
+                        <a href="?{{ yyyy_sort_anchor_GET_param }}">
+                            Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        </a>
                     </th>
                     <th>
-                        <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}">
+                        <!-- <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
+                        <a href="?{{ mm_sort_anchor_GET_param }}">
                             Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
@@ -160,47 +160,24 @@
         <!-- Paginations-->
         <!-- @TODO need to add template url for this entire page to link with. -->
         {% if is_paginated %}
-        {% if page_obj.has_previous %}
-        {% if filterStatus == True %}
-        {% for each in title_list %}
-        <a class="btn btn-outline-info" href="?page=1&{{ urlParam }}">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ urlParam }}">Previous</a>
-        {% endfor %}
-        {% elif filterStatus == False %}
-        <a class="btn btn-outline-info" href="?page=1{{ urlParam }}">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ urlParam }}">Previous</a>
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        {%for num in page_obj.paginator.page_range %}
-        {% if filterStatus == True %}
-        {% for each in title_list %}
-        {% if page_obj.number == num %}
-        <a class=" btn btn-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
-        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class=" btn btn-outline-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
-        {% endif %}
-        {% endfor %}
-        {% elif filterStatus == False %}
-        {% if page_obj.number == num %}
-        <a class=" btn btn-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
-        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class=" btn btn-outline-info" href="?page={{ num }}&{{ urlParam }}">{{ num }}</a>
-        {% endif %}
-        {% endif %}
-        {% endfor %}
+            {% if page_obj.has_previous %}
+                <a class="btn btn-outline-info" href="?page=1&{{ ctx_filter_sort_param }}">First</a>
+                <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ ctx_filter_sort_param }}">Previous</a>
+            {% endif %}
 
+            {%for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <a class=" btn btn-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a class=" btn btn-outline-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
 
-        {% if page_obj.has_next %}
-        {% if filterStatus == True %}
-        {% for each in title_list %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ urlParam }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}&{{ urlParam }}">Last</a>
-        {% endfor %}
-        {% elif filterStatus == False %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ urlParam }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages}}&{{ urlParam }}">Last</a>
-        {% endif %}
+            {% if page_obj.has_next %}
+
+                <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ ctx_filter_sort_param }}">Next</a>
+                <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}&{{ ctx_filter_sort_param }}">Last</a>
+            {% endif %}
         {% endif %}
         <!--end pagination-->
     </div>
@@ -208,8 +185,6 @@
 {% endblock content %}
 
 {% block custom_js %}
-
-
 <script>
     $(document).ready(function(){
         $(document).on("dblclick", ".editable", function(){
