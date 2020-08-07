@@ -7,7 +7,7 @@ from .models import *
 from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
-
+from django.db.models import Q
 # Create your views here.
 
 def get_cur_client(request):
@@ -140,10 +140,26 @@ class WebGridPageView(generic.ListView):
     req_success = False
     category_permissions = []
     err_msg = ""
+
     req_sort_dir =  "asc"
     req_sort_by = "indicator__indicator_title"
+    
+    uniq_titles=""
+    uniq_years=""
+    uniq_months=""
+    
+    req_title_list_filter = []
+    req_yr_list_filter = []
+    req_mn_list_filter = []
+
+    ctx_filter_sort_param = ""
+    
+    title_sort_anchor_GET_param = ""
+    yyyy_sort_anchor_GET_param = ""
+    mm_sort_anchor_GET_param = ""
 
     def get_queryset(self):
+        
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -152,6 +168,10 @@ class WebGridPageView(generic.ListView):
         temp_sort_by = self.request.GET.get('SortBy')
         if (temp_sort_by is not None and temp_sort_by != ''):
             self.req_sort_by = temp_sort_by
+           
+        self.req_title_list_filter = self.request.GET.getlist('TitleListFilter')
+        self.req_yr_list_filter = self.request.GET.getlist('YYYYListFilter')
+        self.req_mn_list_filter = self.request.GET.getlist('MMListFilter')
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -163,6 +183,7 @@ class WebGridPageView(generic.ListView):
         category_pk_list = user_cat_permissions["pk_list"]
         self.category_permissions = user_cat_permissions["category_names"]
 
+        # Default filters WebGrid dataset
         try:
             indicator_data_entries = IndicatorData.objects.filter(
                 indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
@@ -175,7 +196,58 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # @TODO Filter for only searched indicator title
+        # Get dropdown list values (Don't move this function, needs to be after the default filtered dataset, to pull unique title, years and months)
+        try:
+            self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
+            self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
+            self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
+            print("HERE: ", self.uniq_titles)
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
+        # Filter dataset from Dropdown list
+        ## Filter by Titles
+        if len(self.req_title_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_title_list_filter:
+                    qs = qs | Q(indicator__indicator_title=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        ## Filter by YYYYs
+        if len(self.req_yr_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_yr_list_filter:
+                    qs = qs | Q(year_month__yyyy=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        ## Filter by MMs
+        if len(self.req_mn_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_mn_list_filter:
+                    qs = qs | Q(year_month__mm=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+
+        # Filter dataset from sort direction and sort column
         try:
             if self.req_sort_dir == "asc":
                 indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
@@ -196,26 +268,129 @@ class WebGridPageView(generic.ListView):
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
-
         try:
+            # Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
 
-            # Add my own variables to the context for the front end to shows
+            # Construct current context filter and sort GET param string, for front end to keep states
+            ctx_title_filter_param = ""
+            ctx_yyyy_filter_param = ""
+            ctx_mm_filter_param = ""
+
+            ## Construct Filter GET Param
+            for each in self.req_title_list_filter:
+                ctx_title_filter_param = "{}TitleListFilter={}&".format(ctx_title_filter_param, each)
+            ### At this point, your ctx_title_filter_param  is something like "TitleListFilter=Facebook&TitleListFilter=Instagram&"
+            for each in self.req_yr_list_filter:
+                ctx_yyyy_filter_param = "{}YYYYListFilter={}&".format(ctx_yyyy_filter_param, each)
+            for each in self.req_mn_list_filter:
+                ctx_mm_filter_param = "{}MMListFilter={}&".format(ctx_mm_filter_param, each)
+
+            ## Construct <a></a> GET parameter for the sorting columns
+            if self.req_sort_by == 'indicator__indicator_title':
+                if self.req_sort_dir == 'asc':
+                    TitleSortParam = "SortDir=desc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=asc&"
+                elif self.req_sort_dir == 'desc':
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=desc&"
+                    MMSortParam = "SortDir=desc&"
+                else:
+                    #### Sort by the default sort direction, ASC
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=asc&"
+
+            elif self.req_sort_by == 'year_month__yyyy':
+                if self.req_sort_dir == 'asc':
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=desc&"
+                    MMSortParam = "SortDir=asc&"
+                elif self.req_sort_dir == 'desc':
+                    TitleSortParam = "SortDir=desc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=desc&"
+                else:
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=asc&"
+
+            elif self.req_sort_by == 'year_month__mm':
+                if self.req_sort_dir == 'asc':
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=desc&"
+                elif self.req_sort_dir == 'desc':
+                    TitleSortParam = "SortDir=desc&"
+                    YYYYSortParam = "SortDir=desc&"
+                    MMSortParam = "SortDir=asc&"
+                else:
+                    TitleSortParam = "SortDir=asc&"
+                    YYYYSortParam = "SortDir=asc&"
+                    MMSortParam = "SortDir=asc&"
+
+            self.title_sort_anchor_GET_param = "SortBy=indicator__indicator_title&{}{}{}{}".format(TitleSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+            ### At this point, your self.title_sort_anchor_GET_param is something like
+            ### "SortBy=indicator__indicator_title&SortDir=desc&title_list=Facebook&title_list=Instagram&yr_list=2019&yr_list=2020&mn_list=2&mn_list=1"
+            self.yyyy_sort_anchor_GET_param = "SortBy=year_month__yyyy&{}{}{}{}".format(YYYYSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+            self.mm_sort_anchor_GET_param = "SortBy=year_month__mm&{}{}{}{}".format(MMSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+
+            ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
+            self.ctx_filter_sort_param = "SortBy={}&SortDir={}&{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+
+
+            # Finally, setting the context variables
+            ## Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["category_permissions"] = self.category_permissions
+            context["err_msg"] = self.err_msg
+
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-            context["category_permissions"] = self.category_permissions
+
+            context["uniq_titles"] = self.uniq_titles
+            context["uniq_years"] = self.uniq_years
+            context["uniq_months"] = self.uniq_months
+
+            context["title_list_filter"] = self.req_title_list_filter
+            context["yr_list_filter"] = self.req_yr_list_filter
+            context["mn_list_filter"] = self.req_mn_list_filter
+
+            context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
+            context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param
+            context["mm_sort_anchor_GET_param"] = self.mm_sort_anchor_GET_param
+
+            context["ctx_filter_sort_param"] = self.ctx_filter_sort_param
+
             return context
         except Exception as e:
+            self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            context["sort_dir"] = self.req_sort_dir
-            context["sort_by"] = self.req_sort_by
-            context["req_success"] = False
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
-            context["category_permissions"] = self.category_permissions
             print(self.err_msg)
+            context["indicator_data_entries"] = IndicatorData.objects.none()
+
+            context["category_permissions"] = ""
+
+            context["sort_dir"] = ""
+            context["sort_by"] = ""
+
+            context["uniq_titles"] = ""
+            context["uniq_years"] = ""
+            context["uniq_months"] = ""
+
+            context["title_list_filter"] = ""
+            context["yr_list_filter"] = ""
+            context["mn_list_filter"] = ""
+
+            context["title_sort_anchor_GET_param"] = ""
+            context["yyyy_sort_anchor_GET_param"] = ""
+            context["mm_sort_anchor_GET_param"] = ""
+
+            context["ctx_filter_sort_param"] = ""
             return context
 
 def SavePerIndDataApi(request):
