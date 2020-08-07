@@ -196,11 +196,12 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Get dropdown list values
+        # Get dropdown list values (Don't move this function, needs to be after the default filtered dataset, to pull unique title, years and months)
         try:
-            self.uniq_titles=indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
-            self.uniq_years=indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
-            self.uniq_months=indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
+            self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
+            self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
+            self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
+            print("HERE: ", self.uniq_titles)
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -209,6 +210,19 @@ class WebGridPageView(generic.ListView):
 
         #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
         # Filter dataset from Dropdown list
+        ## Filter by Titles
+        if len(self.req_title_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_title_list_filter:
+                    qs = qs | Q(indicator__indicator_title=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        ## Filter by YYYYs
         if len(self.req_yr_list_filter) >= 1:
             try:
                 qs = Q()
@@ -217,7 +231,19 @@ class WebGridPageView(generic.ListView):
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
                 self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): yr_list: {}".format(e)
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+        ## Filter by MMs
+        if len(self.req_mn_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_mn_list_filter:
+                    qs = qs | Q(year_month__mm=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
                 print(self.err_msg)
                 return IndicatorData.objects.none()
 
@@ -338,13 +364,14 @@ class WebGridPageView(generic.ListView):
 
             return context
         except Exception as e:
+            self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
             context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
             print(self.err_msg)
             context["indicator_data_entries"] = IndicatorData.objects.none()
 
-            context["req_success"] = ""
             context["category_permissions"] = ""
 
             context["sort_dir"] = ""

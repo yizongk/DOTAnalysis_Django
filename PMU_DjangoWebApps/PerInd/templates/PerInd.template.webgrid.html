@@ -89,20 +89,17 @@
             <thead>
                 <tr>
                     <th>
-                        <!-- <a href="?SortBy=indicator__indicator_title&{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
                         <a href="?{{ title_sort_anchor_GET_param }}">
                             Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
 
                     <th>
-                        <!-- <a href="?SortBy=year_month__yyyy&{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
                         <a href="?{{ yyyy_sort_anchor_GET_param }}">
                             Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
                     </th>
                     <th>
-                        <!-- <a href="?SortBy=year_month__mm&{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}SortDir=desc{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}SortDir=asc{% else %}SortDir=asc{% endif %}"> -->
                         <a href="?{{ mm_sort_anchor_GET_param }}">
                             Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                         </a>
