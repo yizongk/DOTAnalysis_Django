@@ -23,6 +23,9 @@
     <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     <!--Dropdown-->
     <div>CURRENT CONTEXT PARAM: {{ ctx_filter_sort_param }}</div>
+    <div>Title Filters: {% for each in ctx_title_list_filter %}{{each}}, {% endfor %}</div>
+    <div>Year Filters: {% for each in ctx_yr_list_filter %}{{each}}, {% endfor %}</div>
+    <div>Month Filters: {% for each in ctx_mn_list_filter %}{{each}}, {% endfor %}</div>
     <div class="container">
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -31,7 +34,19 @@
             <form>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                     {% for each in uniq_titles %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" /> {{ each.indicator__indicator_title }}</a>
+                        <a class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" {% if each.indicator__indicator_title in ctx_title_list_filter %}checked{% endif %} /> {{ each.indicator__indicator_title }}</a>
+                    {% endfor %}
+                    <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
+                    {% for each in uniq_years %}
+                        {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                            <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
+                    {% for each in uniq_months %}
+                        {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                            <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                        {% endif %}
                     {% endfor %}
                     <button type="submit" class="btn btn-info">Filter</button>
                 </div>
@@ -44,7 +59,19 @@
             <form>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                     {% for each in uniq_years %}
-                    <a data-unique_title="yr" class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" /> {{ each.year_month__yyyy}}</a>
+                        <a class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}checked{% endif %} /> {{ each.year_month__yyyy }}</a> <!-- |stringformat:"i" is needed here to convert the int to a string. "i" stands for string, take a look here https://docs.python.org/2/library/stdtypes.html#string-formatting-operations -->
+                    {% endfor %}
+                    <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
+                    {% for each in uniq_titles %}
+                        {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                            <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
+                    {% for each in uniq_months %}
+                        {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                            <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                        {% endif %}
                     {% endfor %}
                     <button type="submit" class="btn btn-info">Filter</button>
                 </div>
@@ -57,35 +84,47 @@
             <form>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
                     {% for each in uniq_months %}
-
-                    {% if each.year_month__mm == 1 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jan</a>
-                    {% elif each.year_month__mm == 2 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Feb</a>
-                    {% elif each.year_month__mm == 3 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Mar</a>
-                    {% elif each.year_month__mm == 4 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Apr</a>
-                    {% elif each.year_month__mm == 5 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> May</a>
-                    {% elif each.year_month__mm == 6 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jun</a>
-                    {% elif each.year_month__mm == 7 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Jul</a>
-                    {% elif each.year_month__mm == 8 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Aug</a>
-                    {% elif each.year_month__mm == 9 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Sep</a>
-                    {% elif each.year_month__mm == 10 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Oct</a>
-                    {% elif each.year_month__mm == 11 %}
-                    <a data-unique_title="ind" class="dropdown-item" ><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Nov</a>
-                    {% elif each.year_month__mm == 12 %}
-                    <a data-unique_title="ind" class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}"/> Dec</a>
-                    {% else %}
-                    Unrecognized Month
-                    {% endif %}
-
+                        <a class="dropdown-item"><input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}" {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}checked{% endif %} />
+                            {% if each.year_month__mm == 1 %}
+                            Jan
+                            {% elif each.year_month__mm == 2 %}
+                            Feb
+                            {% elif each.year_month__mm == 3 %}
+                            Mar
+                            {% elif each.year_month__mm == 4 %}
+                            Apr
+                            {% elif each.year_month__mm == 5 %}
+                            May
+                            {% elif each.year_month__mm == 6 %}
+                            Jun
+                            {% elif each.year_month__mm == 7 %}
+                            Jul
+                            {% elif each.year_month__mm == 8 %}
+                            Aug
+                            {% elif each.year_month__mm == 9 %}
+                            Sep
+                            {% elif each.year_month__mm == 10 %}
+                            Oct
+                            {% elif each.year_month__mm == 11 %}
+                            Nov
+                            {% elif each.year_month__mm == 12 %}
+                            Dec
+                            {% else %}
+                            Unrecognized Month
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                    <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
+                    {% for each in uniq_titles %}
+                        {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                            <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
+                    {% for each in uniq_years %}
+                        {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                            <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                        {% endif %}
                     {% endfor %}
                     <button type="submit" class="btn btn-info">Filter</button>
                 </div>

@@ -353,9 +353,9 @@ class WebGridPageView(generic.ListView):
             context["uniq_years"] = self.uniq_years
             context["uniq_months"] = self.uniq_months
 
-            context["title_list_filter"] = self.req_title_list_filter
-            context["yr_list_filter"] = self.req_yr_list_filter
-            context["mn_list_filter"] = self.req_mn_list_filter
+            context["ctx_title_list_filter"] = self.req_title_list_filter
+            context["ctx_yr_list_filter"] = self.req_yr_list_filter
+            context["ctx_mn_list_filter"] = self.req_mn_list_filter
 
             context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
             context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param
@@ -382,9 +382,9 @@ class WebGridPageView(generic.ListView):
             context["uniq_years"] = ""
             context["uniq_months"] = ""
 
-            context["title_list_filter"] = ""
-            context["yr_list_filter"] = ""
-            context["mn_list_filter"] = ""
+            context["ctx_title_list_filter"] = ""
+            context["ctx_yr_list_filter"] = ""
+            context["ctx_mn_list_filter"] = ""
 
             context["title_sort_anchor_GET_param"] = ""
             context["yyyy_sort_anchor_GET_param"] = ""
