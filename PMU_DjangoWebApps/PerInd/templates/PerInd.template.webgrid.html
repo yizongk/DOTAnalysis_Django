@@ -32,19 +32,19 @@
         <form>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                 {% for each in uniq_titles %}
-                <a class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" {% if each.indicator__indicator_title in ctx_title_list_filter %}checked{% endif %} /> {{ each.indicator__indicator_title }}</a>
+                    <a class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" {% if each.indicator__indicator_title in ctx_title_list_filter %}checked{% endif %} /> {{ each.indicator__indicator_title }}</a>
                 {% endfor %}
                 <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
                 {% for each in uniq_years %}
-                {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
-                <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
-                {% endif %}
+                    {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                        <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                    {% endif %}
                 {% endfor %}
                 <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
                 {% for each in uniq_months %}
-                {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
-                <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
-                {% endif %}
+                    {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                        <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                    {% endif %}
                 {% endfor %}
                 <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                 <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
@@ -59,19 +59,19 @@
         <form>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                 {% for each in uniq_years %}
-                <a class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}checked{% endif %} /> {{ each.year_month__yyyy }}</a> <!-- |stringformat:"i" is needed here to convert the int to a string. "i" stands for string, take a look here https://docs.python.org/2/library/stdtypes.html#string-formatting-operations -->
+                    <a class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}checked{% endif %} /> {{ each.year_month__yyyy }}</a> <!-- |stringformat:"i" is needed here to convert the int to a string. "i" stands for string, take a look here https://docs.python.org/2/library/stdtypes.html#string-formatting-operations -->
                 {% endfor %}
                 <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
                 {% for each in uniq_titles %}
-                {% if each.indicator__indicator_title in ctx_title_list_filter %}
-                <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
-                {% endif %}
+                    {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                        <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                    {% endif %}
                 {% endfor %}
                 <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
                 {% for each in uniq_months %}
-                {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
-                <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
-                {% endif %}
+                    {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                        <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                    {% endif %}
                 {% endfor %}
                 <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                 <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
@@ -119,15 +119,15 @@
                 {% endfor %}
                 <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
                 {% for each in uniq_titles %}
-                {% if each.indicator__indicator_title in ctx_title_list_filter %}
-                <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
-                {% endif %}
+                    {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                        <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                    {% endif %}
                 {% endfor %}
                 <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
                 {% for each in uniq_years %}
-                {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
-                <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
-                {% endif %}
+                    {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                        <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                    {% endif %}
                 {% endfor %}
                 <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                 <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
@@ -142,11 +142,9 @@
         <thead>
             <tr>
                 <th>
-
                     <a class="blue-text" href="?{{ title_sort_anchor_GET_param }}">
                         Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                     </a>
-
                 </th>
 
                 <th>
@@ -154,6 +152,7 @@
                         Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
                     </a>
                 </th>
+
                 <th>
                     <a class="blue-text" href="?{{ mm_sort_anchor_GET_param }}">
                         Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
@@ -209,24 +208,23 @@
     </table>
     <!-- Paginations-->
     {% if is_paginated %}
-    {% if page_obj.has_previous %}
-    <a class="btn btn-outline-info" href="?page=1&{{ ctx_filter_sort_param }}">First</a>
-    <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ ctx_filter_sort_param }}">Previous</a>
-    {% endif %}
+        {% if page_obj.has_previous %}
+            <a class="btn btn-outline-info" href="?page=1&{{ ctx_filter_sort_param }}">First</a>
+            <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}&{{ ctx_filter_sort_param }}">Previous</a>
+        {% endif %}
 
-    {%for num in page_obj.paginator.page_range %}
-    {% if page_obj.number == num %}
-    <a class=" btn btn-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
-    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-    <a class=" btn btn-outline-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
-    {% endif %}
-    {% endfor %}
+        {%for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <a class=" btn btn-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a class=" btn btn-outline-info" href="?page= {{ num }}&{{ ctx_filter_sort_param }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
 
-    {% if page_obj.has_next %}
-
-    <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ ctx_filter_sort_param }}">Next</a>
-    <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}&{{ ctx_filter_sort_param }}">Last</a>
-    {% endif %}
+        {% if page_obj.has_next %}
+            <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}&{{ ctx_filter_sort_param }}">Next</a>
+            <a class="btn btn-outline-info" href="?page= {{ page_obj.paginator.num_pages}}&{{ ctx_filter_sort_param }}">Last</a>
+        {% endif %}
     {% endif %}
     <!--end pagination-->
 </div>
@@ -320,39 +318,39 @@
                     column: column,
                 },
             })
-                .done(function (json_response) {
-                    console.log("JSON RESPONSE", json_response);
-                    if (json_response["post_success"] == false) {
-                        td_node.html(old_val);
-                        console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-
-                        // Set status light and error message to red and response error msg
-                        setDatabaseStatus(good = false, msg = json_response["post_msg"]);
-                    } else { // Api call successful
-                        td_node.html(new_value);
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
-                        setDatabaseStatus(good = true, msg = "");
-                    }
-                    finishCellEditMode(td_node);
-
-                    return true;
-                }) // @TODO FOR TOMORROW< FIX THIS, when you turn off server, but still edit webgrid, make sure somehow the response is like server offline or not found!
-                .fail(function (jqXHR) {
+            .done(function (json_response) {
+                console.log("JSON RESPONSE", json_response);
+                if (json_response["post_success"] == false) {
                     td_node.html(old_val);
-                    // for (var x in jqXHR) {
-                    //     console.log(`Property check-> ${x}: ${jqXHR[x]}`)
-                    // }
-                    // var errorMessage = jqXHR.status + ': ' + jqXHR.responseXML
-                    var errorMessage = "Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov"
-                    setDatabaseStatus(good = false, msg = errorMessage);
-                    finishCellEditMode(td_node);
+                    console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
 
-                    console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                    alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                    return false;
-                });
+                    // Set status light and error message to red and response error msg
+                    setDatabaseStatus(good = false, msg = json_response["post_msg"]);
+                } else { // Api call successful
+                    td_node.html(new_value);
+                    $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
+                    $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
+                    setDatabaseStatus(good = true, msg = "");
+                }
+                finishCellEditMode(td_node);
+
+                return true;
+            }) // @TODO FOR TOMORROW< FIX THIS, when you turn off server, but still edit webgrid, make sure somehow the response is like server offline or not found!
+            .fail(function (jqXHR) {
+                td_node.html(old_val);
+                // for (var x in jqXHR) {
+                //     console.log(`Property check-> ${x}: ${jqXHR[x]}`)
+                // }
+                // var errorMessage = jqXHR.status + ': ' + jqXHR.responseXML
+                var errorMessage = "Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov"
+                setDatabaseStatus(good = false, msg = errorMessage);
+                finishCellEditMode(td_node);
+
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                return false;
+            });
         };
     })
 </script>
