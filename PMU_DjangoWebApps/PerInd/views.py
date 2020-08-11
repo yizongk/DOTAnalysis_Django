@@ -141,16 +141,18 @@ class WebGridPageView(generic.ListView):
     category_permissions = []
     err_msg = ""
 
-    req_sort_dir =  "asc"
+    req_sort_dir = "asc"
     req_sort_by = "indicator__indicator_title"
     
-    uniq_titles=""
-    uniq_years=""
-    uniq_months=""
+    uniq_titles = ""
+    uniq_years = ""
+    uniq_fiscal_years = ""
+    uniq_months = ""
     
     req_title_list_filter = []
-    req_yr_list_filter = []
+    req_yr_list_filter = [] # Calendar Year
     req_mn_list_filter = []
+    req_fy_list_filter = [] # Fiscal Year
 
     ctx_filter_sort_param = ""
     
@@ -172,6 +174,7 @@ class WebGridPageView(generic.ListView):
         self.req_title_list_filter = self.request.GET.getlist('TitleListFilter')
         self.req_yr_list_filter = self.request.GET.getlist('YYYYListFilter')
         self.req_mn_list_filter = self.request.GET.getlist('MMListFilter')
+        self.req_fy_list_filter = self.request.GET.getlist('FiscalYYYYListFilter')
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -201,7 +204,9 @@ class WebGridPageView(generic.ListView):
             self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
             self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
             self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
-            print("HERE: ", self.uniq_titles)
+            self.uniq_fiscal_years = list(set([ each.year_month.fiscal_yyyy for each in indicator_data_entries ])) # set(list()) to get distinct values out of the list
+            print("uniq_years: ", [each["year_month__yyyy"] for each in self.uniq_years])
+            print("FISCALYEAR: ", self.uniq_fiscal_years)
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -246,6 +251,21 @@ class WebGridPageView(generic.ListView):
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
                 print(self.err_msg)
                 return IndicatorData.objects.none()
+        ## Filter by Fiscal Years
+        if len(self.req_fy_list_filter) >= 1:
+            try:
+                qs = Q()
+                for each_fiscal_yr in self.req_fy_list_filter:
+                    each_fiscal_yr = int(each_fiscal_yr)
+                    # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1. 
+                    # In other words, any year x with month in [7,8,9,10,11,12] is FY = x+1, and any year x with month in [1,2,3,4,5,6] is FY = x
+                    qs = qs | ( ( Q(year_month__mm__in=[1,2,3,4,5,6]) & Q(year_month__yyyy=each_fiscal_yr) ) | ( Q(year_month__mm__in=[7,8,9,10,11,12]) & Q(year_month__yyyy=each_fiscal_yr-1) ) )
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
 
         # Filter dataset from sort direction and sort column
         try:
@@ -276,6 +296,7 @@ class WebGridPageView(generic.ListView):
             ctx_title_filter_param = ""
             ctx_yyyy_filter_param = ""
             ctx_mm_filter_param = ""
+            ctx_fiscal_yyyy_filter_param = ""
 
             ## Construct Filter GET Param
             for each in self.req_title_list_filter:
@@ -285,6 +306,8 @@ class WebGridPageView(generic.ListView):
                 ctx_yyyy_filter_param = "{}YYYYListFilter={}&".format(ctx_yyyy_filter_param, each)
             for each in self.req_mn_list_filter:
                 ctx_mm_filter_param = "{}MMListFilter={}&".format(ctx_mm_filter_param, each)
+            for each in self.req_fy_list_filter:
+                ctx_fiscal_yyyy_filter_param = "{}FiscalYYYYListFilter={}&".format(ctx_fiscal_yyyy_filter_param, each)
 
             ## Construct <a></a> GET parameter for the sorting columns
             if self.req_sort_by == 'indicator__indicator_title':
@@ -351,11 +374,13 @@ class WebGridPageView(generic.ListView):
 
             context["uniq_titles"] = self.uniq_titles
             context["uniq_years"] = self.uniq_years
+            context["uniq_fiscal_years"] = self.uniq_fiscal_years
             context["uniq_months"] = self.uniq_months
 
             context["ctx_title_list_filter"] = self.req_title_list_filter
             context["ctx_yr_list_filter"] = self.req_yr_list_filter
             context["ctx_mn_list_filter"] = self.req_mn_list_filter
+            context["ctx_fy_list_filter"] = self.req_fy_list_filter
 
             context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
             context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param

@@ -93,6 +93,14 @@ class YearMonth(models.Model):
         managed = False
         db_table = 'Year_Month'
 
+    @property
+    def fiscal_yyyy(self):
+        # NYC Govenment, a new Fiscal year starts July 1st of each year and ends on last day of June the next year. Therefore to mask Calendar Year as Fiscal Year for Jan to June, and Jul to Dec Fiscal Year = Calendar Year + 1
+        if self.mm in [1,2,3,4,5,6]:
+            return self.yyyy
+        else:
+            return self.yyyy + 1
+
 
 class UserPermissions(models.Model):
     user_permission_id = models.AutoField(db_column='User_Permission_ID', primary_key=True)  # Field name made lowercase.
