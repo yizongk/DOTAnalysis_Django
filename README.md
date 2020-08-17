@@ -9,6 +9,9 @@ To install the python dependencies
 
 python -m pip install -r PMU_DjangoWebApps/python_dependencies.txt
 
+# Database driver
+This web app uses "SQL Server Native Client 11.0", so install it here: https://www.microsoft.com/en-us/download/details.aspx?id=50402
+
 # Database
 Need SQL Server Account, need to be of the following roles:
 * db_datareader
@@ -193,3 +196,16 @@ Works on the following:
 * Chrome 84.0.4147.105 (64-bit)
 Doesn't work on the following:
 * Internet Explorer 11.973.17763.0CO
+
+# Secret setting file
+There needs to be a secret_settings.py file in PMU_DjangoWebApps\PMU_DjangoWebApps\PMU_DjangoWebApps\secret_settings.py
+
+And it must have the following format:
+```
+SECRET_KEY =...
+SQLServerHost =...
+SQLServerDbName =...
+SQLServerUID =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
+SQLServerPWD =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
+UseWinAuth =... # Boolean
+```
