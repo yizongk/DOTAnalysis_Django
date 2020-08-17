@@ -203,25 +203,47 @@
             <tr>
                 <th>
                     <a class="blue-text" href="?{{ title_sort_anchor_GET_param }}">
-                        Indicator Title{% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        Indicator Title
+                        {% if sort_by == 'indicator__indicator_title' and sort_dir == 'asc' %}
+                            <i class="fas fa-caret-up"></i>
+                        {% elif sort_by == 'indicator__indicator_title' and sort_dir == 'desc' %}
+                            <i class="fas fa-caret-down"></i>
+                        {% endif %}
                     </a>
                 </th>
 
                 <th>
-                    <a class="blue-text" href="?{{ yyyy_sort_anchor_GET_param }}">
+                    <!-- fy_yyyy_sort_anchor_GET_param's backend is sorting by Calendar Year -->
+                    <!-- It's okay to use YYYY as the sort fiscal year here, since Fiscal Year doesn't actually exists in the database model, it's hard to do the sort. And since Fiscal Year is alwaya a fix offset from Calendar Year, sorting by Calendar Year will sort the Fiscal Year correctly. In effect, we are sorting Fiscal Year by proxy(proxy through sorting Calendar Year) -->
+                    <a class="blue-text" href="?{{ fy_yyyy_sort_anchor_GET_param }}">
                         Fiscal Year
+                        {% if sort_by == 'year_month__fiscal_yyyy' and sort_dir == 'asc' %}
+                            <i class="fas fa-caret-up"></i>
+                        {% elif sort_by == 'year_month__fiscal_yyyy' and sort_dir == 'desc' %}
+                            <i class="fas fa-caret-down"></i>
+                        {% endif %}
                     </a>
                 </th>
 
                 <th>
                     <a class="blue-text" href="?{{ yyyy_sort_anchor_GET_param }}">
-                        Calendar Year{% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        Calendar Year
+                        {% if sort_by == 'year_month__yyyy' and sort_dir == 'asc' %}
+                            <i class="fas fa-caret-up"></i>
+                        {% elif sort_by == 'year_month__yyyy' and sort_dir == 'desc' %}
+                            <i class="fas fa-caret-down"></i>
+                        {% endif %}
                     </a>
                 </th>
 
                 <th>
                     <a class="blue-text" href="?{{ mm_sort_anchor_GET_param }}">
-                        Month{% if sort_by == 'year_month__mm' and sort_dir == 'asc' %} <i class="fas fa-caret-up"></i></i>{% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %} <i class="fas fa-caret-down"></i>{% endif %}
+                        Month
+                        {% if sort_by == 'year_month__mm' and sort_dir == 'asc' %}
+                            <i class="fas fa-caret-up"></i>
+                        {% elif sort_by == 'year_month__mm' and sort_dir == 'desc' %}
+                            <i class="fas fa-caret-down"></i>
+                        {% endif %}
                     </a>
                 </th>
                 <th>Indicator Value</th>
