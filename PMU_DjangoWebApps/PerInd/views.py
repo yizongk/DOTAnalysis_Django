@@ -90,7 +90,7 @@ class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
 
-    # paginate_by = 12
+    paginate_by = 12
 
     req_success = False
     category_permissions = []
@@ -109,7 +109,7 @@ class WebGridPageView(generic.ListView):
     req_mn_list_filter = []
     req_fy_list_filter = [] # Fiscal Year
 
-    ctx_filter_sort_param = ""
+    ctx_pagination_param = ""
     
     title_sort_anchor_GET_param = ""
     yyyy_sort_anchor_GET_param = ""
@@ -312,7 +312,7 @@ class WebGridPageView(generic.ListView):
             ### "SortBy=indicator__indicator_title&SortDir=desc&title_list=Facebook&title_list=Instagram&yr_list=2019&yr_list=2020&mn_list=2&mn_list=1"
 
             ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
-            self.ctx_filter_sort_param = "SortBy={}&SortDir={}&{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+            self.ctx_pagination_param = "SortBy={}&SortDir={}&{}{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
 
 
             # Finally, setting the context variables
@@ -339,7 +339,7 @@ class WebGridPageView(generic.ListView):
             context["mm_sort_anchor_GET_param"] = self.mm_sort_anchor_GET_param
             context["fy_yyyy_sort_anchor_GET_param"] = self.fy_yyyy_sort_anchor_GET_param
 
-            context["ctx_filter_sort_param"] = self.ctx_filter_sort_param
+            context["ctx_pagination_param"] = self.ctx_pagination_param
 
             return context
         except Exception as e:
@@ -367,8 +367,9 @@ class WebGridPageView(generic.ListView):
             context["title_sort_anchor_GET_param"] = ""
             context["yyyy_sort_anchor_GET_param"] = ""
             context["mm_sort_anchor_GET_param"] = ""
+            context["fy_yyyy_sort_anchor_GET_param"] = ""
 
-            context["ctx_filter_sort_param"] = ""
+            context["ctx_pagination_param"] = ""
             return context
 
 def SavePerIndDataApi(request):
