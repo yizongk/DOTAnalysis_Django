@@ -20,12 +20,21 @@
 <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div>
 <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
 <!--Dropdown-->
+{% comment %}
 <div>CURRENT CONTEXT PARAM: {{ ctx_pagination_param }}</div>
 <div>Title Filters: {% for each in ctx_title_list_filter %}{{each}}, {% endfor %}</div>
 <div>Calendar Year Filters: {% for each in ctx_yr_list_filter %}{{each}}, {% endfor %}</div>
 <div>FY Year Filters: {% for each in ctx_fy_list_filter %}{{each}}, {% endfor %}</div>
 <div>Month Filters: {% for each in ctx_mn_list_filter %}{{each}}, {% endfor %}</div>
+{% endcomment %}
 <div class="container">
+    Filters:
+    <!-- Clear All Dropdown Button -->
+    <div>
+        <a class="btn btn-secondary" type="button" aria-haspopup="true" aria-expanded="false" href="?">
+            Clear all filters and sorts
+        </a>
+    </div>
     <!-- Title Dropdown -->
     <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -194,12 +203,6 @@
                 <button type="submit" class="btn btn-info">Filter</button>
             </div>
         </form>
-    </div>
-    <!-- Clear All Dropdown Button -->
-    <div>
-        <a class="btn btn-secondary" type="button" aria-haspopup="true" aria-expanded="false" href="?">
-            Clear all filters and sorts
-        </a>
     </div>
 </div>
 <!--End Dropdown-->
