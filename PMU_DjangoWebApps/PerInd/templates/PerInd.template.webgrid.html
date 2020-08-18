@@ -7,15 +7,26 @@
     }
 </style>
 
-<div>
-    Instructions:
+<div class="navbar navbar-expand-lg">
+    <!-- Collapse buttons -->
     <div>
-        1. The column in blue is editable!<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;* Double click on any of the cell to enter Edit Mode.<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* Once you are done, press 'Enter' key to save the value, or press 'ESC' key to cancel your edit.<br>
-        2. The blue column names are sortable, click it to sort it by Ascending or Descending.
+        <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+            Instructions:
+        </a>
     </div>
+    <!-- / Collapse buttons -->
+    <!-- Collapsible element -->
+    <div class="collapse" id="collapseExample">
+        <div class="mt-3">
+            1. The column in blue is editable!<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;* Double click on any of the cell to enter Edit Mode.<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* Once you are done, press 'Enter' key to save the value, or press 'ESC' key to cancel your edit.<br>
+            2. The blue column names are sortable, click it to sort it by Ascending or Descending.
+        </div>
+    </div>
+    <!-- / Collapsible element -->
 </div>
+
 <div><br>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
 <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div>
 <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
@@ -27,14 +38,11 @@
 <div>Month Filters: {% for each in ctx_mn_list_filter %}{{each}}, {% endfor %}</div>
 {% endcomment %}
 <!--Dropdown-->
-<div class="container">
+<div>
     Filters:
-    <!-- Clear All Dropdown Button -->
-    <div>
-        <a class="btn btn-secondary" type="button" aria-haspopup="true" aria-expanded="false" href="?">
-            Clear all filters and sorts
-        </a>
-    </div>
+</div>
+<div class="container btn-group">
+
     <!-- Title Dropdown -->
     <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -70,6 +78,7 @@
             </div>
         </form>
     </div>
+
     {% comment %}
     <!-- Year Dropdown -->
     <div class="dropdown">
@@ -107,6 +116,7 @@
         </form>
     </div>
     {% endcomment %}
+
     <!-- Fiscal Year Dropdown -->
     <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -142,6 +152,7 @@
             </div>
         </form>
     </div>
+
     <!-- Month Dropdown -->
     <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -205,6 +216,13 @@
                 <button type="submit" class="btn btn-info">Filter</button>
             </div>
         </form>
+    </div>
+
+    <!-- Clear All Dropdown Button -->
+    <div class="dropdown">
+        <a class="btn btn-default" type="button" aria-haspopup="true" aria-expanded="false" href="?">
+            Clear all filters and sorts
+        </a>
     </div>
 </div>
 <!--End Dropdown-->
