@@ -10,51 +10,6 @@ import pytz # For converting datetime objects from one timezone to another timez
 from django.db.models import Q
 # Create your views here.
 
-def get_cur_client(request):
-    cur_client = request.META['REMOTE_USER']
-    return cur_client
-
-'''
-def index(request):
-    cur_client = get_cur_client(request)
-    return HttpResponse("""
-    <!DOCTPYE html>
-    <html>
-
-    <head>
-        <title>Home Page - Performance Indicator Portal</title>
-    </head>
-
-    <body>
-        <div>
-            <ul>
-                <li><a href="/PerInd/about">About</a></li>
-                <li><a href="/PerInd/contact">Contact</a></li>
-                <li><a href="/PerInd/webgrid">WebGrid - Will remove from this list in prod</a></li>
-            </ul>
-            <p class="nav navbar-text navbar-right">Hello, {}!</p>
-        </div>
-    </body>
-
-    </html>
-    """.format(cur_client))
-
-def about(request):
-    return HttpResponse("This will be the ABOUT page")
-
-def contact(request):
-    return HttpResponse("This will be the CONTACT page")
-
-def webgrid(request):
-    latest_user_list = Users.objects.order_by('-user_id')[:5]
-
-    context = {
-        'latest_user_list': latest_user_list
-    }
-
-    return render(request, 'PerInd.template.webgrid.html', context)
-'''
-
 def get_user_category_permissions(username):
     try:
         user_permissions_list = UserPermissions.objects.filter(user__login=username)
@@ -141,22 +96,25 @@ class WebGridPageView(generic.ListView):
     category_permissions = []
     err_msg = ""
 
-    req_sort_dir =  "asc"
+    req_sort_dir = "asc"
     req_sort_by = "indicator__indicator_title"
     
-    uniq_titles=""
-    uniq_years=""
-    uniq_months=""
+    uniq_titles = ""
+    uniq_years = ""
+    uniq_fiscal_years = ""
+    uniq_months = ""
     
     req_title_list_filter = []
-    req_yr_list_filter = []
+    req_yr_list_filter = [] # Calendar Year
     req_mn_list_filter = []
+    req_fy_list_filter = [] # Fiscal Year
 
-    ctx_filter_sort_param = ""
+    ctx_pagination_param = ""
     
     title_sort_anchor_GET_param = ""
     yyyy_sort_anchor_GET_param = ""
     mm_sort_anchor_GET_param = ""
+    fy_yyyy_sort_anchor_GET_param = ""
 
     def get_queryset(self):
         
@@ -172,6 +130,7 @@ class WebGridPageView(generic.ListView):
         self.req_title_list_filter = self.request.GET.getlist('TitleListFilter')
         self.req_yr_list_filter = self.request.GET.getlist('YYYYListFilter')
         self.req_mn_list_filter = self.request.GET.getlist('MMListFilter')
+        self.req_fy_list_filter = self.request.GET.getlist('FiscalYYYYListFilter')
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
         user_cat_permissions = get_user_category_permissions(self.request.user)
@@ -201,7 +160,7 @@ class WebGridPageView(generic.ListView):
             self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
             self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
             self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
-            print("HERE: ", self.uniq_titles)
+            self.uniq_fiscal_years = list(set([ each.year_month.fiscal_yyyy for each in indicator_data_entries ])) # set(list()) to get distinct values out of the list, but it will be unordered! But seems to work for now, since it happens to result in a sorted order, I will let this sit for now
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -246,21 +205,56 @@ class WebGridPageView(generic.ListView):
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
                 print(self.err_msg)
                 return IndicatorData.objects.none()
+        ## Filter by Fiscal Years
+        if len(self.req_fy_list_filter) >= 1:
+            try:
+                qs = Q()
+                for each_fiscal_yr in self.req_fy_list_filter:
+                    each_fiscal_yr = int(each_fiscal_yr)
+                    # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1. 
+                    # In other words, any year x with month in [7,8,9,10,11,12] is FY = x+1, and any year x with month in [1,2,3,4,5,6] is FY = x
+                    qs = qs | ( ( Q(year_month__mm__in=[1,2,3,4,5,6]) & Q(year_month__yyyy=each_fiscal_yr) ) | ( Q(year_month__mm__in=[7,8,9,10,11,12]) & Q(year_month__yyyy=each_fiscal_yr-1) ) )
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
 
         # Filter dataset from sort direction and sort column
         try:
-            if self.req_sort_dir == "asc":
-                indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
-            elif self.req_sort_dir == "desc":
-                indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
+            ## Handles sorting by Property here, such as sorting by Fiscal Year
+            ### It's okay to use YYYY as the sort fiscal year here. Since Fiscal Year doesn't actually exists in the database model, it's hard to do the sort. And since Fiscal Year is alwaya a fix offset from Calendar Year, sorting by Calendar Year will sort the Fiscal Year correctly. In effect, we are sorting Fiscal Year by proxy(proxy through sorting Calendar Year)
+            if self.req_sort_by == 'year_month__fiscal_yyyy':
+                if self.req_sort_dir == "asc":
+                    # # Order the month first for neatness
+                    # indicator_data_entries = indicator_data_entries.order_by('year_month__mm')
+                    # Ref: https://stackoverflow.com/questions/8478494/ordering-django-queryset-by-a-property
+                    # and Ref: https://stackoverflow.com/questions/8966538/syntax-behind-sortedkey-lambda
+                    indicator_data_entries = sorted(indicator_data_entries, key=lambda each_rec: each_rec.year_month.fiscal_yyyy)
+                elif self.req_sort_dir == "desc":
+                    # # Order the month first for neatness
+                    # indicator_data_entries = indicator_data_entries.order_by('-year_month__mm')
+                    # Ref: https://www.w3schools.com/python/ref_func_sorted.asp
+                    indicator_data_entries = sorted(indicator_data_entries, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
+                else:
+                    self.req_success = False
+                    self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                    print(self.err_msg)
+                    return IndicatorData.objects.none()
             else:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                if self.req_sort_dir == "asc":
+                    indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
+                elif self.req_sort_dir == "desc":
+                    indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
+                else:
+                    self.req_success = False
+                    self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                    print(self.err_msg)
+                    return IndicatorData.objects.none()
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
@@ -276,6 +270,7 @@ class WebGridPageView(generic.ListView):
             ctx_title_filter_param = ""
             ctx_yyyy_filter_param = ""
             ctx_mm_filter_param = ""
+            ctx_fiscal_yyyy_filter_param = ""
 
             ## Construct Filter GET Param
             for each in self.req_title_list_filter:
@@ -285,59 +280,39 @@ class WebGridPageView(generic.ListView):
                 ctx_yyyy_filter_param = "{}YYYYListFilter={}&".format(ctx_yyyy_filter_param, each)
             for each in self.req_mn_list_filter:
                 ctx_mm_filter_param = "{}MMListFilter={}&".format(ctx_mm_filter_param, each)
+            for each in self.req_fy_list_filter:
+                ctx_fiscal_yyyy_filter_param = "{}FiscalYYYYListFilter={}&".format(ctx_fiscal_yyyy_filter_param, each)
 
             ## Construct <a></a> GET parameter for the sorting columns
+            ### Defaults
+            ctx_title_sort_dir = "SortDir=asc&"
+            ctx_yyyy_sort_dir = "SortDir=asc&"
+            ctx_mm_sort_dir = "SortDir=asc&"
+            ctx_fiscal_yyyy_sort_dir = "SortDir=asc&"
+            ### Getting off of defaults on a need to basis
             if self.req_sort_by == 'indicator__indicator_title':
                 if self.req_sort_dir == 'asc':
-                    TitleSortParam = "SortDir=desc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=asc&"
-                elif self.req_sort_dir == 'desc':
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=desc&"
-                    MMSortParam = "SortDir=desc&"
-                else:
-                    #### Sort by the default sort direction, ASC
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=asc&"
-
+                    ctx_title_sort_dir = "SortDir=desc&"
             elif self.req_sort_by == 'year_month__yyyy':
                 if self.req_sort_dir == 'asc':
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=desc&"
-                    MMSortParam = "SortDir=asc&"
-                elif self.req_sort_dir == 'desc':
-                    TitleSortParam = "SortDir=desc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=desc&"
-                else:
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=asc&"
-
+                    ctx_yyyy_sort_dir = "SortDir=desc&"
             elif self.req_sort_by == 'year_month__mm':
                 if self.req_sort_dir == 'asc':
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=desc&"
-                elif self.req_sort_dir == 'desc':
-                    TitleSortParam = "SortDir=desc&"
-                    YYYYSortParam = "SortDir=desc&"
-                    MMSortParam = "SortDir=asc&"
-                else:
-                    TitleSortParam = "SortDir=asc&"
-                    YYYYSortParam = "SortDir=asc&"
-                    MMSortParam = "SortDir=asc&"
+                    ctx_mm_sort_dir = "SortDir=desc&"
+            elif self.req_sort_by == 'year_month__fiscal_yyyy':
+                if self.req_sort_dir == 'asc':
+                    ctx_fiscal_yyyy_sort_dir = "SortDir=desc&"
 
-            self.title_sort_anchor_GET_param = "SortBy=indicator__indicator_title&{}{}{}{}".format(TitleSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+
+            self.title_sort_anchor_GET_param = "SortBy=indicator__indicator_title&{}{}{}{}{}".format(ctx_title_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
+            self.yyyy_sort_anchor_GET_param = "SortBy=year_month__yyyy&{}{}{}{}{}".format(ctx_yyyy_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
+            self.mm_sort_anchor_GET_param = "SortBy=year_month__mm&{}{}{}{}{}".format(ctx_mm_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
+            self.fy_yyyy_sort_anchor_GET_param = "SortBy=year_month__fiscal_yyyy&{}{}{}{}{}".format(ctx_fiscal_yyyy_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
             ### At this point, your self.title_sort_anchor_GET_param is something like
             ### "SortBy=indicator__indicator_title&SortDir=desc&title_list=Facebook&title_list=Instagram&yr_list=2019&yr_list=2020&mn_list=2&mn_list=1"
-            self.yyyy_sort_anchor_GET_param = "SortBy=year_month__yyyy&{}{}{}{}".format(YYYYSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
-            self.mm_sort_anchor_GET_param = "SortBy=year_month__mm&{}{}{}{}".format(MMSortParam, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
 
             ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
-            self.ctx_filter_sort_param = "SortBy={}&SortDir={}&{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param)
+            self.ctx_pagination_param = "SortBy={}&SortDir={}&{}{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_yyyy_filter_param)
 
 
             # Finally, setting the context variables
@@ -351,17 +326,20 @@ class WebGridPageView(generic.ListView):
 
             context["uniq_titles"] = self.uniq_titles
             context["uniq_years"] = self.uniq_years
+            context["uniq_fiscal_years"] = self.uniq_fiscal_years
             context["uniq_months"] = self.uniq_months
 
             context["ctx_title_list_filter"] = self.req_title_list_filter
             context["ctx_yr_list_filter"] = self.req_yr_list_filter
             context["ctx_mn_list_filter"] = self.req_mn_list_filter
+            context["ctx_fy_list_filter"] = self.req_fy_list_filter
 
             context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
             context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param
             context["mm_sort_anchor_GET_param"] = self.mm_sort_anchor_GET_param
+            context["fy_yyyy_sort_anchor_GET_param"] = self.fy_yyyy_sort_anchor_GET_param
 
-            context["ctx_filter_sort_param"] = self.ctx_filter_sort_param
+            context["ctx_pagination_param"] = self.ctx_pagination_param
 
             return context
         except Exception as e:
@@ -389,8 +367,9 @@ class WebGridPageView(generic.ListView):
             context["title_sort_anchor_GET_param"] = ""
             context["yyyy_sort_anchor_GET_param"] = ""
             context["mm_sort_anchor_GET_param"] = ""
+            context["fy_yyyy_sort_anchor_GET_param"] = ""
 
-            context["ctx_filter_sort_param"] = ""
+            context["ctx_pagination_param"] = ""
             return context
 
 def SavePerIndDataApi(request):

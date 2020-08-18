@@ -87,23 +87,40 @@ WSGI_APPLICATION = 'PMU_DjangoWebApps.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        SQLServerHost,
-        'NAME' :        SQLServerDbName,
-        'USER' :        SQLServerUID,       # SQLServerUID imported from secret_settings.py
-        'PASSWORD' :    SQLServerPWD,       # SQLServerPWD imported from secret_settings.py
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/ 
+if UseWinAuth: # UseWinAuth imported from secret_settings.py
+    DATABASES = { # https://django-mssql.readthedocs.io/en/latest/settings.html, read this doc on trusted connections. TLDR: Remove the line "'USER': '...'," and it will default to trusted connection
+        'default': {
+            # 'ENGINE': 'django.db.backends.sqlite3',
+            # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'ENGINE':       'sql_server.pyodbc',
+            'HOST' :        SQLServerHost,
+            'NAME' :        SQLServerDbName,
+            'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+            'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
+            'OPTIONS' : {
+                'driver' :      'SQL Server Native Client 11.0',
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            # 'ENGINE': 'django.db.backends.sqlite3',
+            # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'ENGINE':       'sql_server.pyodbc',
+            'HOST' :        SQLServerHost,
+            'NAME' :        SQLServerDbName,
+            'USER' :        SQLServerUID,       # SQLServerUID imported from secret_settings.py
+            'PASSWORD' :    SQLServerPWD,       # SQLServerPWD imported from secret_settings.py
+            'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+            'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+            'OPTIONS' : {
+                'driver' :      'SQL Server Native Client 11.0',
+            },
+        }
+    }
 
 
 # Password validation
