@@ -8,6 +8,7 @@ from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
 from django.db.models import Q
+from openpyxl import Workbook
 # Create your views here.
 
 def get_user_category_permissions(username):
@@ -96,8 +97,8 @@ class WebGridPageView(generic.ListView):
     category_permissions = []
     err_msg = ""
 
-    req_sort_dir = "asc"
-    req_sort_by = "indicator__indicator_title"
+    req_sort_dir = ""
+    req_sort_by = ""
     
     uniq_titles = ""
     uniq_years = ""
@@ -142,7 +143,7 @@ class WebGridPageView(generic.ListView):
         category_pk_list = user_cat_permissions["pk_list"]
         self.category_permissions = user_cat_permissions["category_names"]
 
-        # Default filters WebGrid dataset
+        # Default filters on the WebGrid dataset
         try:
             indicator_data_entries = IndicatorData.objects.filter(
                 indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
@@ -242,6 +243,10 @@ class WebGridPageView(generic.ListView):
                     self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
                     print(self.err_msg)
                     return IndicatorData.objects.none()
+            # Default sort
+            elif self.req_sort_by == '':
+                # Default sort it by Fiscal Year Desc and to show latest year first then to older years
+                indicator_data_entries = sorted(indicator_data_entries, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
             else:
                 if self.req_sort_dir == "asc":
                     indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
@@ -372,6 +377,7 @@ class WebGridPageView(generic.ListView):
             context["ctx_pagination_param"] = ""
             return context
 
+# Post request
 def SavePerIndDataApi(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
@@ -449,3 +455,13 @@ def SavePerIndDataApi(request):
         "post_success": False,
         "post_msg": "Warning: SavePerIndDataApi():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
+
+# Post request
+def GetXlsx(request):
+    """
+    Download WebGrid view with all current context as xlsx.
+    Expects all the filter and sort context in the request. (Don't need pagination context)
+    """
+    id = request.POST.get('id', '')
+
+    # Authenticate user
