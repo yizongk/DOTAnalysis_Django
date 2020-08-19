@@ -1,4 +1,5 @@
 {% extends 'template.base.html' %}
+{% load static %}
 <!-- Will contain the template for the WebGrid html -->
 {% block content %}
 <style>
@@ -257,7 +258,7 @@
 
 <!--WebGrid-->
 <div>
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover" id="WebGridTable">
         <thead>
             <tr>
                 <th>
@@ -381,10 +382,53 @@
     <!--end pagination-->
 </div>
 <!--End WebGrid-->
+
+<!--Miscellaneous-->
+<button id="convert_xlsx_button" onclick="downloadWebGridAsXlsx('WebGridTable')">Create Xlsx</button>
+<!--End Miscellaneous-->
 {% endblock content %}
 
 {% block custom_js %}
+<!--JS for exporting html table to xlsx-->
+<script type="text/javascript" src={% static 'PMU_DjangoWebApps/js/xlsx.full.min.js' %}></script>
+<script type="text/javascript" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
+
 <script>
+    function s2ab(s) {
+        var buf = new ArrayBuffer(s.length);
+        var view = new Uint8Array(buf);
+        for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+    };
+
+    function downloadWebGridAsXlsx(tableId) {
+        var wb = XLSX.utils.table_to_book(
+            document.getElementById(tableId),
+            {
+                sheet: "Sheet JS"
+            }
+        );
+
+        var wbout = XLSX.write(
+            wb,
+            {
+                bookType: 'xlsx',
+                bookSST: true,
+                type: 'binary'
+            }
+        )
+
+        saveAs(
+            new Blob(
+                [s2ab(wbout)],
+                {
+                    type: "application/octet-stream"
+                }
+            ),
+            'test.xlsx'
+        );
+    };
+
     $(document).ready(function () {
         $(document).on("dblclick", ".editable", function () {
             enterCellEditMode($(this))
@@ -403,9 +447,9 @@
         $(document).ajaxStart(function () {
             $("body").addClass("loading");
         })
-            .ajaxStop(function () {
-                $("body").removeClass("loading");
-            });
+        .ajaxStop(function () {
+            $("body").removeClass("loading");
+        });
 
         function setDatabaseStatus(good, msg) {
             // Set status light and error message to red and response error msg
@@ -416,30 +460,30 @@
                 $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
                 $('.status_info.err_msg').html("Error: " + msg);
             }
-        }
+        };
 
         function finishCellEditMode(td_node) {
             td_node.addClass("editable");
-        }
+        };
 
         function enterCellEditMode(td_node) {
             var old_value = td_node.text();
             var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
             td_node.html(input);
             td_node.removeClass("editable");
-        }
+        };
 
         function cancelEditMode(node) {
             var old_val = $(node).attr("value")
             var td_node = $(node).parent("td");
             td_node.html(old_val);
             finishCellEditMode(td_node);
-        }
+        };
 
         function csrfSafeMethod(method) {
             // these HTTP methods do not require CSRF protection
             return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-        }
+        };
 
         function sendToServer(node) {
             // console.log(id, new_value, table, column, td_node, old_val);
