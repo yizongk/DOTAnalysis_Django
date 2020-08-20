@@ -208,4 +208,8 @@ SQLServerDbName =...
 SQLServerUID =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 SQLServerPWD =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 UseWinAuth =... # Boolean
+HostList = [  # A list of string containing ip address that will be set to settings.py's ALLOWED_HOSTS variable
+    '127.0.0.1',
+    '...',
+]
 ```
