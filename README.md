@@ -209,3 +209,83 @@ SQLServerUID =... # If UseWinAuth is set to True, you should still set this vari
 SQLServerPWD =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 UseWinAuth =... # Boolean
 ```
+
+# Setting up Apache config file, and an example
+## Background:
+Make sure to use VirtualHost in the config to server your django webapp, especially if you are planning to server PHP, Django and other framework with the same Apache instance.
+
+Look at this ref: https://stackoverflow.com/questions/1020390/how-do-i-run-django-and-php-together-on-one-apache-server
+
+and: https://www.youtube.com/watch?v=EwUbAiaUFgg
+
+Main point is that WSGIScriptAlias in the config is the thing that is causing Django to take over the entire Apache server, so any other framework like PHP won't run in the server at all.
+
+The solution is to place the WSGIScriptAlias and the Django config in its own VirtualHost part of the Apache Server:
+```
+Listen 8080     # To tell Apache to listen to port 8080
+...
+<VirtualHost *:8080>
+    WSGIScriptAlias / "C:/path/to/wsgi.py"
+    ...Django Configs...
+</VirtualHost>
+```
+Now if you open www.yourwebsite.com:8080 you will be able to access your Django webapp
+
+If you have your other framework like PHP in the same httpd.conf coded without VirtualHost, you can access those framework just by www.yourwebsite.com
+
+Or if your other frameowkr is config also as a VirutalHost like:
+```
+Listen 8081     # To tell Apache to listen to port 8081
+...
+<VirtualHost *:8081>
+    ...PHP Configs...
+</VirtualHost>
+```
+You can access your PHP with www.yourwebsite.com:8081
+
+## Example:
+```
+# Make sure any LoadModule directives don't load the same module twice, this can cause error. Check authnz_sspi_module modules/mod_authnz_sspi.so and wsgi_module modules/mod_wsgi.so arn't loaded already, if they are loaded already in a earlier line in the httpd.config, remove or comment out the appropriate LoadModule directive in the example
+
+Listen 8080
+######### BEGIN For DJANGO Projects #########
+LoadModule authnz_sspi_module modules/mod_authnz_sspi.so
+
+LoadModule wsgi_module modules/mod_wsgi.so
+<IfModule wsgi_module>
+    # Filling WSGIPythonPath is important, cuz you might run into this error if not set, https://github.com/GrahamDumpleton/mod_wsgi/issues/353
+    WSGIPythonPath "C:/xampp/htdocs/PMU_DjangoWebApps"
+    WSGIPythonHome "C:/Users/ykuang/Documents/python38"
+
+    <VirtualHost *:8080>
+        WSGIScriptAlias / "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/PMU_DjangoWebApps/wsgi.py"
+        <Directory "C:/xampp/htdocs/PMU_DjangoWebApps">
+            <Files wsgi.py>
+                Order deny,allow
+                Allow from all
+
+                AuthName "DOT Intranet"
+                AuthType SSPI
+                SSPIAuth On
+                SSPIAuthoritative Off
+                SSPIOfferBasic Off
+                SSPIOmitDomain On
+                Require valid-user
+
+            </Files>
+        </Directory>
+    </VirtualHost>
+    Alias /static/ "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/"
+    <Directory "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/">
+        Require all granted
+    </Directory>
+</IfModule>
+######### END For DJANGO Projects #########
+```
+
+## Note:
+Some port number will cause apache to crash. If you run httpd.exe in apache/bin, and it tells you that:
+```
+sock: could not bind to address ...
+```
+It's cuz that port number is already being in used. Use another port number
