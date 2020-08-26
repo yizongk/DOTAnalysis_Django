@@ -287,9 +287,67 @@ LoadModule wsgi_module modules/mod_wsgi.so
 ######### END For DJANGO Projects #########
 ```
 
-## Note:
+## Note (Related to SSL and self signed certificate to allow the web app to use https protocol):
 Some port number will cause apache to crash. If you run httpd.exe in apache/bin, and it tells you that:
 ```
 sock: could not bind to address ...
 ```
 It's cuz that port number is already being in used. Use another port number
+
+When running with VirtualHost. You may encounter the following errors:
+
+Firefox: Secure Connection Failed ... Error code: SSL_ERROR_RX_RECORD_TOO_LONG
+
+Chrome: This site can't provide a secure connection ... ERR_SSL_PROTOCOL_ERROR
+
+Edge: Can't connect securely to this page ... outdated or unsafe TSL security
+
+IE: Can't connect securely to this page ... outdated or unsafe TSL security
+
+It's cuz you are using https://www.yourwebsite.com:portnum, with https (secure)
+Try using this http://www.yourwebsite.com:portnum, with http (It's known that http is not as secure as https, but this web app is operated in an intranet sitting behind a firewall, the risk is not as high)
+
+To fix this issue once and for all, buy a SSL cert or create your own sign signed certificate. The instructions for a self signed certificate and how to configure apache to use the self signed certificate:
+
+ref: https://www.acunetix.com/blog/articles/setting-up-self-signed-tls-ssl-certificate/
+
+some links to window pre-compiled binaries of OpenSSL
+
+http://gnuwin32.sourceforge.net/packages/openssl.htm
+
+The link that this django web app used for its apache self signed cert
+
+https://sourceforge.net/projects/gnuwin32/
+
+After you download and extract the folder. Place it where you want to place it, and then add that path ("/yourpath/to/openssl/bin", like "C:\Users\...\Desktop\openssl-0.9.8h-1-bin\bin") to the PATH.
+
+Add an env variable call OPENSSL_CONF with the path that points to your openssl.cnf that comes with what you have just downloaded and extracted (It's in the whatyoujustextracted/share/openssl.cnf).
+
+OPENSSL_CONF: "/yourpath/to/openssl/bin" like "C:\Users\...\Desktop\openssl-0.9.8h-1-bin\share\openssl.cnf"
+
+If you don't add OPENSSL_CONF to your env varibles. You will get the following error (https://stackoverflow.com/questions/14459078/unable-to-load-config-info-from-usr-local-ssl-openssl-cnf-on-windows):
+
+Unable to load config info from /usr/local/ssl/openssl.cnf
+
+After you have downloaded openssl, and run it without problem, run the following command to create your cert and key, replace mysitename with your web app name:
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mysitename.key -out mysitename.crt
+```
+
+in the dir that you ran the command, you will get two files:
+mysitename.key and mysitename.crt. Move these two files to where you want to store your certs.
+
+Then in your Apache httpd.conf add the following lines to your VirtualHost config of this Djanog web app:
+```
+<VirtualHost ...>
+    SSLEngine on
+    SSLCertificateFile "C:/xampp/apache/certs/PMU_DjangoWebApps.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/certs/PMU_DjangoWebApps.key"
+    ...
+    <Directory ...>
+    ...
+    </Directory>
+</VirtualHost>
+```
+
+The bug should be fix now.
