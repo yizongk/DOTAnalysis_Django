@@ -351,3 +351,20 @@ Then in your Apache httpd.conf add the following lines to your VirtualHost confi
 ```
 
 The bug should be fix now.
+
+OR instead of creating your own self signed cert, just use the one that Apache provides:
+
+It's stored in C:\xampp\apache\conf\ssl.crt\server.crt and C:\xampp\apache\conf\ssl.key\server.key
+
+and in the httpd.conf:
+```
+<VirtualHost ...>
+    SSLEngine on
+    SSLCertificateFile "C:/xampp/apache/conf/ssl.crt/server.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/conf/ssl.key/server.key"
+    ...
+    <Directory ...>
+    ...
+    </Directory>
+</VirtualHost>
+```
