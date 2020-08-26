@@ -7,16 +7,8 @@
     }
 
     .scrollable-menu {
-        {% comment %} height: auto; {% endcomment %}
         max-height: 320px;
         overflow-y: auto;
-        {% comment %} overflow-x: hidden;
-        min-width: 100% !important;
-        background-attachment: local, local, scroll, scroll; {% endcomment %}
-    }
-
-    .dropdown-item {
-        {% comment %} white-space: normal; {% endcomment %}
     }
 </style>
 
@@ -50,6 +42,7 @@
 <div>FY Year Filters: {% for each in ctx_fy_list_filter %}{{each}}, {% endfor %}</div>
 <div>Month Filters: {% for each in ctx_mn_list_filter %}{{each}}, {% endfor %}</div>
 {% endcomment %}
+
 <!--Dropdown-->
 <div class="container btn-group">
 
@@ -62,7 +55,10 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                 <div class="scrollable-menu">
                     {% for each in uniq_titles %}
-                        <a class="dropdown-item"><input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" {% if each.indicator__indicator_title in ctx_title_list_filter %}checked{% endif %} /> {{ each.indicator__indicator_title }}</a>
+                        <label class="dropdown-item">
+                            <input type="checkbox" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" {% if each.indicator__indicator_title in ctx_title_list_filter %}checked{% endif %} />
+                            {{ each.indicator__indicator_title }}
+                        </label>
                     {% endfor %}
 
                     <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
@@ -103,7 +99,11 @@
         <form>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                 {% for each in uniq_years %}
-                    <a class="dropdown-item"><input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}checked{% endif %} /> {{ each.year_month__yyyy }}</a> <!-- |stringformat:"i" is needed here to convert the int to a string. "i" stands for string, take a look here https://docs.python.org/2/library/stdtypes.html#string-formatting-operations -->
+                    <label class="dropdown-item">
+                        <input type="checkbox" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}checked{% endif %} />
+                        {{ each.year_month__yyyy }}
+                    </label>
+                    <!-- |stringformat:"i" is needed here to convert the int to a string. "i" stands for string, take a look here https://docs.python.org/2/library/stdtypes.html#string-formatting-operations -->
                 {% endfor %}
 
                 <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
@@ -141,7 +141,10 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
                 <div class="scrollable-menu">
                     {% for each in uniq_fiscal_years %}
-                        <a class="dropdown-item"><input type="checkbox" name="FiscalYYYYListFilter" value="{{ each }}" {% if each|stringformat:"i" in ctx_fy_list_filter %}checked{% endif %} /> {{ each }}</a>
+                        <label class="dropdown-item">
+                            <input type="checkbox" name="FiscalYYYYListFilter" value="{{ each }}" {% if each|stringformat:"i" in ctx_fy_list_filter %}checked{% endif %} />
+                            {{ each }}
+                        </label>
                     {% endfor %}
 
                     <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
@@ -182,7 +185,7 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
                 <div class="scrollable-menu">
                     {% for each in uniq_months %}
-                    <a class="dropdown-item">
+                    <label class="dropdown-item">
                         <input type="checkbox" name="MMListFilter" value="{{ each.year_month__mm }}" {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}checked{% endif %} />
                         {% if each.year_month__mm == 1 %}
                         Jan
@@ -211,7 +214,7 @@
                         {% else %}
                         Unrecognized Month
                         {% endif %}
-                    </a>
+                    </label>
                     {% endfor %}
 
                     <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
@@ -251,6 +254,7 @@
     </div>
 </div>
 <!--End Dropdown-->
+
 <!--WebGrid-->
 <div>
     <table class="table table-striped table-hover">
