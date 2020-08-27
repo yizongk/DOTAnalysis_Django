@@ -209,3 +209,14 @@ SQLServerUID =... # If UseWinAuth is set to True, you should still set this vari
 SQLServerPWD =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 UseWinAuth =... # Boolean
 ```
+
+# Performance Issue
+It seems like the python lib openpyxl doesn't work well with Django. I have tried add the following to my views.py
+```
+from openpyxl import Workbook
+```
+This cause all pages on that views.py to take forever to load. In fact, it never finish loading at all.
+
+Like this stackoverflow question: https://stackoverflow.com/questions/41837926/why-does-openpyxl-take-forever-to-import-in-django
+
+So don't use openpyxl til you figure out a solution to make it work.

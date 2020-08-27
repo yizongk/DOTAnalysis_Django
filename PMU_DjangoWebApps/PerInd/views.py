@@ -8,7 +8,6 @@ from datetime import datetime
 from django.utils import timezone
 import pytz # For converting datetime objects from one timezone to another timezone
 from django.db.models import Q
-from openpyxl import Workbook
 # Create your views here.
 
 def get_user_category_permissions(username):
