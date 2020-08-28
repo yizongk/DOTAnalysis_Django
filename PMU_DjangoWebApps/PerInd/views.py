@@ -456,11 +456,54 @@ def SavePerIndDataApi(request):
     })
 
 # Post request
-def GetXlsx(request):
+def GetCsvApi(request):
     """
     Download WebGrid view with all current context as xlsx.
     Expects all the filter and sort context in the request. (Don't need pagination context)
     """
-    id = request.POST.get('id', '')
+    import csv
+    # from io import BytesIO
+    from io import StringIO
+
+    # dummy_in_mem_file = BytesIO()
+    dummy_in_mem_file = StringIO()
+    # response = HttpResponse(content_type='text/csv')
+    # response['Content-Disposition'] = 'attachment; filename="test.csv"'
+
+
+    # Collect GET url parameter info
+    req_sort_dir = ""
+    req_sort_by = ""
+
+    temp_sort_dir = request.POST.get('SortDir')
+    if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
+        req_sort_dir = temp_sort_dir
+
+    temp_sort_by = request.POST.get('SortBy')
+    if (temp_sort_by is not None and temp_sort_by != ''):
+        req_sort_by = temp_sort_by
+
+    req_title_list_filter = request.POST.getlist('TitleListFilter[]')
+    req_yr_list_filter = request.POST.getlist('YYYYListFilter[]')
+    req_mn_list_filter = request.POST.getlist('MMListFilter[]')
+    req_fy_list_filter = request.POST.getlist('FiscalYYYYListFilter[]')
+
+    print("req_sort_dir: {}".format(req_sort_dir))
+    print("req_sort_by: {}".format(req_sort_by))
+    print("req_title_list_filter: {}".format(req_title_list_filter))
+    print("req_yr_list_filter: {}".format(req_yr_list_filter))
+    print("req_mn_list_filter: {}".format(req_mn_list_filter))
+    print("req_fy_list_filter: {}".format(req_fy_list_filter))
 
     # Authenticate user
+
+    writer = csv.writer(dummy_in_mem_file)
+    writer.writerow(['col1', 'col2'])
+    writer.writerow(['hi', 'there'])
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "Success, check returned variable post_data for the csv file",
+        "post_data": dummy_in_mem_file.getvalue(),
+    })
+    # return response

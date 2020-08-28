@@ -13,5 +13,6 @@ urlpatterns = [
     path('webgrid', WebGridPageView.as_view(), name='webgrid_view'),
     # path('webgrid', views.webgrid_view, name='webgrid_view'),
     path('save_perind_data_api', views.SavePerIndDataApi, name='save_perind_data_api'),
+    path('get_csv_cur_ctx_api', views.GetCsvApi, name='get_csv_cur_ctx_api'),
 
 ]

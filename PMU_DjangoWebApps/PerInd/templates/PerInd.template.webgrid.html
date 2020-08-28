@@ -384,51 +384,15 @@
 <!--End WebGrid-->
 
 <!--Miscellaneous-->
-<button id="convert_xlsx_button" onclick="downloadWebGridAsXlsx('WebGridTable')">Create Xlsx</button>
+<button id="convert_xlsx_button">Create Xlsx</button>
 <!--End Miscellaneous-->
 {% endblock content %}
 
 {% block custom_js %}
 <!--JS for exporting html table to xlsx-->
-<script type="text/javascript" src={% static 'PMU_DjangoWebApps/js/xlsx.full.min.js' %}></script>
 <script type="text/javascript" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
 
 <script>
-    function s2ab(s) {
-        var buf = new ArrayBuffer(s.length);
-        var view = new Uint8Array(buf);
-        for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-        return buf;
-    };
-
-    function downloadWebGridAsXlsx(tableId) {
-        var wb = XLSX.utils.table_to_book(
-            document.getElementById(tableId),
-            {
-                sheet: "Sheet JS"
-            }
-        );
-
-        var wbout = XLSX.write(
-            wb,
-            {
-                bookType: 'xlsx',
-                bookSST: true,
-                type: 'binary'
-            }
-        )
-
-        saveAs(
-            new Blob(
-                [s2ab(wbout)],
-                {
-                    type: "application/octet-stream"
-                }
-            ),
-            'test.xlsx'
-        );
-    };
-
     $(document).ready(function () {
         $(document).on("dblclick", ".editable", function () {
             enterCellEditMode($(this))
@@ -533,17 +497,95 @@
                 finishCellEditMode(td_node);
 
                 return true;
-            }) // @TODO FOR TOMORROW< FIX THIS, when you turn off server, but still edit webgrid, make sure somehow the response is like server offline or not found!
+            })
             .fail(function (jqXHR) {
                 td_node.html(old_val);
-                // for (var x in jqXHR) {
-                //     console.log(`Property check-> ${x}: ${jqXHR[x]}`)
-                // }
-                // var errorMessage = jqXHR.status + ': ' + jqXHR.responseXML
-                var errorMessage = "Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov"
+                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
                 setDatabaseStatus(good = false, msg = errorMessage);
                 finishCellEditMode(td_node);
 
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                return false;
+            });
+        };
+
+        $('#convert_xlsx_button').click(function() {
+            downloadWebGridAsCsv()
+        });
+
+        // Taken from https://stackoverflow.com/questions/13405129/javascript-create-and-save-file, works very well, but I will use FileSaver.js as it's a community developed: https://github.com/eligrey/FileSaver.js/
+        //function download(data, filename, type) {
+        //    var file = new Blob([data], {type: type});
+        //    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        //        window.navigator.msSaveOrOpenBlob(file, filename);
+        //    else { // Other
+        //        var a = document.createElement("a"),
+        //                url = URL.createObjectURL(file);
+        //        a.href = url;
+        //        a.download = filename;
+        //        document.body.appendChild(a);
+        //        a.click();
+        //        setTimeout(function() {
+        //            document.body.removeChild(a);
+        //            window.URL.revokeObjectURL(url);
+        //        }, 0);
+        //    }
+        //};
+
+        function s2ab(s) {
+            var buf = new ArrayBuffer(s.length);
+            var view = new Uint8Array(buf);
+            for (var i=0; i<s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+        };
+
+        function downloadWebGridAsCsv() {
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+            $.ajax({
+                url: "/PerInd/get_csv_cur_ctx_api",
+                type: "POST",
+                data: {
+                    SortDir: "{{ sort_dir }}",
+                    SortBy: "{{ sort_by }}",
+                    TitleListFilter: {{ ctx_title_list_filter|safe }},
+                    YYYYListFilter: {{ ctx_yr_list_filter|safe }},
+                    MMListFilter: {{ ctx_mn_list_filter|safe }},
+                    FiscalYYYYListFilter: {{ ctx_fy_list_filter|safe }},
+                },
+            })
+            .done(function (json_response) {
+                console.log("JSON RESPONSE", json_response);
+                if (json_response["post_success"] == false) {
+                    console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                } else { // Api call successful
+                    // Initiate download
+                    // download(data=json_response["post_data"], filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
+
+                    // From FileSaver.js
+                    saveAs(
+                        new Blob(
+                            [s2ab(json_response["post_data"])],
+                            {
+                                type: "application/octet-stream"
+                            }
+                        ),
+                        'PerformanceIndicatorData.csv'
+                    );
+                }
+                return true;
+            })
+            .fail(function (jqXHR) {
+                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
                 console.log(`Ajax Post: Error Occured: ${errorMessage}`);
                 alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
                 return false;
