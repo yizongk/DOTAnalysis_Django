@@ -157,3 +157,24 @@ class IndicatorData(models.Model):
         managed = False
         db_table = 'Indicator_Data'
         ordering = ['indicator__indicator_title', 'year_month__yyyy', 'year_month__mm']
+
+
+"""
+CREATE TABLE Admins (
+	[Admin_ID] int NOT NULL IDENTITY PRIMARY KEY,
+	[User_ID] int NOT NULL FOREIGN KEY REFERENCES Users([User_ID]),
+	[Active] bit NOT NULL,
+    CONSTRAINT [AK__Admins__User_ID] UNIQUE (User_ID)
+)
+
+INSERT INTO dbo.Admins
+([User_ID], [Active]) VALUEs (67, 1)
+"""
+class Admins(models.Model):
+    admin_id = models.AutoField(db_column='Admin_ID', primary_key=True)  # Field name made lowercase.
+    user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)  # Field name made lowercase.
+    active = models.BooleanField(db_column='Active', blank=False, null=False)  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'Admins'

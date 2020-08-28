@@ -10,6 +10,24 @@ import pytz # For converting datetime objects from one timezone to another timez
 from django.db.models import Q
 # Create your views here.
 
+def get_admin_category_permissions():
+    try:
+        user_permissions_list = Category.objects.all()
+        return {
+            "success": True,
+            "pk_list": [x.category_id for x in user_permissions_list],
+            "err": '',
+            "category_names": [x.category_name for x in user_permissions_list],
+        }
+    except Exception as e:
+        print("Exception: get_user_category_permissions(): {}".format(e))
+        return {
+            "success": False,
+            "err": "Exception: get_user_category_permissions(): {}".format(e),
+            "pk_list": [],
+            "category_names": [],
+        }
+
 def get_user_category_permissions(username):
     try:
         user_permissions_list = UserPermissions.objects.filter(user__login=username)
@@ -26,6 +44,29 @@ def get_user_category_permissions(username):
             "err": "Exception: get_user_category_permissions(): {}".format(e),
             "pk_list": [],
             "category_names": [],
+        }
+
+# Check if remote user is admin and is active
+def user_is_active_admin(username):
+    try:
+        admin_query = Admins.objects.filter(
+            user__login=username,
+            active=True, # Filters for active Admins
+        )
+        if admin_query.count() > 0:
+            return {
+                "success": True,
+                "err": "",
+            }
+        return {
+            "success": False,
+            "err": '{} is not an active Admin'.format(username),
+        }
+    except Exception as e:
+        print("Exception: user_is_active_admin(): {}".format(e))
+        return {
+            "success": None,
+            "err": 'Exception: user_is_active_admin(): {}'.format(e),
         }
 
 # Given a record id, checks if user has permission to edit the record
@@ -63,7 +104,7 @@ def user_has_permission_to_edit(username, record_id):
     except Exception as e:
         print("Exception: user_has_permission_to_edit(): {}".format(e))
         return {
-            "success": False,
+            "success": None,
             "err": 'Exception: user_has_permission_to_edit(): {}'.format(e),
         }
 
@@ -116,6 +157,8 @@ class WebGridPageView(generic.ListView):
     mm_sort_anchor_GET_param = ""
     fy_yyyy_sort_anchor_GET_param = ""
 
+    client_is_admin = False
+
     def get_queryset(self):
         
         # Collect GET url parameter info
@@ -133,14 +176,34 @@ class WebGridPageView(generic.ListView):
         self.req_fy_list_filter = self.request.GET.getlist('FiscalYYYYListFilter')
 
         # Get list authorized Categories of Indicator Data, and log the category_permissions
-        user_cat_permissions = get_user_category_permissions(self.request.user)
-        if user_cat_permissions["success"] == False:
+        is_admin = user_is_active_admin(self.request.user)
+        if is_admin["success"] == True:
+            # Is admin, so unrestricted list of cetegories
+            user_cat_permissions = get_admin_category_permissions()
+            self.client_is_admin = True
+        elif is_admin["success"] == False:
+            # If not admin, do standard filter with categories
+            user_cat_permissions = get_user_category_permissions(self.request.user)
+            self.client_is_admin = False
+        elif is_admin["success"] is None:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_admin["err"])
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        if user_cat_permissions["success"] == True:
+            category_pk_list = user_cat_permissions["pk_list"]
+            self.category_permissions = user_cat_permissions["category_names"]
+        elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
             print(self.err_msg)
             return IndicatorData.objects.none()
-        category_pk_list = user_cat_permissions["pk_list"]
-        self.category_permissions = user_cat_permissions["category_names"]
+        else:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
+            print(self.err_msg)
+            return IndicatorData.objects.none()
 
         # Default filters on the WebGrid dataset
         try:
@@ -345,6 +408,8 @@ class WebGridPageView(generic.ListView):
 
             context["ctx_pagination_param"] = self.ctx_pagination_param
 
+            contest["client_is_admin"] = self.client_is_admin
+
             return context
         except Exception as e:
             self.req_success = False
@@ -374,6 +439,8 @@ class WebGridPageView(generic.ListView):
             context["fy_yyyy_sort_anchor_GET_param"] = ""
 
             context["ctx_pagination_param"] = ""
+
+            contest["client_is_admin"] = False
             return context
 
 # Post request
