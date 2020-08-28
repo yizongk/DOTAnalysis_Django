@@ -384,7 +384,7 @@
 <!--End WebGrid-->
 
 <!--Miscellaneous-->
-<button id="convert_xlsx_button">Create Xlsx</button>
+<button class="btn btn-light-green" id="convert_xlsx_button">Download table as csv</button>
 <!--End Miscellaneous-->
 {% endblock content %}
 
@@ -480,7 +480,7 @@
                 },
             })
             .done(function (json_response) {
-                console.log("JSON RESPONSE", json_response);
+                // console.log("JSON RESPONSE", json_response);
                 if (json_response["post_success"] == false) {
                     td_node.html(old_val);
                     console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
@@ -563,7 +563,7 @@
                 },
             })
             .done(function (json_response) {
-                console.log("JSON RESPONSE", json_response);
+                // console.log("JSON RESPONSE", json_response);
                 if (json_response["post_success"] == false) {
                     console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
                     alert(`Something went wrong trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);

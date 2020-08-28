@@ -211,7 +211,7 @@ class WebGridPageView(generic.ListView):
                 qs = Q()
                 for each_fiscal_yr in self.req_fy_list_filter:
                     each_fiscal_yr = int(each_fiscal_yr)
-                    # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1. 
+                    # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1.
                     # In other words, any year x with month in [7,8,9,10,11,12] is FY = x+1, and any year x with month in [1,2,3,4,5,6] is FY = x
                     qs = qs | ( ( Q(year_month__mm__in=[1,2,3,4,5,6]) & Q(year_month__yyyy=each_fiscal_yr) ) | ( Q(year_month__mm__in=[7,8,9,10,11,12]) & Q(year_month__yyyy=each_fiscal_yr-1) ) )
                 indicator_data_entries = indicator_data_entries.filter(qs)
@@ -462,14 +462,10 @@ def GetCsvApi(request):
     Expects all the filter and sort context in the request. (Don't need pagination context)
     """
     import csv
-    # from io import BytesIO
     from io import StringIO
 
-    # dummy_in_mem_file = BytesIO()
     dummy_in_mem_file = StringIO()
-    # response = HttpResponse(content_type='text/csv')
-    # response['Content-Disposition'] = 'attachment; filename="test.csv"'
-
+    csv_queryset = None
 
     # Collect GET url parameter info
     req_sort_dir = ""
@@ -495,15 +491,179 @@ def GetCsvApi(request):
     print("req_mn_list_filter: {}".format(req_mn_list_filter))
     print("req_fy_list_filter: {}".format(req_fy_list_filter))
 
-    # Authenticate user
+    # Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: SavePerIndDataApi(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
 
+    # Get list authorized Categories of Indicator Data, and log the category_permissions
+    user_cat_permissions = get_user_category_permissions(request.user)
+    if user_cat_permissions["success"] == False:
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "GetCsvApi(): Fail to get a list of authorized category permissions",
+            "post_data": None,
+        })
+    category_pk_list = user_cat_permissions["pk_list"]
+
+    # Default filters on the WebGrid dataset
+    try:
+        csv_queryset = IndicatorData.objects.filter(
+            indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
+            indicator__active=True, # Filters for active Indicator titles
+            year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+        )
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "GetCsvApi(): Failed to get any data from queryset: {}\n\nErr Msg: {}".format(user_perm_chk["err"], e),
+            "post_data": None,
+        })
+
+    # Query for the queryset with matching filter and sort criteria
+    ## Filter by Titles
+    if len(req_title_list_filter) >= 1:
+        try:
+            qs = Q()
+            for i in req_title_list_filter:
+                qs = qs | Q(indicator__indicator_title=i)
+            csv_queryset = csv_queryset.filter(qs)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "GetCsvApi(): Failed to filter Titles from queryset\n\nErr Msg: {}".format(e),
+                "post_data": None,
+            })
+    ## Filter by YYYYs
+    if len(req_yr_list_filter) >= 1:
+        try:
+            qs = Q()
+            for i in req_yr_list_filter:
+                qs = qs | Q(year_month__yyyy=i)
+            csv_queryset = csv_queryset.filter(qs)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "GetCsvApi(): Failed to filter YYYY from queryset\n\nErr Msg: {}".format(e),
+                "post_data": None,
+            })
+    ## Filter by MMs
+    if len(req_mn_list_filter) >= 1:
+        try:
+            qs = Q()
+            for i in req_mn_list_filter:
+                qs = qs | Q(year_month__mm=i)
+            csv_queryset = csv_queryset.filter(qs)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "GetCsvApi(): Failed to filter MM from queryset\n\nErr Msg: {}".format(e),
+                "post_data": None,
+            })
+    ## Filter by Fiscal Years
+    if len(req_fy_list_filter) >= 1:
+        try:
+            qs = Q()
+            for each_fiscal_yr in req_fy_list_filter:
+                each_fiscal_yr = int(each_fiscal_yr)
+                # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1.
+                # In other words, any year x with month in [7,8,9,10,11,12] is FY = x+1, and any year x with month in [1,2,3,4,5,6] is FY = x
+                qs = qs | ( ( Q(year_month__mm__in=[1,2,3,4,5,6]) & Q(year_month__yyyy=each_fiscal_yr) ) | ( Q(year_month__mm__in=[7,8,9,10,11,12]) & Q(year_month__yyyy=each_fiscal_yr-1) ) )
+            csv_queryset = csv_queryset.filter(qs)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "GetCsvApi(): Failed to filter FY from queryset\n\nErr Msg: {}".format(e),
+                "post_data": None,
+            })
+
+    # Filter dataset from sort direction and sort column
+    try:
+        if req_sort_by == 'year_month__fiscal_yyyy':
+            if req_sort_dir == "asc":
+                csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy)
+            elif req_sort_dir == "desc":
+                csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
+            else:
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "GetCsvApi(): Failed to sort by FY from queryset, unrecognize req_sort_dir: {}".format(req_sort_dir),
+                    "post_data": None,
+                })
+        # Default sort
+        elif req_sort_by == '':
+            # Default sort it by Fiscal Year Desc and to show latest year first then to older years
+            csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
+        else:
+            if req_sort_dir == "asc":
+                csv_queryset = csv_queryset.order_by(req_sort_by)
+            elif req_sort_dir == "desc":
+                csv_queryset = csv_queryset.order_by('-{}'.format(req_sort_by))
+            else:
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "GetCsvApi(): Failed to sort by FY from queryset, unrecognize req_sort_dir: {}".format(req_sort_dir),
+                    "post_data": None,
+                })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "GetCsvApi(): Failed to sort from queryset\n\nErr Msg: {}".format(e),
+            "post_data": None,
+        })
+
+    # Convert to CSV
     writer = csv.writer(dummy_in_mem_file)
-    writer.writerow(['col1', 'col2'])
-    writer.writerow(['hi', 'there'])
+    writer.writerow(['Indicator Title', 'Fiscal Year', 'Month', 'Indicator Value', 'Updated Date', 'Last Updated By', 'Category',])
+    for each in csv_queryset:
+        if each.year_month.mm == 1:
+            month_name = 'Jan'
+        elif each.year_month.mm == 2:
+            month_name = 'Feb'
+        elif each.year_month.mm == 3:
+            month_name = 'Mar'
+        elif each.year_month.mm == 4:
+            month_name = 'Apr'
+        elif each.year_month.mm == 5:
+            month_name = 'May'
+        elif each.year_month.mm == 6:
+            month_name = 'Jun'
+        elif each.year_month.mm == 7:
+            month_name = 'Jul'
+        elif each.year_month.mm == 8:
+            month_name = 'Aug'
+        elif each.year_month.mm == 9:
+            month_name = 'Sep'
+        elif each.year_month.mm == 10:
+            month_name = 'Oct'
+        elif each.year_month.mm == 11:
+            month_name = 'Nov'
+        elif each.year_month.mm == 12:
+            month_name = 'Dec'
+        else:
+            month_name = 'Unknown Month'
+
+        eachrow = [
+            each.indicator,
+            each.year_month.fiscal_yyyy,
+            month_name,
+            each.val,
+            each.updated_date.strftime("%m/%d/%Y"),
+            each.update_user,
+            each.indicator.category.category_name,
+        ]
+        writer.writerow(eachrow)
+        # print(eachrow)
 
     return JsonResponse({
         "post_success": True,
-        "post_msg": "Success, check returned variable post_data for the csv file",
+        "post_msg": "GetCsvApi(): Success, check for variable 'post_data' in the response JSON for the csv file",
         "post_data": dummy_in_mem_file.getvalue(),
     })
-    # return response
