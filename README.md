@@ -208,6 +208,165 @@ SQLServerDbName =...
 SQLServerUID =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 SQLServerPWD =... # If UseWinAuth is set to True, you should still set this variable to empty string, even though this variable won't be used, because it will still be read by the program
 UseWinAuth =... # Boolean
+HostList = [  # A list of string containing ip address that will be set to settings.py's ALLOWED_HOSTS variable
+    '127.0.0.1',
+    '...',
+]
+```
+
+# Setting up Apache config file, and an example
+## Background:
+Make sure to use VirtualHost in the config to server your django webapp, especially if you are planning to server PHP, Django and other framework with the same Apache instance.
+
+Look at this ref: https://stackoverflow.com/questions/1020390/how-do-i-run-django-and-php-together-on-one-apache-server
+
+and: https://www.youtube.com/watch?v=EwUbAiaUFgg
+
+Main point is that WSGIScriptAlias in the config is the thing that is causing Django to take over the entire Apache server, so any other framework like PHP won't run in the server at all.
+
+The solution is to place the WSGIScriptAlias and the Django config in its own VirtualHost part of the Apache Server:
+```
+Listen 8080     # To tell Apache to listen to port 8080
+...
+<VirtualHost *:8080>
+    WSGIScriptAlias / "C:/path/to/wsgi.py"
+    ...Django Configs...
+</VirtualHost>
+```
+Now if you open www.yourwebsite.com:8080 you will be able to access your Django webapp
+
+If you have your other framework like PHP in the same httpd.conf coded without VirtualHost, you can access those framework just by www.yourwebsite.com
+
+Or if your other frameowkr is config also as a VirutalHost like:
+```
+Listen 8081     # To tell Apache to listen to port 8081
+...
+<VirtualHost *:8081>
+    ...PHP Configs...
+</VirtualHost>
+```
+You can access your PHP with www.yourwebsite.com:8081
+
+## Example:
+```
+# Make sure any LoadModule directives don't load the same module twice, this can cause error. Check authnz_sspi_module modules/mod_authnz_sspi.so and wsgi_module modules/mod_wsgi.so arn't loaded already, if they are loaded already in a earlier line in the httpd.config, remove or comment out the appropriate LoadModule directive in the example
+
+Listen 8080
+######### BEGIN For DJANGO Projects #########
+LoadModule authnz_sspi_module modules/mod_authnz_sspi.so
+
+LoadModule wsgi_module modules/mod_wsgi.so
+<IfModule wsgi_module>
+    # Filling WSGIPythonPath is important, cuz you might run into this error if not set, https://github.com/GrahamDumpleton/mod_wsgi/issues/353
+    WSGIPythonPath "C:/xampp/htdocs/PMU_DjangoWebApps"
+    WSGIPythonHome "C:/Users/ykuang/Documents/python38"
+
+    <VirtualHost *:8080>
+        WSGIScriptAlias / "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/PMU_DjangoWebApps/wsgi.py"
+        <Directory "C:/xampp/htdocs/PMU_DjangoWebApps">
+            <Files wsgi.py>
+                Order deny,allow
+                Allow from all
+
+                AuthName "DOT Intranet"
+                AuthType SSPI
+                SSPIAuth On
+                SSPIAuthoritative Off
+                SSPIOfferBasic Off
+                SSPIOmitDomain On
+                Require valid-user
+
+            </Files>
+        </Directory>
+    </VirtualHost>
+    Alias /static/ "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/"
+    <Directory "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/">
+        Require all granted
+    </Directory>
+</IfModule>
+######### END For DJANGO Projects #########
+```
+
+## Note (Related to SSL and self signed certificate to allow the web app to use https protocol):
+Some port number will cause apache to crash. If you run httpd.exe in apache/bin, and it tells you that:
+```
+sock: could not bind to address ...
+```
+It's cuz that port number is already being in used. Use another port number
+
+When running with VirtualHost. You may encounter the following errors:
+
+Firefox: Secure Connection Failed ... Error code: SSL_ERROR_RX_RECORD_TOO_LONG
+
+Chrome: This site can't provide a secure connection ... ERR_SSL_PROTOCOL_ERROR
+
+Edge: Can't connect securely to this page ... outdated or unsafe TSL security
+
+IE: Can't connect securely to this page ... outdated or unsafe TSL security
+
+It's cuz you are using https://www.yourwebsite.com:portnum, with https (secure)
+Try using this http://www.yourwebsite.com:portnum, with http (It's known that http is not as secure as https, but this web app is operated in an intranet sitting behind a firewall, the risk is not as high)
+
+To fix this issue once and for all, buy a SSL cert or create your own sign signed certificate. The instructions for a self signed certificate and how to configure apache to use the self signed certificate:
+
+ref: https://www.acunetix.com/blog/articles/setting-up-self-signed-tls-ssl-certificate/
+
+some links to window pre-compiled binaries of OpenSSL
+
+http://gnuwin32.sourceforge.net/packages/openssl.htm
+
+The link that this django web app used for its apache self signed cert
+
+https://sourceforge.net/projects/gnuwin32/
+
+After you download and extract the folder. Place it where you want to place it, and then add that path ("/yourpath/to/openssl/bin", like "C:\Users\...\Desktop\openssl-0.9.8h-1-bin\bin") to the PATH.
+
+Add an env variable call OPENSSL_CONF with the path that points to your openssl.cnf that comes with what you have just downloaded and extracted (It's in the whatyoujustextracted/share/openssl.cnf).
+
+OPENSSL_CONF: "/yourpath/to/openssl/bin" like "C:\Users\...\Desktop\openssl-0.9.8h-1-bin\share\openssl.cnf"
+
+If you don't add OPENSSL_CONF to your env varibles. You will get the following error (https://stackoverflow.com/questions/14459078/unable-to-load-config-info-from-usr-local-ssl-openssl-cnf-on-windows):
+
+Unable to load config info from /usr/local/ssl/openssl.cnf
+
+After you have downloaded openssl, and run it without problem, run the following command to create your cert and key, replace mysitename with your web app name:
+```
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mysitename.key -out mysitename.crt
+```
+
+in the dir that you ran the command, you will get two files:
+mysitename.key and mysitename.crt. Move these two files to where you want to store your certs.
+
+Then in your Apache httpd.conf add the following lines to your VirtualHost config of this Djanog web app:
+```
+<VirtualHost ...>
+    SSLEngine on
+    SSLCertificateFile "C:/xampp/apache/certs/PMU_DjangoWebApps.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/certs/PMU_DjangoWebApps.key"
+    ...
+    <Directory ...>
+    ...
+    </Directory>
+</VirtualHost>
+```
+
+The bug should be fix now.
+
+OR instead of creating your own self signed cert, just use the one that Apache provides:
+
+It's stored in C:\xampp\apache\conf\ssl.crt\server.crt and C:\xampp\apache\conf\ssl.key\server.key
+
+and in the httpd.conf:
+```
+<VirtualHost ...>
+    SSLEngine on
+    SSLCertificateFile "C:/xampp/apache/conf/ssl.crt/server.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/conf/ssl.key/server.key"
+    ...
+    <Directory ...>
+    ...
+    </Directory>
+</VirtualHost>
 ```
 
 # Performance Issue
