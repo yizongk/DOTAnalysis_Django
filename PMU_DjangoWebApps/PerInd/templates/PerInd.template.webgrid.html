@@ -31,7 +31,7 @@
         </div>
     <!-- / Collapsible element -->
     </div>
-    <div><br>Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
+    <div><br>{% if client_is_admin %}(Admin) {% endif %}Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
     <!-- <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div> -->
     <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
 </div>
@@ -80,6 +80,12 @@
                             <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
                         {% endif %}
                     {% endfor %}
+                    <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
+                    {% for each in uniq_categories %}
+                        {% if each.indicator__category__category_name in ctx_cat_list_filter %}
+                            <input type="hidden" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" />
+                        {% endif %}
+                    {% endfor %}
                     <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                     <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
                 </div>
@@ -125,6 +131,12 @@
                         <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
                     {% endif %}
                 {% endfor %}
+                <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
+                {% for each in uniq_categories %}
+                    {% if each.indicator__category__category_name in ctx_cat_list_filter %}
+                        <input type="hidden" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" />
+                    {% endif %}
+                {% endfor %}
                 <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                 <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
                 <button type="submit" class="btn btn-info">Filter</button>
@@ -164,6 +176,12 @@
                     {% for each in uniq_months %}
                         {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
                             <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
+                    {% for each in uniq_categories %}
+                        {% if each.indicator__category__category_name in ctx_cat_list_filter %}
+                            <input type="hidden" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" />
                         {% endif %}
                     {% endfor %}
                     <input type="hidden" name="SortBy" value="{{ sort_by }}" />
@@ -236,6 +254,12 @@
                             <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
                         {% endif %}
                     {% endfor %}
+                    <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
+                    {% for each in uniq_categories %}
+                        {% if each.indicator__category__category_name in ctx_cat_list_filter %}
+                            <input type="hidden" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" />
+                        {% endif %}
+                    {% endfor %}
                     <input type="hidden" name="SortBy" value="{{ sort_by }}" />
                     <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
                 </div>
@@ -246,6 +270,57 @@
             </div>
         </form>
     </div>
+
+    {% if client_is_admin %}
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Category
+        </button>
+        <form>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                <div class="scrollable-menu">
+                    {% for each in uniq_categories %}
+                        <label class="dropdown-item">
+                            <input type="checkbox" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" {% if each.indicator__category__category_name in ctx_cat_list_filter %}checked{% endif %} />
+                            {{ each.indicator__category__category_name }}
+                        </label>
+                    {% endfor %}
+
+                    <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
+                    {% for each in uniq_titles %}
+                        {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                            <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
+                    {% for each in uniq_years %}
+                        {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                            <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
+                    {% for each in uniq_months %}
+                        {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                            <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
+                    {% for each in uniq_fiscal_years %}
+                        {% if each|stringformat:"i" in ctx_fy_list_filter %}
+                            <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <input type="hidden" name="SortBy" value="{{ sort_by }}" />
+                    <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
+                </div>
+                <div class="dropdown-divider"></div>
+                <div>
+                    <button type="submit" class="btn btn-info">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
 
     <!-- Clear All Dropdown Button -->
     <div class="dropdown">
@@ -311,7 +386,20 @@
                 <th>Indicator Value</th>
                 <th>Updated Date</th>
                 <th>Last Updated By</th>
-                <th>Category</th>
+                <th>
+                    {% if client_is_admin %}
+                        <a class="blue-text" href="?{{ cat_sort_anchor_GET_param }}">
+                            Category
+                            {% if sort_by == 'indicator__category__category_name' and sort_dir == 'asc' %}
+                                <i class="fas fa-caret-up"></i>
+                            {% elif sort_by == 'indicator__category__category_name' and sort_dir == 'desc' %}
+                                <i class="fas fa-caret-down"></i>
+                            {% endif %}
+                        </a>
+                    {% else %}
+                        Category
+                    {% endif %}
+                </th>
             </tr>
         </thead>
         <tbody>
