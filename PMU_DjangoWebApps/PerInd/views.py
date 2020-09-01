@@ -72,7 +72,31 @@ def user_is_active_admin(username):
 # Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
     try:
-        category_info = get_user_category_permissions(username)
+        is_admin = user_is_active_admin(username)
+        if is_admin["success"] == True:
+            category_info = get_admin_category_permissions()
+        elif is_admin["success"] == False:
+            # If not admin, do standard filter with categories
+            category_info = get_user_category_permissions(username)
+        elif is_admin["success"] is None:
+            return {
+                    "success": False,
+                    "err": "Permission denied: Cannot determine if user is Admin or not: {}".format(is_admin["err"]),
+                }
+
+        if category_info["success"] == True:
+            category_pk_list = category_info["pk_list"]
+        elif (category_info["success"] == False) or (category_info["success"] is None):
+            return {
+                "success": False,
+                "err": "Permission denied: user_cat_permissions['success'] has an unrecognized value: {}".format(category_info['err']),
+            }
+        else:
+            return {
+                "success": False,
+                "err": "Permission denied: user_cat_permissions['success'] has an unrecognized value: {}".format(category_info['success']),
+            }
+
         category_id_permission_list = category_info["pk_list"]
         record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) # Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
         record_category_id = record_category_info["indicator__category__category_id"]
