@@ -139,13 +139,13 @@ class WebGridPageView(generic.ListView):
 
     req_sort_dir = ""
     req_sort_by = ""
-    
+
     uniq_titles = []
     uniq_years = []
     uniq_fiscal_years = []
     uniq_months = []
     uniq_categories = []
-    
+
     req_title_list_filter = []
     req_yr_list_filter = [] # Calendar Year
     req_mn_list_filter = []
@@ -153,7 +153,7 @@ class WebGridPageView(generic.ListView):
     req_cat_list_filter = [] # Category
 
     ctx_pagination_param = ""
-    
+
     title_sort_anchor_GET_param = ""
     yyyy_sort_anchor_GET_param = ""
     mm_sort_anchor_GET_param = ""
@@ -163,7 +163,7 @@ class WebGridPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        
+
         # Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -172,7 +172,7 @@ class WebGridPageView(generic.ListView):
         temp_sort_by = self.request.GET.get('SortBy')
         if (temp_sort_by is not None and temp_sort_by != ''):
             self.req_sort_by = temp_sort_by
-           
+
         self.req_title_list_filter = self.request.GET.getlist('TitleListFilter')
         self.req_yr_list_filter = self.request.GET.getlist('YYYYListFilter')
         self.req_mn_list_filter = self.request.GET.getlist('MMListFilter')
