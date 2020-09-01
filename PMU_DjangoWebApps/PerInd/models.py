@@ -83,23 +83,29 @@ class ValMultiplier(models.Model):
     def __str__(self):
         return self.multiplier_scale
 
-
+"""
+ALTER TABLE Year_Month
+ADD [Fiscal_Year] INT DEFAULT 0 NOT NULL
+GO
+UPDATE Year_Month
+SET [Fiscal_Year] = (
+	CASE
+		WHEN MM IN (1, 2, 3, 4, 5, 6) THEN [YYYY]
+		WHEN MM IN (7, 8, 9, 10, 11, 12) THEN [YYYY] + 1
+		ELSE 0
+	END
+)
+GO
+"""
 class YearMonth(models.Model):
     year_month_id = models.AutoField(db_column='Year_Month_ID', primary_key=True)  # Field name made lowercase.
     yyyy = models.IntegerField(db_column='YYYY')  # Field name made lowercase.
     mm = models.IntegerField(db_column='MM')  # Field name made lowercase.
+    fiscal_year = models.IntegerField(db_column='Fiscal_Year')  # Field name made lowercase.
 
     class Meta:
         managed = False
         db_table = 'Year_Month'
-
-    @property
-    def fiscal_yyyy(self):
-        # NYC Govenment, a new Fiscal year starts July 1st of each year and ends on last day of June the next year. Therefore to mask Calendar Year as Fiscal Year for Jan to June, and Jul to Dec Fiscal Year = Calendar Year + 1
-        if self.mm in [1,2,3,4,5,6]:
-            return self.yyyy
-        else:
-            return self.yyyy + 1
 
 
 class UserPermissions(models.Model):

@@ -76,8 +76,8 @@
                     {% endfor %}
                     <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
                     {% for each in uniq_fiscal_years %}
-                        {% if each|stringformat:"i" in ctx_fy_list_filter %}
-                            <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
+                        {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
+                            <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
                         {% endif %}
                     {% endfor %}
                     <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
@@ -127,8 +127,8 @@
                 {% endfor %}
                 <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
                 {% for each in uniq_fiscal_years %}
-                    {% if each|stringformat:"i" in ctx_fy_list_filter %}
-                        <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
+                    {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
+                        <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
                     {% endif %}
                 {% endfor %}
                 <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
@@ -155,8 +155,8 @@
                 <div class="scrollable-menu">
                     {% for each in uniq_fiscal_years %}
                         <label class="dropdown-item">
-                            <input type="checkbox" name="FiscalYYYYListFilter" value="{{ each }}" {% if each|stringformat:"i" in ctx_fy_list_filter %}checked{% endif %} />
-                            {{ each }}
+                            <input type="checkbox" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}checked{% endif %} />
+                            {{ each.year_month__fiscal_year }}
                         </label>
                     {% endfor %}
 
@@ -250,8 +250,8 @@
                     {% endfor %}
                     <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
                     {% for each in uniq_fiscal_years %}
-                        {% if each|stringformat:"i" in ctx_fy_list_filter %}
-                            <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
+                        {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
+                            <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
                         {% endif %}
                     {% endfor %}
                     <!-- Exists to keep current Category filter context alive when submit button is click for this form -->
@@ -306,8 +306,8 @@
                     {% endfor %}
                     <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
                     {% for each in uniq_fiscal_years %}
-                        {% if each|stringformat:"i" in ctx_fy_list_filter %}
-                            <input type="hidden" name="FiscalYYYYListFilter" value="{{ each }}" />
+                        {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
+                            <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
                         {% endif %}
                     {% endfor %}
                     <input type="hidden" name="SortBy" value="{{ sort_by }}" />
@@ -348,13 +348,11 @@
                 </th>
 
                 <th>
-                    <!-- fy_yyyy_sort_anchor_GET_param's backend is sorting by Calendar Year -->
-                    <!-- It's okay to use YYYY as the sort fiscal year here, since Fiscal Year doesn't actually exists in the database model, it's hard to do the sort. And since Fiscal Year is alwaya a fix offset from Calendar Year, sorting by Calendar Year will sort the Fiscal Year correctly. In effect, we are sorting Fiscal Year by proxy(proxy through sorting Calendar Year) -->
-                    <a class="blue-text" href="?{{ fy_yyyy_sort_anchor_GET_param }}">
+                    <a class="blue-text" href="?{{ fiscal_year_sort_anchor_GET_param }}">
                         Fiscal Year
-                        {% if sort_by == 'year_month__fiscal_yyyy' and sort_dir == 'asc' %}
+                        {% if sort_by == 'year_month__fiscal_year' and sort_dir == 'asc' %}
                             <i class="fas fa-caret-up"></i>
-                        {% elif sort_by == 'year_month__fiscal_yyyy' and sort_dir == 'desc' %}
+                        {% elif sort_by == 'year_month__fiscal_year' and sort_dir == 'desc' %}
                             <i class="fas fa-caret-down"></i>
                         {% endif %}
                     </a>
@@ -406,7 +404,7 @@
             {% for entry in indicator_data_entries %}
             <tr>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
-                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="Fiscal_YYYY">{{ entry.year_month.fiscal_yyyy }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="Fiscal_YYYY">{{ entry.year_month.fiscal_year }}</td>
                 {% comment %}
                 <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
                 {% endcomment %}
@@ -647,7 +645,7 @@
                     TitleListFilter: {{ ctx_title_list_filter|safe }},
                     YYYYListFilter: {{ ctx_yr_list_filter|safe }},
                     MMListFilter: {{ ctx_mn_list_filter|safe }},
-                    FiscalYYYYListFilter: {{ ctx_fy_list_filter|safe }},
+                    FiscalYearListFilter: {{ ctx_fy_list_filter|safe }},
                 },
             })
             .done(function (json_response) {
