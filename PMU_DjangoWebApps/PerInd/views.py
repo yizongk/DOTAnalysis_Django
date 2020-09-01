@@ -183,7 +183,6 @@ class WebGridPageView(generic.ListView):
         is_admin = user_is_active_admin(self.request.user)
         if is_admin["success"] == True:
             user_cat_permissions = get_admin_category_permissions()
-
             self.client_is_admin = True
         elif is_admin["success"] == False:
             # If not admin, do standard filter with categories
@@ -230,7 +229,6 @@ class WebGridPageView(generic.ListView):
 
             self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
 
-            # self.uniq_fiscal_years = list(set([ each.year_month.fiscal_yyyy for each in indicator_data_entries ])) # set(list()) to get distinct values out of the list, but it will be unordered! But seems to work for now, since it happens to result in a sorted order, I will let this sit for now
             self.uniq_fiscal_years = indicator_data_entries.order_by('year_month__fiscal_year').values('year_month__fiscal_year').distinct()
 
             if self.client_is_admin == True:
@@ -305,7 +303,7 @@ class WebGridPageView(generic.ListView):
                     print(self.err_msg)
                     return IndicatorData.objects.none()
 
-        # Filter dataset from sort direction and sort column
+        # Sort dataset from sort direction and sort column
         try:
             # Default sort it by Fiscal Year Desc and to show latest year first then to older years
             if self.req_sort_by == '':
@@ -550,6 +548,7 @@ def GetCsvApi(request):
 
     dummy_in_mem_file = StringIO()
     csv_queryset = None
+    client_is_admin = False
 
     # Collect GET url parameter info
     req_sort_dir = ""
@@ -567,13 +566,15 @@ def GetCsvApi(request):
     req_yr_list_filter = request.POST.getlist('YYYYListFilter[]')
     req_mn_list_filter = request.POST.getlist('MMListFilter[]')
     req_fy_list_filter = request.POST.getlist('FiscalYearListFilter[]')
+    req_cat_list_filter = request.POST.getlist('CategoriesListFilter[]')
 
-    print("req_sort_dir: {}".format(req_sort_dir))
-    print("req_sort_by: {}".format(req_sort_by))
-    print("req_title_list_filter: {}".format(req_title_list_filter))
-    print("req_yr_list_filter: {}".format(req_yr_list_filter))
-    print("req_mn_list_filter: {}".format(req_mn_list_filter))
-    print("req_fy_list_filter: {}".format(req_fy_list_filter))
+    # print("req_sort_dir: {}".format(req_sort_dir))
+    # print("req_sort_by: {}".format(req_sort_by))
+    # print("req_title_list_filter: {}".format(req_title_list_filter))
+    # print("req_yr_list_filter: {}".format(req_yr_list_filter))
+    # print("req_mn_list_filter: {}".format(req_mn_list_filter))
+    # print("req_fy_list_filter: {}".format(req_fy_list_filter))
+    # print("req_cat_list_filter: {}".format(req_cat_list_filter))
 
     # Authenticate User
     remote_user = None
@@ -588,14 +589,36 @@ def GetCsvApi(request):
         })
 
     # Get list authorized Categories of Indicator Data, and log the category_permissions
-    user_cat_permissions = get_user_category_permissions(request.user)
-    if user_cat_permissions["success"] == False:
+    is_admin = user_is_active_admin(request.user)
+    if is_admin["success"] == True:
+        user_cat_permissions = get_admin_category_permissions()
+        client_is_admin = True
+    elif is_admin["success"] == False:
+        # If not admin, do standard filter with categories
+        user_cat_permissions = get_user_category_permissions(request.user)
+        client_is_admin = False
+    elif is_admin["success"] is None:
         return JsonResponse({
             "post_success": True,
-            "post_msg": "GetCsvApi(): Fail to get a list of authorized category permissions",
+            "post_msg": "GetCsvApi(): {}".format(is_admin["err"]),
             "post_data": None,
         })
-    category_pk_list = user_cat_permissions["pk_list"]
+
+    # Get list authorized Categories of Indicator Data, and log the category_permissions
+    if user_cat_permissions["success"] == True:
+        category_pk_list = user_cat_permissions["pk_list"]
+    elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "GetCsvApi(): {}".format(user_cat_permissions['err']),
+            "post_data": None,
+        })
+    else:
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "GetCsvApi(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success']),
+            "post_data": None,
+        })
 
     # Default filters on the WebGrid dataset
     try:
@@ -655,11 +678,8 @@ def GetCsvApi(request):
     if len(req_fy_list_filter) >= 1:
         try:
             qs = Q()
-            for each_fiscal_yr in req_fy_list_filter:
-                each_fiscal_yr = int(each_fiscal_yr)
-                # funky query here to implement the logic that year x jan-june, means Fiscal Year = x, and year x july-dec, means Fiscal Year = x + 1.
-                # In other words, any year x with month in [7,8,9,10,11,12] is FY = x+1, and any year x with month in [1,2,3,4,5,6] is FY = x
-                qs = qs | ( ( Q(year_month__mm__in=[1,2,3,4,5,6]) & Q(year_month__yyyy=each_fiscal_yr) ) | ( Q(year_month__mm__in=[7,8,9,10,11,12]) & Q(year_month__yyyy=each_fiscal_yr-1) ) )
+            for i in req_fy_list_filter:
+                qs = qs | Q(year_month__fiscal_year=i)
             csv_queryset = csv_queryset.filter(qs)
         except Exception as e:
             return JsonResponse({
@@ -667,24 +687,26 @@ def GetCsvApi(request):
                 "post_msg": "GetCsvApi(): Failed to filter FY from queryset\n\nErr Msg: {}".format(e),
                 "post_data": None,
             })
-
-    # Filter dataset from sort direction and sort column
-    try:
-        if req_sort_by == 'year_month__fiscal_year':
-            if req_sort_dir == "asc":
-                csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy)
-            elif req_sort_dir == "desc":
-                csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
-            else:
+    ## Filter by Categories
+    if client_is_admin == True:
+        if len(req_cat_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in req_cat_list_filter:
+                    qs = qs | Q(indicator__category__category_name=i)
+                csv_queryset = csv_queryset.filter(qs)
+            except Exception as e:
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "GetCsvApi(): Failed to sort by FY from queryset, unrecognize req_sort_dir: {}".format(req_sort_dir),
+                    "post_msg": "GetCsvApi(): Failed to filter Categories from queryset\n\nErr Msg: {}".format(e),
                     "post_data": None,
                 })
-        # Default sort
-        elif req_sort_by == '':
-            # Default sort it by Fiscal Year Desc and to show latest year first then to older years
-            csv_queryset = sorted(csv_queryset, key=lambda each_rec: each_rec.year_month.fiscal_yyyy, reverse=True)
+
+    # Sort dataset from sort direction and sort column
+    try:
+        # Default sort it by Fiscal Year Desc and to show latest year first then to older years
+        if req_sort_by == '':
+            csv_queryset = csv_queryset.order_by('-year_month__fiscal_year')
         else:
             if req_sort_dir == "asc":
                 csv_queryset = csv_queryset.order_by(req_sort_by)
@@ -693,7 +715,7 @@ def GetCsvApi(request):
             else:
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "GetCsvApi(): Failed to sort by FY from queryset, unrecognize req_sort_dir: {}".format(req_sort_dir),
+                    "post_msg": "GetCsvApi(): Failed to sort, unrecognize req_sort_dir: {}".format(req_sort_dir),
                     "post_data": None,
                 })
     except Exception as e:
@@ -736,7 +758,7 @@ def GetCsvApi(request):
 
         eachrow = [
             each.indicator,
-            each.year_month.fiscal_yyyy,
+            each.year_month.fiscal_year,
             month_name,
             each.val,
             each.updated_date.strftime("%m/%d/%Y"),
@@ -744,7 +766,6 @@ def GetCsvApi(request):
             each.indicator.category.category_name,
         ]
         writer.writerow(eachrow)
-        # print(eachrow)
 
     return JsonResponse({
         "post_success": True,
