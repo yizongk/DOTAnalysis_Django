@@ -17,6 +17,7 @@ Need SQL Server Account, need to be of the following roles:
 * db_datareader
 * db_datawriter
 * db_ddladmin (For DDL privilege, such as CREATE, DROP, ALTER TRUNCATE, and RENAME)
+* Need Default schema to be 'dbo', to allow creation of tables under the name dbo, like dbo.sessions.
 
 Notes on generating the database model from existing database
 https://dev.to/idrisrampurawala/creating-django-models-of-an-existing-db-288m
@@ -379,3 +380,15 @@ This cause all pages on that views.py to take forever to load. In fact, it never
 Like this stackoverflow question: https://stackoverflow.com/questions/41837926/why-does-openpyxl-take-forever-to-import-in-django
 
 So don't use openpyxl til you figure out a solution to make it work.
+
+# Note on python manage.py migrate
+Depending on the authentication you use, and what permissions/role you have on that SQL Server, different schema will be used to create the django tables. (Schema as in dbo.sessions or data_reader.sessions etc).
+
+If it's in the wrong schema (not dbo), you will run in SQL error like
+```
+[SQL Server]Invalid object name 'django_session']
+```
+
+So far It seems my app needs to be in dbo schema for it to compile properly.
+
+To fix this, when you edit the user's permission in SSMS, under General tab on the left side, make sure the Default schema is set to 'dbo'
