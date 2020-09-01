@@ -54,6 +54,57 @@
 <!--Dropdown-->
 <div class="container btn-group">
 
+    {% if client_is_admin %}
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Division
+        </button>
+        <form>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                <div class="scrollable-menu">
+                    {% for each in uniq_categories %}
+                        <label class="dropdown-item">
+                            <input type="checkbox" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" {% if each.indicator__category__category_name in ctx_cat_list_filter %}checked{% endif %} />
+                            {{ each.indicator__category__category_name }}
+                        </label>
+                    {% endfor %}
+
+                    <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
+                    {% for each in uniq_titles %}
+                        {% if each.indicator__indicator_title in ctx_title_list_filter %}
+                            <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
+                    {% for each in uniq_years %}
+                        {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
+                            <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
+                    {% for each in uniq_months %}
+                        {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
+                            <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
+                    {% for each in uniq_fiscal_years %}
+                        {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
+                            <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
+                        {% endif %}
+                    {% endfor %}
+                    <input type="hidden" name="SortBy" value="{{ sort_by }}" />
+                    <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
+                </div>
+                <div class="dropdown-divider"></div>
+                <div>
+                    <button type="submit" class="btn btn-info">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
     <!-- Title Dropdown -->
     <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -278,57 +329,6 @@
         </form>
     </div>
 
-    {% if client_is_admin %}
-    <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Category
-        </button>
-        <form>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                <div class="scrollable-menu">
-                    {% for each in uniq_categories %}
-                        <label class="dropdown-item">
-                            <input type="checkbox" name="CategoriesListFilter" value="{{ each.indicator__category__category_name }}" {% if each.indicator__category__category_name in ctx_cat_list_filter %}checked{% endif %} />
-                            {{ each.indicator__category__category_name }}
-                        </label>
-                    {% endfor %}
-
-                    <!-- Exists to keep current Title filter context alive when submit button is click for this form -->
-                    {% for each in uniq_titles %}
-                        {% if each.indicator__indicator_title in ctx_title_list_filter %}
-                            <input type="hidden" name="TitleListFilter" value="{{ each.indicator__indicator_title }}" />
-                        {% endif %}
-                    {% endfor %}
-                    <!-- Exists to keep current YYYY filter context alive when submit button is click for this form -->
-                    {% for each in uniq_years %}
-                        {% if each.year_month__yyyy|stringformat:"i" in ctx_yr_list_filter %}
-                            <input type="hidden" name="YYYYListFilter" value="{{ each.year_month__yyyy }}" />
-                        {% endif %}
-                    {% endfor %}
-                    <!-- Exists to keep current MM filter context alive when submit button is click for this form -->
-                    {% for each in uniq_months %}
-                        {% if each.year_month__mm|stringformat:"i" in ctx_mn_list_filter %}
-                            <input type="hidden" name="MMListFilter" value="{{ each.year_month__mm }}" />
-                        {% endif %}
-                    {% endfor %}
-                    <!-- Exists to keep current Fiscal Year filter context alive when submit button is click for this form -->
-                    {% for each in uniq_fiscal_years %}
-                        {% if each.year_month__fiscal_year|stringformat:"i" in ctx_fy_list_filter %}
-                            <input type="hidden" name="FiscalYearListFilter" value="{{ each.year_month__fiscal_year }}" />
-                        {% endif %}
-                    {% endfor %}
-                    <input type="hidden" name="SortBy" value="{{ sort_by }}" />
-                    <input type="hidden" name="SortDir" value="{{ sort_dir }}" />
-                </div>
-                <div class="dropdown-divider"></div>
-                <div>
-                    <button type="submit" class="btn btn-info">Filter</button>
-                </div>
-            </div>
-        </form>
-    </div>
-    {% endif %}
-
     <!-- Clear All Dropdown Button -->
     <div class="dropdown">
         <a class="btn btn-default" type="button" aria-haspopup="true" aria-expanded="false" href="?">
@@ -343,6 +343,21 @@
     <table class="table table-striped table-hover" id="WebGridTable">
         <thead>
             <tr>
+                <th>
+                    {% if client_is_admin %}
+                        <a class="blue-text" href="?{{ cat_sort_anchor_GET_param }}">
+                            Division
+                            {% if sort_by == 'indicator__category__category_name' and sort_dir == 'asc' %}
+                                <i class="fas fa-caret-up"></i>
+                            {% elif sort_by == 'indicator__category__category_name' and sort_dir == 'desc' %}
+                                <i class="fas fa-caret-down"></i>
+                            {% endif %}
+                        </a>
+                    {% else %}
+                        Division
+                    {% endif %}
+                </th>
+
                 <th>
                     <a class="blue-text" href="?{{ title_sort_anchor_GET_param }}">
                         Indicator Title
@@ -391,25 +406,12 @@
                 <th>Indicator Value</th>
                 <th>Updated Date</th>
                 <th>Last Updated By</th>
-                <th>
-                    {% if client_is_admin %}
-                        <a class="blue-text" href="?{{ cat_sort_anchor_GET_param }}">
-                            Category
-                            {% if sort_by == 'indicator__category__category_name' and sort_dir == 'asc' %}
-                                <i class="fas fa-caret-up"></i>
-                            {% elif sort_by == 'indicator__category__category_name' and sort_dir == 'desc' %}
-                                <i class="fas fa-caret-down"></i>
-                            {% endif %}
-                        </a>
-                    {% else %}
-                        Category
-                    {% endif %}
-                </th>
             </tr>
         </thead>
         <tbody>
             {% for entry in indicator_data_entries %}
             <tr>
+                <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="Fiscal_YYYY">{{ entry.year_month.fiscal_year }}</td>
                 {% comment %}
@@ -447,7 +449,6 @@
                 <td class="editable light-blue" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
-                <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
             </tr>
             {% endfor %}
         </tbody>
