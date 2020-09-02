@@ -69,19 +69,41 @@ def user_is_active_admin(username):
             "err": 'Exception: user_is_active_admin(): {}'.format(e),
         }
 
+def user_is_active_user(username):
+    try:
+        user_query = Users.objects.filter(
+            login=username,
+            active_user=True, # Filters for active users
+        )
+        if user_query.count() > 0:
+            return {
+                "success": True,
+                "err": "",
+            }
+        return {
+            "success": False,
+            "err": '{} is not an active User or is not registered in our Users database'.format(username),
+        }
+    except Exception as e:
+        print("Exception: user_is_active_user(): {}".format(e))
+        return {
+            "success": None,
+            "err": 'Exception: user_is_active_user(): {}'.format(e),
+        }
+
 # Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
     try:
-        is_admin = user_is_active_admin(username)
-        if is_admin["success"] == True:
+        is_active_admin = user_is_active_admin(username)
+        if is_active_admin["success"] == True:
             category_info = get_admin_category_permissions()
-        elif is_admin["success"] == False:
+        elif is_active_admin["success"] == False:
             # If not admin, do standard filter with categories
             category_info = get_user_category_permissions(username)
-        elif is_admin["success"] is None:
+        elif is_active_admin["success"] is None:
             return {
                     "success": False,
-                    "err": "Permission denied: Cannot determine if user is Admin or not: {}".format(is_admin["err"]),
+                    "err": "Permission denied: Cannot determine if user is Admin or not: {}".format(is_active_admin["err"]),
                 }
 
         if category_info["success"] == True:
@@ -203,18 +225,28 @@ class WebGridPageView(generic.ListView):
         self.req_fy_list_filter = self.request.GET.getlist('FiscalYearListFilter')
         self.req_cat_list_filter = self.request.GET.getlist('CategoriesListFilter')
 
-        # Get list authorized Categories of Indicator Data, and log the category_permissions
-        is_admin = user_is_active_admin(self.request.user)
-        if is_admin["success"] == True:
-            user_cat_permissions = get_admin_category_permissions()
+        # Get authorized list of Categories of Indicator Data, also check for Active Admins or Users
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
             self.client_is_admin = True
-        elif is_admin["success"] == False:
-            # If not admin, do standard filter with categories
-            user_cat_permissions = get_user_category_permissions(self.request.user)
+            user_cat_permissions = get_admin_category_permissions()
+
+        elif is_active_admin["success"] == False:
             self.client_is_admin = False
-        elif is_admin["success"] is None:
+            is_active_user = user_is_active_user(self.request.user)
+
+            if is_active_user["success"] == True:
+                 # If not admin, do standard filter with categories
+                user_cat_permissions = get_user_category_permissions(self.request.user)
+            else:
+                self.req_success = False
+                self.err_msg = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+
+        elif is_active_admin["success"] is None:
             self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_admin["err"])
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
             print(self.err_msg)
             return IndicatorData.objects.none()
 
@@ -500,6 +532,15 @@ def SavePerIndDataApi(request):
             "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
         })
 
+    # Make sure User is an Active User
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] != True:
+        print("Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user),
+        })
+
     # Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
@@ -613,18 +654,29 @@ def GetCsvApi(request):
         })
 
     # Get list authorized Categories of Indicator Data, and log the category_permissions
-    is_admin = user_is_active_admin(request.user)
-    if is_admin["success"] == True:
-        user_cat_permissions = get_admin_category_permissions()
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
         client_is_admin = True
-    elif is_admin["success"] == False:
-        # If not admin, do standard filter with categories
-        user_cat_permissions = get_user_category_permissions(request.user)
+        user_cat_permissions = get_admin_category_permissions()
+    elif is_active_admin["success"] == False:
         client_is_admin = False
-    elif is_admin["success"] is None:
+
+        is_active_user = user_is_active_user(request.user)
+        if is_active_user["success"] == True:
+            # If not admin, do standard filter with categories
+            user_cat_permissions = get_user_category_permissions(request.user)
+        else:
+            print("GetCsvApi(): {}".format(is_active_user["err"]))
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "GetCsvApi(): {}".format(is_active_user["err"]),
+                "post_data": None,
+            })
+
+    elif is_active_admin["success"] is None:
         return JsonResponse({
-            "post_success": True,
-            "post_msg": "GetCsvApi(): {}".format(is_admin["err"]),
+            "post_success": False,
+            "post_msg": "GetCsvApi(): {}".format(is_active_admin["err"]),
             "post_data": None,
         })
 
@@ -633,13 +685,13 @@ def GetCsvApi(request):
         category_pk_list = user_cat_permissions["pk_list"]
     elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "GetCsvApi(): {}".format(user_cat_permissions['err']),
             "post_data": None,
         })
     else:
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "GetCsvApi(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success']),
             "post_data": None,
         })
