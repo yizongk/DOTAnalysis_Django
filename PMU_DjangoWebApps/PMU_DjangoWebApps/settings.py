@@ -66,6 +66,7 @@ TEMPLATES = [
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),
             os.path.join(BASE_DIR, 'PerInd/templates'),
+            os.path.join(BASE_DIR, 'MapsApp/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {

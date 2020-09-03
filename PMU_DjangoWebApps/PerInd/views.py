@@ -155,13 +155,13 @@ def user_has_permission_to_edit(username, record_id):
         }
 
 class HomePageView(TemplateView):
-    template_name = 'template.home.html'
+    template_name = 'PerInd.template.home.html'
 
 class AboutPageView(TemplateView):
-    template_name = 'template.about.html'
+    template_name = 'PerInd.template.about.html'
 
 class ContactPageView(TemplateView):
-    template_name = 'template.contact.html'
+    template_name = 'PerInd.template.contact.html'
 
 # Method Flowchart (the order of execution) for generic.ListView
 #     setup()
