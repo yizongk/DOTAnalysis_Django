@@ -4,5 +4,13 @@
 <!-- Will contain the template for the WebGrid html -->
 {% block content %}
 
-Hi, a map will be here
+<div>D3.js</div>
+<div></div>
+
+{% endblock %}
+
+{% block custom_js %}
+<!--JS for exporting html table to xlsx-->
+<script type="text/javascript" src={% static 'MapsApp/js/d3.v6.min.js' %}></script>
+<script type="text/javascript" src={% static 'MapsApp/js/map1.js' %}></script>
 {% endblock %}
