@@ -1,16 +1,105 @@
 {% extends 'MapsApp.template.base.html' %}
 
 {% load static %}
-<!-- Will contain the template for the WebGrid html -->
+
+
+
 {% block content %}
-
-<div>D3.js</div>
-<div></div>
-
+<div>Leaflet.js</div>
+<select id="filter"></select>
+<div id='map_container'></div>
 {% endblock %}
 
+
+
+
+
+
+
 {% block custom_js %}
-<!--JS for exporting html table to xlsx-->
-<script type="text/javascript" src={% static 'MapsApp/js/d3.v6.min.js' %}></script>
-<script type="text/javascript" src={% static 'MapsApp/js/map1.js' %}></script>
+{% comment %} <script type="text/javascript" src={% static 'MapsApp/js/d3.v6.min.js' %}></script> {% endcomment %}
+{% comment %} <script type="text/javascript" src={% static 'MapsApp/js/map1_d3.js' %}></script> {% endcomment %}
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+
+    <script src="https://d3js.org/d3-fetch.v2.min.js"></script>
+    <style>
+        #map_container {
+            height: 600px;
+            width: 600px;
+        }
+    </style>
+
+    <script>
+        // Initialize Leaflet, and set a long & lat as the center of the view (Long/Lat is abritrary, anywhere in the city that you deem good will do)
+        var map = L.map("map_container").setView([40.716459, -73.925294], 10);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { // Load in the open street map as the base layer
+        attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Load in the nyc geojson
+        d3.json('/static/MapsApp/geojsons/nyc.geojson').then(function(data) {
+            let boroLayer = L.geoJson(data, {
+                style: {
+                    color: "#ff00000",
+                    strokeColor: "red"
+                }
+            }).addTo(map)
+
+            // Creating the list for the dropdown
+            const filterInput = document.getElementById('filter')
+            const options = data.features.map(function(feature){
+                return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
+            }).join('')
+            filterInput.innerHTML = '<option>All</option>' + options
+
+            // Filter with selected value in the <select></select>
+            filterInput.addEventListener('change', function(){
+                const value = filterInput.value
+
+                // Remove boro layer, and we will recreate the boro layer and add it back to the map
+                map.removeLayer(boroLayer)
+
+                if(value === 'All'){
+                    boroLayer = L.geoJson(data, {
+                        style: {
+                            color: "#ff00000",
+                            strokeColor: "red"
+                    }
+                    }).addTo(map)
+                }else{
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function(feature){ // Filtering happens here
+                            return feature.properties.boro_name === value
+                        })
+                    }
+
+                    // Re-add the boro layer (Now filtered down)
+                    boroLayer = L.geoJson(newData, {
+                        style: {
+                            color: "#ff00000",
+                            strokeColor: "red"
+                    }
+                    }).addTo(map)
+                }
+            })
+        });
+
+        // Load in the vision zero geojson
+        d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson').then(function(data) {
+          L.geoJson(data, {
+            // Create a pop up text when you click on each element/feature
+            onEachFeature: function(feature, layer){
+                     layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson to see how the json file is formated, and you will understand this part
+                 }
+          }).addTo(map)
+        });
+    
+    </script>
 {% endblock %}

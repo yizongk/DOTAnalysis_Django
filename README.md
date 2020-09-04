@@ -392,3 +392,9 @@ If it's in the wrong schema (not dbo), you will run in SQL error like
 So far It seems my app needs to be in dbo schema for it to compile properly.
 
 To fix this, when you edit the user's permission in SSMS, under General tab on the left side, make sure the Default schema is set to 'dbo'
+
+# ogr2ogr commands
+## Convert .shp (plus its dbf, prj, and shx existing in the samed directory), run the following command
+```
+ogr2ogr -f GeoJSON out.geojson in.shp
+```
