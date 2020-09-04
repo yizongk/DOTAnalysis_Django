@@ -65,6 +65,7 @@
 $(document).ready(function () {
     function createMap(geoJson) {
         // Place your mapping stuff here
+        
 
         var projection = d3.geoEquirectangular();
 

@@ -8,6 +8,7 @@
 <div>Leaflet.js</div>
 <select id="filter"></select>
 <div id='map_container'></div>
+
 {% endblock %}
 
 
@@ -90,10 +91,10 @@
                 }
             })
         });
-
+        
         // Load in the vision zero geojson
-        d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson').then(function(data) {
-          L.geoJson(data, {
+        d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson').then(function(data1) {
+          L.geoJson(data1, {
             // Create a pop up text when you click on each element/feature
             onEachFeature: function(feature, layer){
                      layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson to see how the json file is formated, and you will understand this part
@@ -101,5 +102,42 @@
           }).addTo(map)
         });
     
+        //source: https://stackoverflow.com/questions/38733012/leaflet-js-choropleth-example-updating-color-based-on-separate-data-file
+        //first idea: create an array with each code and medium income and then shade it based on that.
+        //issues: will this data be updated? this might take time to calculate the medium for all NTA's
+        var pov_array = [{
+            'code': 'BK83',
+            'income': 46012
+        }];
+        function getColor(income) {
+            if (income > 5) return 'yellow';
+            return 'red';
+        }
+        function getNTAColor(ntacode) {
+            var color;
+            for (var i = 0; i < pov_array.length; i++) {
+                if (pov_array[i].code === ntacode) {
+                    color = getColor(pov_array[i].income);
+                    console.log("color",color);
+                    break;
+                }
+            }
+            return color;
+        }
+        d3.json('/static/MapsApp/geojsons/NTA.json').then(function (data2) {
+            L.geoJson(data2, {
+                // Create a pop up text when you click on each element/feature
+                style: function (feature, layer) {
+                    return {
+                        fillColor: getNTAColor(feature.properties.ntacode),
+                        color:'white',
+                        //layer.bindPopup(feature.properties.BoroCD_code)
+                    } 
+                }
+            }).addTo(map)
+
+           
+        });
+     
     </script>
 {% endblock %}
