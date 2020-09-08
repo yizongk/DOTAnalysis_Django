@@ -405,6 +405,7 @@
                     </a>
                 </th>
                 <th>Indicator Value</th>
+                <th>Units (Multiplier)</th>
                 <th>Updated Date</th>
                 <th>Last Updated By</th>
             </tr>
@@ -448,6 +449,7 @@
                     {% endif %}
                 </td>
                 <td class="editable light-blue" data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="val">{{ entry.val }}</td>
+                <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UnitsMultiplier">{{ entry.indicator.unit.unit_type }} ({{ entry.indicator.val_multiplier.multiplier_scale }}x)</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdatedDate">{{ entry.updated_date }}</td>
                 <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="UpdateUser">{{ entry.update_user }}</td>
             </tr>
