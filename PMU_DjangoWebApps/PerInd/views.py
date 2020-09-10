@@ -277,24 +277,6 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Get dropdown list values (Don't move this function, needs to be after the default filtered dataset, to pull unique title, years and months)
-        try:
-            self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
-
-            self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
-
-            self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
-
-            self.uniq_fiscal_years = indicator_data_entries.order_by('year_month__fiscal_year').values('year_month__fiscal_year').distinct()
-
-            if self.client_is_admin == True:
-                self.uniq_categories = indicator_data_entries.order_by('indicator__category__category_name').values('indicator__category__category_name').distinct()
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
-
         #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
         # Filter dataset from Dropdown list
         ## Filter by Titles
@@ -377,6 +359,24 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        # Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
+        try:
+            self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
+
+            self.uniq_years = indicator_data_entries.order_by('year_month__yyyy').values('year_month__yyyy').distinct()
+
+            self.uniq_months = indicator_data_entries.order_by('year_month__mm').values('year_month__mm').distinct()
+
+            self.uniq_fiscal_years = indicator_data_entries.order_by('year_month__fiscal_year').values('year_month__fiscal_year').distinct()
+
+            if self.client_is_admin == True:
+                self.uniq_categories = indicator_data_entries.order_by('indicator__category__category_name').values('indicator__category__category_name').distinct()
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
@@ -803,7 +803,7 @@ def GetCsvApi(request):
 
     # Convert to CSV
     writer = csv.writer(dummy_in_mem_file)
-    writer.writerow(['Indicator Title', 'Fiscal Year', 'Month', 'Indicator Value', 'Updated Date', 'Last Updated By', 'Category',])
+    writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
     for each in csv_queryset:
         if each.year_month.mm == 1:
             month_name = 'Jan'
@@ -833,13 +833,15 @@ def GetCsvApi(request):
             month_name = 'Unknown Month'
 
         eachrow = [
+            each.indicator.category.category_name,
             each.indicator,
             each.year_month.fiscal_year,
             month_name,
             each.val,
+            each.indicator.unit.unit_type,
+            each.indicator.val_multiplier.multiplier_scale,
             each.updated_date.strftime("%m/%d/%Y"),
             each.update_user,
-            each.indicator.category.category_name,
         ]
         writer.writerow(eachrow)
 
