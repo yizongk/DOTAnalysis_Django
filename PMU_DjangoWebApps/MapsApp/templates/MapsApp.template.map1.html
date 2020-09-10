@@ -7,6 +7,7 @@
 {% block content %}
 <div>Leaflet.js</div>
 <select id="filter"></select>
+<select id="layer_filter"></select>
 <div id='map_container'></div>
 
 {% endblock %}
@@ -35,109 +36,164 @@
     </style>
 
     <script>
-        // Initialize Leaflet, and set a long & lat as the center of the view (Long/Lat is abritrary, anywhere in the city that you deem good will do)
-        var map = L.map("map_container").setView([40.716459, -73.925294], 10);
+        $( document ).ready(async function(){
+            // Initialize Leaflet, and set a long & lat as the center of the view (Long/Lat is abritrary, anywhere in the city that you deem good will do)
+            var map = L.map("map_container").setView([40.716459, -73.925294], 10);
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { // Load in the open street map as the base layer
-        attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { // Load in the open street map as the base layer
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
-        // Load in the nyc geojson
-        d3.json('/static/MapsApp/geojsons/nyc.geojson').then(function(data) {
-            let boroLayer = L.geoJson(data, {
-                style: {
-                    color: "#ff00000",
-                    strokeColor: "red"
+            var layer_dict = {};
+            // Load in the nyc geojson
+            d3.json('/static/MapsApp/geojsons/nyc.geojson')
+            .then(function(data) {
+                let nycBoroLayer = L.geoJson(data, {
+                    style: {
+                        color: "#ff00000",
+                        strokeColor: "red"
+                    }
+                }).addTo(map);
+
+                // Creating the list for the dropdown
+                const filterInput = document.getElementById('filter')
+                const options = data.features.map(function(feature){
+                    return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
+                }).join('')
+                filterInput.innerHTML = '<option>All</option>' + options
+
+                // Filter with selected value in the <select></select>
+                filterInput.addEventListener('change', function(){
+                    const value = filterInput.value
+
+                    // Remove boro layer, and we will recreate the boro layer and add it back to the map
+                    map.removeLayer(nycBoroLayer)
+
+                    if(value === 'All'){
+                        nycBoroLayer = L.geoJson(data, {
+                            style: {
+                                color: "#ff00000",
+                                strokeColor: "red"
+                        }
+                        }).addTo(map)
+                    }else{
+                        let newData = {
+                            "type": "FeatureCollection",
+                            "features": data.features.filter(function(feature){ // Filtering happens here
+                                return feature.properties.boro_name === value
+                            })
+                        }
+
+                        // Re-add the boro layer (Now filtered down)
+                        nycBoroLayer = L.geoJson(newData, {
+                            style: {
+                                color: "#ff00000",
+                                strokeColor: "red"
+                        }
+                        }).addTo(map)
+                    }
+                })
+                return nycBoroLayer;
+            })
+            .then( function(layer) {
+                layer_dict['nycBoroLayer'] = layer;
+            });
+
+            // Load in the vision zero geojson
+            d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson')
+            .then(function(data1) {
+                let layer = L.geoJson(data1, {
+                    // Create a pop up text when you click on each element/feature
+                    onEachFeature: function(feature, layer){
+                            layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson to see how the json file is formated, and you will understand this part
+                        }
+                }).addTo(map);
+                return layer;
+            })
+            .then(function(layer) {
+                layer_dict['vzvLayer'] = layer;
+            });
+
+            // Load in the NTA geojson
+            //source: https://stackoverflow.com/questions/38733012/leaflet-js-choropleth-example-updating-color-based-on-separate-data-file
+            //first idea: create an array with each code and medium income and then shade it based on that.
+            //issues: will this data be updated? this might take time to calculate the medium for all NTA's
+            var pov_array = [{
+                'code': 'BK83',
+                'income': 46012
+            }];
+            function getColor(income) {
+                if (income > 5) return 'yellow';
+                return 'red';
+            }
+            function getNTAColor(ntacode) {
+                var color;
+                for (var i = 0; i < pov_array.length; i++) {
+                    if (pov_array[i].code === ntacode) {
+                        color = getColor(pov_array[i].income);
+                        //console.log("color",color);
+                        break;
+                    }
                 }
-            }).addTo(map)
+                return color;
+            }
+            d3.json('/static/MapsApp/geojsons/NTA.json')
+            .then(function (data2) {
+                let layer = L.geoJson(data2, {
+                    // Create a pop up text when you click on each element/feature
+                    style: function (feature, layer) {
+                        return {
+                            fillColor: getNTAColor(feature.properties.ntacode),
+                            color:'white',
+                            //layer.bindPopup(feature.properties.BoroCD_code)
+                        }
+                    }
+                }).addTo(map);
 
-            // Creating the list for the dropdown
-            const filterInput = document.getElementById('filter')
-            const options = data.features.map(function(feature){
-                return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
+                return layer;
+            })
+            .then(function(layer) {
+                layer_dict['ntaLayer'] = layer;
+            });
+
+
+            // Toggle between NTA and VZV Bike Layer
+            const layerFilterInput = document.getElementById('layer_filter')
+            const options = ['NYC Boro Stuff', 'VZV Bike Stuff', 'NTA Stuff'].map(function(each){ // Create the drop down list
+                return `<option value='${each}'>${each}</option>`
             }).join('')
-            filterInput.innerHTML = '<option>All</option>' + options
+            layerFilterInput.innerHTML = '<option>All</option>' + options
+
 
             // Filter with selected value in the <select></select>
-            filterInput.addEventListener('change', function(){
-                const value = filterInput.value
+            layerFilterInput.addEventListener('change', function(){
+                const value = layerFilterInput.value
 
-                // Remove boro layer, and we will recreate the boro layer and add it back to the map
-                map.removeLayer(boroLayer)
+                // Remove all layer from map, and we will re-add the layers to the map base on the filter selection
+                // Iterate through the layer_dict with access to its key and element
+                Object.keys(layer_dict).map(function(key, index) {
+                    // console.log(key, index);
+                    // console.log(layer_dict[key]);
+                    map.removeLayer(layer_dict[key])
+                });
 
                 if(value === 'All'){
-                    boroLayer = L.geoJson(data, {
-                        style: {
-                            color: "#ff00000",
-                            strokeColor: "red"
-                    }
-                    }).addTo(map)
-                }else{
-                    let newData = {
-                        "type": "FeatureCollection",
-                        "features": data.features.filter(function(feature){ // Filtering happens here
-                            return feature.properties.boro_name === value
-                        })
-                    }
-
-                    // Re-add the boro layer (Now filtered down)
-                    boroLayer = L.geoJson(newData, {
-                        style: {
-                            color: "#ff00000",
-                            strokeColor: "red"
-                    }
-                    }).addTo(map)
+                    Object.keys(layer_dict).map(function(key, index) {
+                        layer_dict[key].addTo(map)
+                    });
+                } else if (value === 'NYC Boro Stuff') {
+                    layer_dict['nycBoroLayer'].addTo(map)
+                } else if (value === 'VZV Bike Stuff') {
+                    layer_dict['vzvLayer'].addTo(map)
+                } else if (value === 'NTA Stuff') {
+                    layer_dict['ntaLayer'].addTo(map)
+                } else {
+                    console.log('layer not valid to add to map')
                 }
             })
-        });
-        
-        // Load in the vision zero geojson
-        d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson').then(function(data1) {
-          L.geoJson(data1, {
-            // Create a pop up text when you click on each element/feature
-            onEachFeature: function(feature, layer){
-                     layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson to see how the json file is formated, and you will understand this part
-                 }
-          }).addTo(map)
-        });
-    
-        //source: https://stackoverflow.com/questions/38733012/leaflet-js-choropleth-example-updating-color-based-on-separate-data-file
-        //first idea: create an array with each code and medium income and then shade it based on that.
-        //issues: will this data be updated? this might take time to calculate the medium for all NTA's
-        var pov_array = [{
-            'code': 'BK83',
-            'income': 46012
-        }];
-        function getColor(income) {
-            if (income > 5) return 'yellow';
-            return 'red';
-        }
-        function getNTAColor(ntacode) {
-            var color;
-            for (var i = 0; i < pov_array.length; i++) {
-                if (pov_array[i].code === ntacode) {
-                    color = getColor(pov_array[i].income);
-                    console.log("color",color);
-                    break;
-                }
-            }
-            return color;
-        }
-        d3.json('/static/MapsApp/geojsons/NTA.json').then(function (data2) {
-            L.geoJson(data2, {
-                // Create a pop up text when you click on each element/feature
-                style: function (feature, layer) {
-                    return {
-                        fillColor: getNTAColor(feature.properties.ntacode),
-                        color:'white',
-                        //layer.bindPopup(feature.properties.BoroCD_code)
-                    } 
-                }
-            }).addTo(map)
 
-           
         });
-     
+
     </script>
 {% endblock %}
