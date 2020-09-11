@@ -6,8 +6,12 @@
 
 {% block content %}
 <div>Leaflet.js</div>
+<div>NYC Borough</div>
 <select id="filter"></select>
-<select id="layer_filter"></select>
+<div>Select DOT Service</div>
+<select id="service_filter"></select>
+<div>Social Backdrop</div>
+<select id="social_filter"></select>
 <div id='map_container'></div>
 
 {% endblock %}
@@ -162,11 +166,17 @@
 
 
             // Toggle between NTA and VZV Bike Layer
-            const layerFilterInput = document.getElementById('layer_filter')
-            const options = ['NYC Boro Stuff', 'VZV Bike Stuff', 'NTA Stuff'].map(function(each){ // Create the drop down list
+            const layerFilterInput = document.getElementById('service_filter')
+            const options = [ 'VZV Bike Stuff'].map(function(each){ // Create the drop down list
                 return `<option value='${each}'>${each}</option>`
             }).join('')
             layerFilterInput.innerHTML = '<option>All</option>' + options
+
+            const layerFilterSocialInput = document.getElementById('social_filter')
+            const options2 = ['NTA Stuff'].map(function (each) { // Create the drop down list
+                return `<option value='${each}'>${each}</option>`
+            }).join('')
+            layerFilterSocialInput.innerHTML = '<option>All</option>' + options2
 
 
             // Filter with selected value in the <select></select>
@@ -185,9 +195,11 @@
                     Object.keys(layer_dict).map(function(key, index) {
                         layer_dict[key].addTo(map)
                     });
-                } else if (value === 'NYC Boro Stuff') {
-                    layer_dict['nycBoroLayer'].addTo(map)
-                } else if (value === 'VZV Bike Stuff') {
+                }
+                //else if (value === 'NYC Boro Stuff') {
+                  //  layer_dict['nycBoroLayer'].addTo(map)
+            //} 
+                else if (value === 'VZV Bike Stuff') {
                     layer_dict['vzvLayer'].addTo(map)
                 } else if (value === 'NTA Stuff') {
                     layer_dict['ntaLayer'].addTo(map)
@@ -195,6 +207,35 @@
                     console.log('layer not valid to add to map')
                 }
             })
+
+       
+        layerFilterSocialInput.addEventListener('change', function () {
+            const value = layerFilterSocialInput.value
+
+            // Remove all layer from map, and we will re-add the layers to the map base on the filter selection
+            // Iterate through the layer_dict with access to its key and element
+            Object.keys(layer_dict).map(function (key, index) {
+                // console.log(key, index);
+                // console.log(layer_dict[key]);
+                map.removeLayer(layer_dict[key])
+            });
+
+            if (value === 'All') {
+                Object.keys(layer_dict).map(function (key, index) {
+                    layer_dict[key].addTo(map)
+                });
+            }
+            //else if (value === 'NYC Boro Stuff') {
+            //  layer_dict['nycBoroLayer'].addTo(map)
+            //} 
+            else if (value === 'VZV Bike Stuff') {
+                layer_dict['vzvLayer'].addTo(map)
+            } else if (value === 'NTA Stuff') {
+                layer_dict['ntaLayer'].addTo(map)
+            } else {
+                console.log('layer not valid to add to map')
+            }
+        })
 
         });
 
