@@ -74,7 +74,8 @@
                         nycBoroLayer = L.geoJson(data, {
                             style: {
                                 color: "#ff00000",
-                                strokeColor: "red"
+                                strokeColor: "red",
+                                weight:1
                         }
                         }).addTo(map)
                     }else{
@@ -89,7 +90,8 @@
                         nycBoroLayer = L.geoJson(newData, {
                             style: {
                                 color: "#ff00000",
-                                strokeColor: "red"
+                                strokeColor: "red",
+                                weight:1
                         }
                         }).addTo(map)
                     }
@@ -122,7 +124,7 @@
             var pov_array = [{
                 'code': 'BK83',
                 'income': 46012
-            }];
+            },];
             function getColor(income) {
                 if (income > 5) return 'yellow';
                 return 'red';
@@ -145,7 +147,8 @@
                     style: function (feature, layer) {
                         return {
                             fillColor: getNTAColor(feature.properties.ntacode),
-                            color:'white',
+                            color: 'white',
+                            weight:1
                             //layer.bindPopup(feature.properties.BoroCD_code)
                         }
                     }
