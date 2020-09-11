@@ -42,11 +42,15 @@
     <script>
         $( document ).ready(async function(){
             // Initialize Leaflet, and set a long & lat as the center of the view (Long/Lat is abritrary, anywhere in the city that you deem good will do)
-            var map = L.map("map_container").setView([40.716459, -73.925294], 10);
+            var map = L.map("map_container").setView([40.703312, -73.97968], 10);
 
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { // Load in the open street map as the base layer
-            attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { // Load in the open street map as the base layer
+            L.tileLayer('https://maps{s}.nyc.gov/xyz/1.0.0/carto/basemap/{z}/{x}/{y}.jpg', {
+                minNativeZoom: 8,
+                maxNativeZoom: 19,
+                subdomains: '1234',
+                bounds: L.latLngBounds([39.3682, -75.9374], [42.0329, -71.7187]),
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             }).addTo(map);
 
             var layer_dict = {};
@@ -209,33 +213,33 @@
             })
 
        
-        layerFilterSocialInput.addEventListener('change', function () {
-            const value = layerFilterSocialInput.value
+            layerFilterSocialInput.addEventListener('change', function () {
+                const value = layerFilterSocialInput.value
 
-            // Remove all layer from map, and we will re-add the layers to the map base on the filter selection
-            // Iterate through the layer_dict with access to its key and element
-            Object.keys(layer_dict).map(function (key, index) {
-                // console.log(key, index);
-                // console.log(layer_dict[key]);
-                map.removeLayer(layer_dict[key])
-            });
-
-            if (value === 'All') {
+                // Remove all layer from map, and we will re-add the layers to the map base on the filter selection
+                // Iterate through the layer_dict with access to its key and element
                 Object.keys(layer_dict).map(function (key, index) {
-                    layer_dict[key].addTo(map)
+                    // console.log(key, index);
+                    // console.log(layer_dict[key]);
+                    map.removeLayer(layer_dict[key])
                 });
-            }
-            //else if (value === 'NYC Boro Stuff') {
-            //  layer_dict['nycBoroLayer'].addTo(map)
-            //} 
-            else if (value === 'VZV Bike Stuff') {
-                layer_dict['vzvLayer'].addTo(map)
-            } else if (value === 'NTA Stuff') {
-                layer_dict['ntaLayer'].addTo(map)
-            } else {
-                console.log('layer not valid to add to map')
-            }
-        })
+
+                if (value === 'All') {
+                    Object.keys(layer_dict).map(function (key, index) {
+                        layer_dict[key].addTo(map)
+                    });
+                }
+                //else if (value === 'NYC Boro Stuff') {
+                //  layer_dict['nycBoroLayer'].addTo(map)
+                //}
+                else if (value === 'VZV Bike Stuff') {
+                    layer_dict['vzvLayer'].addTo(map)
+                } else if (value === 'NTA Stuff') {
+                    layer_dict['ntaLayer'].addTo(map)
+                } else {
+                    console.log('layer not valid to add to map')
+                }
+            });
 
         });
 
