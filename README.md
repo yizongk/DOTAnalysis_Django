@@ -8,7 +8,7 @@ Includes:
 To install the python dependencies
 
 python -m pip install -r PMU_DjangoWebApps/python_dependencies.txt
-    * By extension, when installing mod_wsgi, you will need Microsoft Visual C++ 14.0 installed on your system. To download it, download 'Microsoft C++ Build Tools' with the following link
+    * By extension, when installing mod_wsgi, you will need Microsoft Visual C++ 14.0 installed on your system. To download it, download the installer with the following link, and select 'Microsoft C++ Build Tools' in the menu of the installer to install the proper dependency
         * https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
 # Database driver
