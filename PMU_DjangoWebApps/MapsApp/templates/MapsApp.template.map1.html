@@ -148,7 +148,7 @@
                 }
                 return color;
             }
-            d3.json('/static/MapsApp/geojsons/NTA.json')
+            d3.json('/static/MapsApp/geojsons/NTA.geojson')
             .then(function (data2) {
                 let layer = L.geoJson(data2, {
                     // Create a pop up text when you click on each element/feature
