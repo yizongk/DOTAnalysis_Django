@@ -6,9 +6,9 @@ from django.views import generic
 from .models import *
 from datetime import datetime
 from django.utils import timezone
-import pytz # For converting datetime objects from one timezone to another timezone
+import pytz ## For converting datetime objects from one timezone to another timezone
 from django.db.models import Q
-# Create your views here.
+## Create your views here.
 
 def get_admin_category_permissions():
     try:
@@ -46,12 +46,12 @@ def get_user_category_permissions(username):
             "category_names": [],
         }
 
-# Check if remote user is admin and is active
+## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
         admin_query = Admins.objects.filter(
             user__login=username,
-            active=True, # Filters for active Admins
+            active=True, ## Filters for active Admins
         )
         if admin_query.count() > 0:
             return {
@@ -73,7 +73,7 @@ def user_is_active_user(username):
     try:
         user_query = Users.objects.filter(
             login=username,
-            active_user=True, # Filters for active users
+            active_user=True, ## Filters for active users
         )
         if user_query.count() > 0:
             return {
@@ -91,14 +91,14 @@ def user_is_active_user(username):
             "err": 'Exception: user_is_active_user(): {}'.format(e),
         }
 
-# Given a record id, checks if user has permission to edit the record
+## Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
     try:
         is_active_admin = user_is_active_admin(username)
         if is_active_admin["success"] == True:
             category_info = get_admin_category_permissions()
         elif is_active_admin["success"] == False:
-            # If not admin, do standard filter with categories
+            ## If not admin, do standard filter with categories
             category_info = get_user_category_permissions(username)
         elif is_active_admin["success"] is None:
             return {
@@ -120,7 +120,7 @@ def user_has_permission_to_edit(username, record_id):
             }
 
         category_id_permission_list = category_info["pk_list"]
-        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) # Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
         record_category_id = record_category_info["indicator__category__category_id"]
         record_category_name = record_category_info["indicator__category__category_name"]
         if len(category_id_permission_list) != 0:
@@ -136,8 +136,8 @@ def user_has_permission_to_edit(username, record_id):
                     "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
                 }
         elif category_info["success"] == False:
-            raise # re-raise the error that happend in get_user_category_permissions(), because ["success"] is only False when an exception happens in get_user_category_permissions()
-        else: # Else successful query, but no permissions results found
+            raise ## re-raise the error that happend in get_user_category_permissions(), because ["success"] is only False when an exception happens in get_user_category_permissions()
+        else: ## Else successful query, but no permissions results found
             return {
                 "success": False,
                 "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
@@ -163,16 +163,16 @@ class AboutPageView(TemplateView):
 class ContactPageView(TemplateView):
     template_name = 'PerInd.template.contact.html'
 
-# Method Flowchart (the order of execution) for generic.ListView
-#     setup()
-#     dispatch()
-#     http_method_not_allowed()
-#     get_template_names()
-#     get_queryset()
-#     get_context_object_name()
-#     get_context_data()
-#     get()
-#     render_to_response()
+## Method Flowchart (the order of execution) for generic.ListView
+##     setup()
+##     dispatch()
+##     http_method_not_allowed()
+##     get_template_names()
+##     get_queryset()
+##     get_context_object_name()
+##     get_context_data()
+##     get()
+##     render_to_response()
 class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
@@ -193,10 +193,10 @@ class WebGridPageView(generic.ListView):
     uniq_categories = []
 
     req_title_list_filter = []
-    req_yr_list_filter = [] # Calendar Year
+    req_yr_list_filter = [] ## Calendar Year
     req_mn_list_filter = []
-    req_fy_list_filter = [] # Fiscal Year
-    req_cat_list_filter = [] # Category
+    req_fy_list_filter = [] ## Fiscal Year
+    req_cat_list_filter = [] ## Category
 
     ctx_pagination_param = ""
 
@@ -210,7 +210,7 @@ class WebGridPageView(generic.ListView):
 
     def get_queryset(self):
 
-        # Collect GET url parameter info
+        ## Collect GET url parameter info
         temp_sort_dir = self.request.GET.get('SortDir')
         if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
             self.req_sort_dir = temp_sort_dir
@@ -225,7 +225,7 @@ class WebGridPageView(generic.ListView):
         self.req_fy_list_filter = self.request.GET.getlist('FiscalYearListFilter')
         self.req_cat_list_filter = self.request.GET.getlist('CategoriesListFilter')
 
-        # Get authorized list of Categories of Indicator Data, also check for Active Admins or Users
+        ## Get authorized list of Categories of Indicator Data, also check for Active Admins or Users
         is_active_admin = user_is_active_admin(self.request.user)
         if is_active_admin["success"] == True:
             self.client_is_admin = True
@@ -236,7 +236,7 @@ class WebGridPageView(generic.ListView):
             is_active_user = user_is_active_user(self.request.user)
 
             if is_active_user["success"] == True:
-                 # If not admin, do standard filter with categories
+                 ## If not admin, do standard filter with categories
                 user_cat_permissions = get_user_category_permissions(self.request.user)
             else:
                 self.req_success = False
@@ -264,21 +264,27 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Default filters on the WebGrid dataset
+        ## Default filters on the WebGrid dataset
         try:
             indicator_data_entries = IndicatorData.objects.filter(
-                indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
-                indicator__active=True, # Filters for active Indicator titles
-                year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+                indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
+                indicator__active=True, ## Filters for active Indicator titles
+                year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
+
+            indicator_data_entries = indicator_data_entries.exclude(  ## Exclude any future dates greater than current month and current year
+                year_month__yyyy__exact=timezone.now().year,
+                year_month__mm__gt=timezone.now().month
+            )
+
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
-        # Filter dataset from Dropdown list
+        ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
+        ## Filter dataset from Dropdown list
         ## Filter by Titles
         if len(self.req_title_list_filter) >= 1:
             try:
@@ -341,11 +347,11 @@ class WebGridPageView(generic.ListView):
                     print(self.err_msg)
                     return IndicatorData.objects.none()
 
-        # Sort dataset from sort direction and sort column
+        ## Sort dataset from sort direction and sort column
         try:
-            # Default sort it by Fiscal Year Desc and to show latest year first then to older years
+            ## Default sort
             if self.req_sort_by == '':
-                indicator_data_entries = indicator_data_entries.order_by('-year_month__fiscal_year')
+                indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
             else:
                 if self.req_sort_dir == "asc":
                     indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
@@ -362,7 +368,7 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        # Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
+        ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
             self.uniq_titles = indicator_data_entries.order_by('indicator__indicator_title').values('indicator__indicator_title').distinct()
 
@@ -385,10 +391,10 @@ class WebGridPageView(generic.ListView):
 
     def get_context_data(self, **kwargs):
         try:
-            # Call the base implementation first to get a context
+            ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
 
-            # Construct current context filter and sort GET param string, for front end to keep states
+            ## Construct current context filter and sort GET param string, for front end to keep states
             ctx_title_filter_param = ""
             ctx_yyyy_filter_param = ""
             ctx_mm_filter_param = ""
@@ -446,7 +452,7 @@ class WebGridPageView(generic.ListView):
             self.ctx_pagination_param = "SortBy={}&SortDir={}&{}{}{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
 
 
-            # Finally, setting the context variables
+            ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
             context["req_success"] = self.req_success
             context["category_permissions"] = self.category_permissions
@@ -521,7 +527,7 @@ def SavePerIndDataApi(request):
     column = request.POST.get('column', '')
     new_value = request.POST.get('new_value', '')
 
-    # Authenticate User
+    ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
         remote_user = request.user.username
@@ -532,7 +538,7 @@ def SavePerIndDataApi(request):
             "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
         })
 
-    # Make sure User is an Active User
+    ## Make sure User is an Active User
     is_active_user = user_is_active_user(request.user)
     if is_active_user["success"] != True:
         print("Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user))
@@ -541,7 +547,7 @@ def SavePerIndDataApi(request):
             "post_msg": "Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user),
         })
 
-    # Authenticate permission for user
+    ## Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
         print("Warning: SavePerIndDataApi(): USER '{}' has no permission to edit record #{}!".format(remote_user, id))
@@ -551,7 +557,7 @@ def SavePerIndDataApi(request):
         })
 
 
-    # Make sure new_value is convertable to float
+    ## Make sure new_value is convertable to float
     try:
         new_value = float(new_value)
     except Exception as e:
@@ -568,13 +574,13 @@ def SavePerIndDataApi(request):
             try:
                 row.val = new_value
 
-                # Update [last updated by] to current remote user, also make sure it's active user
-                user_obj = Users.objects.get(login=remote_user, active_user=True) # Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                ## Update [last updated by] to current remote user, also make sure it's active user
+                user_obj = Users.objects.get(login=remote_user, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                 row.update_user = user_obj
 
-                # Update [updated date] to current time
-                # updated_timestamp = datetime.now() # Give 'naive' local time, which happens to be EDT on my home dev machine
-                updated_timestamp = timezone.now() # Give 'time zone awared' datetime, but backend is UTC
+                ## Update [updated date] to current time
+                ## updated_timestamp = datetime.now() ## Give 'naive' local time, which happens to be EDT on my home dev machine
+                updated_timestamp = timezone.now() ## Give 'time zone awared' datetime, but backend is UTC
                 row.updated_date = updated_timestamp
 
                 local_updated_timestamp_str_response = updated_timestamp.astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
@@ -615,7 +621,7 @@ def GetCsvApi(request):
     csv_queryset = None
     client_is_admin = False
 
-    # Collect GET url parameter info
+    ## Collect GET url parameter info
     req_sort_dir = ""
     req_sort_by = ""
 
@@ -633,15 +639,15 @@ def GetCsvApi(request):
     req_fy_list_filter = request.POST.getlist('FiscalYearListFilter[]')
     req_cat_list_filter = request.POST.getlist('CategoriesListFilter[]')
 
-    # print("req_sort_dir: {}".format(req_sort_dir))
-    # print("req_sort_by: {}".format(req_sort_by))
-    # print("req_title_list_filter: {}".format(req_title_list_filter))
-    # print("req_yr_list_filter: {}".format(req_yr_list_filter))
-    # print("req_mn_list_filter: {}".format(req_mn_list_filter))
-    # print("req_fy_list_filter: {}".format(req_fy_list_filter))
-    # print("req_cat_list_filter: {}".format(req_cat_list_filter))
+    ## print("req_sort_dir: {}".format(req_sort_dir))
+    ## print("req_sort_by: {}".format(req_sort_by))
+    ## print("req_title_list_filter: {}".format(req_title_list_filter))
+    ## print("req_yr_list_filter: {}".format(req_yr_list_filter))
+    ## print("req_mn_list_filter: {}".format(req_mn_list_filter))
+    ## print("req_fy_list_filter: {}".format(req_fy_list_filter))
+    ## print("req_cat_list_filter: {}".format(req_cat_list_filter))
 
-    # Authenticate User
+    ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
         remote_user = request.user.username
@@ -653,7 +659,7 @@ def GetCsvApi(request):
             "post_data": None,
         })
 
-    # Get list authorized Categories of Indicator Data, and log the category_permissions
+    ## Get list authorized Categories of Indicator Data, and log the category_permissions
     is_active_admin = user_is_active_admin(request.user)
     if is_active_admin["success"] == True:
         client_is_admin = True
@@ -663,7 +669,7 @@ def GetCsvApi(request):
 
         is_active_user = user_is_active_user(request.user)
         if is_active_user["success"] == True:
-            # If not admin, do standard filter with categories
+            ## If not admin, do standard filter with categories
             user_cat_permissions = get_user_category_permissions(request.user)
         else:
             print("GetCsvApi(): {}".format(is_active_user["err"]))
@@ -680,7 +686,7 @@ def GetCsvApi(request):
             "post_data": None,
         })
 
-    # Get list authorized Categories of Indicator Data, and log the category_permissions
+    ## Get list authorized Categories of Indicator Data, and log the category_permissions
     if user_cat_permissions["success"] == True:
         category_pk_list = user_cat_permissions["pk_list"]
     elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
@@ -696,12 +702,17 @@ def GetCsvApi(request):
             "post_data": None,
         })
 
-    # Default filters on the WebGrid dataset
+    ## Default filters on the WebGrid dataset
     try:
         csv_queryset = IndicatorData.objects.filter(
-            indicator__category__pk__in=category_pk_list, # Filters for authorized Categories
-            indicator__active=True, # Filters for active Indicator titles
-            year_month__yyyy__gt=timezone.now().year-4, # Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+            indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
+            indicator__active=True, ## Filters for active Indicator titles
+            year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+        )
+
+        csv_queryset = csv_queryset.exclude(  ## Exclude any future dates greater than current month and current year
+            year_month__yyyy__exact=timezone.now().year,
+            year_month__mm__gt=timezone.now().month
         )
     except Exception as e:
         return JsonResponse({
@@ -710,7 +721,7 @@ def GetCsvApi(request):
             "post_data": None,
         })
 
-    # Query for the queryset with matching filter and sort criteria
+    ## Query for the queryset with matching filter and sort criteria
     ## Filter by Titles
     if len(req_title_list_filter) >= 1:
         try:
@@ -778,11 +789,11 @@ def GetCsvApi(request):
                     "post_data": None,
                 })
 
-    # Sort dataset from sort direction and sort column
+    ## Sort dataset from sort direction and sort column
     try:
-        # Default sort it by Fiscal Year Desc and to show latest year first then to older years
+        ## Default sort
         if req_sort_by == '':
-            csv_queryset = csv_queryset.order_by('-year_month__fiscal_year')
+            csv_queryset = csv_queryset.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
         else:
             if req_sort_dir == "asc":
                 csv_queryset = csv_queryset.order_by(req_sort_by)
@@ -801,7 +812,7 @@ def GetCsvApi(request):
             "post_data": None,
         })
 
-    # Convert to CSV
+    ## Convert to CSV
     writer = csv.writer(dummy_in_mem_file)
     writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
     for each in csv_queryset:
