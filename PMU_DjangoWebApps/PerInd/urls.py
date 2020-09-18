@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView
+from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView, PastDueIndicatorsPageView
 urlpatterns = [
     
     #path('', views.index, name='index'),
@@ -14,5 +14,6 @@ urlpatterns = [
     # path('webgrid', views.webgrid_view, name='perind_webgrid_view'),
     path('save_perind_data_api', views.SavePerIndDataApi, name='save_perind_data_api'),
     path('get_csv_cur_ctx_api', views.GetCsvApi, name='get_csv_cur_ctx_api'),
+    path('pastdueindicators', PastDueIndicatorsPageView.as_view(), name='perind_pastdueindicators'),
 
 ]

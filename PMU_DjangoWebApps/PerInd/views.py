@@ -276,7 +276,6 @@ class WebGridPageView(generic.ListView):
                 year_month__yyyy__exact=timezone.now().year,
                 year_month__mm__gt=timezone.now().month
             )
-
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
@@ -863,3 +862,105 @@ def GetCsvApi(request):
         "post_msg": "GetCsvApi(): Success, check for variable 'post_data' in the response JSON for the csv file",
         "post_data": dummy_in_mem_file.getvalue(),
     })
+
+## For admin access only
+class PastDueIndicatorsPageView(generic.ListView):
+    template_name = 'PerInd.template.pastdueindicators.html'
+    context_object_name = 'indicator_data_entries'
+
+    paginate_by = 12
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        ## Check if remote user is admin
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): '{}' is not an Admin and is not authorized to see this page.".format(self.request.user)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        ## Default filters on the WebGrid dataset
+        try:
+            indicator_data_entries = IndicatorData.objects.filter(
+                indicator__active=True, ## Filters for active Indicator titles
+                year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
+            )
+
+            indicator_data_entries = indicator_data_entries.exclude(  ## Exclude any future dates greater than current month and current year
+                year_month__yyyy__exact=timezone.now().year,
+                year_month__mm__gt=timezone.now().month
+            )
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        ## Default sort
+        try:
+            indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        self.req_success = True
+        return indicator_data_entries
+
+    def get_context_data(self, **kwargs):
+        try:
+            ## Call the base implementation first to get a context
+            context = super().get_context_data(**kwargs)
+
+            ## Finally, setting the context variables
+            ## Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["category_permissions"] = self.category_permissions
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+            print(self.err_msg)
+            context["indicator_data_entries"] = IndicatorData.objects.none()
+
+            context["category_permissions"] = ""
+
+            context["sort_dir"] = ""
+            context["sort_by"] = ""
+
+            context["uniq_titles"] = []
+            context["uniq_years"] = []
+            context["uniq_months"] = []
+            context["uniq_categories"] = []
+
+            context["ctx_title_list_filter"] = ""
+            context["ctx_yr_list_filter"] = ""
+            context["ctx_mn_list_filter"] = ""
+            context["ctx_fy_list_filter"] = ""
+            context["ctx_cat_list_filter"] = ""
+
+            context["title_sort_anchor_GET_param"] = ""
+            context["yyyy_sort_anchor_GET_param"] = ""
+            context["mm_sort_anchor_GET_param"] = ""
+            context["fiscal_year_sort_anchor_GET_param"] = ""
+            context["cat_sort_anchor_GET_param"] = ""
+
+            context["ctx_pagination_param"] = ""
+
+            context["client_is_admin"] = False
+            return context
