@@ -13,5 +13,5 @@ class AboutPageView(TemplateView):
 class ContactPageView(TemplateView):
     template_name = 'MapsApp.template.contact.html'
 
-class Map1(TemplateView):
-    template_name = 'MapsApp.template.map1.html'
+class EquityMap(TemplateView):
+    template_name = 'MapsApp.template.equity_map.html'
