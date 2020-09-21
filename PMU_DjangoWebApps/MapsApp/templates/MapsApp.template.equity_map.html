@@ -12,52 +12,52 @@
 <select id="service_filter"></select>
 <div>Social Backdrop</div>
 <select id="social_filter"></select>
-<div>Select Income Level</div>
+
 <div id="testIncome"></div>
-<div>Select Minority Percent</div>
+
 <div id="testMin"></div>
-<!--
-<div class="float-container">
-    <div id="incomeFilter" class="float-child">
-        Income Levels:
-        <div>
-            <input type="checkbox" name="incFilt" value="ALL" checked />ALL
-        </div>
-        <div>
-            <input type="checkbox" name="incFilt" value="one" />100K+
-        </div>
-        <div>
-            <input type="checkbox" name="incFilt" value="two" />75K-100K
-        </div>
-        <div>
-            <input type="checkbox" name="incFilt" value="three" />50K-75K
-        </div>
-        <div>
-            <input type="checkbox" name="incFilt" value="four" />25K-50K
-        </div>
-        <div>
-            <input type="checkbox" name="incFilt" value="five" />-25K
-        </div>
-    </div>
 
-    <div id="minorityFilter" class="float-child">
-        Minority Percent:
-        <div>
-            <input type="checkbox" name="minFilt" value="ALL" checked />ALL
-        </div>
-        <div>
-            <input type="checkbox" name="minFilt" value="one" />66%+
-        </div>
-        <div>
-            <input type="checkbox" name="minFilt" value="two" />33%-66%
-        </div>
-        <div>
-            <input type="checkbox" name="minFilt" value="three" />below 33%
-        </div>
+<div class="dropdown">
 
-    </div>
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Select Income Level
+    </button>
+    <form>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <label class="dropdown-item"><input type="checkbox" />100K+</label>
+            <label class="dropdown-item"> <input type="checkbox" />75K-100K</label>
+            <label class="dropdown-item"> <input type="checkbox" />50K-75K</label>
+            <label class="dropdown-item"> <input type="checkbox" />25K-50K</label>
+            <label class="dropdown-item"> <input type="checkbox" />below 25K</label>
+            <label class="dropdown-item"><input type="checkbox" checked />All</label>
+            <div class="dropdown-divider"></div>
+            <div>
+                <button type="submit" class="btn btn-info">Filter</button>
+            </div>
+        </div>
+       
+    </form>
 </div>
-    -->
+
+<div class="dropdown">
+
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Select Minority Percentage
+    </button>
+    <form>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <label class="dropdown-item"><input type="checkbox" />66%+</label>
+            <label class="dropdown-item"> <input type="checkbox" />33%-66%</label>
+            <label class="dropdown-item"> <input type="checkbox" />below 33%</label>
+            <label class="dropdown-item"><input type="checkbox" checked />All</label>
+            <div class="dropdown-divider"></div>
+            <div>
+                <button type="submit" class="btn btn-info">Filter</button>
+            </div>
+        </div>
+    </form>
+</div>
+
 <div id='map_container'></div>
 
 
@@ -100,7 +100,7 @@
 <script>
 
     $(document).ready(async function () {
- 
+
 
         // Initialize Leaflet, and set a long & lat as the center of the view (Long/Lat is abritrary, anywhere in the city that you deem good will do)
         var map = L.map("map_container").setView([40.703312, -73.97968], 10);
@@ -115,7 +115,7 @@
         }).addTo(map);
 
 
-      
+
         var layer_dict = {};
         // Load in the nyc geojson
         d3.json('/static/MapsApp/geojsons/nyc.geojson')
@@ -225,8 +225,9 @@
             .then(function (layer) {
                 layer_dict['incomeLayer'] = layer;
             });
-       // source: https://gis.stackexchange.com/questions/68941/how-to-add-remove-legend-with-leaflet-layers-control
-        //legend begin! 
+
+        // source: https://gis.stackexchange.com/questions/68941/how-to-add-remove-legend-with-leaflet-layers-control
+        //legend begin!
         var legendIncome = L.control({ position: 'bottomright' });
         var legendMin = L.control({ position: 'bottomleft' });
 
@@ -235,7 +236,7 @@
             var div = L.DomUtil.create('div', 'info legend'),
                 grades = [0, 25000, 50000, 75000, 100000],
                 colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
-          
+
             div.innerHTML += "<div>Income Levels</div>"
             // loop through our density intervals and generate a label with a colored square for each interval
             for (var i = 0; i < grades.length; i++) {
@@ -253,7 +254,7 @@
             var div = L.DomUtil.create('div', 'info legend'),
                 grades = [0, 33, 66],
                 colors = ['#FFFF00', '#FD8D3C', '#8B0000'];
-           
+
             div.innerHTML += "<div>Minority Percent</div>"
             // loop through our density intervals and generate a label with a colored square for each interval
             for (var i = 0; i < grades.length; i++) {
@@ -266,10 +267,12 @@
         };
         legendMin.addTo(map);
         legendIncome.addTo(map);
-       
+
         //end legend
 
         function getColor(income) {
+            //const opts = ['100K+', '75K-100K', '50K-75K', '25K-50K', '<25K']
+            // console.log("in getColor", document.getElementById("AllInc").checked)
 
             if (income >= 100000) { return '8B0000'; }
             else if (income < 100000 && income >= 75000) { return 'E31A1C'; }
@@ -277,6 +280,8 @@
             else if (income < 50000 && income >= 25000) { return 'FED976'; }
             else if (income < 25000) { return 'FFFF00'; }
             else { return '000000'; }
+
+
         }
         function getMinorityColor(perc) {
 
@@ -308,13 +313,17 @@
             .then(function (layer) {
                 layer_dict['ntaLayer'] = layer;
             });
+        /*
         //select checkboxes for income avg
         const selectInc = document.getElementById('testIncome')
+      
+
+        selectInc.innerHTML += "<form>"
         const opts = ['100K+', '75K-100K', '50K-75K', '25K-50K', '<25K'].map(function (each
         ) {
-            return `<input value='${each}' type="checkbox">${each}</input>`
+            return `<input name ="income" value='${each}' type="checkbox" id='${each}'>${each}</input>`
         }).join('')
-        selectInc.innerHTML = '<input type="checkbox" checked>All</input>' + opts
+        selectInc.innerHTML += '<input name ="income" id="AllInc" type="checkbox" checked>All</input>' + opts + "</form>"
 
         //select minority percent
         const selectMin = document.getElementById('testMin')
@@ -323,7 +332,7 @@
             return `<input value='${each}' type="checkbox">${each}</input>`
         }).join('')
         selectMin.innerHTML = '<input type="checkbox" checked>All</input>' + opts2
-
+        */
         // Toggle between NTA and VZV Bike Layer
         const layerFilterInput = document.getElementById('service_filter')
         const options = ['VZV Bike Priority Districts'].map(function (each) { // Create the drop down list
@@ -337,7 +346,8 @@
         }).join('')
         layerFilterSocialInput.innerHTML = '<option>Minority Data</option>' + options2
 
-
+        var inc = document.getElementById('testIncome').value;
+        console.log("inc! ", inc)
         // Filter with selected value in the <select></select>
         layerFilterInput.addEventListener('change', function () {
             const value = layerFilterInput.value
