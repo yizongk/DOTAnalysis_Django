@@ -1004,27 +1004,27 @@ class PastDueIndicatorsPageView(generic.ListView):
                 print(self.err_msg)
                 return IndicatorData.objects.none()
 
-        # # # # ## Sort dataset from sort direction and sort column #@TODO
-        # # # # try:
-        # # # #     ## Default sort
-        # # # #     if self.req_sort_by == '':
-        # # # #         #@TODO
-        # # # #         indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
-        # # # #     else:
-        # # # #         if self.req_sort_dir == "asc":
-        # # # #             indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
-        # # # #         elif self.req_sort_dir == "desc":
-        # # # #             indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
-        # # # #         else:
-        # # # #             self.req_success = False
-        # # # #             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
-        # # # #             print(self.err_msg)
-        # # # #             return IndicatorData.objects.none()
-        # # # # except Exception as e:
-        # # # #     self.req_success = False
-        # # # #     self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
-        # # # #     print(self.err_msg)
-        # # # #     return IndicatorData.objects.none()
+        ## Sort dataset from sort direction and sort column
+        try:
+            ## Default sort
+            if self.req_sort_by == '':
+                #@TODO
+                indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
+            else:
+                if self.req_sort_dir == "asc":
+                    indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
+                elif self.req_sort_dir == "desc":
+                    indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
+                else:
+                    self.req_success = False
+                    self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                    print(self.err_msg)
+                    return IndicatorData.objects.none()
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
