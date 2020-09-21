@@ -499,6 +499,7 @@ class WebGridPageView(generic.ListView):
 
             context["uniq_titles"] = []
             context["uniq_years"] = []
+            context["uniq_fiscal_years"] = []
             context["uniq_months"] = []
             context["uniq_categories"] = []
 
@@ -868,34 +869,119 @@ class PastDueIndicatorsPageView(generic.ListView):
     template_name = 'PerInd.template.pastdueindicators.html'
     context_object_name = 'indicator_data_entries'
 
-    paginate_by = 12
+    paginate_by = 24
 
     req_success = False
     err_msg = ""
 
+    req_sort_dir = ""
+    req_sort_by = ""
+
+    uniq_categories = []
+
+    req_cat_list_filter = [] ## Category
+
+    ctx_pagination_param = ""
+
+    cat_sort_anchor_GET_param = ""
+
     client_is_admin = False
 
     def get_queryset(self):
-        ## Check if remote user is admin
+        ## Collect GET url parameter info
+        temp_sort_dir = self.request.GET.get('SortDir')
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
+            self.req_sort_dir = temp_sort_dir
+
+        temp_sort_by = self.request.GET.get('SortBy')
+        if (temp_sort_by is not None and temp_sort_by != ''):
+            self.req_sort_by = temp_sort_by
+
+        self.req_cat_list_filter = self.request.GET.getlist('CategoriesListFilter')
+
+        ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
             self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): '{}' is not an Admin and is not authorized to see this page.".format(self.request.user)
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        ## Default filters on the WebGrid dataset
+        ## Use python to process the queryset to find a list of Indicator_Data.Records_IDs that meet the Past-Due-Criteria
+        ## Criteria for past due, last month entered is at least two months in the past (Updated_Date = '1899-12-30', means no data was entered, it is also our default 'NULL/Empty' date)
         try:
-            indicator_data_entries = IndicatorData.objects.filter(
+            base_data_qs = IndicatorData.objects.filter(
                 indicator__active=True, ## Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
 
-            indicator_data_entries = indicator_data_entries.exclude(  ## Exclude any future dates greater than current month and current year
+            base_data_qs = base_data_qs.exclude(  ## Exclude any future dates greater than current month and current year
                 year_month__yyyy__exact=timezone.now().year,
                 year_month__mm__gt=timezone.now().month
+            )
+
+            ## Find out out past due entry here
+            past_due_record_id_list = []
+            unique_ind_id = base_data_qs.order_by('indicator_id').values('indicator_id').distinct()
+            for each_ind_id in unique_ind_id:
+                ind_id_related = base_data_qs.filter(indicator_id__exact=each_ind_id['indicator_id']).order_by('indicator_id', '-year_month__yyyy', '-year_month__mm')
+
+                n_th_count = 0
+                for each_row in ind_id_related:
+                    n_th_count += 1
+                    if n_th_count <= 2 and each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                        # the ind_id is up to date
+                        break
+                        
+                    if n_th_count > 2 and each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                        # Collect the first instance of the entered entry's record_id, the reference query set should be ordered by order_by('indicator_id', '-year_month__yyyy', '-year_month__mm') for this to work.
+                        past_due_record_id_list.append(each_row.record_id)
+                        break
+
+            ## Use the following query to verify what is shown on the website is actaully outdated records by more than 2 month and shows just the latest record that was entered for each indicator title
+            """
+            SELECT
+            Indicator_Data.Record_ID,
+            Indicator_Data.Indicator_ID,
+            Year_Month.YYYY,
+            Year_Month.MM,
+            Indicator_Data.Updated_Date,
+            Users.Login
+            ,Indicator_Title
+            --ROW_NUMBER() OVER (PARTITION BY Indicator_Data.Indicator_ID ORDER BY Indicator_Data.Indicator_ID, Fiscal_Year DESC, MM DESC) AS rank
+            FROM Indicator_Data
+            LEFT JOIN Indicator_List
+            ON Indicator_Data.Indicator_ID = Indicator_List.Indicator_ID
+            LEFT JOIN Year_Month
+            ON Indicator_Data.Year_Month_ID = Year_Month.Year_Month_ID
+            LEFT JOIN Users
+            ON Indicator_Data.Update_User_ID = Users.User_ID
+            LEFT JOIN Category
+            ON Indicator_List.Category_ID = Category.Category_ID
+            WHERE
+            Indicator_Title = 'ENTER YOU INDICATOR TITLE HERE' AND
+            Indicator_List.Active = 1 AND
+            --Indicator_Data.Updated_Date = '1899-12-30 00:00:00' AND 
+            --Users.Login = 'Unknown' AND
+            Year_Month.YYYY > YEAR(GETDATE()) - 4 AND
+            NOT( Year_Month.YYYY = YEAR(GETDATE()) AND Year_Month.MM > MONTH(GETDATE()) )
+            ORDER BY
+            Indicator_ID,
+            YYYY DESC,
+            MM DESC
+            """
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return IndicatorData.objects.none()
+
+        ## Requery db to match up with the list of Indicator_Data.Records_IDs to pass to the client
+        try:
+            indicator_data_entries = IndicatorData.objects.filter(
+                pk__in=past_due_record_id_list,
             )
         except Exception as e:
             self.req_success = False
@@ -903,12 +989,49 @@ class PastDueIndicatorsPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        ## Default sort
+        ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
+        ## Filter dataset from Dropdown list
+        ## Filter by Categories
+        if len(self.req_cat_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in self.req_cat_list_filter:
+                    qs = qs | Q(indicator__category__category_name=i)
+                indicator_data_entries = indicator_data_entries.filter(qs)
+            except Exception as e:
+                self.req_success = False
+                self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Categories Filtering: {}".format(e)
+                print(self.err_msg)
+                return IndicatorData.objects.none()
+
+        # # # # ## Sort dataset from sort direction and sort column #@TODO
+        # # # # try:
+        # # # #     ## Default sort
+        # # # #     if self.req_sort_by == '':
+        # # # #         #@TODO
+        # # # #         indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
+        # # # #     else:
+        # # # #         if self.req_sort_dir == "asc":
+        # # # #             indicator_data_entries = indicator_data_entries.order_by(self.req_sort_by)
+        # # # #         elif self.req_sort_dir == "desc":
+        # # # #             indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
+        # # # #         else:
+        # # # #             self.req_success = False
+        # # # #             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+        # # # #             print(self.err_msg)
+        # # # #             return IndicatorData.objects.none()
+        # # # # except Exception as e:
+        # # # #     self.req_success = False
+        # # # #     self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+        # # # #     print(self.err_msg)
+        # # # #     return IndicatorData.objects.none()
+
+        ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
-            indicator_data_entries = indicator_data_entries.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
+            self.uniq_categories = indicator_data_entries.order_by('indicator__category__category_name').values('indicator__category__category_name').distinct()
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return IndicatorData.objects.none()
 
@@ -920,11 +1043,43 @@ class PastDueIndicatorsPageView(generic.ListView):
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
 
+            ## Construct current context filter and sort GET param string, for front end to keep states
+            ctx_cat_filter_param = ""
+
+            ## Construct Filter GET Param
+            for each in self.req_cat_list_filter:
+                ctx_cat_filter_param = "{}CategoriesListFilter={}&".format(ctx_cat_filter_param, each)
+                ### At this point, your ctx_cat_filter_param  is something like "CategoriesListFilter=1&CategoriesListFilter=2&"
+
+            ## Construct <a></a> GET parameter for the sorting columns
+            ### Defaults
+            ctx_cat_sort_dir = "SortDir=asc&"
+            ### Getting off of defaults on a need to basis
+            if self.req_sort_by == 'indicator__category__category_name':
+                if self.req_sort_dir == 'asc':
+                    ctx_cat_sort_dir = "SortDir=desc&"
+
+            self.cat_sort_anchor_GET_param = "SortBy=indicator__category__category_name&{}{}".format(ctx_cat_sort_dir, ctx_cat_filter_param)
+
+            ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
+            self.ctx_pagination_param = "SortBy={}&SortDir={}&{}".format(self.req_sort_by, self.req_sort_dir, ctx_cat_filter_param)
+
+
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
             context["req_success"] = self.req_success
-            context["category_permissions"] = self.category_permissions
             context["err_msg"] = self.err_msg
+
+            context["sort_dir"] = self.req_sort_dir
+            context["sort_by"] = self.req_sort_by
+
+            context["uniq_categories"] = self.uniq_categories
+
+            context["ctx_cat_list_filter"] = self.req_cat_list_filter
+
+            context["cat_sort_anchor_GET_param"] = self.cat_sort_anchor_GET_param
+
+            context["ctx_pagination_param"] = self.ctx_pagination_param
 
             context["client_is_admin"] = self.client_is_admin
 
@@ -938,26 +1093,13 @@ class PastDueIndicatorsPageView(generic.ListView):
             print(self.err_msg)
             context["indicator_data_entries"] = IndicatorData.objects.none()
 
-            context["category_permissions"] = ""
-
             context["sort_dir"] = ""
             context["sort_by"] = ""
 
-            context["uniq_titles"] = []
-            context["uniq_years"] = []
-            context["uniq_months"] = []
             context["uniq_categories"] = []
 
-            context["ctx_title_list_filter"] = ""
-            context["ctx_yr_list_filter"] = ""
-            context["ctx_mn_list_filter"] = ""
-            context["ctx_fy_list_filter"] = ""
             context["ctx_cat_list_filter"] = ""
 
-            context["title_sort_anchor_GET_param"] = ""
-            context["yyyy_sort_anchor_GET_param"] = ""
-            context["mm_sort_anchor_GET_param"] = ""
-            context["fiscal_year_sort_anchor_GET_param"] = ""
             context["cat_sort_anchor_GET_param"] = ""
 
             context["ctx_pagination_param"] = ""
