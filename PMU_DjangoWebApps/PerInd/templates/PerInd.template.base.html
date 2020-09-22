@@ -21,3 +21,9 @@
 {% block customize_contact_link %}
     {% url 'perind_contact_view' %}
 {% endblock %}
+
+{% block customize_nav_items %}
+{% comment %} <li class="nav-item">
+    <a class="nav-link" href="{% url 'perind_pastdueindicators' %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">Past Due Indicators</a>
+</li> {% endcomment %}
+{% endblock %}

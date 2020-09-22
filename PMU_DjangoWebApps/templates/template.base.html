@@ -65,6 +65,8 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% block customize_contact_link %}{% endblock %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
                     </li>
+                    {% block customize_nav_items %}
+                    {% endblock %}
 
                 </ul>
                 <p class="nav navbar-text navbar-right" style=" font-family:sans-serif;">Hello, {{user.username}}</p>
