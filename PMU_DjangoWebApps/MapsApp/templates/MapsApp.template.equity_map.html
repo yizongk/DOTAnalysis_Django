@@ -174,12 +174,12 @@
             });
 
         // Load in the vision zero geojson
-        d3.json('/static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson')
+        d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson')
             .then(function (data1) {
                 let layer = L.geoJson(data1, {
                     // Create a pop up text when you click on each element/feature
                     onEachFeature: function (feature, layer) {
-                        layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/vzv_bike_priority_districts_reprojected_4326.geojson to see how the json file is formated, and you will understand this part
+                        layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson to see how the json file is formated, and you will understand this part
                     }
                 }).addTo(map);
                 return layer;
