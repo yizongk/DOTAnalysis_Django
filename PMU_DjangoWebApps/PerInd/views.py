@@ -940,17 +940,24 @@ class PastDueIndicatorsPageView(generic.ListView):
             for each_ind_id in unique_ind_id:
                 ind_id_related = base_data_qs.filter(indicator_id__exact=each_ind_id['indicator_id']).order_by('indicator_id', '-year_month__yyyy', '-year_month__mm')
 
-                n_th_count = 0
                 for each_row in ind_id_related:
-                    n_th_count += 1
-                    if n_th_count <= 2 and each_row.updated_date.date() != datetime(1899, 12, 30).date():
-                        # the ind_id is up to date
-                        break
-                        
-                    if n_th_count > 2 and each_row.updated_date.date() != datetime(1899, 12, 30).date():
-                        # Collect the first instance of the entered entry's record_id, the reference query set should be ordered by order_by('indicator_id', '-year_month__yyyy', '-year_month__mm') for this to work.
-                        past_due_record_id_list.append(each_row.record_id)
-                        break
+                    ## Indicator could be up-to-date, current record is for entry for the last two month (Counting current month and last month)
+                    if each_row.year_month.yyyy == timezone.now().year and ( timezone.now().month - each_row.year_month.mm ) < 2:
+                        if each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                            # Indicator is up-to-date, abort loop and go scan the next Indicator
+                            break
+                        else:
+                            # check the next record
+                            continue
+                    ## Indicator is pass-dued (current record is for entry over two months ago, before current month and last month), find the latest record where data was entered.
+                    else:
+                        if each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                            ## Found latest record where data was entered, break loop and scan the next Indicator
+                            past_due_record_id_list.append(each_row.record_id)
+                            break
+                        else:
+                            # check the next record
+                            continue
 
             ## Use the following query to verify what is shown on the website is actaully outdated records by more than 2 month and shows just the latest record that was entered for each indicator title
             """
