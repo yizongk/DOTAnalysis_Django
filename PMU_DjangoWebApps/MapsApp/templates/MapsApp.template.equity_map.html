@@ -17,9 +17,10 @@
 
 <div id="testMin"></div>
 
-<div class="dropdown">
+<div id="activeSocialBackdropLevels" class="dropdown dropright">
 
-    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <!-- may not want to have a submit button here, we don't have any backend code for this form to call to. Probably should copy the active minority/income geojson as a new object and just filter that object for the proper records and before adding it to the maps. Will need to find a good place in the code to remove this new goejson object layer -->
+    <!-- <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Select Income Level
     </button>
     <form>
@@ -36,10 +37,10 @@
             </div>
         </div>
 
-    </form>
+    </form> -->
 </div>
 
-<div class="dropdown">
+<!-- <div class="dropdown">
 
     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Select Minority Percentage
@@ -56,7 +57,7 @@
             </div>
         </div>
     </form>
-</div>
+</div> -->
 
 <div id='map_container'></div>
 {% endblock %}
@@ -248,7 +249,6 @@
             return div;
         };
 
-
         legendMin.onAdd = function (map) {
 
             var div = L.DomUtil.create('div', 'info legend'),
@@ -265,10 +265,10 @@
 
             return div;
         };
+
         legendMin.addTo(map);
         legendIncome.addTo(map);
-
-        //end legend
+        //and so has a legend come to pass
 
         function getColor(income) {
             //const opts = ['100K+', '75K-100K', '50K-75K', '25K-50K', '<25K']
@@ -366,15 +366,54 @@
                 map.removeLayer(social_layers_dict[key])
             });
 
+            $("#activeSocialBackdropLevels").html(``)
+
             // if (value === 'All') {
             //     Object.keys(social_layers_dict).map(function (key, index) {
             //         social_layers_dict[key].addTo(map)
             //     });
             // }
             if (value === 'Income Data') {
-                social_layers_dict['incomeLayer'].addTo(map)
+                social_layers_dict['incomeLayer'].addTo(map);
+                $("#activeSocialBackdropLevels").html(`
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Select Income Level
+                </button>
+                <form>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <label class="dropdown-item"><input type="checkbox" />100K+</label>
+                        <label class="dropdown-item"> <input type="checkbox" />75K-100K</label>
+                        <label class="dropdown-item"> <input type="checkbox" />50K-75K</label>
+                        <label class="dropdown-item"> <input type="checkbox" />25K-50K</label>
+                        <label class="dropdown-item"> <input type="checkbox" />below 25K</label>
+                        <label class="dropdown-item"><input type="checkbox" checked />All</label>
+                        <div class="dropdown-divider"></div>
+                        <div>
+                            <button type="submit" class="btn btn-info">Filter</button>
+                        </div>
+                    </div>
+
+                </form>
+                `);
             } else if (value === 'Minority Data') {
-                social_layers_dict['minorityLayer'].addTo(map)
+                social_layers_dict['minorityLayer'].addTo(map);
+                $("#activeSocialBackdropLevels").html(`
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Select Minority Percentage
+                </button>
+                <form>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <label class="dropdown-item"><input type="checkbox" />66%+</label>
+                        <label class="dropdown-item"> <input type="checkbox" />33%-66%</label>
+                        <label class="dropdown-item"> <input type="checkbox" />below 33%</label>
+                        <label class="dropdown-item"><input type="checkbox" checked />All</label>
+                        <div class="dropdown-divider"></div>
+                        <div>
+                            <button type="submit" class="btn btn-info">Filter</button>
+                        </div>
+                    </div>
+                </form>
+                `);
             } else {
                 console.log('layer not valid to add to map')
             }
