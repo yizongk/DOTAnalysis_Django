@@ -9,7 +9,7 @@
 <div>NYC Borough</div>
 <select id="filter"></select>
 <div>Select DOT Service</div>
-<select id="service_filter"></select>
+<select id="dot_services_filter"></select>
 <div>Social Backdrop</div>
 <select id="social_filter"></select>
 
@@ -18,52 +18,10 @@
 <div id="testMin"></div>
 
 <div id="activeSocialBackdropLevels" class="dropdown dropright">
-
-    <!-- may not want to have a submit button here, we don't have any backend code for this form to call to. Probably should copy the active minority/income geojson as a new object and just filter that object for the proper records and before adding it to the maps. Will need to find a good place in the code to remove this new goejson object layer -->
-    <!-- <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Select Income Level
-    </button>
-    <form>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <label class="dropdown-item"><input type="checkbox" />100K+</label>
-            <label class="dropdown-item"> <input type="checkbox" />75K-100K</label>
-            <label class="dropdown-item"> <input type="checkbox" />50K-75K</label>
-            <label class="dropdown-item"> <input type="checkbox" />25K-50K</label>
-            <label class="dropdown-item"> <input type="checkbox" />below 25K</label>
-            <label class="dropdown-item"><input type="checkbox" checked />All</label>
-            <div class="dropdown-divider"></div>
-            <div>
-                <button type="submit" class="btn btn-info">Filter</button>
-            </div>
-        </div>
-
-    </form> -->
 </div>
-
-<!-- <div class="dropdown">
-
-    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Select Minority Percentage
-    </button>
-    <form>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <label class="dropdown-item"><input type="checkbox" />66%+</label>
-            <label class="dropdown-item"> <input type="checkbox" />33%-66%</label>
-            <label class="dropdown-item"> <input type="checkbox" />below 33%</label>
-            <label class="dropdown-item"><input type="checkbox" checked />All</label>
-            <div class="dropdown-divider"></div>
-            <div>
-                <button type="submit" class="btn btn-info">Filter</button>
-            </div>
-        </div>
-    </form>
-</div> -->
 
 <div id='map_container'></div>
 {% endblock %}
-
-
-
 
 
 
@@ -318,25 +276,23 @@
 
         // Toggle between NTA and VZV Bike Layer
         // Creating the dropdown list
-        const layerFilterDOTServicesInput = document.getElementById('service_filter')
         const options = ['VZV Bike Priority Districts'].map(function (each) { // Create the drop down list
             return `<option value='${each}'>${each}</option>`
         }).join('')
-        layerFilterDOTServicesInput.innerHTML = '<option>None</option>' + options
+        $("#dot_services_filter").html('<option>None</option>' + options);
 
-        const layerFilterSocialInput = document.getElementById('social_filter')
         const options2 = ['Minority Data', 'Income Data'].map(function (each) { // Create the drop down list
             return `<option value='${each}'>${each}</option>`
         }).join('')
-        layerFilterSocialInput.innerHTML = '<option>None</option>' + options2
+        $('#social_filter').html('<option>None</option>' + options2);
 
         var inc = document.getElementById('testIncome').value;
         console.log("inc! ", inc)
 
 
         // Filter with selected value in the dropdown list
-        layerFilterDOTServicesInput.addEventListener('change', function () {
-            const value = layerFilterDOTServicesInput.value
+        $("#dot_services_filter").change( function() {
+            const value = $("#dot_services_filter").val()
 
             // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
             // Iterate through the DOT_services_layers_dict with access to its key and element
@@ -349,16 +305,18 @@
             //         DOT_services_layers_dict[key].addTo(map)
             //     });
             // }
-            if (value === 'VZV Bike Priority Districts') {
+            if (value === 'None') {
+                return //@TODO might move the map.remove layer here, and let things just keep getting added to the map when you select , and add the layer if it doesn't exists (This look promising: https://gis.stackexchange.com/questions/193711/how-to-check-if-a-leaflet-layer-is-already-added-on-the-map)
+            } else if (value === 'VZV Bike Priority Districts') {
                 DOT_services_layers_dict['vzvLayer'].addTo(map)
             } else {
-                console.log('layer not valid to add to map')
+                console.log(`layer not valid to add to map: '${value}'`)
             }
         })
 
 
-        layerFilterSocialInput.addEventListener('change', function () {
-            const value = layerFilterSocialInput.value
+        $('#social_filter').change( function() {
+            const value = $('#social_filter').val();
 
             // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
             // Iterate through the social_layers_dict with access to its key and element
@@ -373,7 +331,9 @@
             //         social_layers_dict[key].addTo(map)
             //     });
             // }
-            if (value === 'Income Data') {
+            if (value === 'None') {
+                return //@TODO might move the map.remove layer here, and let things just keep getting added to the map when you select , and add the layer if it doesn't exists (This look promising: https://gis.stackexchange.com/questions/193711/how-to-check-if-a-leaflet-layer-is-already-added-on-the-map)
+            } else if (value === 'Income Data') {
                 social_layers_dict['incomeLayer'].addTo(map);
                 $("#activeSocialBackdropLevels").html(`
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -415,7 +375,7 @@
                 </form>
                 `);
             } else {
-                console.log('layer not valid to add to map')
+                console.log(`layer not valid to add to map: '${value}'`)
             }
         });
 
