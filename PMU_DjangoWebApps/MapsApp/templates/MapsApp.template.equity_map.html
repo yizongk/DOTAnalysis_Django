@@ -88,7 +88,7 @@
                 const options = data.features.map(function (feature) {
                     return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
                 }).join('')
-                filterInput.innerHTML = '<option>All</option>' + options
+                filterInput.innerHTML = '<option>All</option><option>None</option>' + options
 
                 // Filter with selected value in the <select></select>
                 filterInput.addEventListener('change', function () {
@@ -99,6 +99,21 @@
 
                     if (value === 'All') {
                         nycBoroLayer = L.geoJson(data, {
+                            style: {
+                                color: "#ff00000",
+                                strokeColor: "red",
+                                weight: 1
+                            }
+                        }).addTo(map)
+                    } else if (value === 'None') {
+                        let newData = {
+                            "type": "FeatureCollection",
+                            "features": data.features.filter(function (feature) { // Filtering happens here
+                                return feature.properties.boro_name === null
+                            })
+                        }
+
+                        nycBoroLayer = L.geoJson(newData, {
                             style: {
                                 color: "#ff00000",
                                 strokeColor: "red",
