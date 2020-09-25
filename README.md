@@ -400,3 +400,8 @@ To fix this, when you edit the user's permission in SSMS, under General tab on t
 ```
 ogr2ogr -f GeoJSON out.geojson in.shp
 ```
+
+## Converting from a Spacial SQL Server to a GeoJSON in EPSG:4326 format
+```
+ogr2ogr -f "GeoJson" -t_srs "EPSG:4326" "outputname_epsg4326.geojson" "MSSQL:server={YourServerWithoutTheBracket};database={YourDatabaseWithoutTheBracket};uid={YourUsernameWithoutTheBracket};pwd={YourPasswordWithoutTheBracket};" -sql "SELECT * FROM {YourTableNameWithoutTheBracket}"
+```
