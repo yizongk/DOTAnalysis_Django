@@ -1,0 +1,26 @@
+{
+"type": "FeatureCollection",
+"name": "SELECT",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "OBJECTID": 1, "Location": "John Jay College", "Address": "899 10th Ave." }, "geometry": { "type": "Point", "coordinates": [ -73.987692873288324, 40.770327750561293 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 2, "Location": "Bohemian Hall", "Address": "29-19 24th Avenue" }, "geometry": { "type": "Point", "coordinates": [ -73.916101741015012, 40.772798400781724 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 3, "Location": "John Jay College", "Address": "524 West 59th Street" }, "geometry": { "type": "Point", "coordinates": [ -73.988533986138592, 40.77079444098726 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 4, "Location": "Medgar Evers College", "Address": "1650 Bedford Ave" }, "geometry": { "type": "Point", "coordinates": [ -73.956675978977515, 40.666269101117017 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 5, "Location": "Brooklyn Borough Hall", "Address": "209 Joralemon Street" }, "geometry": { "type": "Point", "coordinates": [ -73.990487376250698, 40.692475723008471 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 6, "Location": "Bronx Library", "Address": "310 East Kingsbridge Road" }, "geometry": { "type": "Point", "coordinates": [ -73.894209090396117, 40.863202322342005 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 7, "Location": "Latino Pastoral Action Center", "Address": "14 West 170th street" }, "geometry": { "type": "Point", "coordinates": [ -73.918513723459711, 40.840490409515176 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 8, "Location": "PS 321", "Address": "180 7th Ave" }, "geometry": { "type": "Point", "coordinates": [ -73.977782999461596, 40.671459972196374 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 9, "Location": "LaGuardia Community College", "Address": "31-10 Thomson Ave." }, "geometry": { "type": "Point", "coordinates": [ -73.935022185332613, 40.744902071908392 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 10, "Location": "IS 231", "Address": "145-00 Springfield Blvd." }, "geometry": { "type": "Point", "coordinates": [ -73.758740461061365, 40.664594570022636 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 11, "Location": "Curtis High School", "Address": "105 Hamilton Ave" }, "geometry": { "type": "Point", "coordinates": [ -74.081222113338981, 40.644734747601589 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 12, "Location": "Casita Maria Center for Arts & Education", "Address": "928 Simpson Street" }, "geometry": { "type": "Point", "coordinates": [ -73.893127899668642, 40.820578803188646 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 13, "Location": "Lehman College", "Address": "250 Bedford Park Blvd" }, "geometry": { "type": "Point", "coordinates": [ -73.886451870517774, 40.87094871971717 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 14, "Location": "PS 42", "Address": "488 Beach 66th Street" }, "geometry": { "type": "Point", "coordinates": [ -73.79530371357508, 40.594538534245871 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 15, "Location": "Parkchester Library", "Address": "1985 Westchester Ave." }, "geometry": { "type": "Point", "coordinates": [ -73.858242156806824, 40.833512759142479 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 16, "Location": "Hunter College", "Address": "695 Park Avenue" }, "geometry": { "type": "Point", "coordinates": [ -73.965367678059664, 40.768972820357043 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 17, "Location": "South Brooklyn Community High School", "Address": "173 Conover Street" }, "geometry": { "type": "Point", "coordinates": [ -74.014363465435011, 40.677969029618716 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 18, "Location": "PS 169", "Address": "4305 7th Ave." }, "geometry": { "type": "Point", "coordinates": [ -74.001902702658953, 40.64628963358534 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 19, "Location": "IS 73", "Address": "70-02 54th Ave." }, "geometry": { "type": "Point", "coordinates": [ -73.893624341052529, 40.729215222936219 ] } }
+]
+}
