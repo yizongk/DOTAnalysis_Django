@@ -5,21 +5,26 @@
 
 
 {% block content %}
-<div>Leaflet.js</div>
-<div>NYC Borough</div>
-<select id="filter"></select>
-<div>Select DOT Service</div>
-<select id="dot_services_filter"></select>
-<div>Social Backdrop</div>
-<select id="social_filter"></select>
-<div id="SocialBackdropLevels"></div>
+   
+        <div>Leaflet.js</div>
+        <div>NYC Borough</div>
+        <select id="filter"></select>
+        <div>Select DOT Service</div>
+        <select id="dot_services_filter"></select>
+        <div>Social Backdrop</div>
+        <select id="social_filter"></select>
+        <div id="SocialBackdropLevels"></div>
 
-<div id="testIncome"></div>
+        <div id="testIncome"></div>
 
-<div id="testMin"></div>
-
-
-<div id='map_container'></div>
+        <div id="testMin"></div>
+        <div id="container">
+            <div id="nta_filter">Compare NTA</div>
+            <select id="nta_filter_1"></select>
+            <select id="nta_filter_2"></select>
+            <div id='map_container'></div>
+        </div>
+        
 {% endblock %}
 
 
@@ -34,11 +39,22 @@
 <script src="https://d3js.org/d3-fetch.v2.min.js"></script>
 
 <style>
+
     #map_container {
         height: 600px;
         width: 600px;
+        float:left;
     }
+    #nta_filter_1, #nta_filter_2,#nta_filter{
+        margin-top:50px;
+        margin-right:15px;
 
+        float:left;
+      
+    }
+    #container{
+        overflow:hidden;
+    }
     .float-container {
         padding: 20px;
     }
@@ -73,6 +89,134 @@
         var DOT_services_layers_dict = {};
         var social_layers_dict = {};
         var social_layers_dict_geojson_backup = {};  // For holding a complete full copy of each social geojson file, when accessing this variables, always make a deep copy like JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer'])). DO NOT MODIFY the content once you have set it! (It's suppose to be a backup afterall)
+
+        // Load in the nta geojson-for the first NTA dropdown
+        d3.json('/static/MapsApp/geojsons/NTA.geojson')
+            .then(function (data) {
+              
+                let ntaLayer1 = L.geoJson(data, {
+                    style: {
+                       
+                    }
+                })
+                // Creating the list for the dropdown
+                const selectNTA1 = document.getElementById('nta_filter_1')
+               
+                const options = data.features.map(function (feature) {
+                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+                }).join('')
+                selectNTA1.innerHTML = '<option>None</option>'+options
+               
+                selectNTA1.addEventListener('change', function () {
+                const value1 = selectNTA1.value
+
+            
+            map.removeLayer(ntaLayer1)
+
+            
+          if (value1 === 'None') {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": data.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === null
+                    })
+                }
+
+              ntaLayer1 = L.geoJson(newData, {
+                  onEachFeature: function (feature, layer) {
+                      layer.bindPopup(feature.properties.ntacode)
+                  }
+              }).addTo(map)
+            } else  {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": data.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === (value1)
+                    })
+                }
+
+                // Re-add the boro layer (Now filtered down)
+                ntaLayer1 = L.geoJson(newData, {
+                   onEachFeature: function (feature, layer) {
+                                layer.bindPopup(feature.properties.ntacode)
+                            }
+                }).addTo(map)
+                    }
+            
+                })
+
+                
+
+        return ntaLayer1;
+    })
+            .then(function (layer) {
+                layer_dict['ntaLayer1'] = layer;
+            });
+
+        // Load in the nta geojson-for the second NTA dropdown
+        d3.json('/static/MapsApp/geojsons/NTA.geojson')
+            .then(function (data) {
+
+                let ntaLayer2 = L.geoJson(data, {
+                    style: {
+
+                    }
+                })
+                
+              
+                const selectNTA2 = document.getElementById('nta_filter_2')
+                const options = data.features.map(function (feature) {
+                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+                }).join('')
+              
+                selectNTA2.innerHTML = '<option>None</option>' + options
+
+                
+                selectNTA2.addEventListener('change', function () {
+                    const value2 = selectNTA2.value
+
+                    
+                    map.removeLayer(ntaLayer2)
+
+
+                    if (value2 === 'None') {
+                        let newData = {
+                            "type": "FeatureCollection",
+                            "features": data.features.filter(function (feature) { // Filtering happens here
+                                return feature.properties.ntacode === null
+                            })
+                        }
+
+                        ntaLayer2 = L.geoJson(newData, {
+                            onEachFeature: function (feature, layer) {
+                                layer.bindPopup(feature.properties.ntacode)
+                            }
+                        }).addTo(map)
+                    } else {
+                        let newData = {
+                            "type": "FeatureCollection",
+                            "features": data.features.filter(function (feature) { // Filtering happens here
+                                return feature.properties.ntacode === (value2)
+                            })
+                        }
+
+                        // Re-add the boro layer (Now filtered down)
+                        ntaLayer2 = L.geoJson(newData, {
+                            style: {
+                                //color: "#0000FF",
+                                //strokeColor: "blue",
+                                //weight: 1
+                            }
+                        }).addTo(map)
+                    }
+
+                })
+                return ntaLayer2;
+            })
+            .then(function (layer) {
+                layer_dict['ntaLayer2'] = layer;
+            });
+
         // Load in the nyc geojson
         d3.json('/static/MapsApp/geojsons/nyc.geojson')
             .then(function (data) {
