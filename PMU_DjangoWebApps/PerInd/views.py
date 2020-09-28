@@ -285,8 +285,13 @@ class WebGridPageView(generic.ListView):
             )
 
             indicator_data_entries = indicator_data_entries.exclude(  ## Exclude any future dates greater than current month and current year
-                year_month__yyyy__exact=timezone.now().year,
-                year_month__mm__gt=timezone.now().month
+                Q(
+                    year_month__yyyy__exact=timezone.now().year,
+                    year_month__mm__gt=timezone.now().month
+                ) |
+                Q(
+                    year_month__yyyy__gt=timezone.now().year,
+                )
             )
         except Exception as e:
             self.req_success = False
@@ -724,8 +729,13 @@ def GetCsvApi(request):
         )
 
         csv_queryset = csv_queryset.exclude(  ## Exclude any future dates greater than current month and current year
-            year_month__yyyy__exact=timezone.now().year,
-            year_month__mm__gt=timezone.now().month
+            Q(
+                year_month__yyyy__exact=timezone.now().year,
+                year_month__mm__gt=timezone.now().month
+            ) |
+            Q(
+                year_month__yyyy__gt=timezone.now().year,
+            )
         )
     except Exception as e:
         return JsonResponse({
@@ -930,8 +940,13 @@ class PastDueIndicatorsPageView(generic.ListView):
             )
 
             base_data_qs = base_data_qs.exclude(  ## Exclude any future dates greater than current month and current year
-                year_month__yyyy__exact=timezone.now().year,
-                year_month__mm__gt=timezone.now().month
+                Q(
+                    year_month__yyyy__exact=timezone.now().year,
+                    year_month__mm__gt=timezone.now().month
+                ) |
+                Q(
+                    year_month__yyyy__gt=timezone.now().year,
+                )
             )
 
             ## Find out out past due entry here
