@@ -294,7 +294,7 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
+        ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         ## Filter dataset from Dropdown list
         ## Filter by Titles
         if len(self.req_title_list_filter) >= 1:
@@ -943,7 +943,7 @@ class PastDueIndicatorsPageView(generic.ListView):
                 for each_row in ind_id_related:
                     ## Indicator could be up-to-date, current record is for entry for the last two month (Counting current month and last month)
                     if each_row.year_month.yyyy == timezone.now().year and ( timezone.now().month - each_row.year_month.mm ) < 2:
-                        if each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                        if each_row.updated_date.date().year != datetime(1899, 12, 30).date().year:
                             # Indicator is up-to-date, abort loop and go scan the next Indicator
                             break
                         else:
@@ -951,7 +951,7 @@ class PastDueIndicatorsPageView(generic.ListView):
                             continue
                     ## Indicator is pass-dued (current record is for entry over two months ago, before current month and last month), find the latest record where data was entered.
                     else:
-                        if each_row.updated_date.date() != datetime(1899, 12, 30).date():
+                        if each_row.updated_date.date().year != datetime(1899, 12, 30).date().year:
                             ## Found latest record where data was entered, break loop and scan the next Indicator
                             past_due_record_id_list.append(each_row.record_id)
                             break
@@ -982,7 +982,7 @@ class PastDueIndicatorsPageView(generic.ListView):
             WHERE
             Indicator_Title = 'ENTER YOU INDICATOR TITLE HERE' AND
             Indicator_List.Active = 1 AND
-            --Indicator_Data.Updated_Date = '1899-12-30 00:00:00' AND 
+            --Indicator_Data.Updated_Date = '1899-12-30 00:00:00' AND
             --Users.Login = 'Unknown' AND
             Year_Month.YYYY > YEAR(GETDATE()) - 4 AND
             NOT( Year_Month.YYYY = YEAR(GETDATE()) AND Year_Month.MM > MONTH(GETDATE()) )
