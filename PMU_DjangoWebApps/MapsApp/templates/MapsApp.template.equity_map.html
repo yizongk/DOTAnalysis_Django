@@ -1,11 +1,11 @@
 {% extends 'MapsApp.template.base.html' %}
 
 {% load static %}
-
+{% comment %} #@TODO need to revamp the geojson. Put all poverty and minority data into one single json file, and load that instead {% endcomment %}
+{% comment %} #@TODO need to s_join the vision zero data with NTA that the points is in. Need backend python script for that {% endcomment %}
 
 
 {% block content %}
-   
         <div>Leaflet.js</div>
         <div>NYC Borough</div>
         <select id="filter"></select>
@@ -24,7 +24,7 @@
             <select id="nta_filter_2"></select>
             <div id='map_container'></div>
         </div>
-        
+
 {% endblock %}
 
 
@@ -50,7 +50,7 @@
         margin-right:15px;
 
         float:left;
-      
+
     }
     #container{
         overflow:hidden;
@@ -93,27 +93,27 @@
         // Load in the nta geojson-for the first NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
             .then(function (data) {
-              
+
                 let ntaLayer1 = L.geoJson(data, {
                     style: {
-                       
+
                     }
                 })
                 // Creating the list for the dropdown
                 const selectNTA1 = document.getElementById('nta_filter_1')
-               
+
                 const options = data.features.map(function (feature) {
                     return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
                 }).join('')
                 selectNTA1.innerHTML = '<option>None</option>'+options
-               
+
                 selectNTA1.addEventListener('change', function () {
                 const value1 = selectNTA1.value
 
-            
+
             map.removeLayer(ntaLayer1)
 
-            
+
           if (value1 === 'None') {
                 let newData = {
                     "type": "FeatureCollection",
@@ -142,10 +142,10 @@
                             }
                 }).addTo(map)
                     }
-            
+
                 })
 
-                
+
 
         return ntaLayer1;
     })
@@ -162,20 +162,20 @@
 
                     }
                 })
-                
-              
+
+
                 const selectNTA2 = document.getElementById('nta_filter_2')
                 const options = data.features.map(function (feature) {
                     return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
                 }).join('')
-              
+
                 selectNTA2.innerHTML = '<option>None</option>' + options
 
-                
+
                 selectNTA2.addEventListener('change', function () {
                     const value2 = selectNTA2.value
 
-                    
+
                     map.removeLayer(ntaLayer2)
 
 

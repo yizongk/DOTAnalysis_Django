@@ -277,7 +277,7 @@ class WebGridPageView(generic.ListView):
             print(self.err_msg)
             return IndicatorData.objects.none()
 
-        #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list 
+        #refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         # Filter dataset from Dropdown list
         ## Filter by Titles
         if len(self.req_title_list_filter) >= 1:
