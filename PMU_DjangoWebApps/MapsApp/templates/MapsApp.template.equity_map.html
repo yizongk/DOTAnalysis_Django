@@ -92,259 +92,259 @@
 
         // Load in the nta geojson-for the first NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
-            .then(function (data) {
+        .then(function (data) {
 
-                let ntaLayer1 = L.geoJson(data, {
-                    style: {
+            let ntaLayer1 = L.geoJson(data, {
+                style: {
 
-                    }
-                })
-                // Creating the list for the dropdown
-                const selectNTA1 = document.getElementById('nta_filter_1')
+                }
+            })
+            // Creating the list for the dropdown
+            const selectNTA1 = document.getElementById('nta_filter_1')
 
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-                }).join('')
-                selectNTA1.innerHTML = '<option>None</option>'+options
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+            }).join('')
+            selectNTA1.innerHTML = '<option>None</option>'+options
 
-                selectNTA1.addEventListener('change', function () {
+            selectNTA1.addEventListener('change', function () {
                 const value1 = selectNTA1.value
 
 
-            map.removeLayer(ntaLayer1)
+                map.removeLayer(ntaLayer1)
 
 
-          if (value1 === 'None') {
-                let newData = {
-                    "type": "FeatureCollection",
-                    "features": data.features.filter(function (feature) { // Filtering happens here
-                        return feature.properties.ntacode === null
-                    })
-                }
-
-              ntaLayer1 = L.geoJson(newData, {
-                  onEachFeature: function (feature, layer) {
-                      layer.bindPopup(feature.properties.ntacode)
-                  }
-              }).addTo(map)
-            } else  {
-                let newData = {
-                    "type": "FeatureCollection",
-                    "features": data.features.filter(function (feature) { // Filtering happens here
-                        return feature.properties.ntacode === (value1)
-                    })
-                }
-
-                // Re-add the boro layer (Now filtered down)
-                ntaLayer1 = L.geoJson(newData, {
-                   onEachFeature: function (feature, layer) {
-                                layer.bindPopup(feature.properties.ntacode)
-                            }
-                }).addTo(map)
+                if (value1 === 'None') {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.ntacode === null
+                        })
                     }
 
-                })
+                    ntaLayer1 = L.geoJson(newData, {
+                        onEachFeature: function (feature, layer) {
+                            layer.bindPopup(feature.properties.ntacode)
+                        }
+                    }).addTo(map)
+                } else  {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.ntacode === (value1)
+                        })
+                    }
+
+                    // Re-add the boro layer (Now filtered down)
+                    ntaLayer1 = L.geoJson(newData, {
+                        onEachFeature: function (feature, layer) {
+                                    layer.bindPopup(feature.properties.ntacode)
+                                }
+                    }).addTo(map)
+                }
+
+            })
 
 
 
-        return ntaLayer1;
-    })
-            .then(function (layer) {
-                layer_dict['ntaLayer1'] = layer;
-            });
+            return ntaLayer1;
+        })
+        .then(function (layer) {
+            layer_dict['ntaLayer1'] = layer;
+        });
 
         // Load in the nta geojson-for the second NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
-            .then(function (data) {
+        .then(function (data) {
 
-                let ntaLayer2 = L.geoJson(data, {
-                    style: {
+            let ntaLayer2 = L.geoJson(data, {
+                style: {
 
-                    }
-                })
-
-
-                const selectNTA2 = document.getElementById('nta_filter_2')
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-                }).join('')
-
-                selectNTA2.innerHTML = '<option>None</option>' + options
-
-
-                selectNTA2.addEventListener('change', function () {
-                    const value2 = selectNTA2.value
-
-
-                    map.removeLayer(ntaLayer2)
-
-
-                    if (value2 === 'None') {
-                        let newData = {
-                            "type": "FeatureCollection",
-                            "features": data.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.ntacode === null
-                            })
-                        }
-
-                        ntaLayer2 = L.geoJson(newData, {
-                            onEachFeature: function (feature, layer) {
-                                layer.bindPopup(feature.properties.ntacode)
-                            }
-                        }).addTo(map)
-                    } else {
-                        let newData = {
-                            "type": "FeatureCollection",
-                            "features": data.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.ntacode === (value2)
-                            })
-                        }
-
-                        // Re-add the boro layer (Now filtered down)
-                        ntaLayer2 = L.geoJson(newData, {
-                            style: {
-                                //color: "#0000FF",
-                                //strokeColor: "blue",
-                                //weight: 1
-                            }
-                        }).addTo(map)
-                    }
-
-                })
-                return ntaLayer2;
+                }
             })
-            .then(function (layer) {
-                layer_dict['ntaLayer2'] = layer;
-            });
+
+
+            const selectNTA2 = document.getElementById('nta_filter_2')
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+            }).join('')
+
+            selectNTA2.innerHTML = '<option>None</option>' + options
+
+
+            selectNTA2.addEventListener('change', function () {
+                const value2 = selectNTA2.value
+
+
+                map.removeLayer(ntaLayer2)
+
+
+                if (value2 === 'None') {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.ntacode === null
+                        })
+                    }
+
+                    ntaLayer2 = L.geoJson(newData, {
+                        onEachFeature: function (feature, layer) {
+                            layer.bindPopup(feature.properties.ntacode)
+                        }
+                    }).addTo(map)
+                } else {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.ntacode === (value2)
+                        })
+                    }
+
+                    // Re-add the boro layer (Now filtered down)
+                    ntaLayer2 = L.geoJson(newData, {
+                        style: {
+                            //color: "#0000FF",
+                            //strokeColor: "blue",
+                            //weight: 1
+                        }
+                    }).addTo(map)
+                }
+
+            })
+            return ntaLayer2;
+        })
+        .then(function (layer) {
+            layer_dict['ntaLayer2'] = layer;
+        });
 
         // Load in the nyc geojson
         d3.json('/static/MapsApp/geojsons/nyc.geojson')
-            .then(function (data) {
-                let nycBoroLayer = L.geoJson(data, {
-                    style: {
-                        color: "#ff00000",
-                        strokeColor: "red"
-                    }
-                }).addTo(map);
+        .then(function (data) {
+            let nycBoroLayer = L.geoJson(data, {
+                style: {
+                    color: "#ff00000",
+                    strokeColor: "red"
+                }
+            }).addTo(map);
 
-                // Creating the list for the dropdown
-                const filterInput = document.getElementById('filter')
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
-                }).join('')
-                filterInput.innerHTML = '<option>All</option><option>None</option>' + options
+            // Creating the list for the dropdown
+            const filterInput = document.getElementById('filter')
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.boro_name}'>${feature.properties.boro_name}</option>`
+            }).join('')
+            filterInput.innerHTML = '<option>All</option><option>None</option>' + options
 
-                // Filter with selected value in the <select></select>
-                filterInput.addEventListener('change', function () {
-                    const value = filterInput.value
+            // Filter with selected value in the <select></select>
+            filterInput.addEventListener('change', function () {
+                const value = filterInput.value
 
-                    // Remove boro layer, and we will recreate the boro layer and add it back to the map
-                    map.removeLayer(nycBoroLayer)
+                // Remove boro layer, and we will recreate the boro layer and add it back to the map
+                map.removeLayer(nycBoroLayer)
 
-                    if (value === 'All') {
-                        nycBoroLayer = L.geoJson(data, {
-                            style: {
-                                color: "#ff00000",
-                                strokeColor: "red",
-                                weight: 1
-                            }
-                        }).addTo(map)
-                    } else if (value === 'None') {
-                        let newData = {
-                            "type": "FeatureCollection",
-                            "features": data.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.boro_name === null
-                            })
+                if (value === 'All') {
+                    nycBoroLayer = L.geoJson(data, {
+                        style: {
+                            color: "#ff00000",
+                            strokeColor: "red",
+                            weight: 1
                         }
-
-                        nycBoroLayer = L.geoJson(newData, {
-                            style: {
-                                color: "#ff00000",
-                                strokeColor: "red",
-                                weight: 1
-                            }
-                        }).addTo(map)
-                    } else {
-                        let newData = {
-                            "type": "FeatureCollection",
-                            "features": data.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.boro_name === value
-                            })
-                        }
-
-                        // Re-add the boro layer (Now filtered down)
-                        nycBoroLayer = L.geoJson(newData, {
-                            style: {
-                                color: "#ff00000",
-                                strokeColor: "red",
-                                weight: 1
-                            }
-                        }).addTo(map)
+                    }).addTo(map)
+                } else if (value === 'None') {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.boro_name === null
+                        })
                     }
-                })
-                return nycBoroLayer;
+
+                    nycBoroLayer = L.geoJson(newData, {
+                        style: {
+                            color: "#ff00000",
+                            strokeColor: "red",
+                            weight: 1
+                        }
+                    }).addTo(map)
+                } else {
+                    let newData = {
+                        "type": "FeatureCollection",
+                        "features": data.features.filter(function (feature) { // Filtering happens here
+                            return feature.properties.boro_name === value
+                        })
+                    }
+
+                    // Re-add the boro layer (Now filtered down)
+                    nycBoroLayer = L.geoJson(newData, {
+                        style: {
+                            color: "#ff00000",
+                            strokeColor: "red",
+                            weight: 1
+                        }
+                    }).addTo(map)
+                }
             })
-            .then(function (layer) {
-                layer_dict['nycBoroLayer'] = layer;
-            });
+            return nycBoroLayer;
+        })
+        .then(function (layer) {
+            layer_dict['nycBoroLayer'] = layer;
+        });
 
         // LOADING IN DOT SERVICES
         // Vision Zero Town Hall Locations
         d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson')
-            .then(function (data1) {
-                let layer = L.geoJson(data1, {
-                    // Create a pop up text when you click on each element/feature
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson to see how the json file is formated, and you will understand this part
-                    }
-                });
-                return layer;
-            })
-            .then(function (layer) {
-                DOT_services_layers_dict['vzvLayer'] = layer;
+        .then(function (data1) {
+            let layer = L.geoJson(data1, {
+                // Create a pop up text when you click on each element/feature
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson to see how the json file is formated, and you will understand this part
+                }
             });
+            return layer;
+        })
+        .then(function (layer) {
+            DOT_services_layers_dict['vzvLayer'] = layer;
+        });
 
         // LOADING IN SOCIAL INFO
         // minority_percentage data
         d3.json('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
-            .then(function (data4) {
-                let layer = L.geoJson(data4, {
+        .then(function (data4) {
+            let layer = L.geoJson(data4, {
 
-                    style: function (feature, layer) {
-                        return {
+                style: function (feature, layer) {
+                    return {
 
-                            fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
-                            color: 'black',
-                            weight: 1
-                        }
+                        fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
+                        color: 'black',
+                        weight: 1
                     }
-                });
-                social_layers_dict_geojson_backup['minorityLayer'] = data4;
-                return layer;
-            })
-            .then(function (layer) {
-                social_layers_dict['minorityLayer'] = layer;
+                }
             });
+            social_layers_dict_geojson_backup['minorityLayer'] = data4;
+            return layer;
+        })
+        .then(function (layer) {
+            social_layers_dict['minorityLayer'] = layer;
+        });
         // income data
         d3.json('/static/MapsApp/geojsons/income_nta.geojson')
-            .then(function (data3) {
-                let layer = L.geoJson(data3, {
+        .then(function (data3) {
+            let layer = L.geoJson(data3, {
 
-                    style: function (feature, layer) {
-                        return {
+                style: function (feature, layer) {
+                    return {
 
-                            fillColor: '#' + getColor(feature.properties.avg_income),
-                            color: 'black',
-                            weight: 1
-                        }
+                        fillColor: '#' + getColor(feature.properties.avg_income),
+                        color: 'black',
+                        weight: 1
                     }
-                });
-                social_layers_dict_geojson_backup['incomeLayer'] = data3;
-                return layer;
-            })
-            .then(function (layer) {
-                social_layers_dict['incomeLayer'] = layer;
+                }
             });
+            social_layers_dict_geojson_backup['incomeLayer'] = data3;
+            return layer;
+        })
+        .then(function (layer) {
+            social_layers_dict['incomeLayer'] = layer;
+        });
 
         // source: https://gis.stackexchange.com/questions/68941/how-to-add-remove-legend-with-leaflet-layers-control
         //legend begin!
@@ -409,29 +409,6 @@
             else if (perc < 33) { return 'FFFF00'; }
             //else { return 'black'; }
         }
-
-
-
-        /*
-        //select checkboxes for income avg
-        const selectInc = document.getElementById('testIncome')
-
-
-        selectInc.innerHTML += "<form>"
-        const opts = ['100K+', '75K-100K', '50K-75K', '25K-50K', '<25K'].map(function (each
-        ) {
-            return `<input name ="income" value='${each}' type="checkbox" id='${each}'>${each}</input>`
-        }).join('')
-        selectInc.innerHTML += '<input name ="income" id="AllInc" type="checkbox" checked>All</input>' + opts + "</form>"
-
-        //select minority percent
-        const selectMin = document.getElementById('testMin')
-        const opts2 = ['66%+', '33%-66%', '<33%'].map(function (each
-        ) {
-            return `<input value='${each}' type="checkbox">${each}</input>`
-        }).join('')
-        selectMin.innerHTML = '<input type="checkbox" checked>All</input>' + opts2
-        */
 
 
 
