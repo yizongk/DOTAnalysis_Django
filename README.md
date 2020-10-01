@@ -5,11 +5,17 @@ Includes:
 
         The first iteration is Access, then an attempt to migrate over to ASP.NET (Which failed dued to lack of support from IT in regards to using their Production Server to host the ASp.NET Web App), and now migrating to Django
 
-To install the python dependencies
+## To install the python dependencies
 
+By extension, when installing mod_wsgi, you will need Microsoft Visual C++ 14.0 installed on your system. To download it, download the installer with the following link, and select 'Microsoft C++ Build Tools' in the menu of the installer to install the proper dependency
+
+    https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+Then run the following command
+```
 python -m pip install -r PMU_DjangoWebApps/python_dependencies.txt
-    * By extension, when installing mod_wsgi, you will need Microsoft Visual C++ 14.0 installed on your system. To download it, download the installer with the following link, and select 'Microsoft C++ Build Tools' in the menu of the installer to install the proper dependency
-        * https://visualstudio.microsoft.com/visual-cpp-build-tools/
+```
+
 
 # Database driver
 This web app uses "SQL Server Native Client 11.0", so install it here: https://www.microsoft.com/en-us/download/details.aspx?id=50402
