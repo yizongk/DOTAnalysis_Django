@@ -299,8 +299,8 @@
         legendMin.onAdd = function (map) {
 
             var div = L.DomUtil.create('div', 'info legend'),
-                grades = [0, 33, 66],
-                colors = ['#FFFF00', '#FD8D3C', '#8B0000'];
+                grades = [0, 20, 40, 60, 80],
+                colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
 
             div.innerHTML += "<div>Minority Percent</div>"
             // loop through our density intervals and generate a label with a colored square for each interval
@@ -332,10 +332,12 @@
         }
         function getMinorityColor(perc) {
 
-            if (perc >= 66) { return '8B0000'; }
-            else if (perc < 66 && perc >= 33) { return 'FD8D3C'; }
-            else if (perc < 33) { return 'FFFF00'; }
-            //else { return 'black'; }
+            if (perc >= 80 && perc < 100) { return '8B0000'; }
+            else if (perc >= 60 && perc < 80) { return 'E31A1C'; }
+            else if (perc >= 40 && perc < 60) { return 'FD8D3C'; }
+            else if (perc >= 20 && perc < 40) { return 'FED976'; }
+            else if (perc >= 0 && perc < 20) { return 'FFFF00'; }
+            else { return 'black'; }
         }
 
 
@@ -397,7 +399,7 @@
                 // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
                 let incomeFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['incomeLayer']));
 
-                // Default load in full layer
+                // Default load in full layer and style it!
                 social_layers_dict['incomeLayer'] = L.geoJson(incomeFullJsonObj, {
                     style: function (feature, layer) {
                         return {
@@ -486,7 +488,7 @@
                 // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
                 let minorityFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer']));
 
-                // Default load in full layer
+                // Default load in full layer and style it!
                 social_layers_dict['minorityLayer'] = L.geoJson(minorityFullJsonObj, {
                     style: function (feature, layer) {
                         return {
@@ -499,7 +501,7 @@
                 }).addTo(map)
 
                 // Create the level downdown list
-                const options = ['All', 'None', '66%+', '33%-66%', 'below 33%'].map(function (each) { // Create the drop down list
+                const options = ['All', 'None', '80%+', '60%-80%', '40%-60%', '20%-40%', 'below 20%'].map(function (each) { // Create the drop down list
                     return `<option value='${each}'>${each}</option>`
                 }).join('')
                 $("#SocialBackdropLevels").html('<select id="minorityLevel">' + options + '</select>');
@@ -514,25 +516,39 @@
                     let newData;
                     if (value === 'All') {
                         newData = minorityFullJsonObj;
-                    } else if (value === '66%+') {
+                    } else if (value === '80%+') {
                         newData = {
                             "type": "FeatureCollection",
                             "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 66
+                                return feature.properties.avg_minority_percentage >= 80
                             })
                         }
-                    } else if (value === '33%-66%') {
+                    } else if (value === '60%-80%') {
                         newData = {
                             "type": "FeatureCollection",
                             "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 33 & feature.properties.avg_minority_percentage < 66
+                                return feature.properties.avg_minority_percentage >= 60 & feature.properties.avg_minority_percentage < 80
                             })
                         }
-                    } else if (value === 'below 33%') {
+                    } else if (value === '40%-60%') {
                         newData = {
                             "type": "FeatureCollection",
                             "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage < 33
+                                return feature.properties.avg_minority_percentage >= 40 & feature.properties.avg_minority_percentage < 60
+                            })
+                        }
+                    } else if (value === '20%-40%') {
+                        newData = {
+                            "type": "FeatureCollection",
+                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                return feature.properties.avg_minority_percentage >= 20 & feature.properties.avg_minority_percentage < 40
+                            })
+                        }
+                    } else if (value === 'below 20%') {
+                        newData = {
+                            "type": "FeatureCollection",
+                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                return feature.properties.avg_minority_percentage < 20
                             })
                         }
                     } else {
