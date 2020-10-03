@@ -9,13 +9,13 @@
         <div>Leaflet.js</div>
         <div>Select DOT Service</div>
         <select id="dot_services_filter"></select>
-        <div>Social Backdrop</div>
-        <select id="social_filter"></select>
+        <br>
+        <br>
+        <div>Social Backdrop: Aggregation Type</div>
+        <div id="AggregationType"></div>
+        <div id="social_filter"></div>
         <div id="SocialBackdropLevels"></div>
 
-        <div id="testIncome"></div>
-
-        <div id="testMin"></div>
         <div id="container">
             <div id="nta_filter">Compare NTA</div>
             <select id="nta_filter_1"></select>
@@ -87,6 +87,7 @@
         var DOT_services_layers_dict = {};
         var social_layers_dict = {};
         var social_layers_dict_geojson_backup = {};  // For holding a complete full copy of each social geojson file, when accessing this variables, always make a deep copy like JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer'])). DO NOT MODIFY the content once you have set it! (It's suppose to be a backup afterall)
+        var legend_layer_dict = {};
 
         // Load in the nta geojson-for the first NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
@@ -276,47 +277,133 @@
 
         // source: https://gis.stackexchange.com/questions/68941/how-to-add-remove-legend-with-leaflet-layers-control
         //legend begin!
-        var legendIncome = L.control({ position: 'bottomright' });
-        var legendMin = L.control({ position: 'bottomleft' });
-
-        legendIncome.onAdd = function (map) {
-
-            var div = L.DomUtil.create('div', 'info legend'),
-                grades = [0, 25000, 50000, 75000, 100000],
-                colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
-
-            div.innerHTML += "<div>Income Levels</div>"
-            // loop through our density intervals and generate a label with a colored square for each interval
-            for (var i = 0; i < grades.length; i++) {
-                div.innerHTML +=
-                    '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
-                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+        function RemoveOldAddNewLegend(forWhichAggrType) {
+            // Remove legend for both income and minority from map and legend holder obj if it exists.
+            if ( legend_layer_dict.hasOwnProperty('incomeLegend') ) {
+                legend_layer_dict['incomeLegend'].remove()
+                delete legend_layer_dict['incomeLegend']
+            }
+            if ( legend_layer_dict.hasOwnProperty('minorityLegend') ) {
+                legend_layer_dict['minorityLegend'].remove()
+                delete legend_layer_dict['minorityLegend']
             }
 
-            return div;
-        };
+            if (forWhichAggrType == 'None') {
+                // Do nothing
+                return true
+            } else if (forWhichAggrType == 'Equal Interval Grouping') {
+                var legendIncome = L.control({ position: 'bottomright' });
+                var legendMin = L.control({ position: 'bottomleft' });
 
-        legendMin.onAdd = function (map) {
+                legendIncome.id = 'IncomeLegend';
+                legendMin.id = 'MinorityLegend';
 
-            var div = L.DomUtil.create('div', 'info legend'),
-                grades = [0, 20, 40, 60, 80],
-                colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
+                legendIncome.onAdd = function (map) {
 
-            div.innerHTML += "<div>Minority Percent</div>"
-            // loop through our density intervals and generate a label with a colored square for each interval
-            for (var i = 0; i < grades.length; i++) {
-                div.innerHTML +=
-                    '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
-                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + "%" + '<br>' : '%+');
+                    var div = L.DomUtil.create('div', 'info legend'),
+                        grades = [0, 25000, 50000, 75000, 100000],
+                        colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
+
+                    div.innerHTML += "<div>Income Levels</div>"
+                    // loop through our density intervals and generate a label with a colored square for each interval
+                    for (var i = 0; i < grades.length; i++) {
+                        div.innerHTML +=
+                            '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                    }
+
+                    return div;
+                };
+
+                legendMin.onAdd = function (map) {
+
+                    var div = L.DomUtil.create('div', 'info legend'),
+                        grades = [0, 20, 40, 60, 80],
+                        colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
+
+                    div.innerHTML += "<div>Minority Percent</div>"
+                    // loop through our density intervals and generate a label with a colored square for each interval
+                    for (var i = 0; i < grades.length; i++) {
+                        div.innerHTML +=
+                            '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + "%" + '<br>' : '%+');
+                    }
+
+                    return div;
+                };
+
+                // Add legend obj to array for future reference
+                legend_layer_dict['incomeLegend'] = legendIncome
+                legend_layer_dict['minorityLegend'] = legendMin
+
+                legendMin.addTo(map);
+                legendIncome.addTo(map);
+                return true
+            } else if (forWhichAggrType == 'Quintile') {
+                var legendIncome = L.control({ position: 'bottomright' });
+                var legendMin = L.control({ position: 'bottomleft' });
+
+                legendIncome.id = 'IncomeLegend';
+                legendMin.id = 'MinorityLegend';
+
+                legendIncome.onAdd = function (map) {
+
+                    var div = L.DomUtil.create('div', 'info legend'),
+                        grades = ['Q0', 'Q1', 'Q2', 'Q3', 'Q4'],
+                        colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
+
+                    div.innerHTML += "<div>Income Levels</div>"
+                    // loop through our density intervals and generate a label with a colored square for each interval
+                    for (var i = 0; i < grades.length; i++) {
+                        div.innerHTML +=
+                            '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                    }
+
+                    return div;
+                };
+
+                legendMin.onAdd = function (map) {
+
+                    var div = L.DomUtil.create('div', 'info legend'),
+                        grades = ['Q0', 'Q1', 'Q2', 'Q3', 'Q4'],
+                        colors = ['#FFFF00', '#FED976', '#FD8D3C', '#E31A1C', '#8B0000'];
+
+                    div.innerHTML += "<div>Minority Percent</div>"
+                    // loop through our density intervals and generate a label with a colored square for each interval
+                    for (var i = 0; i < grades.length; i++) {
+                        div.innerHTML +=
+                            '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + "%" + '<br>' : '%+');
+                    }
+
+                    return div;
+                };
+
+                // Add legend obj to array for future reference
+                legend_layer_dict['incomeLegend'] = legendIncome
+                legend_layer_dict['minorityLegend'] = legendMin
+
+                legendMin.addTo(map);
+                legendIncome.addTo(map);
+                return true
+
+            } else {
+                console.log(`'${forWhichAggrType}' is not a valid AggrType in RemoveOldAddNewLegend()`)
+                return false
             }
 
-            return div;
-        };
-
-        legendMin.addTo(map);
-        legendIncome.addTo(map);
+        }
         //and so has a legend come to pass
 
+        function getColorForQuintile(quintileRange){
+            if (quintileRange == 'Q4-Q5') { return '8B0000'; }
+            else if (quintileRange == 'Q3-Q4') { return 'E31A1C'; }
+            else if (quintileRange == 'Q2-Q3') { return 'FD8D3C'; }
+            else if (quintileRange == 'Q1-Q2') { return 'FED976'; }
+            else if (quintileRange == 'Q0-Q1') { return 'FFFF00'; }
+            else { return '000000'; }
+        }
         function getColor(income) {
             //const opts = ['100K+', '75K-100K', '50K-75K', '25K-50K', '<25K']
             // console.log("in getColor", document.getElementById("AllInc").checked)
@@ -344,19 +431,11 @@
 
         // Toggle between NTA and VZV Bike Layer
         // Creating the dropdown list
-        const options = ['VZV Bike Priority Districts'].map(function (each) { // Create the drop down list
+        const dot_services_options = ['VZV Bike Priority Districts'].map(function (each) { // Create the drop down list
             return `<option value='${each}'>${each}</option>`
         }).join('')
-        $("#dot_services_filter").html('<option>None</option>' + options);
 
-        const options2 = ['Minority Data', 'Income Data'].map(function (each) { // Create the drop down list
-            return `<option value='${each}'>${each}</option>`
-        }).join('')
-        $('#social_filter').html('<option>None</option>' + options2);
-
-        var inc = document.getElementById('testIncome').value;
-        console.log("inc! ", inc)
-
+        $("#dot_services_filter").html('<option>None</option>' + dot_services_options);
 
         // Filter DOT Services
         $("#dot_services_filter").change( function() {
@@ -380,200 +459,416 @@
         })
 
 
-        // Filter Social Backdrop
-        $('#social_filter').change( function() {
-            const value = $('#social_filter').val();
-
-            // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
+        function removeSocialLayers() {
             Object.keys(social_layers_dict).map(function (key, index) {
                 map.removeLayer(social_layers_dict[key])
             });
 
             $("#SocialBackdropLevels").html(``);
+        }
 
-            if (value === 'None') {
-                return
+        function updateSocialLayers(socialType, aggregationType) {
+            if (aggregationType === 'Equal Interval Grouping') {
+                if (socialType === 'None') {
+                    return
+                // Sub-filter Income with Levels
+                } else if (socialType === 'Income Data') {
+                    // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
+                    let incomeFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['incomeLayer']));
 
-            // Sub-filter Income with Levels
-            } else if (value === 'Income Data') {
-                // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
-                let incomeFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['incomeLayer']));
-
-                // Default load in full layer and style it!
-                social_layers_dict['incomeLayer'] = L.geoJson(incomeFullJsonObj, {
-                    style: function (feature, layer) {
-                        return {
-
-                            fillColor: '#' + getColor(feature.properties.avg_income),
-                            color: 'black',
-                            weight: 1
-                        }
-                    }
-                }).addTo(map)
-
-                // Create the level downdown list
-                const options = ['All', 'None', '100K+', '75K-100K', '50K-75K', '25K-50K', 'below 25K'].map(function (each) { // Create the drop down list
-                    return `<option value='${each}'>${each}</option>`
-                }).join('')
-                $("#SocialBackdropLevels").html('<select id="incomeLevel">' + options + '</select>');
-
-                // Filter with selected level
-                $('#incomeLevel').change( function() {
-                    const value = $('#incomeLevel').val()
-
-                    // Remove income layer, and we will recreate the income layer and add it back to the map
-                    map.removeLayer(social_layers_dict['incomeLayer'])
-
-                    let newData;
-                    if (value === 'All') {
-                        newData = incomeFullJsonObj;
-                    } else if (value === '100K+') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_income >= 100000
-                            })
-                        }
-                    } else if (value === '75K-100K') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_income >= 75000 & feature.properties.avg_income < 100000
-                            })
-                        }
-                    } else if (value === '50K-75K') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_income >= 50000 & feature.properties.avg_income < 75000
-                            })
-                        }
-                    } else if (value === '25K-50K') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_income >= 25000 & feature.properties.avg_income < 50000
-                            })
-                        }
-                    } else if (value === 'below 25K') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_income < 25000
-                            })
-                        }
-                    } else {
-                        // Don't modify the back up income geojson data, and don't add the income layer to the map
-                        if (value !== 'None') {
-                            console.log(`income level not valid to add to map: '${value}'`)
-                        }
-                        return
-                    }
-
-                    // Re-add the income layer (Now filtered down)
-                    social_layers_dict['incomeLayer'] = L.geoJson(newData, {
+                    // Default load in full layer and style it!
+                    social_layers_dict['incomeLayer'] = L.geoJson(incomeFullJsonObj, {
                         style: function (feature, layer) {
-                        return {
+                            return {
 
-                            fillColor: '#' + getColor(feature.properties.avg_income),
-                            color: 'black',
-                            weight: 1
+                                fillColor: '#' + getColor(feature.properties.avg_income),
+                                color: 'black',
+                                weight: 1
+                            }
                         }
-                    }
                     }).addTo(map)
-                } );
 
-            // Sub-filter Minority with Levels
-            } else if (value === 'Minority Data') {
-                // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
-                let minorityFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer']));
+                    // Create the level downdown list
+                    const options = ['All', 'None', '100K+', '75K-100K', '50K-75K', '25K-50K', 'below 25K'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="incomeLevel">' + options + '</select>');
 
-                // Default load in full layer and style it!
-                social_layers_dict['minorityLayer'] = L.geoJson(minorityFullJsonObj, {
-                    style: function (feature, layer) {
-                        return {
+                    // Filter with selected level
+                    $('#incomeLevel').change( function() {
+                        const value = $('#incomeLevel').val()
 
-                            fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
-                            color: 'black',
-                            weight: 1
+                        // Remove income layer, and we will recreate the income layer and add it back to the map
+                        map.removeLayer(social_layers_dict['incomeLayer'])
+
+                        let newData;
+                        if (value === 'All') {
+                            newData = incomeFullJsonObj;
+                        } else if (value === '100K+') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_income >= 100000
+                                })
+                            }
+                        } else if (value === '75K-100K') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_income >= 75000 & feature.properties.avg_income < 100000
+                                })
+                            }
+                        } else if (value === '50K-75K') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_income >= 50000 & feature.properties.avg_income < 75000
+                                })
+                            }
+                        } else if (value === '25K-50K') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_income >= 25000 & feature.properties.avg_income < 50000
+                                })
+                            }
+                        } else if (value === 'below 25K') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_income < 25000
+                                })
+                            }
+                        } else {
+                            // Don't modify the back up income geojson data, and don't add the income layer to the map
+                            if (value !== 'None') {
+                                console.log(`income level not valid to add to map: '${value}'`)
+                            }
+                            return
                         }
-                    }
-                }).addTo(map)
 
-                // Create the level downdown list
-                const options = ['All', 'None', '80%+', '60%-80%', '40%-60%', '20%-40%', 'below 20%'].map(function (each) { // Create the drop down list
-                    return `<option value='${each}'>${each}</option>`
-                }).join('')
-                $("#SocialBackdropLevels").html('<select id="minorityLevel">' + options + '</select>');
+                        // Re-add the income layer (Now filtered down)
+                        social_layers_dict['incomeLayer'] = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                            return {
 
-                // Filter with selected level
-                $('#minorityLevel').change( function() {
-                    const value = $('#minorityLevel').val()
+                                fillColor: '#' + getColor(feature.properties.avg_income),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                        }).addTo(map)
+                    } );
 
-                    // Remove minority layer, and we will recreate the minority layer and add it back to the map
-                    map.removeLayer(social_layers_dict['minorityLayer'])
+                // Sub-filter Minority with Levels
+                } else if (socialType === 'Minority Data') {
+                    // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
+                    let minorityFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer']));
 
-                    let newData;
-                    if (value === 'All') {
-                        newData = minorityFullJsonObj;
-                    } else if (value === '80%+') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 80
-                            })
-                        }
-                    } else if (value === '60%-80%') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 60 & feature.properties.avg_minority_percentage < 80
-                            })
-                        }
-                    } else if (value === '40%-60%') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 40 & feature.properties.avg_minority_percentage < 60
-                            })
-                        }
-                    } else if (value === '20%-40%') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage >= 20 & feature.properties.avg_minority_percentage < 40
-                            })
-                        }
-                    } else if (value === 'below 20%') {
-                        newData = {
-                            "type": "FeatureCollection",
-                            "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
-                                return feature.properties.avg_minority_percentage < 20
-                            })
-                        }
-                    } else {
-                        // Don't modify the back up minority geojson data, and don't add the minority layer to the map
-                        if (value !== 'None') {
-                            console.log(`minority level not valid to add to map: '${value}'`)
-                        }
-                        return
-                    }
-
-                    // Re-add the minority layer (Now filtered down)
-                    social_layers_dict['minorityLayer'] = L.geoJson(newData, {
+                    // Default load in full layer and style it!
+                    social_layers_dict['minorityLayer'] = L.geoJson(minorityFullJsonObj, {
                         style: function (feature, layer) {
-                        return {
+                            return {
 
-                            fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
-                            color: 'black',
-                            weight: 1
+                                fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
+                                color: 'black',
+                                weight: 1
+                            }
                         }
-                    }
                     }).addTo(map)
-                } )
 
+                    // Create the level downdown list
+                    const options = ['All', 'None', '80%+', '60%-80%', '40%-60%', '20%-40%', 'below 20%'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="minorityLevel">' + options + '</select>');
+
+                    // Filter with selected level
+                    $('#minorityLevel').change( function() {
+                        const value = $('#minorityLevel').val()
+
+                        // Remove minority layer, and we will recreate the minority layer and add it back to the map
+                        map.removeLayer(social_layers_dict['minorityLayer'])
+
+                        let newData;
+                        if (value === 'All') {
+                            newData = minorityFullJsonObj;
+                        } else if (value === '80%+') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_minority_percentage >= 80
+                                })
+                            }
+                        } else if (value === '60%-80%') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_minority_percentage >= 60 & feature.properties.avg_minority_percentage < 80
+                                })
+                            }
+                        } else if (value === '40%-60%') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_minority_percentage >= 40 & feature.properties.avg_minority_percentage < 60
+                                })
+                            }
+                        } else if (value === '20%-40%') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_minority_percentage >= 20 & feature.properties.avg_minority_percentage < 40
+                                })
+                            }
+                        } else if (value === 'below 20%') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.avg_minority_percentage < 20
+                                })
+                            }
+                        } else {
+                            // Don't modify the back up minority geojson data, and don't add the minority layer to the map
+                            if (value !== 'None') {
+                                console.log(`minority level not valid to add to map: '${value}'`)
+                            }
+                            return
+                        }
+
+                        // Re-add the minority layer (Now filtered down)
+                        social_layers_dict['minorityLayer'] = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getMinorityColor(feature.properties.avg_minority_percentage),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                        }).addTo(map)
+                    } )
+
+                } else {
+                    console.log(`layer is not valid to add to map, layer name in question: '${socialType}'`)
+                }
+            } else if (aggregationType === 'Quintile') {
+                if (socialType === 'None') {
+                    return
+                // Sub-filter Income with Levels
+                } else if (socialType === 'Income Data') {
+                    // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
+                    let incomeFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['incomeLayer']));
+
+                    // Default load in full layer and style it!
+                    social_layers_dict['incomeLayer'] = L.geoJson(incomeFullJsonObj, {
+                        style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForQuintile(feature.properties.quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                    }).addTo(map)
+
+                    // Create the level downdown list
+                    const levelOptions = ['All', 'None', 'Q4-Q5', 'Q3-Q4', 'Q2-Q3', 'Q1-Q2', 'Q0-Q1'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="incomeLevel">' + levelOptions + '</select>');
+
+                    // Filter with selected level
+                    $('#incomeLevel').change( function() {
+                        const agrLevel = $('#incomeLevel').val()
+
+                        // Remove income layer, and we will recreate the income layer and add it back to the map
+                        map.removeLayer(social_layers_dict['incomeLayer'])
+
+                        let newData;
+                        if (agrLevel === 'All') {
+                            newData = incomeFullJsonObj;
+                        } else if (agrLevel === 'Q0-Q1') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q1-Q2') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q2-Q3') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q3-Q4') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q4-Q5') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": incomeFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else {
+                            // Don't modify the back up income geojson data, and don't add the income layer to the map
+                            if (agrLevel !== 'None') {
+                                console.log(`income level not valid to add to map: '${agrLevel}'`)
+                            }
+                            return
+                        }
+
+                        // Re-add the income layer (Now filtered down)
+                        social_layers_dict['incomeLayer'] = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForQuintile(feature.properties.quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                        }).addTo(map)
+                    } );
+
+                // Sub-filter Minority with Levels
+                } else if (socialType === 'Minority Data') {
+                    // Collect a deep copy of the backed-up-and-complete geojson data before applying filter
+                    let minorityFullJsonObj = JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer']));
+
+                    // Default load in full layer and style it!
+                    social_layers_dict['minorityLayer'] = L.geoJson(minorityFullJsonObj, {
+                        style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForQuintile(feature.properties.quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                    }).addTo(map)
+
+                    // Create the level downdown list
+                    const levelOptions = ['All', 'None', 'Q4-Q5', 'Q3-Q4', 'Q2-Q3', 'Q1-Q2', 'Q0-Q1'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="minorityLevel">' + levelOptions + '</select>');
+
+                    // Filter with selected level
+                    $('#minorityLevel').change( function() {
+                        const agrLevel = $('#minorityLevel').val()
+
+                        // Remove minority layer, and we will recreate the minority layer and add it back to the map
+                        map.removeLayer(social_layers_dict['minorityLayer'])
+
+                        let newData;
+                        if (agrLevel === 'All') {
+                            newData = minorityFullJsonObj;
+                        } else if (agrLevel === 'Q0-Q1') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q1-Q2') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q2-Q3') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q3-Q4') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'Q4-Q5') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": minorityFullJsonObj.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.quintile == agrLevel
+                                })
+                            }
+                        } else {
+                            // Don't modify the back up minority geojson data, and don't add the minority layer to the map
+                            if (agrLevel !== 'None') {
+                                console.log(`minority level not valid to add to map: '${agrLevel}'`)
+                            }
+                            return
+                        }
+
+                        // Re-add the minority layer (Now filtered down)
+                        social_layers_dict['minorityLayer'] = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForQuintile(feature.properties.quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                        }).addTo(map)
+                    } )
+
+                } else {
+                    console.log(`layer is not valid to add to map, layer name in question: '${socialType}'`)
+                }
             } else {
-                console.log(`layer not valid to add to map: '${value}'`)
+                console.log(`aggregationType is not valid for aggregating social data, aggregationType name in question: '${socialType}'`)
+            }
+        };
+
+        // Choose your grouping type
+        // Create the grouping type downdown list
+        const groupingOptions = ['None', 'Equal Interval Grouping', 'Quintile'].map(function (each) { // Create the drop down list
+            return `<option value='${each}'>${each}</option>`
+        }).join('')
+        $("#AggregationType").html('<select id="groupingTypeOption">' + groupingOptions + '</select>');
+        // Filter with selected level
+        $('#AggregationType').change( function() {
+            const aggregationType = $('#groupingTypeOption').val();
+
+            legendAddedSuccess = RemoveOldAddNewLegend(aggregationType);
+            removeSocialLayers();
+            $('#social_filter').html('');
+            if (aggregationType !== 'None' && legendAddedSuccess) {
+                // Create the options dropdown for the Social dataset
+                const social_options = ['Minority Data', 'Income Data'].map(function (each) { // Create the drop down list
+                    return `<option value='${each}'>${each}</option>`
+                }).join('')
+                $('#social_filter').html('Social Backdrop<br><select id="socialOption"><option>None</option>' + social_options + '</select>');
+
+
+                // Filter Social Backdrop
+                $('#social_filter').change( function() {
+                    const socialType = $('#socialOption').val();
+                    // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
+                    removeSocialLayers();
+                    updateSocialLayers(socialType, aggregationType);
+                });
             }
         });
 
