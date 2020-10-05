@@ -83,158 +83,176 @@
 
 
 
-        var layer_dict = {};
-        var DOT_services_layers_dict = {};
         var social_layers_dict = {};
         var social_layers_dict_geojson_backup = {};  // For holding a complete full copy of each social geojson file, when accessing this variables, always make a deep copy like JSON.parse(JSON.stringify(social_layers_dict_geojson_backup['minorityLayer'])). DO NOT MODIFY the content once you have set it! (It's suppose to be a backup afterall)
         var legend_layer_dict = {};
 
-        // Load in the nta geojson-for the first NTA dropdown
+        var nta_1_geojson;
+        var nta_1_layer;
+
+        var nta_2_geojson;
+        var nta_2_layer;
+
+        var dot_services_town_hall_locations_geojson;
+        var dot_services_current_layer;
+
+        // Load in NTA geojson for the first NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
         .then(function (data) {
-
-            let ntaLayer1 = L.geoJson(data, {
-                style: {
-
-                }
-            })
             // Creating the list for the dropdown
-            const selectNTA1 = document.getElementById('nta_filter_1')
-
             const options = data.features.map(function (feature) {
                 return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
             }).join('')
-            selectNTA1.innerHTML = '<option>None</option>'+options
+            $('#nta_filter_1').html('<option>None</option>'+options)
 
-            selectNTA1.addEventListener('change', function () {
-                const value1 = selectNTA1.value
+            nta_1_geojson = data
+        })
 
+        $('#nta_filter_1').change(function() {
+            const value1 = $('#nta_filter_1').val()
 
-                map.removeLayer(ntaLayer1)
+            if (map.hasLayer(nta_1_layer)) {
+                map.removeLayer(nta_1_layer)
+            }
 
+            delete nta_1_layer;
 
-                if (value1 === 'None') {
-                    let newData = {
-                        "type": "FeatureCollection",
-                        "features": data.features.filter(function (feature) { // Filtering happens here
-                            return feature.properties.ntacode === null
-                        })
-                    }
-
-                    ntaLayer1 = L.geoJson(newData, {
-                        onEachFeature: function (feature, layer) {
-                            layer.bindPopup(feature.properties.ntacode)
-                        }
-                    }).addTo(map)
-                } else  {
-                    let newData = {
-                        "type": "FeatureCollection",
-                        "features": data.features.filter(function (feature) { // Filtering happens here
-                            return feature.properties.ntacode === (value1)
-                        })
-                    }
-
-                    // Re-add the boro layer (Now filtered down)
-                    ntaLayer1 = L.geoJson(newData, {
-                        onEachFeature: function (feature, layer) {
-                                    layer.bindPopup(feature.properties.ntacode)
-                                }
-                    }).addTo(map)
+            if (value1 === 'None') {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": nta_1_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === null
+                    })
                 }
 
-            })
+                nta_1_layer = L.geoJson(newData, {
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.ntacode)
+                    }
+                })
+                nta_1_layer.addTo(map)
+            } else  {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": nta_1_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === (value1)
+                    })
+                }
 
+                // Re-add the boro layer (Now filtered down)
+                nta_1_layer = L.geoJson(newData, {
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.ntacode)
+                    }
+                })
+                nta_1_layer.addTo(map)
+            }
 
-
-            return ntaLayer1;
-        })
-        .then(function (layer) {
-            layer_dict['ntaLayer1'] = layer;
         });
 
-        // Load in the nta geojson-for the second NTA dropdown
+        // Load in NTA geojson for the second NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
         .then(function (data) {
 
-            let ntaLayer2 = L.geoJson(data, {
-                style: {
-
-                }
-            })
-
-
-            const selectNTA2 = document.getElementById('nta_filter_2')
+            // Creating the list for the dropdown
             const options = data.features.map(function (feature) {
                 return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
             }).join('')
+            $('#nta_filter_2').html('<option>None</option>'+options)
 
-            selectNTA2.innerHTML = '<option>None</option>' + options
+            nta_2_geojson = data
+        })
 
+        $('#nta_filter_2').change(function() {
+            const value2 = $('#nta_filter_2').val()
 
-            selectNTA2.addEventListener('change', function () {
-                const value2 = selectNTA2.value
+            if (map.hasLayer(nta_2_layer)) {
+                map.removeLayer(nta_2_layer)
+            }
 
+            delete nta_2_layer;
 
-                map.removeLayer(ntaLayer2)
-
-
-                if (value2 === 'None') {
-                    let newData = {
-                        "type": "FeatureCollection",
-                        "features": data.features.filter(function (feature) { // Filtering happens here
-                            return feature.properties.ntacode === null
-                        })
-                    }
-
-                    ntaLayer2 = L.geoJson(newData, {
-                        onEachFeature: function (feature, layer) {
-                            layer.bindPopup(feature.properties.ntacode)
-                        }
-                    }).addTo(map)
-                } else {
-                    let newData = {
-                        "type": "FeatureCollection",
-                        "features": data.features.filter(function (feature) { // Filtering happens here
-                            return feature.properties.ntacode === (value2)
-                        })
-                    }
-
-                    // Re-add the boro layer (Now filtered down)
-                    ntaLayer2 = L.geoJson(newData, {
-                        style: {
-                            //color: "#0000FF",
-                            //strokeColor: "blue",
-                            //weight: 1
-                        }
-                    }).addTo(map)
+            if (value2 === 'None') {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": nta_2_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === null
+                    })
                 }
 
-            })
-            return ntaLayer2;
+                nta_2_layer = L.geoJson(newData, {
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.ntacode)
+                    }
+                })
+                nta_2_layer.addTo(map)
+            } else {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": nta_2_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === (value2)
+                    })
+                }
+
+                // Re-add the boro layer (Now filtered down)
+                nta_2_layer = L.geoJson(newData, {
+                    style: {
+                        //color: "#0000FF",
+                        //strokeColor: "blue",
+                        //weight: 1
+                    }
+                })
+                nta_2_layer.addTo(map)
+            }
+
         })
-        .then(function (layer) {
-            layer_dict['ntaLayer2'] = layer;
-        });
 
-
-        // LOADING IN DOT SERVICES
-        // Vision Zero Town Hall Locations
+        // Load in VZV GeoJson here
         d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson')
-        .then(function (data1) {
-            let layer = L.geoJson(data1, {
-                // Create a pop up text when you click on each element/feature
-                onEachFeature: function (feature, layer) {
-                    layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson to see how the json file is formated, and you will understand this part
-                }
-            });
-            return layer;
+        .then(function (data) {
+            dot_services_town_hall_locations_geojson = data
         })
-        .then(function (layer) {
-            DOT_services_layers_dict['vzvLayer'] = layer;
-        });
+
+
+
+        // Toggler VZV Bike Layer
+        // Creating the dropdown list
+        const dot_services_options = ['VZV Town Hall Locations'].map(function (each) { // Create the drop down list
+            return `<option value='${each}'>${each}</option>`
+        }).join('')
+
+        $("#dot_services_filter").html('<option>None</option>' + dot_services_options);
+
+        $("#dot_services_filter").change( function() {
+            const value = $("#dot_services_filter").val()
+
+            if (map.hasLayer(dot_services_current_layer)) {
+                map.removeLayer(dot_services_current_layer)
+            }
+
+            delete dot_services_current_layer;
+
+            if (value === 'None') {
+                return
+
+            } else if (value === 'VZV Town Hall Locations') {
+                dot_services_current_layer = L.geoJson(dot_services_town_hall_locations_geojson, {
+                    // Create a pop up text when you click on each element/feature
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.BoroCD_code) // Access the geoJson['feature']['properties']['BoroCD_code'], take a look at static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson to see how the json file is formated, and you will understand this part
+                    }
+                });
+
+                dot_services_current_layer.addTo(map)
+            } else {
+                console.log(`layer not valid to add to map: '${value}'`)
+
+            }
+        })
+
+
 
         // LOADING IN SOCIAL INFO
-        // minority_percentage data
         d3.json('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
         .then(function (data4) {
             let layer = L.geoJson(data4, {
@@ -254,7 +272,7 @@
         .then(function (layer) {
             social_layers_dict['minorityLayer'] = layer;
         });
-        // income data
+
         d3.json('/static/MapsApp/geojsons/income_nta.geojson')
         .then(function (data3) {
             let layer = L.geoJson(data3, {
@@ -429,39 +447,12 @@
 
 
 
-        // Toggle between NTA and VZV Bike Layer
-        // Creating the dropdown list
-        const dot_services_options = ['VZV Bike Priority Districts'].map(function (each) { // Create the drop down list
-            return `<option value='${each}'>${each}</option>`
-        }).join('')
-
-        $("#dot_services_filter").html('<option>None</option>' + dot_services_options);
-
-        // Filter DOT Services
-        $("#dot_services_filter").change( function() {
-            const value = $("#dot_services_filter").val()
-
-            // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
-            Object.keys(DOT_services_layers_dict).map(function (key, index) {
-                map.removeLayer(DOT_services_layers_dict[key])
-            });
-
-            if (value === 'None') {
-                return
-
-            } else if (value === 'VZV Bike Priority Districts') {
-                DOT_services_layers_dict['vzvLayer'].addTo(map)
-
-            } else {
-                console.log(`layer not valid to add to map: '${value}'`)
-
-            }
-        })
 
 
         function removeSocialLayers() {
             Object.keys(social_layers_dict).map(function (key, index) {
                 map.removeLayer(social_layers_dict[key])
+
             });
 
             $("#SocialBackdropLevels").html(``);
