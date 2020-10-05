@@ -359,6 +359,52 @@
                 legend_current_control.addTo(map);
                 return true
 
+            } else if (forWhichAggrType == 'High Low') {
+                legend_current_control = L.control({ position: 'bottomright' });
+
+                if (forWhichSocial == 'Income Data') {
+                    legend_current_control.onAdd = function (map) {
+
+                        var div = L.DomUtil.create('div', 'info legend'),
+                            grades = ['Low', 'High'],
+                            colors = ['#FFFF00', '#8B0000'];
+
+                        div.innerHTML += "<div>Income Levels</div>"
+                        // loop through our density intervals and generate a label with a colored square for each interval
+                        for (var i = 0; i < grades.length; i++) {
+                            div.innerHTML +=
+                                '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                                grades[i] + (grades[i + 1] ? '<br>' : '');
+                        }
+
+                        return div;
+                    };
+
+                } else if (forWhichSocial == 'Minority Data') {
+                    legend_current_control.onAdd = function (map) {
+
+                        var div = L.DomUtil.create('div', 'info legend'),
+                            grades = ['Low', 'High'],
+                            colors = ['#FFFF00', '#8B0000'];
+
+                        div.innerHTML += "<div>Minority Percent</div>"
+                        // loop through our density intervals and generate a label with a colored square for each interval
+                        for (var i = 0; i < grades.length; i++) {
+                            div.innerHTML +=
+                                '<i style="background-color:' + (colors[i]) + ';border: 1px solid #ccc; float: left; width: 12px; height: 12px; margin: 2px;">' + '</i> ' +
+                                grades[i] + (grades[i + 1] ? '<br>' : '');
+                        }
+
+                        return div;
+                    };
+                } else {
+                    console.log(`addNewLegend(): Unknown forWhichSocial arguement: '${forWhichSocial}'`);
+                    delete legend_current_control;
+                    return false;
+                }
+
+                legend_current_control.addTo(map);
+                return true
             } else {
                 console.log(`addNewLegend(): Unknown forWhichAggrType: '${forWhichAggrType}'`)
                 return false
@@ -368,7 +414,7 @@
 
         // Toggler Aggregation
         // Create the grouping type downdown list
-        const groupingOptions = ['None', 'Equal Interval Grouping', 'Quintile'].map(function (each) { // Create the drop down list
+        const groupingOptions = ['None', 'Equal Interval Grouping', 'Quintile', 'High Low'].map(function (each) { // Create the drop down list
             return `<option value='${each}'>${each}</option>`
         }).join('')
         $("#AggregationType").html('<select id="groupingTypeOption">' + groupingOptions + '</select>');
@@ -425,6 +471,12 @@
             else if (quintileRange == 'Q2-Q3') { return 'FD8D3C'; }
             else if (quintileRange == 'Q1-Q2') { return 'FED976'; }
             else if (quintileRange == 'Q0-Q1') { return 'FFFF00'; }
+            else { return '000000'; }
+        }
+
+        function getColorForHighLow(quintileRange){
+            if (quintileRange == 'High') { return '8B0000'; }
+            else if (quintileRange == 'Low') { return 'FFFF00'; }
             else { return '000000'; }
         }
 
@@ -829,6 +881,155 @@
                                 return {
 
                                     fillColor: '#' + getColorForQuintile(feature.properties.quintile),
+                                    color: 'black',
+                                    weight: 1
+                                }
+                            }
+                        })
+                        social_current_layer.addTo(map)
+                    } )
+
+                } else {
+                    console.log(`updateCurrentSocialLayers(): layer is not valid to add to map, layer name in question: '${socialType}'`)
+                }
+            } else if (aggregationType === 'High Low') {
+                // Something will happen here
+                if (socialType === 'None') {
+                    return
+                // Sub-filter Income with Levels
+                } else if (socialType === 'Income Data') {
+                    // Default load in full layer and style it!
+                    social_current_layer = L.geoJson(social_income_geojson, {
+                        style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForHighLow(feature.properties.high_low_quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                    })
+                    social_current_layer.addTo(map)
+
+                    // Create the level downdown list
+                    const levelOptions = ['All', 'None', 'Low', 'High'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="incomeLevel">' + levelOptions + '</select>');
+
+                    // Filter with selected level
+                    $('#incomeLevel').change( function() {
+                        const agrLevel = $('#incomeLevel').val()
+
+                        // Remove income layer, and we will recreate the income layer and add it back to the map
+                        removeCurrentSocialLayer()
+
+                        let newData;
+                        if (agrLevel === 'All') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_income_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return true
+                                })
+                            }
+                        } else if (agrLevel === 'Low') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_income_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.high_low_quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'High') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_income_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.high_low_quintile == agrLevel
+                                })
+                            }
+                        } else {
+                            if (agrLevel !== 'None') {
+                                console.log(`income level not valid to add to map: '${agrLevel}'`)
+                            }
+                            return
+                        }
+
+                        // Re-add the income layer (Now filtered down)
+                        social_current_layer = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                                return {
+
+                                    fillColor: '#' + getColorForHighLow(feature.properties.high_low_quintile),
+                                    color: 'black',
+                                    weight: 1
+                                }
+                            }
+                        })
+                        social_current_layer.addTo(map)
+                    } );
+
+                // Sub-filter Minority with Levels
+                } else if (socialType === 'Minority Data') {
+                    // Default load in full layer and style it!
+                    social_current_layer = L.geoJson(social_minority_geojson, {
+                        style: function (feature, layer) {
+                            return {
+
+                                fillColor: '#' + getColorForHighLow(feature.properties.high_low_quintile),
+                                color: 'black',
+                                weight: 1
+                            }
+                        }
+                    })
+                    social_current_layer.addTo(map)
+
+                    // Create the level downdown list
+                    const levelOptions = ['All', 'None', 'Low', 'High'].map(function (each) { // Create the drop down list
+                        return `<option value='${each}'>${each}</option>`
+                    }).join('')
+                    $("#SocialBackdropLevels").html('<select id="minorityLevel">' + levelOptions + '</select>');
+
+                    // Filter with selected level
+                    $('#minorityLevel').change( function() {
+                        const agrLevel = $('#minorityLevel').val()
+
+                        // Remove current Layer, will re-add it later with filtered down version
+                        removeCurrentSocialLayer()
+
+                        let newData;
+                        if (agrLevel === 'All') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_minority_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return true
+                                })
+                            }
+                        } else if (agrLevel === 'Low') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_minority_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.high_low_quintile == agrLevel
+                                })
+                            }
+                        } else if (agrLevel === 'High') {
+                            newData = {
+                                "type": "FeatureCollection",
+                                "features": social_minority_geojson.features.filter(function (feature) { // Filtering happens here
+                                    return feature.properties.high_low_quintile == agrLevel
+                                })
+                            }
+                        } else {
+                            if (agrLevel !== 'None') {
+                                console.log(`minority level not valid to add to map: '${agrLevel}'`)
+                            }
+                            return
+                        }
+
+                        // Re-add the minority layer (Now filtered down)
+                        social_current_layer = L.geoJson(newData, {
+                            style: function (feature, layer) {
+                                return {
+
+                                    fillColor: '#' + getColorForHighLow(feature.properties.high_low_quintile),
                                     color: 'black',
                                     weight: 1
                                 }
