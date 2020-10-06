@@ -57,11 +57,15 @@ class Unit(models.Model):
         return self.unit_type
 
 
+"""
+ALTER TABLE [Users]
+ADD CONSTRAINT [AK_Users_Login] UNIQUE (Login);
+"""
 class Users(models.Model):
     user_id = models.AutoField(db_column='User_ID', primary_key=True)  # Field name made lowercase.
     first_name = models.CharField(db_column='First_Name', max_length=255)  # Field name made lowercase.
     last_name = models.CharField(db_column='Last_Name', max_length=255)  # Field name made lowercase.
-    login = models.CharField(db_column='Login', max_length=255)  # Field name made lowercase.
+    login = models.CharField(db_column='Login', max_length=255, unique=True)  # Field name made lowercase.
     active_user = models.BooleanField(db_column='Active_User', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:

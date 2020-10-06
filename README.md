@@ -411,3 +411,11 @@ ogr2ogr -f GeoJSON out.geojson in.shp
 ```
 ogr2ogr -f "GeoJson" -t_srs "EPSG:4326" "outputname_epsg4326.geojson" "MSSQL:server={YourServerWithoutTheBracket};database={YourDatabaseWithoutTheBracket};uid={YourUsernameWithoutTheBracket};pwd={YourPasswordWithoutTheBracket};" -sql "SELECT * FROM {YourTableNameWithoutTheBracket}"
 ```
+
+# Note on the post database creation
+I had to apply the following SQL to make sure dbo.Users.Login has the Unique Contraint so to not cause any duplicates
+```
+ALTER TABLE [Users]
+ADD CONSTRAINT [AK_Users_Login] UNIQUE (Login);
+```
+There's more, take a look at PMU_DjangoWebApps/PerInd/models.py for their comments for SQLs to run, after database creation.
