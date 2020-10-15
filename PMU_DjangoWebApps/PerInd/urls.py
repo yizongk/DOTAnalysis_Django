@@ -1,12 +1,12 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView, PastDueIndicatorsPageView
+from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView, PastDueIndicatorsPageView, AdminPanelPageView
 urlpatterns = [
-    
+
     #path('', views.index, name='index'),
     #path('about', views.about, name='about'),
     #path('contact', views.contact, name='contact'),
-    
+
     path('', HomePageView.as_view(), name='perind_home_view'),
     path('about', AboutPageView.as_view(), name='perind_about_view'),
     path('contact', ContactPageView.as_view(), name='perind_contact_view'),
@@ -15,5 +15,6 @@ urlpatterns = [
     path('save_perind_data_api', views.SavePerIndDataApi, name='save_perind_data_api'),
     path('get_csv_cur_ctx_api', views.GetCsvApi, name='get_csv_cur_ctx_api'),
     path('pastdueindicators', PastDueIndicatorsPageView.as_view(), name='perind_pastdueindicators'),
+    path('adminpanel', AdminPanelPageView.as_view(), name='perind_adminpanel'),
 
 ]

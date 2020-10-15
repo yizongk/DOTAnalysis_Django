@@ -1144,3 +1144,40 @@ class PastDueIndicatorsPageView(generic.ListView):
 
             context["client_is_admin"] = False
             return context
+
+class AdminPanelPageView(generic.ListView):
+    template_name = 'PerInd.template.adminpanel.html'
+    context_object_name = ''
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        pass
+
+    def get_context_data(self, **kwargs):
+        try:
+            ## Call the base implementation first to get a context
+            context = super().get_context_data(**kwargs)
+
+            ## Finally, setting the context variables
+            ## Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
