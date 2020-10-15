@@ -11,7 +11,6 @@ from django.db import models
 # All field names made lowercase.
 class Category(models.Model):
     category_id = models.AutoField(db_column='Category_ID', primary_key=True)
-    old_category_name = models.CharField(db_column='Old_Category_Name', max_length=255)
     category_name = models.CharField(db_column='Category_Name', max_length=255)
 
     class Meta:
