@@ -1147,7 +1147,7 @@ class PastDueIndicatorsPageView(generic.ListView):
 
 class AdminPanelPageView(generic.ListView):
     template_name = 'PerInd.template.adminpanel.html'
-    context_object_name = ''
+    context_object_name = 'permission_data_entries'
 
     req_success = False
     err_msg = ""
@@ -1155,7 +1155,27 @@ class AdminPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        pass
+        ## Check for Active Admins
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            print(self.err_msg)
+            return UserPermissions.objects.none()
+
+        try:
+            permission_data_entries = UserPermissions.objects.all().order_by('user__login')
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return UserPermissions.objects.none()
+
+        self.req_success = True
+        return permission_data_entries
+
 
     def get_context_data(self, **kwargs):
         try:
