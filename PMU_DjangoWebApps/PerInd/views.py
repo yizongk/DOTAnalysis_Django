@@ -189,11 +189,11 @@ class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
 
-    paginate_by = 12
-
     req_success = False
     category_permissions = []
     err_msg = ""
+
+    paginate_by = 12
 
     req_sort_dir = ""
     req_sort_by = ""
@@ -503,10 +503,12 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
-            print(self.err_msg)
+
             context["indicator_data_entries"] = IndicatorData.objects.none()
 
             context["category_permissions"] = ""
@@ -1121,10 +1123,12 @@ class PastDueIndicatorsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
-            print(self.err_msg)
+
             context["indicator_data_entries"] = IndicatorData.objects.none()
 
             context["sort_dir"] = ""
