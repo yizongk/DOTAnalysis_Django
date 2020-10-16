@@ -8,6 +8,7 @@ from datetime import datetime
 from django.utils import timezone
 import pytz ## For converting datetime objects from one timezone to another timezone
 from django.db.models import Q
+import json
 ## Create your views here.
 
 def get_admin_category_permissions():
@@ -1175,6 +1176,7 @@ class AdminPanelPageView(generic.ListView):
             print(self.err_msg)
             return UserPermissions.objects.none()
 
+        ## Get the permissions data
         try:
             permission_data_entries = UserPermissions.objects.all().order_by('user__login')
         except Exception as e:
@@ -1182,6 +1184,22 @@ class AdminPanelPageView(generic.ListView):
             self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return UserPermissions.objects.none()
+
+        # ## Example codes showing how CellEditSave.js works with the html table
+        # ## Get the active users login list
+        # try:
+        #     user_objs = Users.objects.filter(
+        #         active_user=True
+        #     ).order_by('login')
+
+        #     py_list_obj = [x.login for x in user_objs]
+        #     json_obj = json.dumps(py_list_obj)
+        #     self.user_logins_json = json_obj
+        # except Exception as e:
+        #     self.req_success = False
+        #     self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+        #     print(self.err_msg)
+        #     return UserPermissions.objects.none()
 
         self.req_success = True
         return permission_data_entries
