@@ -82,7 +82,7 @@ def user_is_active_user(username):
             }
         return {
             "success": False,
-            "err": '{} is not an active User or is not registered in our Users database'.format(username),
+            "err": '{} is not an active User or is not registered'.format(username),
         }
     except Exception as e:
         print("Exception: user_is_active_user(): {}".format(e))
@@ -1173,13 +1173,23 @@ class AdminPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
+        ## Check for Active User
+        is_active_user = user_is_active_user(self.request.user)
+        if is_active_user["success"] == True:
+            pass
+        else:
+            self.req_success = False
+            self.err_msg = "AdminPanelApiSavePermissionData(): get_queryset(): {}".format(is_active_user["err"])
+            print(self.err_msg)
+            return UserPermissions.objects.none()
+
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
             self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
             return UserPermissions.objects.none()
 
