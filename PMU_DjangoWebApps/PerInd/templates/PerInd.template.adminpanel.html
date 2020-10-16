@@ -30,22 +30,22 @@
         <table class="table table-striped table-hover" id="WebGridTable">
             <thead>
                 <tr>
-                    <th>Login</th>
                     <th>First Name</th>
                     <th>Last Name</th>
+                    <th>Active User</th>
+                    <th>Login</th>
                     <th>Category</th>
-                    <th>Active</th>
                 </tr>
             </thead>
 
             <tbody>
                 {% for entry in permission_data_entries %}
                 <tr>
-                    <td class="editable" data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
                     <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="First_Name">{{ entry.user.first_name }}</td>
                     <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Last_Name">{{ entry.user.last_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
                     <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
+                    <td class="editable light-blue" data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
+                    <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

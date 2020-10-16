@@ -41,7 +41,7 @@ function csrfSafeMethod(method) {
 };
 
 // THIS IS THE ENTRY POINT
-// callbackFct must take in for its first param, the td_node, and then for its second param, the json_response obj
+// callbackFct must take in for its first param, the td_node, and then for its second param, the json_response obj. callbackFct can be used to do any work after a successful api call, such as updating some element on the html beside the new cell value (The new cell value is updated to the edited cell during the sendCellToServer() function).
 function sendCellToServer( node, api_url, callbackFct=function() { return; } ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("value")

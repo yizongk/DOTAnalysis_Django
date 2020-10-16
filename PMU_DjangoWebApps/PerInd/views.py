@@ -580,10 +580,10 @@ def SavePerIndDataApi(request):
     try:
         new_value = float(new_value)
     except Exception as e:
-        print("Warning: SavePerIndDataApi(): Unable to convert new_value '{}' as float type, did not save the value".format(new_value))
+        print("Error: SavePerIndDataApi(): Unable to convert new_value '{}' to float type, did not save the value".format(new_value))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Warning: SavePerIndDataApi():\n\nUnable to convert new_value '{}' as float type, did not save the value".format(new_value),
+            "post_msg": "Error: SavePerIndDataApi():\n\nUnable to convert new_value '{}' to float type, did not save the value".format(new_value),
         })
 
     if table == "IndicatorData":
@@ -615,10 +615,10 @@ def SavePerIndDataApi(request):
                     "updated_by": remote_user,
                 })
             except Exception as e:
-                print("Error: SavePerIndDataApi(): Something went wrong while trying to save to the database: {}".format(e))
+                print("Error: SavePerIndDataApi(): While trying to save to the database: {}".format(e))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: SavePerIndDataApi():\n\nSomething went wrong while trying to save to the database: {}".format(e),
+                    "post_msg": "Error: SavePerIndDataApi():\n\nWhile trying to save to the database: {}".format(e),
                 })
 
     print("Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
@@ -886,24 +886,6 @@ def GetCsvApi(request):
         "post_success": True,
         "post_msg": "GetCsvApi(): Success, check for variable 'post_data' in the response JSON for the csv file",
         "post_data": dummy_in_mem_file.getvalue(),
-    })
-
-# Post request
-def AdminPanelApiSavePermissionData(request):
-    id = request.POST.get('id', '')
-    table = request.POST.get('table', '')
-    column = request.POST.get('column', '')
-    new_value = request.POST.get('new_value', '')
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": 'Hi from backend',
-    })
-
-    print("Warning: AdminPanelApiSavePermissionData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
-    return JsonResponse({
-        "post_success": False,
-        "post_msg": "Warning: AdminPanelApiSavePermissionData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
 ## For admin access only
@@ -1229,3 +1211,120 @@ class AdminPanelPageView(generic.ListView):
 
             context["client_is_admin"] = False
             return context
+
+# Post request
+def AdminPanelApiSavePermissionData(request):
+    id = request.POST.get('id', '')
+    table = request.POST.get('table', '')
+    column = request.POST.get('column', '')
+    new_value = request.POST.get('new_value', '')
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AdminPanelApiSavePermissionData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiSavePermissionData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+    ## Check active user
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] == True:
+        pass
+    else:
+        print("AdminPanelApiSavePermissionData(): {}".format(is_active_user["err"]))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiSavePermissionData(): {}".format(is_active_user["err"]),
+            "post_data": None,
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiSavePermissionData(): {}".format(is_active_admin["err"]),
+            "post_data": None,
+        })
+
+    ## Save the data
+    if table == "Users":
+
+        ## Make sure new_value is convertable to its respective data type
+        if column == "Active_User":
+            try:
+                new_value = bool(new_value)
+            except Exception as e:
+                print("Error: AdminPanelApiSavePermissionData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+                })
+        else:
+            try:
+                new_value = str(new_value)
+            except Exception as e:
+                print("Error: AdminPanelApiSavePermissionData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+                })
+
+        ## Save the value
+        row = UserPermissions.objects.get(user_permission_id=id)
+        if column == "Login":
+            try:
+                user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                row.user = user_obj
+
+                row.save()
+
+                # # Temp
+                # return JsonResponse({
+                #     "post_success": False,
+                #     "post_msg": "trying to save: '{}'".format(new_value),
+                # })
+
+                print("Api Log: AdminPanelApiSavePermissionData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+                return JsonResponse({
+                    "post_success": True,
+                    "post_msg": "",
+                })
+            except Exception as e:
+                print("Error: AdminPanelApiSavePermissionData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+                })
+
+
+
+    # elif table == "":
+    #     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    print("Warning: AdminPanelApiSavePermissionData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    return JsonResponse({
+        "post_success": False,
+        "post_msg": "Warning: AdminPanelApiSavePermissionData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+    })
