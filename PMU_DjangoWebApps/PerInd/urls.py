@@ -16,5 +16,6 @@ urlpatterns = [
     path('get_csv_cur_ctx_api', views.GetCsvApi, name='get_csv_cur_ctx_api'),
     path('pastdueindicators', PastDueIndicatorsPageView.as_view(), name='perind_pastdueindicators'),
     path('adminpanel', AdminPanelPageView.as_view(), name='perind_adminpanel'),
+    path('admin_panel_api_save_permission_data', views.AdminPanelApiSavePermissionData, name='admin_panel_api_save_permission_data'),
 
 ]

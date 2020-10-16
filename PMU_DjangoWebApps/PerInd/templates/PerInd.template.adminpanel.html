@@ -4,7 +4,6 @@
 
 {% block custom_css %}
     <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -42,11 +41,11 @@
             <tbody>
                 {% for entry in permission_data_entries %}
                 <tr>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="">{{ entry.user.login }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="">{{ entry.user.first_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="">{{ entry.user.last_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="category_name">{{ entry.category.category_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="">{{ entry.user.active_user }}</td>
+                    <td class="editable" data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
+                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="First_Name">{{ entry.user.first_name }}</td>
+                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Last_Name">{{ entry.user.last_name }}</td>
+                    <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
+                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -56,10 +55,30 @@
 {% endblock content %}
 
 {% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+
     <script>
         $(document).ready( function () {
-            console.log('Ready for datatable')
+
             $('#WebGridTable').DataTable();
+
+            $(document).on("dblclick", ".editable", function () {
+                enterCellEditMode($(this))
+            });
+
+            $(document).on("keyup", ".input-data", function (e) {
+                var key = e.which;
+                if (key === 13) { // 13 is the return key, aka 'ENTER' key
+                    sendCellToServer(this, "/PerInd/admin_panel_api_save_permission_data", function(td_node, json_response) {
+                        console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
+                    });
+                }
+                if (key === 27) { // 27 is the ESC key
+                    cancelEditMode(this);
+                }
+            });
+
         });
     </script>
 {% endblock custom_js %}

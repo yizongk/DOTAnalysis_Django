@@ -888,6 +888,24 @@ def GetCsvApi(request):
         "post_data": dummy_in_mem_file.getvalue(),
     })
 
+# Post request
+def AdminPanelApiSavePermissionData(request):
+    id = request.POST.get('id', '')
+    table = request.POST.get('table', '')
+    column = request.POST.get('column', '')
+    new_value = request.POST.get('new_value', '')
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": 'Hi from backend',
+    })
+
+    print("Warning: AdminPanelApiSavePermissionData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    return JsonResponse({
+        "post_success": False,
+        "post_msg": "Warning: AdminPanelApiSavePermissionData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+    })
+
 ## For admin access only
 class PastDueIndicatorsPageView(generic.ListView):
     template_name = 'PerInd.template.pastdueindicators.html'
