@@ -5,7 +5,7 @@
     for themselves. Background we set to 80% white with
     out animation centered, and no-repating
 */
-.modal {
+.loadingmodal {
     display:    none;
     position:   fixed;
     z-index:    1000;
@@ -20,11 +20,11 @@
 }
 
 /* When the body has the loading class, we turn the scroll bar off with overflow:hidden */
-body.loading .modal {
+body.loading .loadingmodal {
     overflow: hidden;
 }
 
 /* Anytime the body has the loading class, our modal element will be visible */
-body.loading .modal {
+body.loading .loadingmodal {
     display: block;
 }
