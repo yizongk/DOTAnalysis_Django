@@ -38,7 +38,7 @@
                     </div>
                     <div class="modal-body mx-3">
                         <div>Select Login</div>
-                        <div class="md-form mb-5">
+                        <div id= "modalNewRowFormLoginSelectBorder" class="md-form mb-5">
                             <select id="modalNewRowFormLoginSelect" class="browser-default custom-select">
                                 <option></option>
 
@@ -49,7 +49,7 @@
                         </div>
 
                         <div>Select Category</div>
-                        <div class="md-form mb-4">
+                        <div id= "modalNewRowFormCategorySelectBorder" class="md-form mb-4">
                             <select id="modalNewRowFormCategorySelect" class="browser-default custom-select">
                                 <option></option>
 
@@ -157,6 +157,19 @@
             $('#modalNewRowFormAddButton').on("click", function() {
                 let loginSelect = $("#modalNewRowFormLoginSelect").val()
                 let categorySelect = $("#modalNewRowFormCategorySelect").val()
+
+                $('#modalNewRowFormLoginSelectBorder').css("border", "")
+                $('#modalNewRowFormCategorySelectBorder').css("border", "")
+
+                if (loginSelect == '') {
+                    $('#modalNewRowFormLoginSelectBorder').css("border", "2px solid red")
+                    return
+                }
+
+                if (categorySelect == '') {
+                    $('#modalNewRowFormCategorySelectBorder').css("border", "2px solid red")
+                    return
+                }
 
                 json_blob = {
                     "login_selection": loginSelect,
