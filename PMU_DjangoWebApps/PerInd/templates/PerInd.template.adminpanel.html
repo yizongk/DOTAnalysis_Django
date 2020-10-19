@@ -25,7 +25,6 @@
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
-    <!--admin access control web grid-->
     <div>
         <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -71,34 +70,35 @@
         <div class="text-center">
             <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Add a new permission</a>
         </div>
-
-
-
-        <table class="table table-striped table-hover" id="WebGridTable">
-            <thead>
-                <tr>
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Active User</th>
-                    <th>Login</th>
-                    <th>Category</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for entry in permission_data_entries %}
-                <tr>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="First_Name">{{ entry.user.first_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Last_Name">{{ entry.user.last_name }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
-                    <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
-    <!--End WebGrid-->
+
+    <!--admin access control web grid-->
+    <table class="table table-striped table-hover" id="WebGridTable">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Active User</th>
+                <th>Login</th>
+                <th>Category</th>
+                <th>Delete?</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for entry in permission_data_entries %}
+            <tr>
+                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="First_Name">{{ entry.user.first_name }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Last_Name">{{ entry.user.last_name }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
+                <td class="text-center" data-id="{{ entry.user_permission_id }}" ><a class="deletable"><i class="fas fa-trash-alt"></i></a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!--End admin access control web grid-->
 {% endblock content %}
 
 {% block custom_js %}
@@ -153,6 +153,10 @@
                     });
                 });
             {% endcomment %}
+
+            $('.deletable').on("click", function() {
+                console.log('Attempting to delete')
+            })
 
             $('#modalNewRowFormAddButton').on("click", function() {
                 let loginSelect = $("#modalNewRowFormLoginSelect").val()
