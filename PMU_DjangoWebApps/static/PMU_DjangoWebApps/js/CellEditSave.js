@@ -35,7 +35,7 @@
         //// ==========================For cell select mode===============================
 
         $(document).on("dblclick", ".editable-select", function () {
-            values_array = some_array                                                                           // provide values_array here, such as values_array = ["Option A", "Option B", "Option C"]
+            values_array = some_array                                                                           // provide values_array here, such as values_array = ["Option A", "Option B", "Option C"], or converting a python json obj to array: logins_array = {{ user_logins_json|safe }}
             // Move current select element to the top of the array
             var current_value = $(this).text()
             values_array.sort(function(x, y) {
@@ -132,8 +132,8 @@ function csrfSafeMethod(method) {
 };
 
 // THIS IS THE ENTRY POINT
-// callbackFct must take in for its first param, the td_node, and then for its second param, the json_response obj. callbackFct can be used to do any work after a successful api call, such as updating some element on the html beside the new cell value (The new cell value is updated to the edited cell during the sendCellToServer() function).
-function sendCellToServer( node, api_url, cell_html_type, callbackFct=function() { return; } ) {
+// successCallbackFct must take in for its first param, the td_node, and then for its second param, the json_response obj. successCallbackFct can be used to do any work after a successful api call, such as updating some element on the html beside the new cell value (The new cell value is updated to the edited cell during the sendCellToServer() function).
+function sendCellToServer( node, api_url, cell_html_type, successCallbackFct=function() { return; } ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("old_value")
     var new_value = $(node).val();
@@ -167,15 +167,15 @@ function sendCellToServer( node, api_url, cell_html_type, callbackFct=function()
         // console.log("JSON RESPONSE", json_response);
         if (json_response["post_success"] == false) {
             td_node.html(old_val);
-            console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-            alert(`Something went wrong while trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+            console.log(`Error: Ajax calling '${api_url}'\nServer Response: ${json_response["post_msg"]}`);
+            alert(`Something went wrong while trying to send cell data to server.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling '${api_url}'\nServer Response:\n\n${json_response["post_msg"]}`);
 
             // Set status light and error message to red and response error msg
-            setDatabaseStatus(good = false, msg = json_response["post_msg"]);
+            setDatabaseStatus(good=false, msg=json_response["post_msg"]);
         } else { // Api call successful
             td_node.html(new_value);
-            callbackFct(td_node, json_response);
-            setDatabaseStatus(good = true, msg = "");
+            successCallbackFct(td_node, json_response);
+            setDatabaseStatus(good=true, msg="");
         }
         if (cell_html_type == "input") {
             finishCellEditMode(td_node);
@@ -189,8 +189,8 @@ function sendCellToServer( node, api_url, cell_html_type, callbackFct=function()
     })
     .fail(function (jqXHR) {
         td_node.html(old_val);
-        var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-        setDatabaseStatus(good = false, msg = errorMessage);
+        var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+        setDatabaseStatus(good=false, msg=errorMessage);
         if (cell_html_type == "input") {
             finishCellEditMode(td_node);
         } else if (cell_html_type == "select") {
@@ -198,6 +198,50 @@ function sendCellToServer( node, api_url, cell_html_type, callbackFct=function()
         } else {
             console.log(`Warning: Unknown finish cell mode: ${cell_html_type}`)
         }
+
+        console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+        alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+        return false;
+    });
+};
+
+// Sends a json blob to the api end point. Assumes the api end will know how to handle the json blob
+// successCallbackFct must take in for its first param, the json_response obj. successCallbackFct can be used to do any work after a successful api call, such as displaying a message etc
+function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; } ) {
+
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                // Only send the token to relative URLs i.e. locally.
+                xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+            }
+        }
+    });
+
+    $.ajax({
+        url: api_url,
+        type: "POST",
+        data: JSON.stringify(json_blob),
+        contentType: "application/json",
+    })
+    .done(function (json_response) {
+        // console.log("JSON RESPONSE", json_response);
+        if (json_response["post_success"] == false) {
+            console.log(`Error: Ajax calling '${api_url}'\nServer Response: ${json_response["post_msg"]}`);
+            alert(`Something went wrong while trying to send form data to server.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling api endpoint: '${api_url}'\nServer Response:\n\n${json_response["post_msg"]}`);
+
+            // Set status light and error message to red and response error msg
+            setDatabaseStatus(good=false, msg=json_response["post_msg"]);
+        } else { // Api call successful
+            successCallbackFct(json_response);
+            setDatabaseStatus(good=true, msg="");
+        }
+
+        return true;
+    })
+    .fail(function (jqXHR) {
+        var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+        setDatabaseStatus(good=false, msg=errorMessage);
 
         console.log(`Ajax Post: Error Occured: ${errorMessage}`);
         alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);

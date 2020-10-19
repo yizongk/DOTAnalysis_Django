@@ -1155,6 +1155,8 @@ class AdminPanelPageView(generic.ListView):
 
     client_is_admin = False
 
+    users_list = []
+    categories_list = []
     def get_queryset(self):
         ## Check for Active User
         is_active_user = user_is_active_user(self.request.user)
@@ -1185,8 +1187,7 @@ class AdminPanelPageView(generic.ListView):
             print(self.err_msg)
             return UserPermissions.objects.none()
 
-        # ## Example codes showing how CellEditSave.js works with the html table
-        # ## Get the active users login list
+        # ## EXAMPLE: Get the active users login list in json format
         # try:
         #     user_objs = Users.objects.filter(
         #         active_user=True
@@ -1200,6 +1201,30 @@ class AdminPanelPageView(generic.ListView):
         #     self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
         #     print(self.err_msg)
         #     return UserPermissions.objects.none()
+
+
+        ## Get the active users login list
+        try:
+            user_objs = Users.objects.filter(
+                active_user=True
+            ).order_by('login')
+
+            self.users_list = user_objs
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return UserPermissions.objects.none()
+
+        ## Get the category list
+        try:
+            category_objs = Category.objects.all().order_by('category_name')
+            self.categories_list = category_objs
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return UserPermissions.objects.none()
 
         self.req_success = True
         return permission_data_entries
@@ -1217,6 +1242,8 @@ class AdminPanelPageView(generic.ListView):
 
             context["client_is_admin"] = self.client_is_admin
 
+            context["users_list"] = self.users_list
+            context["categories_list"] = self.categories_list
             return context
         except Exception as e:
             self.req_success = False
@@ -1228,9 +1255,12 @@ class AdminPanelPageView(generic.ListView):
             context["err_msg"] = self.err_msg
 
             context["client_is_admin"] = False
+
+            context["users_list"] = []
+            context["categories_list"] = []
             return context
 
-# Post request
+## Post request - for single cell edits
 def AdminPanelApiSavePermissionData(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
@@ -1345,4 +1375,137 @@ def AdminPanelApiSavePermissionData(request):
     return JsonResponse({
         "post_success": False,
         "post_msg": "Warning: AdminPanelApiSavePermissionData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+    })
+
+## For form add row
+def AdminPanelApiAddRowPermission(request):
+    """
+        Expects the post request to post a JSON object, and that it will contain login_selection and category_selection. Like so:
+        {
+            login_selection: "Some value",
+            category_selection: "Some other value"
+        }
+        Will create a new row in the Permissions table with the selected login and category
+    """
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AdminPanelApiAddRowPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiAddRowPermission():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Check active user
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] == True:
+        pass
+    else:
+        print("AdminPanelApiAddRowPermission(): {}".format(is_active_user["err"]))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiAddRowPermission(): {}".format(is_active_user["err"]),
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiAddRowPermission(): {}".format(is_active_admin["err"]),
+        })
+
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Check login_selection and category_selection is not empty string
+    try:
+        login_selection = json_blob['login_selection']
+        category_selection = json_blob['category_selection']
+
+        if login_selection == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "login_selection cannot be an empty string".format(login_selection, category_selection),
+            })
+
+        if category_selection == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "category_selection cannot be an empty string".format(login_selection, category_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
+
+    ## Check that the login_selection and category_selection exists
+    try:
+        if not Users.objects.filter(login__exact=login_selection, active_user__exact=True).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "'{}' doesn't exists or it's not an active user".format(login_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+        })
+
+    try:
+         if not Category.objects.filter(category_name__exact=category_selection).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "'{}' doesn't exists as a Category".format(category_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+        })
+
+    ## Check for duplication of login and category
+    try:
+        if UserPermissions.objects.filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "'{}' already has access to '{}'".format(login_selection, category_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+        })
+
+    ## Create the row!
+    try:
+        user_obj = Users.objects.get(login=login_selection, active_user=True)
+        category_obj = Category.objects.get(category_name=category_selection)
+        new_permission = UserPermissions(user=user_obj, category=category_obj)
+        new_permission.save()
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "",
+        "first_name": user_obj.first_name,
+        "last_name": user_obj.last_name,
+        "active_user": user_obj.active_user,
+        "login": user_obj.login,
+        "category_name": category_obj.category_name,
     })
