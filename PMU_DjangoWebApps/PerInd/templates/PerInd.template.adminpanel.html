@@ -93,7 +93,7 @@
                 <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
                 <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
                 <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
-                <td class="text-center" data-id="{{ entry.user_permission_id }}" ><a class="deletable"><i class="fas fa-trash-alt"></i></a></td>
+                <td class="text-center" data-id="{{ entry.user_permission_id }}" ></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -108,7 +108,13 @@
     <script>
         $(document).ready( function () {
 
-            var table = $('#WebGridTable').DataTable();
+            var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
+                "columnDefs": [{
+                    "targets": -1,
+                    "data": null,
+                    "defaultContent": '<a class="deletable"><i class="fas fa-trash-alt"></i></a>'
+                }]
+            });
 
             {% comment %}
                 // Example codes showing how CellEditSave.js works with the html table
