@@ -99,7 +99,6 @@
         </tbody>
     </table>
     <!--End admin access control web grid-->
-    <a class="deletable"><i class="fas fa-trash-alt"></i></a>
 {% endblock content %}
 
 {% block custom_js %}
@@ -155,9 +154,7 @@
                 });
 
                 $(document).on("change", ".input-data-select", function () {
-                    sendCellToServer(this, "/PerInd/admin_panel_api_save_permission_data", "select", function(td_node, json_response) {
-                        console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
-                    });
+                    sendCellToServer(this, "/PerInd/admin_panel_api_save_permission_data", "select");
                 });
             {% endcomment %}
 

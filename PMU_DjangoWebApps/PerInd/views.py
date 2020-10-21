@@ -1262,10 +1262,18 @@ class AdminPanelPageView(generic.ListView):
 
 ## Post request - for single cell edits
 def AdminPanelApiSavePermissionData(request):
-    id = request.POST.get('id', '')
-    table = request.POST.get('table', '')
-    column = request.POST.get('column', '')
-    new_value = request.POST.get('new_value', '')
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    id = json_blob['id']
+    table = json_blob['table']
+    column = json_blob['column']
+    new_value = json_blob['new_value']
 
     ## Authenticate User
     remote_user = None
