@@ -133,9 +133,13 @@ function csrfSafeMethod(method) {
 
 // Sends a json blob to the api end point. Assumes the api end will know how to handle the json blob
 // Expects a json obj in response, and must have the following variable "post_success" and "post_msg", ex. json_response["post_success"] and json_response["post_msg"]
-// successCallbackFct and failCallbackFct must take in for its first param, the json_response obj. The success/fail fct can be used to do any work after the respective successful/fail api call, such as displaying a message etc
+// successCallbackFct and failCallbackFct's optional first param, must be the json_response obj. The success/fail fct can be used to do any work after the respective successful/fail api call, such as displaying a message etc
     // success/fail not as in server connectivity, but success as in connectivity is success, and successfuly processed the data. And failure as in connectivity is sucess but something prevented the server from processing the data in its functions.
-function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; } ) {
+    // For its optional 2nd param, it must be props, which contains some props in json form from the parent calling function
+// ajaxFailCallbackFct is called when ajax fails because of connection issues, etc. The optional first param must be jqXHR. You can access jqXHR.status and jqXHR.responseText.
+    // For its optional 2nd param, it must be props, which contains some props in json form from the parent calling function
+// ajaxFailCallbackFct stores calling parent data that can be pass to the various callback function
+function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -152,16 +156,15 @@ function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { 
         contentType: "application/json",
     })
     .done(function (json_response) {
-        // console.log("JSON RESPONSE", json_response);
         if (json_response["post_success"] == false) {
             console.log(`Error: Ajax calling '${api_url}'\nServer Response: ${json_response["post_msg"]}`);
             alert(`Something went wrong while trying to send form data to server.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling api endpoint: '${api_url}'\nServer Response:\n\n${json_response["post_msg"]}`);
 
-            failCallbackFct(json_response)
+            failCallbackFct(json_response, props)
             // Set status light and error message to red and response error msg
             setDatabaseStatus(good=false, msg=json_response["post_msg"]);
         } else { // Api call successful
-            successCallbackFct(json_response);
+            successCallbackFct(json_response, props);
             setDatabaseStatus(good=true, msg="");
         }
 
@@ -169,6 +172,7 @@ function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { 
     })
     .fail(function (jqXHR) {
         var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+        ajaxFailCallbackFct(jqXHR, props)
         setDatabaseStatus(good=false, msg=errorMessage);
 
         console.log(`Ajax Post: Error Occured: ${errorMessage}`);
