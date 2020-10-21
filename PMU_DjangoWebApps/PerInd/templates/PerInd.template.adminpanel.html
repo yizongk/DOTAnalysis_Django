@@ -190,9 +190,14 @@
                     alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
 
                     // Add the newly added row to the grid, and redraw
-                    var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, json_response.category_name,] )
+                    var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, json_response.category_name, ] )
                     .draw()
                     .node();
+
+                    // Add permission_id to all child cells
+                    $(rowNode).children().attr("data-id", json_response.permission_id);
+                    // Add class to child cell with the delete icon
+                    $(rowNode).find('.deletable').parent().addClass("text-center")
 
                     $(rowNode).css('color', 'green')
                     .animate( { color: 'black' } );

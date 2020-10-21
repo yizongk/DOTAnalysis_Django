@@ -1503,6 +1503,7 @@ def AdminPanelApiAddRowPermission(request):
     return JsonResponse({
         "post_success": True,
         "post_msg": "",
+        "permission_id": new_permission.user_permission_id,
         "first_name": user_obj.first_name,
         "last_name": user_obj.last_name,
         "active_user": user_obj.active_user,
