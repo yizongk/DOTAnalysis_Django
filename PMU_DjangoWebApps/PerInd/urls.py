@@ -18,5 +18,6 @@ urlpatterns = [
     path('adminpanel', AdminPanelPageView.as_view(), name='perind_adminpanel'),
     path('admin_panel_api_save_permission_data', views.AdminPanelApiSavePermissionData, name='admin_panel_api_save_permission_data'),
     path('admin_panel_api_add_row_permission', views.AdminPanelApiAddRowPermission, name='admin_panel_api_add_row_permission'),
+    path('admin_panel_api_delete_row_permission', views.AdminPanelApiDeleteRowPermission, name='admin_panel_api_delete_row_permission'),
 
 ]

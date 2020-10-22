@@ -1518,3 +1518,92 @@ def AdminPanelApiAddRowPermission(request):
         "login": user_obj.login,
         "category_name": category_obj.category_name,
     })
+
+## For JS datatable delete row
+def AdminPanelApiDeleteRowPermission(request):
+    """
+        Expects the post request to post a JSON object, and that it will contain user_permission_id. Like so:
+        {
+            user_permission_id: "Some value"
+        }
+        Will delete row in the Permissions table with the given user_permission_id
+    """
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AdminPanelApiDeleteRowPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiDeleteRowPermission():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Check active user
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] == True:
+        pass
+    else:
+        print("AdminPanelApiDeleteRowPermission(): {}".format(is_active_user["err"]))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiDeleteRowPermission(): {}".format(is_active_user["err"]),
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AdminPanelApiDeleteRowPermission(): {}".format(is_active_admin["err"]),
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Make sure user_permission_id is convertable to a unsign int
+    try:
+        user_permission_id = json_blob['user_permission_id']
+
+        try:
+            user_permission_id = int(user_permission_id)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "user_permission_id cannot be converted to an int: '{}'".format(user_permission_id),
+            })
+
+        if user_permission_id <= 0:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "user_permission_id is less than or equal to zero: '{}'".format(user_permission_id),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
+
+    ## Remove the permission row
+    try:
+        permission_row = UserPermissions.objects.get(user_permission_id=user_permission_id)
+        permission_row.delete()
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nFailed to remove user_permission_id '{}' from database: '{}'".format(user_permission_id, e),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "",
+    })

@@ -249,10 +249,10 @@ function sendCellToServer( node, api_url, cell_html_type ) {
 
 };
 
-function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; } ) {
-    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct);
+function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
 };
 
-function deleteRecordToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; } ) {
-    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct);
+function deleteRecordToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
 }
