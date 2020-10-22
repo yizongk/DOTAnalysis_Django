@@ -26,26 +26,19 @@
                         </button>
                     </div>
                     <div class="modal-body mx-3">
-                        <div>Select Login</div>
-                        <div id= "modalNewRowFormLoginSelectBorder" class="md-form mb-5">
-                            <select id="modalNewRowFormLoginSelect" class="browser-default custom-select">
-                                <option></option>
-
-                                {% for each in users_list %}
-                                <option>{{ each.login }}</option>
-                                {% endfor %}
-                            </select>
+                        <div>First Name</div>
+                        <div id="modalNewRowFormFirstNameInputBorder" class="md-form mb-5">
+                            <input id="modalNewRowFormFirstNameInput">
                         </div>
 
-                        <div>Select Category</div>
-                        <div id= "modalNewRowFormCategorySelectBorder" class="md-form mb-4">
-                            <select id="modalNewRowFormCategorySelect" class="browser-default custom-select">
-                                <option></option>
+                        <div>Last Name</div>
+                        <div id="modalNewRowFormLastNameInputBorder" class="md-form mb-5">
+                            <input id="modalNewRowFormLastNameInput">
+                        </div>
 
-                                {% for each in categories_list %}
-                                <option>{{ each.category_name }}</option>
-                                {% endfor %}
-                            </select>
+                        <div>Login</div>
+                        <div id="modalNewRowFormLoginInputBorder" class="md-form mb-4">
+                            <input id="modalNewRowFormLoginInput">
                         </div>
 
                     </div>
@@ -179,27 +172,40 @@
             })
 
             $('#modalNewRowFormAddButton').on("click", function() {
-                let loginSelect = $("#modalNewRowFormLoginSelect").val()
-                let categorySelect = $("#modalNewRowFormCategorySelect").val()
+                modalNewRowFormFirstNameInputBorder
+                modalNewRowFormLastNameInputBorder
+                modalNewRowFormLoginInputBorder
 
-                $('#modalNewRowFormLoginSelectBorder').css("border", "")
-                $('#modalNewRowFormCategorySelectBorder').css("border", "")
+                let firstNameInput = $("#modalNewRowFormFirstNameInput").val()
+                let lastNameInput = $("#modalNewRowFormLastNameInput").val()
+                let loginInput = $("#modalNewRowFormLoginInput").val()
 
-                if (loginSelect == '') {
-                    $('#modalNewRowFormLoginSelectBorder').css("border", "2px solid red")
+                $('#modalNewRowFormFirstNameInputBorder').css("border", "")
+                $('#modalNewRowFormLastNameInputBorder').css("border", "")
+                $('#modalNewRowFormLoginInputBorder').css("border", "")
+
+                if (firstNameInput == '') {
+                    $('#modalNewRowFormFirstNameInputBorder').css("border", "2px solid red")
                     return
                 }
 
-                if (categorySelect == '') {
-                    $('#modalNewRowFormCategorySelectBorder').css("border", "2px solid red")
+                if (lastNameInput == '') {
+                    $('#modalNewRowFormLastNameInputBorder').css("border", "2px solid red")
+                    return
+                }
+
+                if (loginInput == '') {
+                    $('#modalNewRowFormLoginInputBorder').css("border", "2px solid red")
                     return
                 }
 
                 json_blob = {
-                    "login_selection": loginSelect,
-                    "category_selection": categorySelect,
+                    "first_name_input": firstNameInput,
+                    "last_name_input": lastNameInput,
+                    "login_input": loginInput,
                 }
 
+                {% comment %}
                 sendModalFormDataToServer( json_blob, "admin_panel_api_add_row_permission", function(json_response) {
                     alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
 
@@ -215,7 +221,8 @@
 
                     $(rowNode).css('color', 'green')
                     .animate( { color: 'black' } );
-                } )
+                })
+                {% endcomment %}
             })
 
         });
