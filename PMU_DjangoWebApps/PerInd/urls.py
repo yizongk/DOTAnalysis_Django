@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView, PastDueIndicatorsPageView, AdminPanelPageView
+from .views import HomePageView, AboutPageView, ContactPageView, WebGridPageView, PastDueIndicatorsPageView, AdminPanelPageView, UserPermissionsPanelPageView
 urlpatterns = [
 
     #path('', views.index, name='index'),
@@ -16,6 +16,7 @@ urlpatterns = [
     path('get_csv_cur_ctx_api', views.GetCsvApi, name='get_csv_cur_ctx_api'),
     path('pastdueindicators', PastDueIndicatorsPageView.as_view(), name='perind_pastdueindicators'),
     path('adminpanel', AdminPanelPageView.as_view(), name='perind_adminpanel'),
+    path('userpermissionspanel', UserPermissionsPanelPageView.as_view(), name='perind_userpermissionspanel'),
     path('admin_panel_api_save_permission_data', views.AdminPanelApiSavePermissionData, name='admin_panel_api_save_permission_data'),
     path('admin_panel_api_add_row_permission', views.AdminPanelApiAddRowPermission, name='admin_panel_api_add_row_permission'),
     path('admin_panel_api_delete_row_permission', views.AdminPanelApiDeleteRowPermission, name='admin_panel_api_delete_row_permission'),

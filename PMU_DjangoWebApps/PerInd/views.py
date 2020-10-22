@@ -540,7 +540,7 @@ class WebGridPageView(generic.ListView):
             context["client_is_admin"] = False
             return context
 
-# Post request
+## Post request
 def SavePerIndDataApi(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
@@ -628,7 +628,7 @@ def SavePerIndDataApi(request):
         "post_msg": "Warning: SavePerIndDataApi():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
-# Post request
+## Post request
 def GetCsvApi(request):
     from django.db import connection
     """
@@ -1148,6 +1148,58 @@ class PastDueIndicatorsPageView(generic.ListView):
 
 class AdminPanelPageView(generic.ListView):
     template_name = 'PerInd.template.adminpanel.html'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        ## Check for Active User
+        is_active_user = user_is_active_user(self.request.user)
+        if is_active_user["success"] == True:
+            pass
+        else:
+            self.req_success = False
+            self.err_msg = "AdminPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
+            print(self.err_msg)
+            return
+
+        ## Check for Active Admins
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            print(self.err_msg)
+            return
+
+        self.req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
+class UserPermissionsPanelPageView(generic.ListView):
+    template_name = 'PerInd.template.userpermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
     req_success = False
@@ -1164,7 +1216,7 @@ class AdminPanelPageView(generic.ListView):
             pass
         else:
             self.req_success = False
-            self.err_msg = "AdminPanelApiSavePermissionData(): get_queryset(): {}".format(is_active_user["err"])
+            self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             print(self.err_msg)
             return UserPermissions.objects.none()
 
@@ -1174,7 +1226,7 @@ class AdminPanelPageView(generic.ListView):
             self.client_is_admin = True
         else:
             self.req_success = False
-            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
             return UserPermissions.objects.none()
 
@@ -1183,7 +1235,7 @@ class AdminPanelPageView(generic.ListView):
             permission_data_entries = UserPermissions.objects.all().order_by('user__login')
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return UserPermissions.objects.none()
 
@@ -1198,7 +1250,7 @@ class AdminPanelPageView(generic.ListView):
         #     self.user_logins_json = json_obj
         # except Exception as e:
         #     self.req_success = False
-        #     self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+        #     self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
         #     print(self.err_msg)
         #     return UserPermissions.objects.none()
 
@@ -1212,7 +1264,7 @@ class AdminPanelPageView(generic.ListView):
             self.users_list = user_objs
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return UserPermissions.objects.none()
 
@@ -1222,13 +1274,12 @@ class AdminPanelPageView(generic.ListView):
             self.categories_list = category_objs
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return UserPermissions.objects.none()
 
         self.req_success = True
         return permission_data_entries
-
 
     def get_context_data(self, **kwargs):
         try:
