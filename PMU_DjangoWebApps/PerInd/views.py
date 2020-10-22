@@ -1312,13 +1312,13 @@ class UserPermissionsPanelPageView(generic.ListView):
             return context
 
 ## Post request - for single cell edits
-def AdminPanelApiSavePermissionData(request):
+def UserPermissionsPanelApiSaveData(request):
     try:
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
     id = json_blob['id']
@@ -1331,10 +1331,10 @@ def AdminPanelApiSavePermissionData(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: AdminPanelApiSavePermissionData(): UNAUTHENTICATE USER!')
+        print('Warning: UserPermissionsPanelApiSaveData(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiSavePermissionData():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "UserPermissionsPanelApiSaveData():\n\nUNAUTHENTICATE USER!",
             "post_data": None,
         })
 
@@ -1343,10 +1343,10 @@ def AdminPanelApiSavePermissionData(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("AdminPanelApiSavePermissionData(): {}".format(is_active_user["err"]))
+        print("UserPermissionsPanelApiSaveData(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiSavePermissionData(): {}".format(is_active_user["err"]),
+            "post_msg": "UserPermissionsPanelApiSaveData(): {}".format(is_active_user["err"]),
             "post_data": None,
         })
 
@@ -1357,7 +1357,7 @@ def AdminPanelApiSavePermissionData(request):
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiSavePermissionData(): {}".format(is_active_admin["err"]),
+            "post_msg": "UserPermissionsPanelApiSaveData(): {}".format(is_active_admin["err"]),
             "post_data": None,
         })
 
@@ -1369,19 +1369,19 @@ def AdminPanelApiSavePermissionData(request):
             try:
                 new_value = bool(new_value)
             except Exception as e:
-                print("Error: AdminPanelApiSavePermissionData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+                print("Error: UserPermissionsPanelApiSaveData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
                 })
         else:
             try:
                 new_value = str(new_value)
             except Exception as e:
-                print("Error: AdminPanelApiSavePermissionData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+                print("Error: UserPermissionsPanelApiSaveData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
                 })
 
         ## Save the value
@@ -1399,16 +1399,16 @@ def AdminPanelApiSavePermissionData(request):
                 #     "post_msg": "trying to save: '{}'".format(new_value),
                 # })
 
-                print("Api Log: AdminPanelApiSavePermissionData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+                print("Api Log: UserPermissionsPanelApiSaveData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                 })
             except Exception as e:
-                print("Error: AdminPanelApiSavePermissionData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+                print("Error: UserPermissionsPanelApiSaveData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: AdminPanelApiSavePermissionData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
                 })
 
 
@@ -1430,14 +1430,14 @@ def AdminPanelApiSavePermissionData(request):
 
 
 
-    print("Warning: AdminPanelApiSavePermissionData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    print("Warning: UserPermissionsPanelApiSaveData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
-        "post_msg": "Warning: AdminPanelApiSavePermissionData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+        "post_msg": "Warning: UserPermissionsPanelApiSaveData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
 ## For form add row
-def AdminPanelApiAddRowPermission(request):
+def UserPermissionsPanelApiAddRow(request):
     """
         Expects the post request to post a JSON object, and that it will contain login_selection and category_selection. Like so:
         {
@@ -1452,10 +1452,10 @@ def AdminPanelApiAddRowPermission(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: AdminPanelApiAddRowPermission(): UNAUTHENTICATE USER!')
+        print('Warning: UserPermissionsPanelApiAddRow(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiAddRowPermission():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "UserPermissionsPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
         })
 
     ## Check active user
@@ -1463,10 +1463,10 @@ def AdminPanelApiAddRowPermission(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("AdminPanelApiAddRowPermission(): {}".format(is_active_user["err"]))
+        print("UserPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiAddRowPermission(): {}".format(is_active_user["err"]),
+            "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]),
         })
 
     ## Check active admin
@@ -1476,7 +1476,7 @@ def AdminPanelApiAddRowPermission(request):
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiAddRowPermission(): {}".format(is_active_admin["err"]),
+            "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_admin["err"]),
         })
 
     try:
@@ -1484,7 +1484,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
     ## Check login_selection and category_selection is not empty string
@@ -1506,7 +1506,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
         })
 
     ## Check that the login_selection and category_selection exists
@@ -1519,7 +1519,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
         })
 
     try:
@@ -1531,7 +1531,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
         })
 
     ## Check for duplication of login and category
@@ -1544,7 +1544,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
         })
 
     ## Create the row!
@@ -1556,7 +1556,7 @@ def AdminPanelApiAddRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiAddRowPermission(): {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
         })
 
     return JsonResponse({
@@ -1571,7 +1571,7 @@ def AdminPanelApiAddRowPermission(request):
     })
 
 ## For JS datatable delete row
-def AdminPanelApiDeleteRowPermission(request):
+def UserPermissionsPanelApiDeleteRow(request):
     """
         Expects the post request to post a JSON object, and that it will contain user_permission_id. Like so:
         {
@@ -1585,10 +1585,10 @@ def AdminPanelApiDeleteRowPermission(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: AdminPanelApiDeleteRowPermission(): UNAUTHENTICATE USER!')
+        print('Warning: UserPermissionsPanelApiDeleteRow(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiDeleteRowPermission():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "UserPermissionsPanelApiDeleteRow():\n\nUNAUTHENTICATE USER!",
         })
 
     ## Check active user
@@ -1596,10 +1596,10 @@ def AdminPanelApiDeleteRowPermission(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("AdminPanelApiDeleteRowPermission(): {}".format(is_active_user["err"]))
+        print("UserPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiDeleteRowPermission(): {}".format(is_active_user["err"]),
+            "post_msg": "UserPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]),
         })
 
     ## Check active admin
@@ -1609,7 +1609,7 @@ def AdminPanelApiDeleteRowPermission(request):
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "AdminPanelApiDeleteRowPermission(): {}".format(is_active_admin["err"]),
+            "post_msg": "UserPermissionsPanelApiDeleteRow(): {}".format(is_active_admin["err"]),
         })
 
     ## Read the json request body
@@ -1618,7 +1618,7 @@ def AdminPanelApiDeleteRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
     ## Make sure user_permission_id is convertable to a unsign int
@@ -1641,7 +1641,7 @@ def AdminPanelApiDeleteRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
         })
 
     ## Remove the permission row
@@ -1651,7 +1651,7 @@ def AdminPanelApiDeleteRowPermission(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: AdminPanelApiDeleteRowPermission():\n\nFailed to remove user_permission_id '{}' from database: '{}'".format(user_permission_id, e),
+            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nFailed to remove user_permission_id '{}' from database: '{}'".format(user_permission_id, e),
         })
 
     return JsonResponse({

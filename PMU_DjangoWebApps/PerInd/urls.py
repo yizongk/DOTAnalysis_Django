@@ -17,9 +17,9 @@ urlpatterns = [
     path('pastdueindicators', PastDueIndicatorsPageView.as_view(), name='perind_pastdueindicators'),
     path('adminpanel', AdminPanelPageView.as_view(), name='perind_adminpanel'),
     path('userpermissionspanel', UserPermissionsPanelPageView.as_view(), name='perind_userpermissionspanel'),
-    path('admin_panel_api_save_permission_data', views.AdminPanelApiSavePermissionData, name='admin_panel_api_save_permission_data'),
-    path('admin_panel_api_add_row_permission', views.AdminPanelApiAddRowPermission, name='admin_panel_api_add_row_permission'),
-    path('admin_panel_api_delete_row_permission', views.AdminPanelApiDeleteRowPermission, name='admin_panel_api_delete_row_permission'),
+    path('user_permissions_panel_api_save_data', views.UserPermissionsPanelApiSaveData, name='user_permissions_panel_api_save_data'),
+    path('user_permissions_panel_api_add_row', views.UserPermissionsPanelApiAddRow, name='user_permissions_panel_api_add_row'),
+    path('user_permissions_panel_api_delete_row', views.UserPermissionsPanelApiDeleteRow, name='user_permissions_panel_api_delete_row'),
     path('userspanel', UsersPanelPageView.as_view(), name='perind_userspanel'),
 
 ]

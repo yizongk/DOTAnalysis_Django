@@ -107,7 +107,7 @@
                 $(document).on("keyup", ".input-data", function (e) {
                     var key = e.which;
                     if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/admin_panel_api_save_permission_data", "input", function(td_node, json_response) {
+                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_save_data", "input", function(td_node, json_response) {
                             console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
                         });
                     }
@@ -135,7 +135,7 @@
                 });
 
                 $(document).on("change", ".input-data-select", function () {
-                    sendCellToServer(this, "/PerInd/admin_panel_api_save_permission_data", "select");
+                    sendCellToServer(this, "/PerInd/user_permissions_panel_api_save_data", "select");
                 });
             {% endcomment %}
 
@@ -152,7 +152,7 @@
                         'tr_row': $(this).parent().parent()
                     }
 
-                    deleteRecordToServer( json_blob, 'admin_panel_api_delete_row_permission', function(json_response, props) {
+                    deleteRecordToServer( json_blob, 'user_permissions_panel_api_delete_row', function(json_response, props) {
                         // successful api call
                         table = props['table']
                         tr_row = props['tr_row']
@@ -206,7 +206,7 @@
                 }
 
                 {% comment %}
-                sendModalFormDataToServer( json_blob, "admin_panel_api_add_row_permission", function(json_response) {
+                sendModalFormDataToServer( json_blob, "user_permissions_panel_api_add_row", function(json_response) {
                     alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
 
                     // Add the newly added row to the grid, and redraw
