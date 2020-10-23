@@ -6,22 +6,28 @@
 
 
 {% block content %}
-        <div>Leaflet.js</div>
-        <div>Select DOT Service</div>
-        <select id="dot_services_filter"></select>
-        <br>
-        <br>
-        <div>Social Backdrop: Aggregation Type</div>
-        <div id="AggregationType"></div>
-        <div id="social_filter"></div>
-        <div id="SocialBackdropLevels"></div>
+<div>Leaflet.js</div>
+<div>Select DOT Service</div>
+<select id="dot_services_filter"></select>
+<br>
+<br>
+<div>Social Backdrop: Aggregation Type</div>
+<div id="AggregationType"></div>
+<div id="social_filter"></div>
+<div id="SocialBackdropLevels"></div>
 
-        <div id="container">
-            <div id="nta_filter">Compare NTA</div>
-            <select id="nta_filter_1"></select>
-            <select id="nta_filter_2"></select>
-            <div id='map_container'></div>
-        </div>
+<div id="container">
+    <div id="new">New Filter</div>
+    <select id="new_filter"></select>
+
+</div>
+<div id="container">
+    <div id="nta_filter">Compare NTA</div>
+    <select id="nta_filter_1"></select>
+    <select id="nta_filter_2"></select>
+    <div id='map_container'></div>
+</div>
+
 
 {% endblock %}
 
@@ -33,26 +39,36 @@
       href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
 
-<!-- For loading in static JSON files -->
+<!-- For loading in static JSON files
 <script src="https://d3js.org/d3-fetch.v2.min.js"></script>
 
+
+<script src="https://d3js.org/d3-collection.v1.min.js"></script>
+<script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
+<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+<script src="https://d3js.org/d3-request.v1.min.js"></script>-->
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<!-- For loading in static JSON files -->
+<script src="https://d3js.org/d3-fetch.v2.min.js"></script>
 <style>
 
     #map_container {
         height: 600px;
         width: 600px;
-        float:left;
+        float: left;
     }
-    #nta_filter_1, #nta_filter_2,#nta_filter{
-        margin-top:50px;
-        margin-right:15px;
 
-        float:left;
+    #nta_filter_1, #nta_filter_2, #nta_filter {
+        margin-top: 50px;
+        margin-right: 15px;
+        float: left;
+    }
 
+    #container {
+        overflow: hidden;
     }
-    #container{
-        overflow:hidden;
-    }
+
     .float-container {
         padding: 20px;
     }
@@ -99,16 +115,16 @@
 
         // Load in NTA geojson for the first NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
-        .then(function (data) {
-            // Creating the list for the dropdown
-            const options = data.features.map(function (feature) {
-                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-            }).join('')
-            $('#nta_filter_1').html('<option>None</option>'+options)
+            .then(function (data) {
+                // Creating the list for the dropdown
+                const options = data.features.map(function (feature) {
+                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+                }).join('')
+                $('#nta_filter_1').html('<option>None</option>' + options)
 
-            nta_1_geojson = data
-        })
-        $('#nta_filter_1').change(function() {
+                nta_1_geojson = data
+            })
+        $('#nta_filter_1').change(function () {
             const value1 = $('#nta_filter_1').val()
 
             if (map.hasLayer(nta_1_layer)) {
@@ -131,7 +147,7 @@
                     }
                 })
                 nta_1_layer.addTo(map)
-            } else  {
+            } else {
                 let newData = {
                     "type": "FeatureCollection",
                     "features": nta_1_geojson.features.filter(function (feature) { // Filtering happens here
@@ -150,19 +166,76 @@
 
         });
 
+        //NEW DROPDOWN-Shaina added 10.23.20
+
+        // Load in NTA geojson for the first NTA dropdown
+        d3.json('/static/MapsApp/geojsons/NTA.geojson')
+            .then(function (data) {
+                // Creating the list for the dropdown
+                const options = data.features.map(function (feature) {
+                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+                }).join('')
+                $('#new_filter').html('<option>None</option>' + options)
+
+                new_geojson = data
+            })
+        $('#new_filter').change(function () {
+            const val = $('#new_filter').val()
+
+            if (map.hasLayer(new_layer)) {
+                map.removeLayer(new_layer)
+            }
+
+            delete new_layer;
+
+            if (val === 'None') {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": new_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === null
+                    })
+                }
+
+                new_layer = L.geoJson(newData, {
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.ntacode)
+                    }
+                })
+                new_layer.addTo(map)
+            } else {
+                let newData = {
+                    "type": "FeatureCollection",
+                    "features": new_geojson.features.filter(function (feature) { // Filtering happens here
+                        return feature.properties.ntacode === (val)
+                    })
+                }
+
+                // Re-add the boro layer (Now filtered down)
+                new_layer = L.geoJson(newData, {
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(feature.properties.ntacode)
+                    }
+                })
+                new_layer.addTo(map)
+            }
+
+        });
+
+        //END NEW  DROPDOWN
+
         // Load in NTA geojson for the second NTA dropdown
         d3.json('/static/MapsApp/geojsons/NTA.geojson')
-        .then(function (data) {
+            .then(function (data) {
 
-            // Creating the list for the dropdown
-            const options = data.features.map(function (feature) {
-                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-            }).join('')
-            $('#nta_filter_2').html('<option>None</option>'+options)
+                // Creating the list for the dropdown
+                const options = data.features.map(function (feature) {
+                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+                }).join('')
+                $('#nta_filter_2').html('<option>None</option>' + options)
 
-            nta_2_geojson = data
-        })
-        $('#nta_filter_2').change(function() {
+                nta_2_geojson = data
+            })
+        $('#nta_filter_2').change(function () {
             const value2 = $('#nta_filter_2').val()
 
             if (map.hasLayer(nta_2_layer)) {
@@ -210,17 +283,17 @@
 
         // Load in VZV GeoJson here
         d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson')
-        .then(function (data) {
-            dot_services_town_hall_locations_geojson = data
-        })
+            .then(function (data) {
+                dot_services_town_hall_locations_geojson = data
+            })
 
-        // Toggler VZV Bike Layer
+        // Toggler town hall locations
         // Creating the dropdown list
         const dot_services_options = ['VZV Town Hall Locations'].map(function (each) { // Create the drop down list
             return `<option value='${each}'>${each}</option>`
         }).join('')
         $("#dot_services_filter").html('<option>None</option>' + dot_services_options);
-        $("#dot_services_filter").change( function() {
+        $("#dot_services_filter").change(function () {
             const value = $("#dot_services_filter").val()
 
             if (map.hasLayer(dot_services_current_layer)) {
@@ -418,7 +491,7 @@
             return `<option value='${each}'>${each}</option>`
         }).join('')
         $("#AggregationType").html('<select id="groupingTypeOption">' + groupingOptions + '</select>');
-        $('#AggregationType').change( function() {
+        $('#AggregationType').change(function () {
             const aggregationType = $('#groupingTypeOption').val();
 
             removeCurrentLegend();
@@ -435,7 +508,7 @@
 
 
                 // Filter Social Backdrop
-                $('#social_filter').change( function() {
+                $('#social_filter').change(function () {
                     // Remove all layer from current Filter from map, and we will re-add the layers to the map base on the filter selection
                     removeCurrentLegend();
                     removeCurrentSocialLayer();
@@ -455,17 +528,17 @@
 
 
         // Load in Social Info
-        d3.json('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
-        .then(function (data) {
-            social_minority_geojson = data
-        })
+        d3.requests('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
+            .get(function (data) {
+                social_minority_geojson = data
+            })
 
         d3.json('/static/MapsApp/geojsons/income_nta.geojson')
-        .then(function (data) {
-            social_income_geojson = data
-        })
+            .then(function (data) {
+                social_income_geojson = data
+            })
 
-        function getColorForQuintile(quintileRange){
+        function getColorForQuintile(quintileRange) {
             if (quintileRange == 'Q4-Q5') { return '8B0000'; }
             else if (quintileRange == 'Q3-Q4') { return 'E31A1C'; }
             else if (quintileRange == 'Q2-Q3') { return 'FD8D3C'; }
@@ -474,7 +547,7 @@
             else { return '000000'; }
         }
 
-        function getColorForHighLow(quintileRange){
+        function getColorForHighLow(quintileRange) {
             if (quintileRange == 'High') { return '8B0000'; }
             else if (quintileRange == 'Low') { return 'FFFF00'; }
             else { return '000000'; }
@@ -516,7 +589,7 @@
             if (aggregationType === 'Equal Interval Grouping') {
                 if (socialType === 'None') {
                     return
-                // Sub-filter Income with Levels
+                    // Sub-filter Income with Levels
                 } else if (socialType === 'Income Data') {
                     social_current_layer = L.geoJson(social_income_geojson, {
                         style: function (feature, layer) {
@@ -537,7 +610,7 @@
                     $("#SocialBackdropLevels").html('<select id="incomeLevel">' + options + '</select>');
 
                     // Filter with selected level
-                    $('#incomeLevel').change( function() {
+                    $('#incomeLevel').change(function () {
                         const value = $('#incomeLevel').val()
 
                         // Remove income layer, and we will recreate the income layer and add it back to the map
@@ -605,9 +678,9 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } );
+                    });
 
-                // Sub-filter Minority with Levels
+                    // Sub-filter Minority with Levels
                 } else if (socialType === 'Minority Data') {
                     // Default load in full layer and style it!
                     social_current_layer = L.geoJson(social_minority_geojson, {
@@ -629,7 +702,7 @@
                     $("#SocialBackdropLevels").html('<select id="minorityLevel">' + options + '</select>');
 
                     // Filter with selected level
-                    $('#minorityLevel').change( function() {
+                    $('#minorityLevel').change(function () {
                         const value = $('#minorityLevel').val()
 
                         // Remove current Layer, will re-add it later with filtered down version
@@ -697,7 +770,7 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } )
+                    })
 
                 } else {
                     console.log(`layer is not valid to add to map, layer name in question: '${socialType}'`)
@@ -705,7 +778,7 @@
             } else if (aggregationType === 'Quintile') {
                 if (socialType === 'None') {
                     return
-                // Sub-filter Income with Levels
+                    // Sub-filter Income with Levels
                 } else if (socialType === 'Income Data') {
                     // Default load in full layer and style it!
                     social_current_layer = L.geoJson(social_income_geojson, {
@@ -727,7 +800,7 @@
                     $("#SocialBackdropLevels").html('<select id="incomeLevel">' + levelOptions + '</select>');
 
                     // Filter with selected level
-                    $('#incomeLevel').change( function() {
+                    $('#incomeLevel').change(function () {
                         const agrLevel = $('#incomeLevel').val()
 
                         // Remove income layer, and we will recreate the income layer and add it back to the map
@@ -795,9 +868,9 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } );
+                    });
 
-                // Sub-filter Minority with Levels
+                    // Sub-filter Minority with Levels
                 } else if (socialType === 'Minority Data') {
                     // Default load in full layer and style it!
                     social_current_layer = L.geoJson(social_minority_geojson, {
@@ -819,7 +892,7 @@
                     $("#SocialBackdropLevels").html('<select id="minorityLevel">' + levelOptions + '</select>');
 
                     // Filter with selected level
-                    $('#minorityLevel').change( function() {
+                    $('#minorityLevel').change(function () {
                         const agrLevel = $('#minorityLevel').val()
 
                         // Remove current Layer, will re-add it later with filtered down version
@@ -887,7 +960,7 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } )
+                    })
 
                 } else {
                     console.log(`updateCurrentSocialLayers(): layer is not valid to add to map, layer name in question: '${socialType}'`)
@@ -896,7 +969,7 @@
                 // Something will happen here
                 if (socialType === 'None') {
                     return
-                // Sub-filter Income with Levels
+                    // Sub-filter Income with Levels
                 } else if (socialType === 'Income Data') {
                     // Default load in full layer and style it!
                     social_current_layer = L.geoJson(social_income_geojson, {
@@ -918,7 +991,7 @@
                     $("#SocialBackdropLevels").html('<select id="incomeLevel">' + levelOptions + '</select>');
 
                     // Filter with selected level
-                    $('#incomeLevel').change( function() {
+                    $('#incomeLevel').change(function () {
                         const agrLevel = $('#incomeLevel').val()
 
                         // Remove income layer, and we will recreate the income layer and add it back to the map
@@ -965,9 +1038,9 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } );
+                    });
 
-                // Sub-filter Minority with Levels
+                    // Sub-filter Minority with Levels
                 } else if (socialType === 'Minority Data') {
                     // Default load in full layer and style it!
                     social_current_layer = L.geoJson(social_minority_geojson, {
@@ -989,7 +1062,7 @@
                     $("#SocialBackdropLevels").html('<select id="minorityLevel">' + levelOptions + '</select>');
 
                     // Filter with selected level
-                    $('#minorityLevel').change( function() {
+                    $('#minorityLevel').change(function () {
                         const agrLevel = $('#minorityLevel').val()
 
                         // Remove current Layer, will re-add it later with filtered down version
@@ -1036,7 +1109,7 @@
                             }
                         })
                         social_current_layer.addTo(map)
-                    } )
+                    })
 
                 } else {
                     console.log(`updateCurrentSocialLayers(): layer is not valid to add to map, layer name in question: '${socialType}'`)
