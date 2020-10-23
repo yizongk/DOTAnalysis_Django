@@ -11,6 +11,7 @@
 <select id="dot_services_filter"></select>
 <br>
 <br>
+<button id="removal">Test Layer Removal</button>
 <div>Social Backdrop: Aggregation Type</div>
 <div id="AggregationType"></div>
 <div id="social_filter"></div>
@@ -27,6 +28,7 @@
     <select id="nta_filter_2"></select>
     <div id='map_container'></div>
 </div>
+
 
 
 {% endblock %}
@@ -540,6 +542,21 @@
             .get(function (data) {
                 social_income_geojson = data
             })
+    //Shaina added on 10.23 to remove layers
+        $('#remove').click(function (event) {
+            event.preventDefault();
+            if (map.hasLayer(social_current_layer)) {
+                $(this).removeClass('selected');
+                map.removeLayer(social_current_layer);
+                $('#incomeLevel').change(function () {
+                    const agrLevel = 'None'
+            }
+            //switch the dropdown to none too!!
+
+        })
+
+
+
 
         function getColorForQuintile(quintileRange) {
             if (quintileRange == 'Q4-Q5') { return '8B0000'; }
