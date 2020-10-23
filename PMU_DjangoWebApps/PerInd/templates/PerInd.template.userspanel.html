@@ -59,9 +59,9 @@
     <table class="table table-striped table-hover" id="WebGridTable">
         <thead>
             <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Active User</th>
+                <th class="light-blue">First Name</th>
+                <th class="light-blue">Last Name</th>
+                <th class="light-blue">Active User</th>
                 <th>Login</th>
                 <th>Delete?</th>
             </tr>
@@ -72,7 +72,7 @@
             <tr>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="First_Name">{{ entry.first_name }}</td>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Last_Name">{{ entry.last_name }}</td>
-                <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Active_User">{{ entry.active_user }}</td>
+                <td class="editable-select" data-id="{{ entry.user_id }}" data-table="Users" data-column="Active_User">{{ entry.active_user }}</td>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Login">{{ entry.login }}</td>
                 <td class="text-center" data-id="{{ entry.user_id }}" ></td>
             </tr>
@@ -107,7 +107,7 @@
                 $(document).on("keyup", ".input-data", function (e) {
                     var key = e.which;
                     if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_save_data", "input", function(td_node, json_response) {
+                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input", function(td_node, json_response) {
                             console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
                         });
                     }
@@ -115,29 +115,29 @@
                         cancelEditMode(this);
                     }
                 });
-
-                // For cell select mode
-                $(document).on("dblclick", ".editable-select", function () {
-                    logins_array = {{ user_logins_json|safe }}
-                    // Move current select element to the top of the array
-                    var current_value = $(this).text()
-                    logins_array.sort(function(x, y) {
-                        return x == current_value ? -1 : y == current_value ? 1 : 0;
-                    });
-                    enterCellEditSelectMode($(this), logins_array)
-                });
-
-                $(document).on("keyup", ".input-data-select", function (e) {
-                    var key = e.which;
-                    if (key === 27) { // 27 is the ESC key
-                        cancelSelectMode(this);
-                    }
-                });
-
-                $(document).on("change", ".input-data-select", function () {
-                    sendCellToServer(this, "/PerInd/user_permissions_panel_api_save_data", "select");
-                });
             {% endcomment %}
+
+            // For cell select mode
+            $(document).on("dblclick", ".editable-select", function () {
+                logins_array = ['True', 'False']
+                // Move current select element to the top of the array
+                var current_value = $(this).text()
+                logins_array.sort(function(x, y) {
+                    return x == current_value ? -1 : y == current_value ? 1 : 0;
+                });
+                enterCellEditSelectMode($(this), logins_array)
+            });
+
+            $(document).on("keyup", ".input-data-select", function (e) {
+                var key = e.which;
+                if (key === 27) { // 27 is the ESC key
+                    cancelSelectMode(this);
+                }
+            });
+
+            $(document).on("change", ".input-data-select", function () {
+                sendCellToServer(this, "users_panel_api_update_row", "select");
+            });
 
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
@@ -224,6 +224,7 @@
 
                     $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("data-table", "Users")
                     $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("data-column", "Active_User")
+                    $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("class", "editable-select")
 
                     $(rowNode).find(`:contains('${json_response.login}')`           ).attr("data-table", "Users")
                     $(rowNode).find(`:contains('${json_response.login}')`           ).attr("data-column", "Login")

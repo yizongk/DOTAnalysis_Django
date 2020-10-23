@@ -1386,49 +1386,41 @@ def UserPermissionsPanelApiUpdateData(request):
                 })
 
         ## Save the value
-        row = UserPermissions.objects.get(user_permission_id=id)
-        if column == "Login":
-            try:
-                user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
-                row.user = user_obj
+        try:
+            row = UserPermissions.objects.get(user_permission_id=id)
+            if column == "Login":
+                try:
+                    user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                    row.user = user_obj
 
-                row.save()
+                    row.save()
 
-                # # Temp
-                # return JsonResponse({
-                #     "post_success": False,
-                #     "post_msg": "trying to save: '{}'".format(new_value),
-                # })
+                    # # Temp
+                    # return JsonResponse({
+                    #     "post_success": False,
+                    #     "post_msg": "trying to save: '{}'".format(new_value),
+                    # })
 
-                print("Api Log: UserPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
-                return JsonResponse({
-                    "post_success": True,
-                    "post_msg": "",
-                })
-            except Exception as e:
-                print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
-                })
-
-
+                    print("Api Log: UserPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+                    return JsonResponse({
+                        "post_success": True,
+                        "post_msg": "",
+                    })
+                except Exception as e:
+                    print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+                    return JsonResponse({
+                        "post_success": False,
+                        "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+                    })
+        except Exception as e:
+            print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+            })
 
     # elif table == "":
     #     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     print("Warning: UserPermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
@@ -1924,4 +1916,108 @@ def UsersPanelApiDeleteRow(request):
     return JsonResponse({
         "post_success": True,
         "post_msg": "",
+    })
+
+def UsersPanelApiUpdateData(request):
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    id = json_blob['id']
+    table = json_blob['table']
+    column = json_blob['column']
+    new_value = json_blob['new_value']
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UsersPanelApiUpdateData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+    ## Check active user
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] == True:
+        pass
+    else:
+        print("UsersPanelApiUpdateData(): {}".format(is_active_user["err"]))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiUpdateData(): {}".format(is_active_user["err"]),
+            "post_data": None,
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiUpdateData(): {}".format(is_active_admin["err"]),
+            "post_data": None,
+        })
+
+    ## Save the data
+    if table == "Users":
+
+        ## Make sure new_value is convertable to its respective data type
+        if column == "Active_User":
+            if new_value == "True":
+                new_value = True
+            elif new_value == "False":
+                new_value = False
+            else:
+                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+                })
+        else:
+            try:
+                new_value = str(new_value)
+            except Exception as e:
+                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+                })
+
+        # # Temp HALT
+        # return JsonResponse({
+        #     "post_success": False,
+        #     "post_msg": "trying to save: '{}', type: {}".format(new_value, type(new_value)),
+        # })
+        ## Save the value
+        try:
+            row = Users.objects.get(user_id=id)
+            if column == "Active_User":
+                row.active_user = new_value
+                row.save()
+                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
+                return JsonResponse({
+                    "post_success": True,
+                    "post_msg": "",
+                })
+        except Exception as e:
+            print("Error: UsersPanelApiUpdateData(): While trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e))
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "Error: UsersPanelApiUpdateData():\n\nWhile trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e),
+            })
+
+    print("Warning: UsersPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    return JsonResponse({
+        "post_success": False,
+        "post_msg": "Warning: UsersPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
