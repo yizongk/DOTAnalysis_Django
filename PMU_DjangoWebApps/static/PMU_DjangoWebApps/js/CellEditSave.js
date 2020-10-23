@@ -23,7 +23,7 @@
         $(document).on("keyup", ".input-data", function (e) {
             var key = e.which;
             if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                sendCellToServer(this, link_to_your_api, "input", function(td_node, json_response) {            // provide link_to_your_api, like "/PerInd/user_permissions_panel_api_save_data". And optionally, provide a call back function to do some work after the api call is successful
+                sendCellToServer(this, link_to_your_api, "input", function(td_node, json_response) {            // provide link_to_your_api, like "/PerInd/user_permissions_panel_api_update_data". And optionally, provide a call back function to do some work after the api call is successful
                     console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
                 });
             }
@@ -52,7 +52,7 @@
         });
 
         $(document).on("change", ".input-data-select", function () {
-            sendCellToServer(this, link_to_your_api, "select", function(td_node, json_response) {               // provide link_to_your_api, like "/PerInd/user_permissions_panel_api_save_data". And optionally, provide a call back function to do some work after the api call is successful
+            sendCellToServer(this, link_to_your_api, "select", function(td_node, json_response) {               // provide link_to_your_api, like "/PerInd/user_permissions_panel_api_update_data". And optionally, provide a call back function to do some work after the api call is successful
                 console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
             });
         });

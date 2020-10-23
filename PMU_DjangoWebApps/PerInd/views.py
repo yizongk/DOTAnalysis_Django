@@ -1312,14 +1312,14 @@ class UserPermissionsPanelPageView(generic.ListView):
             return context
 
 ## Post request - for single cell edits
-def UserPermissionsPanelApiSaveData(request):
+def UserPermissionsPanelApiUpdateData(request):
     ## Read the json request body
     try:
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
     id = json_blob['id']
@@ -1332,10 +1332,10 @@ def UserPermissionsPanelApiSaveData(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: UserPermissionsPanelApiSaveData(): UNAUTHENTICATE USER!')
+        print('Warning: UserPermissionsPanelApiUpdateData(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "UserPermissionsPanelApiSaveData():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "UserPermissionsPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
             "post_data": None,
         })
 
@@ -1344,10 +1344,10 @@ def UserPermissionsPanelApiSaveData(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UserPermissionsPanelApiSaveData(): {}".format(is_active_user["err"]))
+        print("UserPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "UserPermissionsPanelApiSaveData(): {}".format(is_active_user["err"]),
+            "post_msg": "UserPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
             "post_data": None,
         })
 
@@ -1358,7 +1358,7 @@ def UserPermissionsPanelApiSaveData(request):
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "UserPermissionsPanelApiSaveData(): {}".format(is_active_admin["err"]),
+            "post_msg": "UserPermissionsPanelApiUpdateData(): {}".format(is_active_admin["err"]),
             "post_data": None,
         })
 
@@ -1370,19 +1370,19 @@ def UserPermissionsPanelApiSaveData(request):
             try:
                 new_value = bool(new_value)
             except Exception as e:
-                print("Error: UserPermissionsPanelApiSaveData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+                print("Error: UserPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+                    "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
                 })
         else:
             try:
                 new_value = str(new_value)
             except Exception as e:
-                print("Error: UserPermissionsPanelApiSaveData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+                print("Error: UserPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+                    "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
                 })
 
         ## Save the value
@@ -1400,16 +1400,16 @@ def UserPermissionsPanelApiSaveData(request):
                 #     "post_msg": "trying to save: '{}'".format(new_value),
                 # })
 
-                print("Api Log: UserPermissionsPanelApiSaveData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+                print("Api Log: UserPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                 })
             except Exception as e:
-                print("Error: UserPermissionsPanelApiSaveData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+                print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: UserPermissionsPanelApiSaveData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+                    "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
                 })
 
 
@@ -1431,10 +1431,10 @@ def UserPermissionsPanelApiSaveData(request):
 
 
 
-    print("Warning: UserPermissionsPanelApiSaveData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    print("Warning: UserPermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
-        "post_msg": "Warning: UserPermissionsPanelApiSaveData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+        "post_msg": "Warning: UserPermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
 ## For form add row
