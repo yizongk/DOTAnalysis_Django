@@ -71,7 +71,7 @@
             {% for entry in users_data_entries %}
             <tr>
                 <td class="editable" data-id="{{ entry.user_id }}" data-table="Users" data-column="First_Name">{{ entry.first_name }}</td>
-                <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Last_Name">{{ entry.last_name }}</td>
+                <td class="editable" data-id="{{ entry.user_id }}" data-table="Users" data-column="Last_Name">{{ entry.last_name }}</td>
                 <td class="editable-select" data-id="{{ entry.user_id }}" data-table="Users" data-column="Active_User">{{ entry.active_user }}</td>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Login">{{ entry.login }}</td>
                 <td class="text-center" data-id="{{ entry.user_id }}" ></td>
@@ -222,6 +222,7 @@
                         } else if (index == 1) {
                             $(childNode).attr("data-table", "Users")
                             $(childNode).attr("data-column", "Last_Name")
+                            $(childNode).attr("class", "editable")
                         } else if (index == 2) {
                             $(childNode).attr("data-table", "Users")
                             $(childNode).attr("data-column", "Active_User")

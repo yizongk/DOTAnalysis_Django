@@ -2019,6 +2019,14 @@ def UsersPanelApiUpdateData(request):
                     "post_success": True,
                     "post_msg": "",
                 })
+            if column == "Last_Name":
+                row.last_name = new_value
+                row.save()
+                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
+                return JsonResponse({
+                    "post_success": True,
+                    "post_msg": "",
+                })
             else:
                 print("Warning: UsersPanelApiUpdateData(): Updating to column '{}' for table '{}' not supported\n".format(column, table))
                 return JsonResponse({
