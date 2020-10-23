@@ -21,5 +21,6 @@ urlpatterns = [
     path('user_permissions_panel_api_add_row', views.UserPermissionsPanelApiAddRow, name='user_permissions_panel_api_add_row'),
     path('user_permissions_panel_api_delete_row', views.UserPermissionsPanelApiDeleteRow, name='user_permissions_panel_api_delete_row'),
     path('userspanel', UsersPanelPageView.as_view(), name='perind_userspanel'),
+    path('users_panel_api_add_row', views.UsersPanelApiAddRow, name='users_panel_api_add_row'),
 
 ]

@@ -205,24 +205,22 @@
                     "login_input": loginInput,
                 }
 
-                {% comment %}
-                sendModalFormDataToServer( json_blob, "user_permissions_panel_api_add_row", function(json_response) {
-                    alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
+                sendModalFormDataToServer( json_blob, "users_panel_api_add_row", function(json_response) {
+                    alert(`'${loginInput}' added to Users table successfully!`)
 
                     // Add the newly added row to the grid, and redraw
-                    var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, json_response.category_name, ] )
+                    var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, ] )
                     .draw()
                     .node();
 
-                    // Add permission_id to all child cells
-                    $(rowNode).children().attr("data-id", json_response.permission_id);
+                    // Add user_id to all child cells
+                    $(rowNode).children().attr("data-id", json_response.user_id);
                     // Add class to child cell with the delete icon
                     $(rowNode).find('.deletable').parent().addClass("text-center")
 
                     $(rowNode).css('color', 'green')
                     .animate( { color: 'black' } );
                 })
-                {% endcomment %}
             })
 
         });

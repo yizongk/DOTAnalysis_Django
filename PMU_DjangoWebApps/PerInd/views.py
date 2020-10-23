@@ -1313,6 +1313,7 @@ class UserPermissionsPanelPageView(generic.ListView):
 
 ## Post request - for single cell edits
 def UserPermissionsPanelApiSaveData(request):
+    ## Read the json request body
     try:
         json_blob = json.loads(request.body)
     except Exception as e:
@@ -1479,6 +1480,7 @@ def UserPermissionsPanelApiAddRow(request):
             "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_admin["err"]),
         })
 
+    ## Read the json request body
     try:
         json_blob = json.loads(request.body)
     except Exception as e:
@@ -1721,3 +1723,117 @@ class UsersPanelPageView(generic.ListView):
 
             context["client_is_admin"] = False
             return context
+
+def UsersPanelApiAddRow(request):
+    """
+        Expects the post request to post a JSON object, and that it will contain first_name_input, last_name_input and login_input. Like so:
+        {
+            first_name_input: "Some value",
+            last_name_input: "Some value",
+            login_input: "Some value",
+        }
+        Will create a new row in the Users table with the given first name, last name and login. Default the active_user to True
+    """
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UsersPanelApiAddRow(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Check active user
+    is_active_user = user_is_active_user(request.user)
+    if is_active_user["success"] == True:
+        pass
+    else:
+        print("UsersPanelApiAddRow(): {}".format(is_active_user["err"]))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiAddRow(): {}".format(is_active_user["err"]),
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UsersPanelApiAddRow(): {}".format(is_active_admin["err"]),
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Check json request param is not empty string
+    try:
+        first_name_input = json_blob['first_name_input']
+        last_name_input = json_blob['last_name_input']
+        login_input = json_blob['login_input']
+
+        if first_name_input == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "first_name_input cannot be an empty string",
+            })
+
+        if last_name_input == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "last_name_input cannot be an empty string",
+            })
+
+        if login_input == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "login_input cannot be an empty string",
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
+
+    ## Check for duplication of login
+    try:
+        if Users.objects.filter(login__exact=login_input).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "'{}' already exists in the Users table".format(login_input),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiAddRow(): {}".format(e),
+        })
+
+    ## Create the row!
+    try:
+        new_user = Users(first_name=first_name_input, last_name=last_name_input, login=login_input, active_user=True)
+        new_user.save()
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiAddRow(): {}".format(e),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "",
+        "user_id": new_user.user_id,
+        "first_name": new_user.first_name,
+        "last_name": new_user.last_name,
+        "active_user": new_user.active_user,
+        "login": new_user.login,
+    })
