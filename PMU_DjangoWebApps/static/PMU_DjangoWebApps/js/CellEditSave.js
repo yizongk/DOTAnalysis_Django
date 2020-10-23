@@ -197,7 +197,7 @@ function finishEditMode(td_node, cell_html_type) {
 function sendCellToServer( node, api_url, cell_html_type ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("old_value")
-    var new_value = $(node).val();
+    var new_value = $(node).val().trim();
     var td_node = $(node).parent("td");
     $(node).remove();
 

@@ -70,7 +70,7 @@
         <tbody>
             {% for entry in users_data_entries %}
             <tr>
-                <td data-id="{{ entry.user_id }}" data-table="Users" data-column="First_Name">{{ entry.first_name }}</td>
+                <td class="editable" data-id="{{ entry.user_id }}" data-table="Users" data-column="First_Name">{{ entry.first_name }}</td>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Last_Name">{{ entry.last_name }}</td>
                 <td class="editable-select" data-id="{{ entry.user_id }}" data-table="Users" data-column="Active_User">{{ entry.active_user }}</td>
                 <td data-id="{{ entry.user_id }}" data-table="Users" data-column="Login">{{ entry.login }}</td>
@@ -97,25 +97,23 @@
                 }]
             });
 
-            {% comment %}
-                // Example codes showing how CellEditSave.js works with the html table
-                // For cell edit mode
-                $(document).on("dblclick", ".editable", function () {
-                    enterCellEditMode($(this))
-                });
+            // Example codes showing how CellEditSave.js works with the html table
+            // For cell edit mode
+            $(document).on("dblclick", ".editable", function () {
+                enterCellEditMode($(this))
+            });
 
-                $(document).on("keyup", ".input-data", function (e) {
-                    var key = e.which;
-                    if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input", function(td_node, json_response) {
-                            console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
-                        });
-                    }
-                    if (key === 27) { // 27 is the ESC key
-                        cancelEditMode(this);
-                    }
-                });
-            {% endcomment %}
+            $(document).on("keyup", ".input-data", function (e) {
+                var key = e.which;
+                if (key === 13) { // 13 is the return key, aka 'ENTER' key
+                    sendCellToServer(this, "users_panel_api_update_row", "input", function(td_node, json_response) {
+                        console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
+                    });
+                }
+                if (key === 27) { // 27 is the ESC key
+                    cancelEditMode(this);
+                }
+            });
 
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
@@ -216,18 +214,28 @@
                     // Add user_id to all child cells
                     $(rowNode).children().attr("data-id", json_response.user_id);
                     // Add the proper data-... attribute to the row
-                    $(rowNode).find(`:contains('${json_response.first_name}')`      ).attr("data-table", "Users")
-                    $(rowNode).find(`:contains('${json_response.first_name}')`      ).attr("data-column", "First_Name")
-
-                    $(rowNode).find(`:contains('${json_response.last_name}')`       ).attr("data-table", "Users")
-                    $(rowNode).find(`:contains('${json_response.last_name}')`       ).attr("data-column", "Last_Name")
-
-                    $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("data-table", "Users")
-                    $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("data-column", "Active_User")
-                    $(rowNode).find(`:contains('${json_response.active_user}')`     ).attr("class", "editable-select")
-
-                    $(rowNode).find(`:contains('${json_response.login}')`           ).attr("data-table", "Users")
-                    $(rowNode).find(`:contains('${json_response.login}')`           ).attr("data-column", "Login")
+                    $(rowNode).children().each( (index, childNode) => {
+                        if (index == 0) {
+                            $(childNode).attr("data-table", "Users")
+                            $(childNode).attr("data-column", "First_Name")
+                            $(childNode).attr("class", "editable")
+                        } else if (index == 1) {
+                            $(childNode).attr("data-table", "Users")
+                            $(childNode).attr("data-column", "Last_Name")
+                        } else if (index == 2) {
+                            $(childNode).attr("data-table", "Users")
+                            $(childNode).attr("data-column", "Active_User")
+                            $(childNode).attr("class", "editable-select")
+                        } else if (index == 3) {
+                            $(childNode).attr("data-table", "Users")
+                            $(childNode).attr("data-column", "Login")
+                        } else if (index == 4) {
+                            // Nothing to add for the Delete icon
+                        } else {
+                            alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                            console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                        }
+                    })
                     // Add class to child cell with the delete icon
                     $(rowNode).find('.deletable').parent().addClass("text-center")
 

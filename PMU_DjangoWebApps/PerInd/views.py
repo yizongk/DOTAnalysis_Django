@@ -1971,7 +1971,7 @@ def UsersPanelApiUpdateData(request):
     ## Save the data
     if table == "Users":
 
-        ## Make sure new_value is convertable to its respective data type
+        ## Make sure new_value is convertable to its respective data type. If it's a string, make sure it's not empty or just whitespace
         if column == "Active_User":
             if new_value == "True":
                 new_value = True
@@ -1986,18 +1986,20 @@ def UsersPanelApiUpdateData(request):
         else:
             try:
                 new_value = str(new_value)
+                new_value = new_value.strip()
+                if new_value == "":
+                    print("Error: UsersPanelApiUpdateData(): new_value cannot be a empty string")
+                    return JsonResponse({
+                        "post_success": False,
+                        "post_msg": "Error: UsersPanelApiUpdateData():\n\nnew_value cannot be a empty string",
+                    })
             except Exception as e:
-                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value: {}".format(new_value), e)
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value: {}".format(new_value, e),
                 })
 
-        # # Temp HALT
-        # return JsonResponse({
-        #     "post_success": False,
-        #     "post_msg": "trying to save: '{}', type: {}".format(new_value, type(new_value)),
-        # })
         ## Save the value
         try:
             row = Users.objects.get(user_id=id)
@@ -2008,6 +2010,20 @@ def UsersPanelApiUpdateData(request):
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
+                })
+            if column == "First_Name":
+                row.first_name = new_value
+                row.save()
+                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
+                return JsonResponse({
+                    "post_success": True,
+                    "post_msg": "",
+                })
+            else:
+                print("Warning: UsersPanelApiUpdateData(): Updating to column '{}' for table '{}' not supported\n".format(column, table))
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Warning: UsersPanelApiUpdateData():\n\nUpdating to column '{}' for table '{}' not supported\n".format(column, table),
                 })
         except Exception as e:
             print("Error: UsersPanelApiUpdateData(): While trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e))
