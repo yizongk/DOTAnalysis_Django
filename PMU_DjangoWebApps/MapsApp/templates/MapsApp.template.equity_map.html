@@ -40,17 +40,16 @@
 <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
 
 <!-- For loading in static JSON files
-<script src="https://d3js.org/d3-fetch.v2.min.js"></script>
+<script src="https://d3js.org/d3-fetch.v2.min.js"></script>-->
 
 
 <script src="https://d3js.org/d3-collection.v1.min.js"></script>
 <script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
 <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-<script src="https://d3js.org/d3-request.v1.min.js"></script>-->
+<script src="https://d3js.org/d3-request.v1.min.js"></script>
 
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<!-- For loading in static JSON files -->
-<script src="https://d3js.org/d3-fetch.v2.min.js"></script>
+<!--<script src="https://d3js.org/d3.v5.min.js"></script>-->
+
 <style>
 
     #map_container {
@@ -114,16 +113,16 @@
 
 
         // Load in NTA geojson for the first NTA dropdown
-        d3.json('/static/MapsApp/geojsons/NTA.geojson')
-            .then(function (data) {
-                // Creating the list for the dropdown
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-                }).join('')
-                $('#nta_filter_1').html('<option>None</option>' + options)
+        d3.json('/static/MapsApp/geojsons/NTA.geojson', function (data) {
+            // .then(function (data) {
+            // Creating the list for the dropdown
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+            }).join('')
+            $('#nta_filter_1').html('<option>None</option>' + options)
 
-                nta_1_geojson = data
-            })
+            nta_1_geojson = data
+        })
         $('#nta_filter_1').change(function () {
             const value1 = $('#nta_filter_1').val()
 
@@ -169,16 +168,16 @@
         //NEW DROPDOWN-Shaina added 10.23.20
 
         // Load in NTA geojson for the first NTA dropdown
-        d3.json('/static/MapsApp/geojsons/NTA.geojson')
-            .then(function (data) {
-                // Creating the list for the dropdown
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-                }).join('')
-                $('#new_filter').html('<option>None</option>' + options)
+        d3.json('/static/MapsApp/geojsons/NTA.geojson', function (data) {
+            // .then(function (data) {
+            // Creating the list for the dropdown
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+            }).join('')
+            $('#new_filter').html('<option>None</option>' + options)
 
-                new_geojson = data
-            })
+            new_geojson = data
+        })
         $('#new_filter').change(function () {
             const val = $('#new_filter').val()
 
@@ -224,17 +223,17 @@
         //END NEW  DROPDOWN
 
         // Load in NTA geojson for the second NTA dropdown
-        d3.json('/static/MapsApp/geojsons/NTA.geojson')
-            .then(function (data) {
+        d3.json('/static/MapsApp/geojsons/NTA.geojson', function (data) {
+            //.then(function (data) {
 
-                // Creating the list for the dropdown
-                const options = data.features.map(function (feature) {
-                    return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
-                }).join('')
-                $('#nta_filter_2').html('<option>None</option>' + options)
+            // Creating the list for the dropdown
+            const options = data.features.map(function (feature) {
+                return `<option value='${feature.properties.ntacode}'>${feature.properties.ntacode}</option>`
+            }).join('')
+            $('#nta_filter_2').html('<option>None</option>' + options)
 
-                nta_2_geojson = data
-            })
+            nta_2_geojson = data
+        })
         $('#nta_filter_2').change(function () {
             const value2 = $('#nta_filter_2').val()
 
@@ -282,10 +281,10 @@
 
 
         // Load in VZV GeoJson here
-        d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson')
-            .then(function (data) {
-                dot_services_town_hall_locations_geojson = data
-            })
+        d3.json('/static/MapsApp/geojsons/gisadmin.VZV_TOWN_HALL_LOCATIONS_epsg4326.geojson', function (data) {
+            // .then(function (data) {
+            dot_services_town_hall_locations_geojson = data
+        })
 
         // Toggler town hall locations
         // Creating the dropdown list
@@ -528,13 +527,17 @@
 
 
         // Load in Social Info
-        d3.requests('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
+        d3.request('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
+            .mimeType("application/json")
+            .response(function (xhr) { return JSON.parse(xhr.responseText); })
             .get(function (data) {
                 social_minority_geojson = data
             })
 
-        d3.json('/static/MapsApp/geojsons/income_nta.geojson')
-            .then(function (data) {
+        d3.request('/static/MapsApp/geojsons/income_nta.geojson')
+            .mimeType("application/json")
+            .response(function (xhr) { return JSON.parse(xhr.responseText); })
+            .get(function (data) {
                 social_income_geojson = data
             })
 
