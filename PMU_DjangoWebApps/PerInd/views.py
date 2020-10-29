@@ -541,7 +541,7 @@ class WebGridPageView(generic.ListView):
             return context
 
 ## Post request
-def SavePerIndDataApi(request):
+def PerIndApiUpdateData(request):
     id = request.POST.get('id', '')
     table = request.POST.get('table', '')
     column = request.POST.get('column', '')
@@ -552,28 +552,28 @@ def SavePerIndDataApi(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: SavePerIndDataApi(): UNAUTHENTICATE USER!')
+        print('Warning: PerIndApiUpdateData(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "PerIndApiUpdateData():\n\nUNAUTHENTICATE USER!",
         })
 
     ## Make sure User is an Active User
     is_active_user = user_is_active_user(request.user)
     if is_active_user["success"] != True:
-        print("Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user))
+        print("Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Warning: SavePerIndDataApi(): USER '{}' is not an active user!".format(remote_user),
+            "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user),
         })
 
     ## Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
-        print("Warning: SavePerIndDataApi(): USER '{}' has no permission to edit record #{}!".format(remote_user, id))
+        print("Warning: PerIndApiUpdateData(): USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "SavePerIndDataApi():\n\nUSER '{}' has no permission to edit record #{}: SavePerIndDataApi(): {}".format(remote_user, id, user_perm_chk["err"]),
+            "post_msg": "PerIndApiUpdateData():\n\nUSER '{}' has no permission to edit record #{}: PerIndApiUpdateData(): {}".format(remote_user, id, user_perm_chk["err"]),
         })
 
 
@@ -581,10 +581,10 @@ def SavePerIndDataApi(request):
     try:
         new_value = float(new_value)
     except Exception as e:
-        print("Error: SavePerIndDataApi(): Unable to convert new_value '{}' to float type, did not save the value".format(new_value))
+        print("Error: PerIndApiUpdateData(): Unable to convert new_value '{}' to float type, did not save the value".format(new_value))
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: SavePerIndDataApi():\n\nUnable to convert new_value '{}' to float type, did not save the value".format(new_value),
+            "post_msg": "Error: PerIndApiUpdateData():\n\nUnable to convert new_value '{}' to float type, did not save the value".format(new_value),
         })
 
     if table == "IndicatorData":
@@ -607,7 +607,7 @@ def SavePerIndDataApi(request):
 
                 row.save()
 
-                print("Api Log: SavePerIndDataApi(): User '{}' has successfully update '{}' to [{}].[{}] for record id '{}'".format(remote_user, new_value, table, column, id))
+                print("Api Log: PerIndApiUpdateData(): User '{}' has successfully update '{}' to [{}].[{}] for record id '{}'".format(remote_user, new_value, table, column, id))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
@@ -616,20 +616,20 @@ def SavePerIndDataApi(request):
                     "updated_by": remote_user,
                 })
             except Exception as e:
-                print("Error: SavePerIndDataApi(): While trying to save to the database: {}".format(e))
+                print("Error: PerIndApiUpdateData(): While trying to save to the database: {}".format(e))
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "Error: SavePerIndDataApi():\n\nWhile trying to save to the database: {}".format(e),
+                    "post_msg": "Error: PerIndApiUpdateData():\n\nWhile trying to save to the database: {}".format(e),
                 })
 
-    print("Warning: SavePerIndDataApi(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+    print("Warning: PerIndApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
-        "post_msg": "Warning: SavePerIndDataApi():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+        "post_msg": "Warning: PerIndApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
     })
 
 ## Post request
-def GetCsvApi(request):
+def PerIndApiGetCsv(request):
     from django.db import connection
     """
     Download WebGrid view with all current context as xlsx.
@@ -673,10 +673,10 @@ def GetCsvApi(request):
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: SavePerIndDataApi(): UNAUTHENTICATE USER!')
+        print('Warning: PerIndApiUpdateData(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "SavePerIndDataApi():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "PerIndApiUpdateData():\n\nUNAUTHENTICATE USER!",
             "post_data": None,
         })
 
@@ -693,17 +693,17 @@ def GetCsvApi(request):
             ## If not admin, do standard filter with categories
             user_cat_permissions = get_user_category_permissions(request.user)
         else:
-            print("GetCsvApi(): {}".format(is_active_user["err"]))
+            print("PerIndApiGetCsv(): {}".format(is_active_user["err"]))
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "GetCsvApi(): {}".format(is_active_user["err"]),
+                "post_msg": "PerIndApiGetCsv(): {}".format(is_active_user["err"]),
                 "post_data": None,
             })
 
     elif is_active_admin["success"] is None:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "GetCsvApi(): {}".format(is_active_admin["err"]),
+            "post_msg": "PerIndApiGetCsv(): {}".format(is_active_admin["err"]),
             "post_data": None,
         })
 
@@ -713,13 +713,13 @@ def GetCsvApi(request):
     elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
         return JsonResponse({
             "post_success": False,
-            "post_msg": "GetCsvApi(): {}".format(user_cat_permissions['err']),
+            "post_msg": "PerIndApiGetCsv(): {}".format(user_cat_permissions['err']),
             "post_data": None,
         })
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "GetCsvApi(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success']),
+            "post_msg": "PerIndApiGetCsv(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success']),
             "post_data": None,
         })
 
@@ -743,7 +743,7 @@ def GetCsvApi(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "GetCsvApi(): Failed to get any data from queryset: {}\n\nErr Msg: {}".format(user_perm_chk["err"], e),
+            "post_msg": "PerIndApiGetCsv(): Failed to get any data from queryset: {}\n\nErr Msg: {}".format(user_perm_chk["err"], e),
             "post_data": None,
         })
 
@@ -758,7 +758,7 @@ def GetCsvApi(request):
         except Exception as e:
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "GetCsvApi(): Failed to filter Titles from queryset\n\nErr Msg: {}".format(e),
+                "post_msg": "PerIndApiGetCsv(): Failed to filter Titles from queryset\n\nErr Msg: {}".format(e),
                 "post_data": None,
             })
     ## Filter by YYYYs
@@ -771,7 +771,7 @@ def GetCsvApi(request):
         except Exception as e:
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "GetCsvApi(): Failed to filter YYYY from queryset\n\nErr Msg: {}".format(e),
+                "post_msg": "PerIndApiGetCsv(): Failed to filter YYYY from queryset\n\nErr Msg: {}".format(e),
                 "post_data": None,
             })
     ## Filter by MMs
@@ -784,7 +784,7 @@ def GetCsvApi(request):
         except Exception as e:
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "GetCsvApi(): Failed to filter MM from queryset\n\nErr Msg: {}".format(e),
+                "post_msg": "PerIndApiGetCsv(): Failed to filter MM from queryset\n\nErr Msg: {}".format(e),
                 "post_data": None,
             })
     ## Filter by Fiscal Years
@@ -797,7 +797,7 @@ def GetCsvApi(request):
         except Exception as e:
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "GetCsvApi(): Failed to filter FY from queryset\n\nErr Msg: {}".format(e),
+                "post_msg": "PerIndApiGetCsv(): Failed to filter FY from queryset\n\nErr Msg: {}".format(e),
                 "post_data": None,
             })
     ## Filter by Categories
@@ -811,7 +811,7 @@ def GetCsvApi(request):
             except Exception as e:
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "GetCsvApi(): Failed to filter Categories from queryset\n\nErr Msg: {}".format(e),
+                    "post_msg": "PerIndApiGetCsv(): Failed to filter Categories from queryset\n\nErr Msg: {}".format(e),
                     "post_data": None,
                 })
 
@@ -828,13 +828,13 @@ def GetCsvApi(request):
             else:
                 return JsonResponse({
                     "post_success": False,
-                    "post_msg": "GetCsvApi(): Failed to sort, unrecognize req_sort_dir: {}".format(req_sort_dir),
+                    "post_msg": "PerIndApiGetCsv(): Failed to sort, unrecognize req_sort_dir: {}".format(req_sort_dir),
                     "post_data": None,
                 })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "GetCsvApi(): Failed to sort from queryset\n\nErr Msg: {}".format(e),
+            "post_msg": "PerIndApiGetCsv(): Failed to sort from queryset\n\nErr Msg: {}".format(e),
             "post_data": None,
         })
 
@@ -885,7 +885,7 @@ def GetCsvApi(request):
 
     return JsonResponse({
         "post_success": True,
-        "post_msg": "GetCsvApi(): Success, check for variable 'post_data' in the response JSON for the csv file",
+        "post_msg": "PerIndApiGetCsv(): Success, check for variable 'post_data' in the response JSON for the csv file",
         "post_data": dummy_in_mem_file.getvalue(),
     })
 

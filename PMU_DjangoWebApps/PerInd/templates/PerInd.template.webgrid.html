@@ -570,7 +570,7 @@
                 });
 
                 $.ajax({
-                    url: "/PerInd/save_perind_data_api",
+                    url: "/PerInd/perind_update_data_api",
                     type: "POST",
                     data: {
                         id: id,
@@ -583,8 +583,8 @@
                     // console.log("JSON RESPONSE", json_response);
                     if (json_response["post_success"] == false) {
                         td_node.html(old_val);
-                        console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong while trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                        console.log(`Error: Ajax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
+                        alert(`Something went wrong while trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
 
                         // Set status light and error message to red and response error msg
                         setDatabaseStatus(good = false, msg = json_response["post_msg"]);
@@ -666,8 +666,8 @@
                 .done(function (json_response) {
                     // console.log("JSON RESPONSE", json_response);
                     if (json_response["post_success"] == false) {
-                        console.log(`Error: Ajax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong while trying to download the csv.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling SavePerIndDataApi: Server Response: ${json_response["post_msg"]}`);
+                        console.log(`Error: Ajax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
+                        alert(`Something went wrong while trying to download the csv.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
                     } else { // Api call successful
                         // Initiate download
                         // download(data=json_response["post_data"], filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
