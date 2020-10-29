@@ -491,9 +491,12 @@
 {% block custom_js %}
     <!--JS for exporting html table to xlsx-->
     <script type="text/javascript" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
 
     <script>
         $(document).ready(function () {
+
+            // For cell edit mode
             $(document).on("dblclick", ".editable", function () {
                 enterCellEditMode($(this))
             });
@@ -501,114 +504,12 @@
             $(document).on("keyup", ".input-data", function (e) {
                 var key = e.which;
                 if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendToServer(this);
+                    sendCellToServer(this, "perind_update_data_api", "input");
                 }
                 if (key === 27) { // 27 is the ESC key
                     cancelEditMode(this);
                 }
             });
-
-            $(document).ajaxStart(function () {
-                $("body").addClass("loading");
-            })
-            .ajaxStop(function () {
-                $("body").removeClass("loading");
-            });
-
-            function setDatabaseStatus(good, msg) {
-                // Set status light and error message to red and response error msg
-                if (good == true) {
-                    $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
-                    $('.status_info.err_msg').html("");
-                } else {
-                    $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-                    $('.status_info.err_msg').html("Error: " + msg);
-                }
-            };
-
-            function finishCellEditMode(td_node) {
-                td_node.addClass("editable");
-            };
-
-            function enterCellEditMode(td_node) {
-                var old_value = td_node.text();
-                var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
-                td_node.html(input);
-                td_node.removeClass("editable");
-            };
-
-            function cancelEditMode(node) {
-                var old_val = $(node).attr("value")
-                var td_node = $(node).parent("td");
-                td_node.html(old_val);
-                finishCellEditMode(td_node);
-            };
-
-            function csrfSafeMethod(method) {
-                // these HTTP methods do not require CSRF protection
-                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-            };
-
-            function sendToServer(node) {
-                // console.log(id, new_value, table, column, td_node, old_val);
-                var old_val = $(node).attr("value")
-                var new_value = $(node).val();
-                var td_node = $(node).parent("td");
-                $(node).remove();
-
-                id = td_node.data("id")
-                table = td_node.data("table")
-                column = td_node.data("column")
-
-                $.ajaxSetup({
-                    beforeSend: function (xhr, settings) {
-                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                            // Only send the token to relative URLs i.e. locally.
-                            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-                        }
-                    }
-                });
-
-                $.ajax({
-                    url: "/PerInd/perind_update_data_api",
-                    type: "POST",
-                    data: {
-                        id: id,
-                        new_value: new_value,
-                        table: table,
-                        column: column,
-                    },
-                })
-                .done(function (json_response) {
-                    // console.log("JSON RESPONSE", json_response);
-                    if (json_response["post_success"] == false) {
-                        td_node.html(old_val);
-                        console.log(`Error: Ajax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong while trying to update Indicator Value.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
-
-                        // Set status light and error message to red and response error msg
-                        setDatabaseStatus(good = false, msg = json_response["post_msg"]);
-                    } else { // Api call successful
-                        td_node.html(new_value);
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(json_response["updated_timestamp"]);
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(json_response["updated_by"]);
-                        setDatabaseStatus(good = true, msg = "");
-                    }
-                    finishCellEditMode(td_node);
-
-                    return true;
-                })
-                .fail(function (jqXHR) {
-                    td_node.html(old_val);
-                    var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                    setDatabaseStatus(good = false, msg = errorMessage);
-                    finishCellEditMode(td_node);
-
-                    console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                    alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                    return false;
-                });
-            };
 
             $('#convert_xlsx_button').click(function() {
                 downloadWebGridAsCsv()

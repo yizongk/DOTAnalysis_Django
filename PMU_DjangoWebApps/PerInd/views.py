@@ -542,10 +542,51 @@ class WebGridPageView(generic.ListView):
 
 ## Post request
 def PerIndApiUpdateData(request):
-    id = request.POST.get('id', '')
-    table = request.POST.get('table', '')
-    column = request.POST.get('column', '')
-    new_value = request.POST.get('new_value', '')
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: PerIndApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Check json request param is not empty string
+    try:
+        id = json_blob['id']
+        table = json_blob['table']
+        column = json_blob['column']
+        new_value = json_blob['new_value']
+
+        if id == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "id cannot be an empty string",
+            })
+
+        if table == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "table cannot be an empty string",
+            })
+
+        if column == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "column cannot be an empty string",
+            })
+
+        if new_value == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "new_value cannot be an empty string",
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: PerIndApiUpdateData():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
 
     ## Authenticate User
     remote_user = None
@@ -621,6 +662,18 @@ def PerIndApiUpdateData(request):
                     "post_success": False,
                     "post_msg": "Error: PerIndApiUpdateData():\n\nWhile trying to save to the database: {}".format(e),
                 })
+        else:
+            print("Error: PerIndApiUpdateData(): The api does not support operation with this column: '{}'".format(column))
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this column: '{}'".format(column),
+            })
+    else:
+        print("Error: PerIndApiUpdateData(): The api does not support operation with this table: '{}'".format(table))
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this table: '{}'".format(table),
+        })
 
     print("Warning: PerIndApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
