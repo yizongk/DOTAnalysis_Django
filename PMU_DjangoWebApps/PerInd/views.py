@@ -1836,7 +1836,9 @@ def UsersPanelApiDeleteRow(request):
         {
             user_id: "Some value"
         }
-        Will delete row in the Users table with the given user_id
+        Will delete row in the Users table with the given user_id.
+
+        Delete will fail if there are any UserPermissions record associated with the Users.
     """
 
     ## Authenticate User
@@ -1903,9 +1905,30 @@ def UsersPanelApiDeleteRow(request):
             "post_msg": "Error: UsersPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
         })
 
-    ## Remove the permission row
+    ## Get user row reference
     try:
         user_row = Users.objects.get(user_id=user_id)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiDeleteRow():\n\nFailed to get user object reference from database for user_id '{}': '{}'".format(user_id, e),
+        })
+
+    ## Check that there is no UserPermissions rows associated with given user_id
+    try:
+        if UserPermissions.objects.filter(user__user_id__exact=user_id).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)".format(user_row.login),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiDeleteRow(): {}".format(e),
+        })
+
+    ## Remove the permission row
+    try:
         user_row.delete()
     except Exception as e:
         return JsonResponse({
