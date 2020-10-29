@@ -192,7 +192,7 @@ function finishEditMode(td_node, cell_html_type) {
 }
 
 // THIS IS THE ENTRY POINT
-// successCallbackFct must take in for its first param, the td_node, and then for its second param, the json_response obj. successCallbackFct can be used to do any work after a successful api call, such as updating some element on the html beside the new cell value (The new cell value is updated to the edited cell during the sendCellToServer() function).
+// For its first param, the td_node, and then for its second param, the api_url, and for the third, the cell_html_type. The cell_html_type must either by 'select' or 'input'
 // #@TODO refactor this to use the sentJsonBlobToApi() like sendModalFormDataToServer() and deleteRecordToServer()
 function sendCellToServer( node, api_url, cell_html_type ) {
     // console.log(id, new_value, table, column, td_node, old_val);

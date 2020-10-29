@@ -114,9 +114,7 @@
                 $(document).on("keyup", ".input-data", function (e) {
                     var key = e.which;
                     if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input", function(td_node, json_response) {
-                            console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
-                        });
+                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input");
                     }
                     if (key === 27) { // 27 is the ESC key
                         cancelEditMode(this);

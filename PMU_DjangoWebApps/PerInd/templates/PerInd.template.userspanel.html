@@ -106,9 +106,7 @@
             $(document).on("keyup", ".input-data", function (e) {
                 var key = e.which;
                 if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendCellToServer(this, "users_panel_api_update_row", "input", function(td_node, json_response) {
-                        console.log(`Hi, call back called sendCellToServer(): ${json_response.post_msg}`)
-                    });
+                    sendCellToServer(this, "users_panel_api_update_row", "input");
                 }
                 if (key === 27) { // 27 is the ESC key
                     cancelEditMode(this);
@@ -137,6 +135,7 @@
                 sendCellToServer(this, "users_panel_api_update_row", "select");
             });
 
+            // For row delete, with support for only JS Datatable
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
                 if (confirm(`Are you sure you want to delete User with login: '${$(this).parent().parent().find(`[data-column='Login']`).html()}'?`)) {
@@ -169,6 +168,7 @@
 
             })
 
+            // For row add, with support for only JS Datatable
             $('#modalNewRowFormAddButton').on("click", function() {
                 modalNewRowFormFirstNameInputBorder
                 modalNewRowFormLastNameInputBorder
