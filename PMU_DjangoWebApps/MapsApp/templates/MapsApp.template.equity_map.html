@@ -11,7 +11,7 @@
 <select id="dot_services_filter"></select>
 <br>
 <br>
-<button id="removal">Test Layer Removal</button>
+<!--<button id="removal">Test Layer Removal</button>-->
 <div>Social Backdrop: Aggregation Type</div>
 <div id="AggregationType"></div>
 <div id="social_filter"></div>
@@ -27,6 +27,9 @@
     <select id="nta_filter_1"></select>
     <select id="nta_filter_2"></select>
     <div id='map_container'></div>
+</div>
+<div id="averageContainer">
+    
 </div>
 
 
@@ -529,20 +532,50 @@
 
 
         // Load in Social Info
+        
         d3.request('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
             .mimeType("application/json")
             .response(function (xhr) { return JSON.parse(xhr.responseText); })
             .get(function (data) {
                 social_minority_geojson = data
+                getAvg(data)
+               
+               
             })
+        function getAvg(data) {
+            console.log(data.features[0].properties.avg_minority_percentage)
+            console.log(data.features.length)
+            var size = data.features.length
+            var avg = 0;
+            for (var i = 0; i < size; i++) {
+                avg += data.features[i].properties.avg_minority_percentage
 
+            }
+            console.log(avg / size)
+           
+            $("#averageContainer").html('<div id="test"> Average Minority Percentage: ' + avg/size + '</div>');
+        }
+           
+        /*
+        d3.json('/static/MapsApp/geojsons/minority_percentage_nta.geojson')
+            .then(function (data) {
+                social_income_geojson = data
+            })
+        d3.json('/static/MapsApp/geojsons/income_nta.geojson')
+            .then(function (data) {
+                social_income_geojson = data
+            })
+            */
+        
         d3.request('/static/MapsApp/geojsons/income_nta.geojson')
             .mimeType("application/json")
             .response(function (xhr) { return JSON.parse(xhr.responseText); })
             .get(function (data) {
                 social_income_geojson = data
+                
             })
-    //Shaina added on 10.23 to remove layers
+           /*
+        //Shaina added on 10.23 to remove layers
         $('#remove').click(function (event) {
             event.preventDefault();
             if (map.hasLayer(social_current_layer)) {
@@ -550,12 +583,12 @@
                 map.removeLayer(social_current_layer);
                 $('#incomeLevel').change(function () {
                     const agrLevel = 'None'
-            }
+                }
             //switch the dropdown to none too!!
 
         })
 
-
+ */
 
 
         function getColorForQuintile(quintileRange) {
@@ -1141,6 +1174,7 @@
 
 
     });
+    
 
 </script>
 {% endblock %}
