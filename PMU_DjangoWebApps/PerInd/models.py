@@ -149,7 +149,9 @@ class IndicatorList(models.Model):
     def __str__(self):
         return self.indicator_title
 
-
+"""
+ALTER TABLE Indicator_Data ADD CONSTRAINT AK_IndicatorData_IndicatorID_And_YearMonthID_Must_Be_Unique_Combination UNIQUE(Indicator_ID, Year_Month_ID)
+"""
 class IndicatorData(models.Model):
     record_id = models.AutoField(db_column='Record_ID', primary_key=True)
     # indicator_id = models.IntegerField(db_column='Indicator_ID')
