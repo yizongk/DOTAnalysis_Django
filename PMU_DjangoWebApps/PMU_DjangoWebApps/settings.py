@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
+    'FleetDataCollection.apps.FleetdatacollectionConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
