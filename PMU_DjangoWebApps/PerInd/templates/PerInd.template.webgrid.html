@@ -567,8 +567,8 @@
                 .done(function (json_response) {
                     // console.log("JSON RESPONSE", json_response);
                     if (json_response["post_success"] == false) {
-                        console.log(`Error: Ajax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong while trying to download the csv.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling PerIndApiUpdateData: Server Response: ${json_response["post_msg"]}`);
+                        console.log(`Error: Ajax calling get_csv_cur_ctx_api: Server Response: ${json_response["post_msg"]}`);
+                        alert(`Something went wrong while trying to download the csv.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_csv_cur_ctx_api: Server Response: ${json_response["post_msg"]}`);
                     } else { // Api call successful
                         // Initiate download
                         // download(data=json_response["post_data"], filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
