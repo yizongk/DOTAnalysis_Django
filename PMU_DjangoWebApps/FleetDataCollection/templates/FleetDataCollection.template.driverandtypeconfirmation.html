@@ -41,42 +41,75 @@
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
 
-    {% comment %} <script>
+    <script>
         $(document).ready( function () {
-
-            var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
-                "columnDefs": [{
-                    "targets": -1,
-                    "data": null,
-                    "defaultContent": '<a class="deletable"><i class="fas fa-trash-alt"></i></a>'
-                }]
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
             });
 
-            // Example codes showing how CellEditSave.js works with the html table
-            // For cell edit mode
-            $(document).on("dblclick", ".editable", function () {
-                enterCellEditMode($(this))
-            });
+            var table = $('#WebGridTable').DataTable();
+            var pms_list_str = [] // Use this only after the async ajax function call to get_permitted_pms_list returns
+            var pms_list_additional_info_json = new Object(); // Use this only after the async ajax function call to get_permitted_pms_list returns
 
-            $(document).on("keyup", ".input-data", function (e) {
-                var key = e.which;
-                if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendCellToServer(this, "users_panel_api_update_row", "input");
+            // Get PMS List
+            $.ajax({
+                url: "/FleetDataCollection/get_permitted_pms_list",
+                type: "POST",
+            })
+            .done(function(json_response) {
+                if (json_response["post_success"] == false) {
+                    console.log(`Error: Ajax calling GetPMSList: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong while trying to get list of PMS.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling GetPMSList: Server Response: ${json_response["post_msg"]}`);
+                } else { // Api call successful
+                    list_of_json_pms_response = json_response["post_data"]
+                    list_of_json_pms_response.map(function(each) {
+                        pms_list_str.push(each.pms)
+                        pms_list_additional_info_json[each.pms] = each.last_name + ', ' + each.first_name
+                    })
                 }
-                if (key === 27) { // 27 is the ESC key
-                    cancelEditMode(this);
-                }
+                return true;
+            })
+            .fail(function(json_response) {
+                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                return false;
             });
 
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
-                logins_array = ['True', 'False']
+                if ( $(this).data('column') == 'PMS' ) {
+                    select_list_values = ['None']
+                    select_list_values = select_list_values.concat(pms_list_str)
+                } else if ( $(this).data('column') == 'Class2' ) {
+                    select_list_values = ['None', 'True', 'False']
+                } else {
+                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
+                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
+                    return 0
+                }
+
                 // Move current select element to the top of the array
                 var current_value = $(this).text()
-                logins_array.sort(function(x, y) {
+                select_list_values.sort(function(x, y) {
                     return x == current_value ? -1 : y == current_value ? 1 : 0;
                 });
-                enterCellEditSelectMode($(this), logins_array)
+
+
+                if ( $(this).data('column') == 'PMS' ) {
+                    enterCellEditSelectMode($(this), select_list_values, true, pms_list_additional_info_json, "display additional first")
+                } else if ( $(this).data('column') == 'Class2' ) {
+                    enterCellEditSelectMode($(this), select_list_values)
+                } else {
+                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
+                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
+                    return 0
+                }
             });
 
             $(document).on("keyup", ".input-data-select", function (e) {
@@ -87,119 +120,17 @@
             });
 
             $(document).on("change", ".input-data-select", function () {
-                sendCellToServer(this, "users_panel_api_update_row", "select");
+                if ( $(this).parent().data('column') == 'PMS' ) {
+                    sendCellToServer(this, "users_panel_api_update_row", "select");
+                } else if ( $(this).parent().data('column') == 'Class2' ) {
+                    sendCellToServer(this, "users_panel_api_update_row", "select");
+                } else {
+                    console.log(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
+                    alert(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
+                    return 0
+                }
             });
 
-            // For row delete, with support for only JS Datatable
-            //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
-            $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
-                if (confirm(`Are you sure you want to delete User with login: '${$(this).parent().parent().find(`[data-column='Login']`).html()}'?`)) {
-                    user_id = $(this).parent().attr('data-id')
-                    json_blob = {
-                        'user_id': user_id
-                    }
-
-                    props = {
-                        'table': table,
-                        'tr_row': $(this).parent().parent()
-                    }
-
-                    deleteRecordToServer( json_blob, 'users_panel_api_delete_row', function(json_response, props) {
-                        // successful api call
-                        table = props['table']
-                        tr_row = props['tr_row']
-                        table.row(tr_row).remove().draw();
-
-                        return;
-                    }, function(json_response, props) {
-                        // On failed api calls do nothing.
-                        return;
-                    }, function(jqXHR, props) {
-                        // On failed ajax request do nothing.
-                        return;
-                    },
-                    props)
-                }
-
-            })
-
-            // For row add, with support for only JS Datatable
-            $('#modalNewRowFormAddButton').on("click", function() {
-                modalNewRowFormFirstNameInputBorder
-                modalNewRowFormLastNameInputBorder
-                modalNewRowFormLoginInputBorder
-
-                let firstNameInput = $("#modalNewRowFormFirstNameInput").val()
-                let lastNameInput = $("#modalNewRowFormLastNameInput").val()
-                let loginInput = $("#modalNewRowFormLoginInput").val()
-
-                $('#modalNewRowFormFirstNameInputBorder').css("border", "")
-                $('#modalNewRowFormLastNameInputBorder').css("border", "")
-                $('#modalNewRowFormLoginInputBorder').css("border", "")
-
-                if (firstNameInput == '') {
-                    $('#modalNewRowFormFirstNameInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                if (lastNameInput == '') {
-                    $('#modalNewRowFormLastNameInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                if (loginInput == '') {
-                    $('#modalNewRowFormLoginInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                json_blob = {
-                    "first_name_input": firstNameInput,
-                    "last_name_input": lastNameInput,
-                    "login_input": loginInput,
-                }
-
-                sendModalFormDataToServer( json_blob, "users_panel_api_add_row", function(json_response) {
-                    alert(`'${loginInput}' added to Users table successfully!`)
-
-                    // Add the newly added row to the grid, and redraw
-                    var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, ] )
-                    .draw()
-                    .node();
-
-                    // Add user_id to all child cells
-                    $(rowNode).children().attr("data-id", json_response.user_id);
-                    // Add the proper data-... attribute to the row
-                    $(rowNode).children().each( (index, childNode) => {
-                        if (index == 0) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "First_Name")
-                            $(childNode).attr("class", "editable")
-                        } else if (index == 1) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "Last_Name")
-                            $(childNode).attr("class", "editable")
-                        } else if (index == 2) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "Active_User")
-                            $(childNode).attr("class", "editable-select")
-                        } else if (index == 3) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "Login")
-                        } else if (index == 4) {
-                            // Nothing to add for the Delete icon
-                        } else {
-                            alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                            console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                        }
-                    })
-                    // Add class to child cell with the delete icon
-                    $(rowNode).find('.deletable').parent().addClass("text-center")
-
-                    $(rowNode).css('color', 'green')
-                    .animate( { color: 'black' } );
-                })
-            })
-
         });
-    </script> {% endcomment %}
+    </script>
 {% endblock custom_js %}
