@@ -49,3 +49,16 @@ class M5DriverVehicleDataConfirmations(models.Model):
 
     def __str__(self):
         return self.unit_number
+
+class TblEmployees(models.Model):
+    pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
+    first_name = models.CharField(db_column='F-Name', max_length=255)
+    last_name = models.CharField(db_column='L-Name', max_length=255)
+    wu = models.CharField(db_column='WU', max_length=4)
+
+    class Meta:
+        managed = False
+        db_table = 'tblEmployees'
+
+    def __str__(self):
+        return self.pms
