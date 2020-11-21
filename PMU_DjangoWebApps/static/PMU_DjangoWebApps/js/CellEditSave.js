@@ -95,14 +95,33 @@ function enterCellEditMode(td_node) {
     td_node.removeClass("editable");
 };
 
-// param selections is a array of strings that will populate the selection list
-function enterCellEditSelectMode(td_node, selections) {
+// param selections is a array of strings that will populate the selection list. If has_selection_additional_info is true, selection_additional_info_json must be a json with the param selections as index and it element will be used to attach on to the option in the select list
+// param how_display_additional_info specify the order of data in the option display
+function enterCellEditSelectMode(td_node, selections, has_selection_additional_info, selection_additional_info_json, how_display_additional_info) {
     var old_value = td_node.text();
     // var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
+    if (has_selection_additional_info == true && !selection_additional_info_json) {
+        console.log(`Error: enterCellEditSelectMode(): paremeter has_selection_additional_info is set to true, but paremeter selection_additional_info_json is null: ${selection_additional_info_json}`)
+        return
+    }
 
-    var options = selections.map(function (each_select) {
-        return `<option value='${each_select}'>${each_select}</option>`
-    }).join('')
+    if (has_selection_additional_info == true) {
+        if (how_display_additional_info == "display additional first") {
+            var options = selections.map(function (each_select) {
+                return `<option value='${each_select}'>${selection_additional_info_json[each_select]} | ${each_select}</option>`
+            }).join('')
+        } else {
+            var options = selections.map(function (each_select) {
+                return `<option value='${each_select}'>${each_select} | ${selection_additional_info_json[each_select]}</option>`
+            }).join('')
+        }
+    } else {
+        var options = selections.map(function (each_select) {
+            return `<option value='${each_select}'>${each_select}</option>`
+        }).join('')
+    }
+
+
     var input = `
         <select class='input-data-select' old_value='${old_value}'>
             ${options}
