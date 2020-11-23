@@ -62,3 +62,17 @@ class TblEmployees(models.Model):
 
     def __str__(self):
         return self.pms
+
+class NYC_DOTR_UNIT_MAIN(models.Model):
+    unit_no = models.CharField(db_column='UNIT_NO', max_length=30, primary_key=True)
+    class1 = models.CharField(db_column='CLASS1', max_length=4)
+    make = models.CharField(db_column='MAKE', max_length=30)
+    model = models.CharField(db_column='MODEL', max_length=30)
+    domicile = models.CharField(db_column='USING_DEPT_NO', max_length=30)
+
+    class Meta:
+        managed = False
+        db_table = 'NYC_DOTR_UNIT_MAIN'
+
+    def __str__(self):
+        return self.unit_no
