@@ -48,7 +48,7 @@ def get_allowed_list_of_wu(username):
     except Exception as e:
         print("Exception: FleetDataCollection: get_allowed_list_of_wu(): {}".format(e))
         return {
-            "success": None,
+            "success": False,
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_wu(): {}'.format(e),
         }
 
@@ -77,6 +77,45 @@ def get_allowed_list_of_pms(username):
         "pms_list": pms_list_json_str,
     }
 
+## Return a list of WU that the client has access to
+def get_allowed_list_of_domiciles(username):
+    try:
+        domicile_query = DomicilePermissions.objects.using('FleetDataCollection').filter(
+            window_username=username,
+        ).order_by('domicile')
+
+        if domicile_query.count() > 0:
+            return {
+                "success": True,
+                "err": "",
+                "domicile_list": [each.domicile for each in domicile_query],
+            }
+        return {
+            "success": False,
+            "err": "Cannot find any domicile permissions for '{}'".format(username),
+        }
+    except Exception as e:
+        print("Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}".format(e))
+        return {
+            "success": False,
+            "err": 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(e),
+        }
+
+## Return a list of Unit Numbers  that the client has access to
+def get_domicile_for_unit_number(unit_no):
+    try:
+        domicile = NYC_DOTR_UNIT_MAIN.objects.using('M5').get(unit_no=unit_no).domicile
+        return {
+            "success": True,
+            "err": "",
+            "domicile": domicile,
+        }
+    except Exception as e:
+        print("Exception: FleetDataCollection: get_domicile_for_unit_number(): {}, for unit_no '{}'".format(e, unit_no))
+        return {
+            "success": False,
+            "err": "Exception: FleetDataCollection: get_domicile_for_unit_number(): {}, for unit_no '{}'".format(e, unit_no),
+        }
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -237,17 +276,35 @@ def UpdateM5DriverVehicleDataConfirmations(request):
 
     ## Save the data
     try:
-        row = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').get(unit_number=id)
-        ## TODO make sure client has permission to the domicile for current row
-        if column == 'PMS':
-            permitted_pms_list_obj = get_allowed_list_of_pms(remote_user)
-            if permitted_pms_list_obj['success'] == False:
-                raise ValueError(permitted_pms_list_obj['err'])
-            else:
-                permitted_pms_list = permitted_pms_list_obj['pms_list']
 
-            if new_value not in permitted_pms_list:
-                raise ValueError("Client '{}' does not have permission for PMS '{}'".format(remote_user, new_value))
+        ## make sure client has permission to the domicile for current row
+        domicile_for_row_obj = get_domicile_for_unit_number(id)
+        if domicile_for_row_obj['success'] == False:
+            raise ValueError( 'Exception: FleetDataCollection: get_domicile_for_unit_number(): {}'.format(domicile_for_row_obj['err']) )
+        else:
+            domicile_for_row = domicile_for_row_obj['domicile']
+
+        permitted_domcile_list_obj = get_allowed_list_of_domiciles(remote_user)
+        if permitted_domcile_list_obj['success'] == False:
+            raise ValueError( 'Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}'.format(permitted_domcile_list_obj['err']) )
+        else:
+            permitted_domcile_list = permitted_domcile_list_obj['domicile_list']
+
+        if domicile_for_row not in permitted_domcile_list:
+            raise ValueError("Client '{}' does not have permission for Domicile '{}' for Unit No '{}'".format(remote_user, domicile_for_row, id))
+
+        row = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').get(unit_number=id)
+        if column == 'PMS':
+            ## make sure client has permission to the requested pms
+            if new_value is not None:
+                permitted_pms_list_obj = get_allowed_list_of_pms(remote_user)
+                if permitted_pms_list_obj['success'] == False:
+                    raise ValueError(permitted_pms_list_obj['err'])
+                else:
+                    permitted_pms_list = permitted_pms_list_obj['pms_list']
+
+                if new_value not in permitted_pms_list:
+                    raise ValueError("Client '{}' does not have permission for PMS '{}'".format(remote_user, new_value))
 
             row.pms = new_value
         elif column == 'Class2':
