@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import *
 import json
 
-## Check if remote user is admin and is active
+## Check if remote client is admin and is active
 def user_is_active_admin(username):
     try:
         admin_query = Admins.objects.using('FleetDataCollection').filter(
@@ -28,7 +28,7 @@ def user_is_active_admin(username):
             "err": 'Exception: FleetDataCollection: user_is_active_admin(): {}'.format(e),
         }
 
-## Return a list of WU that the user has access to
+## Return a list of WU that the client has access to
 def get_allowed_list_of_wu(username):
     try:
         wu_query = WUPermissions.objects.using('FleetDataCollection').filter(
@@ -51,6 +51,32 @@ def get_allowed_list_of_wu(username):
             "success": None,
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_wu(): {}'.format(e),
         }
+
+## Return a list of PMS that the client has access to
+def get_allowed_list_of_pms(username):
+    allowed_wu_list_response = get_allowed_list_of_wu(username)
+    if allowed_wu_list_response['success'] == False:
+        return {
+            "success": False,
+            "err": "Error: FleetDataCollection: get_allowed_list_of_pms():\n\nFailed to get list of WU permissions: {}".format(allowed_wu_list_response['err']),
+        }
+    else:
+        allowed_wu_list = allowed_wu_list_response['wu_list']
+
+
+    pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+        wu__in=allowed_wu_list
+    ).order_by('last_name')
+
+    ## gives a list of pms
+    pms_list_json_str = list(pms_list_query.values_list('pms', flat=True))
+
+    return {
+        "success": True,
+        "err": None,
+        "pms_list": pms_list_json_str,
+    }
+
 
 # Create your views here.
 class HomePageView(TemplateView):
@@ -129,26 +155,25 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
             return context
 
 ## Returns a list of json objects, each json object is a row in the tblEmployees, containing pms, first_name, last_name and wu
-def GetPermittedPMSList(request):
+def GetPermittedEmpDataList(request):
     ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: FleetDataCollection: GetPMSList(): UNAUTHENTICATE USER!')
+        print('Warning: FleetDataCollection: GetPermittedEmpDataList(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "FleetDataCollection: GetPMSList():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "FleetDataCollection: GetPermittedEmpDataList():\n\nUNAUTHENTICATE USER!",
         })
 
     ## Get the data
-    #TODO filter by WU taht she has access to
     try:
         allowed_wu_list_response = get_allowed_list_of_wu(remote_user)
         if allowed_wu_list_response['success'] == False:
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "Error: FleetDataCollection: GetPMSList():\n\nFailed to get list of WU permissions: {}".format(allowed_wu_list_response['err']),
+                "post_msg": "Error: FleetDataCollection: GetPermittedEmpDataList():\n\nFailed to get list of WU permissions: {}".format(allowed_wu_list_response['err']),
             })
         else:
             allowed_wu_list = allowed_wu_list_response['wu_list']
@@ -160,17 +185,13 @@ def GetPermittedPMSList(request):
 
         pms_list_json_str = list(pms_list_query.values())
 
-        # return JsonResponse({
-        #     "post_success": False,
-        #     "post_msg": pms_list_json_str,
-        # })
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
             "post_data": pms_list_json_str,
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: GetPMSList(): {}".format(e)
+        err_msg = "Exception: FleetDataCollection: GetPermittedEmpDataList(): {}".format(e)
         print(err_msg)
         return JsonResponse({
             "post_success": False,
@@ -219,7 +240,15 @@ def UpdateM5DriverVehicleDataConfirmations(request):
         row = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').get(unit_number=id)
         ## TODO make sure client has permission to the domicile for current row
         if column == 'PMS':
-            ## TODO make sure client has permission to the PMS in new_value
+            permitted_pms_list_obj = get_allowed_list_of_pms(remote_user)
+            if permitted_pms_list_obj['success'] == False:
+                raise ValueError(permitted_pms_list_obj['err'])
+            else:
+                permitted_pms_list = permitted_pms_list_obj['pms_list']
+
+            if new_value not in permitted_pms_list:
+                raise ValueError("Client '{}' does not have permission for PMS '{}'".format(remote_user, new_value))
+
             row.pms = new_value
         elif column == 'Class2':
             row.class2 = new_value
@@ -232,7 +261,7 @@ def UpdateM5DriverVehicleDataConfirmations(request):
             "post_msg": ""
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: UpdatePMS(): {}".format(e)
+        err_msg = "Exception: FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): {}".format(e)
         print(err_msg)
         return JsonResponse({
             "post_success": False,
