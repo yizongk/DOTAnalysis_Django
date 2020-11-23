@@ -120,10 +120,8 @@
             });
 
             $(document).on("change", ".input-data-select", function () {
-                if ( $(this).parent().data('column') == 'PMS' ) {
-                    sendCellToServer(this, "users_panel_api_update_row", "select");
-                } else if ( $(this).parent().data('column') == 'Class2' ) {
-                    sendCellToServer(this, "users_panel_api_update_row", "select");
+                if ( ($(this).parent().data('column') == 'PMS') || ($(this).parent().data('column') == 'Class2') ) {
+                    sendCellToServer(this, "update_m5_driver_vehicle_data_confirmations", "select");
                 } else {
                     console.log(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
                     alert(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)

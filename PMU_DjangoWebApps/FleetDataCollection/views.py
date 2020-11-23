@@ -176,3 +176,65 @@ def GetPermittedPMSList(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
+## Update the PMS for a record
+def UpdateM5DriverVehicleDataConfirmations(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection: UpdateM5DriverVehicleDataConfirmations():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection: UpdateM5DriverVehicleDataConfirmations():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        id = json_blob['id']
+        table = json_blob['table']
+        column = json_blob['column']
+        new_value = json_blob['new_value']
+
+        if new_value == 'None':
+            new_value = None
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection:\n\nError: {}".format(e),
+        })
+
+
+    ## Save the data
+    try:
+        row = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').get(unit_number=id)
+        ## TODO make sure client has permission to the domicile for current row
+        if column == 'PMS':
+            ## TODO make sure client has permission to the PMS in new_value
+            row.pms = new_value
+        elif column == 'Class2':
+            row.class2 = new_value
+        else:
+            raise ValueError("FleetDataCollection: UpdateM5DriverVehicleDataConfirmations():\n\nError: Unsupported column: '{}'".format(column))
+
+        row.save()
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": ""
+        })
+    except Exception as e:
+        err_msg = "Exception: FleetDataCollection: UpdatePMS(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
