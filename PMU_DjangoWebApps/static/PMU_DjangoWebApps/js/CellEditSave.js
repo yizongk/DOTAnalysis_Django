@@ -158,7 +158,8 @@ function csrfSafeMethod(method) {
 // ajaxFailCallbackFct is called when ajax fails because of connection issues, etc. The optional first param must be jqXHR. You can access jqXHR.status and jqXHR.responseText.
     // For its optional 2nd param, it must be props, which contains some props in json form from the parent calling function
 // ajaxFailCallbackFct stores calling parent data that can be pass to the various callback function
-function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+// Returns a promise containing the POST call response data if call was successful.
+async function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -168,7 +169,7 @@ function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { 
         }
     });
 
-    $.ajax({
+    return await $.ajax({
         url: api_url,
         type: "POST",
         data: JSON.stringify(json_blob),
@@ -187,7 +188,7 @@ function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { 
             setDatabaseStatus(good=true, msg="");
         }
 
-        return true;
+        return json_response['post_data'];
     })
     .fail(function (jqXHR) {
         var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
@@ -213,7 +214,8 @@ function finishEditMode(td_node, cell_html_type) {
 // THIS IS THE ENTRY POINT
 // For its first param, the td_node, and then for its second param, the api_url, and for the third, the cell_html_type. The cell_html_type must either by 'select' or 'input'
 // #@TODO refactor this to use the sentJsonBlobToApi() like sendModalFormDataToServer() and deleteRecordToServer()
-function sendCellToServer( node, api_url, cell_html_type ) {
+// Return a promise returned by sentJsonBlobToApi(), which should contain the POST response data if the api call was successful
+async function sendCellToServer( node, api_url, cell_html_type ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("old_value")
     var new_value = $(node).val().trim();
@@ -238,7 +240,7 @@ function sendCellToServer( node, api_url, cell_html_type ) {
         'cell_html_type': cell_html_type,
     }
 
-    sentJsonBlobToApi( json_obj_to_server, api_url, function(json_response, props) {
+    api_json_response = await sentJsonBlobToApi( json_obj_to_server, api_url, function(json_response, props) {
         // successful api call call-back fct
         td_node = props['td_node']
         new_value = props['new_value']
@@ -265,13 +267,19 @@ function sendCellToServer( node, api_url, cell_html_type ) {
         finishEditMode(td_node, cell_html_type)
     },
     props );
+    result = {
+        'td_node': td_node,
+        'api_json_response': api_json_response
+    }
+
+    return result
 
 };
 
-function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
+async function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    await sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
 };
 
-function deleteRecordToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
+async function deleteRecordToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    await sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
 }
