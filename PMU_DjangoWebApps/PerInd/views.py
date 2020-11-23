@@ -1375,10 +1375,16 @@ def UserPermissionsPanelApiUpdateData(request):
             "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
-    id = json_blob['id']
-    table = json_blob['table']
-    column = json_blob['column']
-    new_value = json_blob['new_value']
+    try:
+        id = json_blob['id']
+        table = json_blob['table']
+        column = json_blob['column']
+        new_value = json_blob['new_value']
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nError: {}".format(e),
+        })
 
     ## Authenticate User
     remote_user = None
@@ -2004,10 +2010,16 @@ def UsersPanelApiUpdateData(request):
             "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
-    id = json_blob['id']
-    table = json_blob['table']
-    column = json_blob['column']
-    new_value = json_blob['new_value']
+    try:
+        id = json_blob['id']
+        table = json_blob['table']
+        column = json_blob['column']
+        new_value = json_blob['new_value']
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: UsersPanelApiUpdateData():\n\nError: {}".format(e),
+        })
 
     ## Authenticate User
     remote_user = None
