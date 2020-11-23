@@ -504,7 +504,18 @@
             $(document).on("keyup", ".input-data", function (e) {
                 var key = e.which;
                 if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendCellToServer(this, "perind_update_data_api", "input");
+                    sendCellToServer(this, "perind_update_data_api", "input")
+                    .then(function(promised_data) { // Expect promise to contain the post response data if api call was successful
+                        td_node = promised_data.td_node
+                        api_json_response = promised_data.api_json_response
+
+                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(api_json_response["updated_timestamp"]);
+                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(api_json_response["updated_by"]);
+                    })
+                    .catch(promise => {
+                        console.log(promise);
+                        alert(`PerInd: Webgrid: Something went wrong when calling sendCellToServer(): ${promise.message}`);
+                    });
                 }
                 if (key === 27) { // 27 is the ESC key
                     cancelEditMode(this);
