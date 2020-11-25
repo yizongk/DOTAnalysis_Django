@@ -65,14 +65,42 @@
             });
 
             var table
-            var select_pms_list = []                                    // Use this only after the async ajax function call to get_permitted_pms_list returns
-            var select_pms_list_additional_info_json = new Object();    // Use this only after the async ajax function call to get_permitted_pms_list returns
+            var select_permitted_pms_list = []                                    // Use this only after the async ajax function call to get_permitted_pms_list returns
+            var select_permitted_pms_list_additional_info_json = new Object();    // Use this only after the async ajax function call to get_permitted_pms_list returns
             var pms_info = new Object();                                // Use this only after the async ajax function call to get_permitted_pms_list returns
+            var m5_info = new Object();                                 // Use this only after the async ajax function call to get_permitted_pms_list returns
+
+            // Get permitted PMS List for pms dropdown selection
+            $.ajax({
+                url: "/FleetDataCollection/get_permitted_pms_list",  // #TODO TO POPULATE PMS, you got to get the entire list, and seeapret this call for select dropdown else where
+                type: "POST",
+            })
+            .done(function(json_response) {
+                if (json_response["post_success"] == false) {
+                    console.log(`Error: Ajax calling GetPMSList: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong while trying to get list of permitted PMS for cell select.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_permitted_pms_list: Server Response: ${json_response["post_msg"]}`);
+                } else { // Api call successful
+                    list_of_json_pms_response = json_response["post_data"]
+
+                    // Create pms dropdown list
+                    list_of_json_pms_response.map(function(each) {
+                        select_permitted_pms_list.push(each.pms)
+                        select_permitted_pms_list_additional_info_json[each.pms] = each.last_name + ', ' + each.first_name
+                    })
+
+                }
+                return true;
+            })
+            .fail(function(json_response) {
+                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                return false;
+            });
 
             // Chain ajax call, get PMS List, get M5 List, populate HTML table, then initiate JSDataTable. Initiating JSDataTable last is very important (So the populated data will show up in the table sort, search and pagination)!
-            // Get PMS List for pms dropdown selection, and populate the JS DataTable with pms info
             $.ajax({
-                url: "/FleetDataCollection/get_permitted_pms_list",
+                url: "/FleetDataCollection/get_permitted_pms_list",  // #@TODO TO POPULATE PMS, you got to get the entire list, and seeapret this call for select dropdown else where
                 type: "POST",
             })
             .done(function(json_response) {
@@ -82,17 +110,14 @@
                 } else { // Api call successful
                     list_of_json_pms_response = json_response["post_data"]
 
-                    // Create pms dropdown list
+                    // Populate global pms variables
                     list_of_json_pms_response.map(function(each) {
-                        select_pms_list.push(each.pms)
-                        select_pms_list_additional_info_json[each.pms] = each.last_name + ', ' + each.first_name
                         pms_info[each.pms] = {
                             'wu': each.wu,
                             'last_name': each.last_name,
                             'first_name': each.first_name,
                         }
                     })
-                    console.log(pms_info)
 
                     // Populate JS DataTable with pms info
                     $('#JSDataTableBody').children().each((index, row) => {
@@ -103,7 +128,50 @@
                             $(row).children('[data-column="F-Name"]').text( pms_info[pms]["first_name"])
                         }
                     });
-                    table = $('#JSDataTable').DataTable();
+
+                    $.ajax({
+                        url: "/FleetDataCollection/get_m5_list",
+                        type: "POST",
+                    }).done(function(json_response) {
+                        if (json_response["post_success"] == false) {
+                            console.log(`Error: Ajax calling get_m5_list: Server Response: ${json_response["post_msg"]}`);
+                            alert(`Something went wrong while trying to get list of PMS.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_m5_list: Server Response: ${json_response["post_msg"]}`);
+                        } else {
+                            list_of_json_m5_response = json_response["post_data"]
+
+                            // Populate global m5 variable
+                            list_of_json_m5_response.map(function(each) {
+                                m5_info[each.unit_no] = {
+                                    'make': each.make,
+                                    'model': each.model,
+                                    'class1': each.class1,
+                                }
+                            })
+
+                            // Populate JS DataTable with m5 info
+                            $('#JSDataTableBody').children().each((index, row) => {
+                                let unit_number = $(row).children('[data-column="MAKE"]').data('entryunitnumber')
+                                if (unit_number != 'None') {
+                                    try {
+                                        $(row).children('[data-column="MAKE"]').text(   m5_info[unit_number]["make"] )
+                                        $(row).children('[data-column="MODEL"]').text(  m5_info[unit_number]["model"])
+                                        $(row).children('[data-column="CLASS1"]').text( m5_info[unit_number]["class1"])
+                                    } catch(err) {
+                                        console.log(`Error happened when looking up '${unit_number}' in m5_info object: ${err}`)
+                                    }
+                                }
+                            });
+
+                            // FINIALLY INITIATE THE JS DATATABLE
+                            table = $('#JSDataTable').DataTable();
+                        }
+                    }).fail(function(json_response) {
+                        var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+                        console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                        alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                        return false;
+                    });
+
                 }
                 return true;
             })
@@ -118,7 +186,7 @@
             $(document).on("dblclick", ".editable-select", function () {
                 if ( $(this).data('column') == 'PMS' ) {
                     select_list_values = ['None']
-                    select_list_values = select_list_values.concat(select_pms_list)
+                    select_list_values = select_list_values.concat(select_permitted_pms_list)
                 } else if ( $(this).data('column') == 'Class2' ) {
                     select_list_values = ['None', 'True', 'False']
                 } else {
@@ -135,7 +203,7 @@
 
 
                 if ( $(this).data('column') == 'PMS' ) {
-                    enterCellEditSelectMode($(this), select_list_values, true, select_pms_list_additional_info_json, "display additional first")
+                    enterCellEditSelectMode($(this), select_list_values, true, select_permitted_pms_list_additional_info_json, "display additional first")
                 } else if ( $(this).data('column') == 'Class2' ) {
                     enterCellEditSelectMode($(this), select_list_values)
                 } else {
