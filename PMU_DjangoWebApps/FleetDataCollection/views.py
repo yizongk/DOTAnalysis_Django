@@ -193,7 +193,7 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
             context["client_is_admin"] = False
             return context
 
-## Returns a list of json objects, each json object is a row in the tblEmployees, containing pms, first_name, last_name and wu
+## Returns a list of json objects with respect to client wu permission, each json object is a row in the tblEmployees, containing pms, first_name, last_name and wu
 def GetPermittedEmpDataList(request):
     ## Authenticate User
     remote_user = None
@@ -238,7 +238,41 @@ def GetPermittedEmpDataList(request):
         })
 
 ## Returns a list of json objects, each json object is a row in the NYC_DOTR_UNIT_MAIN, containing make, model, unit_no, class1, and domicile
-## Does not care about client permission to domicile, because this api's purpose is to serve as the m5 look up for the client-side JS DataTable
+## Does not respect client wu permissions, because this api's purpose is to serve as the pms look up for the client-side JS DataTable
+def GetEmpDataList(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: FleetDataCollection: GetEmpDataList(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection: GetEmpDataList():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        pms_list_query = TblEmployees.objects.using('Orgchart').all().order_by('last_name')
+
+        pms_list_json_str = list(pms_list_query.values())
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": pms_list_json_str,
+        })
+    except Exception as e:
+        err_msg = "Exception: FleetDataCollection: GetEmpDataList(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+
+## Returns a list of json objects, each json object is a row in the NYC_DOTR_UNIT_MAIN, containing make, model, unit_no, class1, and domicile
+## Does not respect client domicile permissions, because this api's purpose is to serve as the m5 look up for the client-side JS DataTable
 def GetM5DataList(request):
     ## Authenticate User
     remote_user = None
