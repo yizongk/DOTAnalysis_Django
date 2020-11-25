@@ -237,6 +237,39 @@ def GetPermittedEmpDataList(request):
             "post_msg": err_msg
         })
 
+## Returns a list of json objects, each json object is a row in the NYC_DOTR_UNIT_MAIN, containing make, model, unit_no, class1, and domicile
+## Does not care about client permission to domicile, because this api's purpose is to serve as the m5 look up for the client-side JS DataTable
+def GetM5DataList(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: FleetDataCollection: GetPermittedM5DataList(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection: GetPermittedM5DataList():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        m5_list_query = NYC_DOTR_UNIT_MAIN.objects.using('M5').all().order_by('unit_no')
+
+        m5_list_json_str = list(m5_list_query.values())
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": m5_list_json_str,
+        })
+    except Exception as e:
+        err_msg = "Exception: FleetDataCollection: GetPermittedM5DataList(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
 ## Update the PMS for a record
 def UpdateM5DriverVehicleDataConfirmations(request):
     ## Authenticate User
@@ -286,7 +319,7 @@ def UpdateM5DriverVehicleDataConfirmations(request):
 
         permitted_domcile_list_obj = get_allowed_list_of_domiciles(remote_user)
         if permitted_domcile_list_obj['success'] == False:
-            raise ValueError( 'Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}'.format(permitted_domcile_list_obj['err']) )
+            raise ValueError( 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(permitted_domcile_list_obj['err']) )
         else:
             permitted_domcile_list = permitted_domcile_list_obj['domicile_list']
 
