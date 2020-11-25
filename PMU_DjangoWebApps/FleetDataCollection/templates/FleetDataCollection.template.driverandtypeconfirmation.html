@@ -98,9 +98,9 @@
                 return false;
             });
 
-            // Chain ajax call, get PMS List, get M5 List, populate HTML table, then initiate JSDataTable. Initiating JSDataTable last is very important (So the populated data will show up in the table sort, search and pagination)!
+            // Chain ajax call, get entire PMS List, get entire M5 List, populate HTML table, then initiate JSDataTable. Initiating JSDataTable last is very important (So the populated data will show up in the table sort, search and pagination)!
             $.ajax({
-                url: "/FleetDataCollection/get_permitted_pms_list",  // #@TODO TO POPULATE PMS, you got to get the entire list, and seeapret this call for select dropdown else where
+                url: "/FleetDataCollection/get_pms_list",
                 type: "POST",
             })
             .done(function(json_response) {
