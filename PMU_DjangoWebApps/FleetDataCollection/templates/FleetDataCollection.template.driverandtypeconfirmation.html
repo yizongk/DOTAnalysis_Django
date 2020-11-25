@@ -123,9 +123,16 @@
                     $('#JSDataTableBody').children().each((index, row) => {
                         let pms = $(row).children('[data-column="WU"]').data('entrypms')
                         if (pms != 'None') {
-                            $(row).children('[data-column="WU"]').text(     pms_info[pms]["wu"] )
-                            $(row).children('[data-column="L-Name"]').text(  pms_info[pms]["last_name"])
-                            $(row).children('[data-column="F-Name"]').text( pms_info[pms]["first_name"])
+                            try {
+                                $(row).children('[data-column="WU"]').text(     pms_info[pms]["wu"] )
+                                $(row).children('[data-column="L-Name"]').text( pms_info[pms]["last_name"])
+                                $(row).children('[data-column="F-Name"]').text( pms_info[pms]["first_name"])
+                            } catch(err) {
+                                console.log(`Error happened when looking up '${pms}' in pms_info object: ${err}`)
+                                $(row).children('[data-column="WU"]').text(     'INACTIVE EMP')
+                                $(row).children('[data-column="L-Name"]').text( 'INACTIVE EMP')
+                                $(row).children('[data-column="F-Name"]').text( 'INACTIVE EMP')
+                            }
                         }
                     });
 
