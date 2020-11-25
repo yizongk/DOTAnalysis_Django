@@ -101,7 +101,7 @@ def get_allowed_list_of_domiciles(username):
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(e),
         }
 
-## Return a list of Unit Numbers  that the client has access to
+## Return the domicile for the given unit_no
 def get_domicile_for_unit_number(unit_no):
     try:
         domicile = NYC_DOTR_UNIT_MAIN.objects.using('M5').get(unit_no=unit_no).domicile
@@ -115,6 +115,39 @@ def get_domicile_for_unit_number(unit_no):
         return {
             "success": False,
             "err": "Exception: FleetDataCollection: get_domicile_for_unit_number(): {}, for unit_no '{}'".format(e, unit_no),
+        }
+
+## Return a list of Unit Numbers that the client has access to
+def get_allowed_list_of_unit_numbers(username):
+    permitted_domcile_list_obj = get_allowed_list_of_domiciles(username)
+    if permitted_domcile_list_obj['success'] == False:
+        return {
+            "success": False,
+            "err": "get_allowed_list_of_unit_numbers(): Cannot find any domicile permissions for '{}': {}".format(username, permitted_domcile_list_obj['err']),
+        }
+    else:
+        permitted_domcile_list = permitted_domcile_list_obj['domicile_list']
+
+    try:
+        unit_number_query = NYC_DOTR_UNIT_MAIN.objects.using('M5').filter(
+            domicile__in=permitted_domcile_list
+        ).order_by('unit_no')
+
+        if unit_number_query.count() > 0:
+            return {
+                "success": True,
+                "err": "",
+                "unit_number_list": [each.unit_no for each in unit_number_query],
+            }
+        return {
+            "success": False,
+            "err": "Cannot find any allowed unit_number for '{}'".format(username),
+        }
+    except Exception as e:
+        print("Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}".format(e))
+        return {
+            "success": False,
+            "err": 'Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}'.format(e),
         }
 
 # Create your views here.
@@ -161,8 +194,15 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
             if self.client_is_admin:
                 driver_type_assigment_entries = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').all().order_by('unit_number')
             else:
-                driver_type_assigment_entries = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').all().order_by('unit_number')
-                #TODO File this thing by domicile related to user # driver_type_assigment_entries = M5DriverVehicleDataConfirmations.filter().order_by('unit_number')
+                allowed_unit_number_list_obj = get_allowed_list_of_unit_numbers(self.request.user)
+                if allowed_unit_number_list_obj['success'] == False:
+                    raise ValueError('get_allowed_list_of_unit_numbers() failed: {}'.format(allowed_unit_number_list_obj['err']))
+                else:
+                    allowed_unit_number_list = allowed_unit_number_list_obj['unit_number_list']
+
+                driver_type_assigment_entries = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').filter(
+                    unit_number__in=allowed_unit_number_list,
+                ).order_by('unit_number')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DriverAndTypeAssignmentConfirmationPageView(): get_queryset(): {}".format(e)
