@@ -129,9 +129,9 @@
                                 $(row).children('[data-column="F-Name"]').text( pms_info[pms]["first_name"])
                             } catch(err) {
                                 console.log(`Error happened when looking up '${pms}' in pms_info object: ${err}`)
-                                $(row).children('[data-column="WU"]').text(     'INACTIVE EMP')
-                                $(row).children('[data-column="L-Name"]').text( 'INACTIVE EMP')
-                                $(row).children('[data-column="F-Name"]').text( 'INACTIVE EMP')
+                                $(row).children('[data-column="WU"]').text(     'INACTIVE')
+                                $(row).children('[data-column="L-Name"]').text( 'INACTIVE')
+                                $(row).children('[data-column="F-Name"]').text( 'INACTIVE')
                             }
                         }
                     });
