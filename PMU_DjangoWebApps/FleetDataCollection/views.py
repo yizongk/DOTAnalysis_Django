@@ -219,7 +219,8 @@ def GetPermittedEmpDataList(request):
 
 
         pms_list_query = TblEmployees.objects.using('Orgchart').filter(
-            wu__in=allowed_wu_list
+            wu__in=allowed_wu_list,
+            lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
         ).order_by('last_name')
 
         pms_list_json_str = list(pms_list_query.values())
@@ -253,7 +254,9 @@ def GetEmpDataList(request):
 
     ## Get the data
     try:
-        pms_list_query = TblEmployees.objects.using('Orgchart').all().order_by('last_name')
+        pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+            lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
+        ).order_by('last_name')
 
         pms_list_json_str = list(pms_list_query.values())
 

@@ -55,6 +55,7 @@ class TblEmployees(models.Model):
     first_name = models.CharField(db_column='F-Name', max_length=255)
     last_name = models.CharField(db_column='L-Name', max_length=255)
     wu = models.CharField(db_column='WU', max_length=4)
+    lv = models.CharField(db_column='Lv', max_length=255)
 
     class Meta:
         managed = False
