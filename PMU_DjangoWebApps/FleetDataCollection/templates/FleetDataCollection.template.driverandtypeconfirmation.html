@@ -19,6 +19,7 @@
         <thead>
             <tr>
                 <th >Vehicle #</th>
+                <th>Domicile</th>
                 <th>Make</th>
                 <th>Model</th>
                 <th>Class (Class)</th>
@@ -35,6 +36,7 @@
             {% for entry in driver_type_assigment_entries %}
             <tr>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="UnitNumber">{{ entry.unit_number }}</td>
+                <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="USING_DEPT_NO"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="MAKE"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="MODEL"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="CLASS1"></td>
@@ -157,6 +159,7 @@
                                     'make': each.make,
                                     'model': each.model,
                                     'class1': each.class1,
+                                    'domicile': each.domicile,
                                 }
                             })
 
@@ -168,6 +171,7 @@
                                         $(row).children('[data-column="MAKE"]').text(   m5_info[unit_number]["make"] )
                                         $(row).children('[data-column="MODEL"]').text(  m5_info[unit_number]["model"])
                                         $(row).children('[data-column="CLASS1"]').text( m5_info[unit_number]["class1"])
+                                        $(row).children('[data-column="USING_DEPT_NO"]').text( m5_info[unit_number]["domicile"])
                                     } catch(err) {
                                         console.log(`Error happened when looking up '${unit_number}' in m5_info object: ${err}`)
                                     }
