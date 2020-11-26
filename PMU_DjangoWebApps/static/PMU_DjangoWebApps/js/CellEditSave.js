@@ -213,8 +213,7 @@ function finishEditMode(td_node, cell_html_type) {
 
 // THIS IS THE ENTRY POINT
 // For its first param, the td_node, and then for its second param, the api_url, and for the third, the cell_html_type. The cell_html_type must either by 'select' or 'input'
-// #@TODO refactor this to use the sentJsonBlobToApi() like sendModalFormDataToServer() and deleteRecordToServer()
-// Return a promise returned by sentJsonBlobToApi(), which should contain the POST response data if the api call was successful
+// Return a promise returned by sentJsonBlobToApi(), which should contain the POST response data if the api call was successful, and also returns the calling td_node, not the node it self, since the node it self is the select list and it's temporary, and it's a child of the td_node, and the td_node is the cell of the table
 async function sendCellToServer( node, api_url, cell_html_type ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("old_value")

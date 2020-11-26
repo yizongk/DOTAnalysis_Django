@@ -234,10 +234,13 @@
                         td_node = promised_data.td_node
                         api_json_response = promised_data.api_json_response
 
-                        // On api success, update the emp info cells of the modified row in the JS DataTable
-                        $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text( pms_info[td_node.html()]['wu'] );
-                        $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text( pms_info[td_node.html()]['last_name'] );
-                        $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text( pms_info[td_node.html()]['first_name'] );
+
+                        if ( td_node.data('column') == 'PMS' ) {
+                            // On api success, update the emp info cells of the modified row in the JS DataTable
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text( pms_info[td_node.html()]['wu'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text( pms_info[td_node.html()]['last_name'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text( pms_info[td_node.html()]['first_name'] );
+                        }
                     }).catch(promise => {
                         console.log(promise);
                         alert(`Something went wrong when calling sendCellToServer(): ${promise.message}`);
