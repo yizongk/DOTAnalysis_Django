@@ -298,7 +298,14 @@ def GetEmpLookUpDataList(request):
             lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
         ).order_by('last_name')
 
-        pms_list_json_str = list(pms_list_query.values())
+        pms_list_json_str = list(pms_list_query.values(
+            'pms'
+            ,'first_name'
+            ,'last_name'
+            ,'lv'
+            ,'wu'
+            ,'wu__subdiv'
+        ))
 
         return JsonResponse({
             "post_success": True,

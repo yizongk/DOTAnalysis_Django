@@ -50,11 +50,26 @@ class M5DriverVehicleDataConfirmations(models.Model):
     def __str__(self):
         return self.unit_number
 
+class TblWorkUnitDivisionJoeSubs(models.Model):
+    id = models.AutoField(db_column='ID', primary_key=True)
+    wu = models.CharField(db_column='WU', max_length=4, unique=True)
+    div = models.CharField(db_column='DIV', max_length=255)
+    wu_desc = models.CharField(db_column='Work Unit Description', max_length=255)
+    div_group = models.CharField(db_column='Division Group', max_length=255)
+    subdiv = models.CharField(db_column='SubDivision', max_length=255)
+
+    class Meta:
+        managed = False
+        db_table = 'tblWorkUnitDivisionJoeSubs'
+
+    def __str__(self):
+        return self.subdiv
+
 class TblEmployees(models.Model):
     pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
     first_name = models.CharField(db_column='F-Name', max_length=255)
     last_name = models.CharField(db_column='L-Name', max_length=255)
-    wu = models.CharField(db_column='WU', max_length=4)
+    wu = models.ForeignKey(db_column='WU', to='TblWorkUnitDivisionJoeSubs', to_field='wu', on_delete=models.DO_NOTHING)
     lv = models.CharField(db_column='Lv', max_length=255)
 
     class Meta:
