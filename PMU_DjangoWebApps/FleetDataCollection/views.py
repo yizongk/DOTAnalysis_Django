@@ -418,7 +418,12 @@ def UpdateM5DriverVehicleDataConfirmations(request):
 
             row.pms = new_value
         elif column == 'Class2':
-            row.class2 = new_value
+            if new_value == 'Commuter':
+                row.class2 = True
+            elif new_value == 'Non-Commuter':
+                row.class2 = False
+            else:
+                row.class2 = None
         else:
             raise ValueError("FleetDataCollection: UpdateM5DriverVehicleDataConfirmations():\n\nError: Unsupported column: '{}'".format(column))
 

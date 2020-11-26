@@ -37,7 +37,7 @@
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="MODEL"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="CLASS1"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="UnitNumber">{{ entry.unit_number }}</td>
-                <td class="editable-select" data-id="{{ entry.unit_number }}" data-table="FleetDataCollectionM5DriverVehicleDataConfirmations" data-column="Class2">{{ entry.class2 }}</td>
+                <td class="editable-select" data-id="{{ entry.unit_number }}" data-table="FleetDataCollectionM5DriverVehicleDataConfirmations" data-column="Class2">{% if entry.class2 is True %}Commuter{% elif entry.class2 is False %}Non-Commuter{% else %}None{% endif %}</td>
                 <td class="editable-select" data-id="{{ entry.unit_number }}" data-table="FleetDataCollectionM5DriverVehicleDataConfirmations" data-column="PMS">{{ entry.pms }}</td>
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="WU"></td>
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="L-Name"></td>
@@ -195,7 +195,7 @@
                     select_list_values = ['None']
                     select_list_values = select_list_values.concat(select_permitted_pms_list)
                 } else if ( $(this).data('column') == 'Class2' ) {
-                    select_list_values = ['None', 'True', 'False']
+                    select_list_values = ['None', 'Commuter', 'Non-Commuter']
                 } else {
                     console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
                     alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
