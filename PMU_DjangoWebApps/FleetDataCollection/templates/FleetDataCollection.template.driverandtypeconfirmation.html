@@ -27,6 +27,7 @@
                 <th>WU</th>
                 <th>Last Name</th>
                 <th>First Name</th>
+                <th>Sub Div</th>
             </tr>
         </thead>
 
@@ -42,6 +43,7 @@
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="WU"></td>
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="L-Name"></td>
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="F-Name"></td>
+                <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblWorkUnitDivisionJoeSubs" data-column="SubDivision"></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -116,6 +118,7 @@
                             'wu': each.wu,
                             'last_name': each.last_name,
                             'first_name': each.first_name,
+                            'subdiv': each.wu__subdiv,
                         }
                     })
 
@@ -124,14 +127,16 @@
                         let pms = $(row).children('[data-column="WU"]').data('entrypms')
                         if (pms != 'None') {
                             try {
-                                $(row).children('[data-column="WU"]').text(     pms_info[pms]["wu"] )
-                                $(row).children('[data-column="L-Name"]').text( pms_info[pms]["last_name"])
-                                $(row).children('[data-column="F-Name"]').text( pms_info[pms]["first_name"])
+                                $(row).children('[data-column="WU"]').text(             pms_info[pms]["wu"] )
+                                $(row).children('[data-column="L-Name"]').text(         pms_info[pms]["last_name"])
+                                $(row).children('[data-column="F-Name"]').text(         pms_info[pms]["first_name"])
+                                $(row).children('[data-column="SubDivision"]').text(    pms_info[pms]["subdiv"])
                             } catch(err) {
                                 console.log(`Error happened when looking up '${pms}' in pms_info object: ${err}`)
-                                $(row).children('[data-column="WU"]').text(     'INACTIVE')
-                                $(row).children('[data-column="L-Name"]').text( 'INACTIVE')
-                                $(row).children('[data-column="F-Name"]').text( 'INACTIVE')
+                                $(row).children('[data-column="WU"]').text(             'INACTIVE')
+                                $(row).children('[data-column="L-Name"]').text(         'INACTIVE')
+                                $(row).children('[data-column="F-Name"]').text(         'INACTIVE')
+                                $(row).children('[data-column="SubDivision"]').text(    'INACTIVE')
                             }
                         }
                     });
@@ -237,14 +242,16 @@
 
                         // On api success, update the emp info cells of the modified row in the JS DataTable
                         if ( td_node.data('column') == 'PMS' && td_node.text() == 'None' ) {  // To prevent accessing pms_info['None'], which will cause an error because there's no key 'None' in pms_info object
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text('');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text('');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text('');
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          '');
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      '');
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      '');
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( '');
                         }
                         else if ( td_node.data('column') == 'PMS' ) {
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text( pms_info[td_node.html()]['wu'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text( pms_info[td_node.html()]['last_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text( pms_info[td_node.html()]['first_name'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          pms_info[td_node.html()]['wu'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      pms_info[td_node.html()]['last_name'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      pms_info[td_node.html()]['first_name'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( pms_info[td_node.html()]['subdiv'] );
                         }
                     }).catch(promise => {
                         console.log(promise);
