@@ -23,6 +23,7 @@
                 <th>Make</th>
                 <th>Model</th>
                 <th>Class (Class)</th>
+                <th>Location</th>
                 <th class="light-blue">Assignment Type</th>
                 <th class="light-blue">PMS</th>
                 <th>WU</th>
@@ -40,6 +41,7 @@
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="MAKE"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="MODEL"></td>
                 <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="CLASS1"></td>
+                <td data-entryunitnumber="{{ entry.unit_number }}" data-table="NYC_DOTR_UNIT_MAIN" data-column="PARKING_LOC_NAME"></td>
                 <td class="editable-select" data-id="{{ entry.unit_number }}" data-table="FleetDataCollectionM5DriverVehicleDataConfirmations" data-column="Class2">{% if entry.class2 is True %}Commuter{% elif entry.class2 is False %}Non-Commuter{% else %}None{% endif %}</td>
                 <td class="editable-select" data-id="{{ entry.unit_number }}" data-table="FleetDataCollectionM5DriverVehicleDataConfirmations" data-column="PMS">{{ entry.pms }}</td>
                 <td data-entrypms="{{ entry.pms }}" data-id="{{ entry.unit_number }}" data-table="tblEmployees" data-column="WU"></td>
@@ -59,6 +61,9 @@
 
     <script>
         $(document).ready( function () {
+            // Reset the default viewport from css class container to container-fluid
+            $(".container").attr('class', 'container-fluid')
+
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
                     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -160,6 +165,7 @@
                                     'model': each.model,
                                     'class1': each.class1,
                                     'domicile': each.domicile,
+                                    'parking_loc_name': each.parking_loc_name,
                                 }
                             })
 
@@ -172,6 +178,7 @@
                                         $(row).children('[data-column="MODEL"]').text(  m5_info[unit_number]["model"])
                                         $(row).children('[data-column="CLASS1"]').text( m5_info[unit_number]["class1"])
                                         $(row).children('[data-column="USING_DEPT_NO"]').text( m5_info[unit_number]["domicile"])
+                                        $(row).children('[data-column="PARKING_LOC_NAME"]').text( m5_info[unit_number]["parking_loc_name"])
                                     } catch(err) {
                                         console.log(`Error happened when looking up '${unit_number}' in m5_info object: ${err}`)
                                     }

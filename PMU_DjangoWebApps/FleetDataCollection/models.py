@@ -85,6 +85,7 @@ class NYC_DOTR_UNIT_MAIN(models.Model):
     make = models.CharField(db_column='MAKE', max_length=30)
     model = models.CharField(db_column='MODEL', max_length=30)
     domicile = models.CharField(db_column='USING_DEPT_NO', max_length=30)
+    parking_loc_name = models.CharField(db_column='PARKING_LOC_NAME', max_length=40)
 
     class Meta:
         managed = False
