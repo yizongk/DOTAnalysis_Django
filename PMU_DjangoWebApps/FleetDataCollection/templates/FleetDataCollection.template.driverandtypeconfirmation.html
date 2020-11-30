@@ -186,7 +186,15 @@
                             });
 
                             // FINIALLY INITIATE THE JS DATATABLE
-                            table = $('#JSDataTable').DataTable();
+                            table = $('#JSDataTable').DataTable({
+                                dom: 'Bfstip',
+                                buttons: [
+                                    {
+                                        extend: 'csv',
+                                        text: 'Download as CSV',
+                                    }
+                                ]
+                            });
                         }
                     }).fail(function(json_response) {
                         var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
