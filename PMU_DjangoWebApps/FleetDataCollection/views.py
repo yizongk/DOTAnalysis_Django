@@ -246,22 +246,39 @@ def GetPermittedEmpDataList(request):
             "post_msg": "FleetDataCollection: GetPermittedEmpDataList():\n\nUNAUTHENTICATE USER!",
         })
 
+    client_is_admin = None
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        client_is_admin = True
+    elif is_active_admin["success"] == False:
+        client_is_admin = False
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "FleetDataCollection: GetPermittedEmpDataList(): Unhandled case: user_is_active_admin() returned a none boolean."
+        })
+
     ## Get the data
     try:
-        allowed_wu_list_response = get_allowed_list_of_wu(remote_user)
-        if allowed_wu_list_response['success'] == False:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "Error: FleetDataCollection: GetPermittedEmpDataList():\n\nFailed to get list of WU permissions: {}".format(allowed_wu_list_response['err']),
-            })
+        if client_is_admin == True:
+            pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+                lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
+            ).order_by('last_name')
         else:
-            allowed_wu_list = allowed_wu_list_response['wu_list']
+            allowed_wu_list_response = get_allowed_list_of_wu(remote_user)
+            if allowed_wu_list_response['success'] == False:
+                return JsonResponse({
+                    "post_success": False,
+                    "post_msg": "Error: FleetDataCollection: GetPermittedEmpDataList():\n\nFailed to get list of WU permissions: {}".format(allowed_wu_list_response['err']),
+                })
+            else:
+                allowed_wu_list = allowed_wu_list_response['wu_list']
 
 
-        pms_list_query = TblEmployees.objects.using('Orgchart').filter(
-            wu__in=allowed_wu_list,
-            lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
-        ).order_by('last_name')
+            pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+                wu__in=allowed_wu_list,
+                lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
+            ).order_by('last_name')
 
         pms_list_json_str = list(pms_list_query.values())
 
@@ -376,7 +393,7 @@ def UpdateM5DriverVehicleDataConfirmations(request):
     else:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Unhandled case: user_is_active_admin() returned a none boolean."
+            "post_msg": "FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): Unhandled case: user_is_active_admin() returned a none boolean."
         })
 
     ## Read the json request body
