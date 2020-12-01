@@ -367,6 +367,18 @@ def UpdateM5DriverVehicleDataConfirmations(request):
             "post_msg": "FleetDataCollection: UpdateM5DriverVehicleDataConfirmations():\n\nUNAUTHENTICATE USER!",
         })
 
+    client_is_admin = None
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        client_is_admin = True
+    elif is_active_admin["success"] == False:
+        client_is_admin = False
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Unhandled case: user_is_active_admin() returned a none boolean."
+        })
+
     ## Read the json request body
     try:
         json_blob = json.loads(request.body)
@@ -394,21 +406,25 @@ def UpdateM5DriverVehicleDataConfirmations(request):
     ## Save the data
     try:
 
-        ## make sure client has permission to the domicile for current row
-        domicile_for_row_obj = get_domicile_for_unit_number(id)
-        if domicile_for_row_obj['success'] == False:
-            raise ValueError( 'Exception: FleetDataCollection: get_domicile_for_unit_number(): {}'.format(domicile_for_row_obj['err']) )
+        ## If client is not admin, make sure client has permission to the domicile for current row
+        if client_is_admin == True:
+            ## Important that you check client_is_admin == True, since it could possible be False or None, where the former means client is not admin, and the latter means something functions failed and was unhandled.
+            pass
         else:
-            domicile_for_row = domicile_for_row_obj['domicile']
+            domicile_for_row_obj = get_domicile_for_unit_number(id)
+            if domicile_for_row_obj['success'] == False:
+                raise ValueError( 'Exception: FleetDataCollection: get_domicile_for_unit_number(): {}'.format(domicile_for_row_obj['err']) )
+            else:
+                domicile_for_row = domicile_for_row_obj['domicile']
 
-        permitted_domcile_list_obj = get_allowed_list_of_domiciles(remote_user)
-        if permitted_domcile_list_obj['success'] == False:
-            raise ValueError( 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(permitted_domcile_list_obj['err']) )
-        else:
-            permitted_domcile_list = permitted_domcile_list_obj['domicile_list']
+            permitted_domcile_list_obj = get_allowed_list_of_domiciles(remote_user)
+            if permitted_domcile_list_obj['success'] == False:
+                raise ValueError( 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(permitted_domcile_list_obj['err']) )
+            else:
+                permitted_domcile_list = permitted_domcile_list_obj['domicile_list']
 
-        if domicile_for_row not in permitted_domcile_list:
-            raise ValueError("Client '{}' does not have permission for Domicile '{}' for Unit No '{}'".format(remote_user, domicile_for_row, id))
+            if domicile_for_row not in permitted_domcile_list:
+                raise ValueError("Client '{}' does not have permission for Domicile '{}' for Unit No '{}'".format(remote_user, domicile_for_row, id))
 
         row = M5DriverVehicleDataConfirmations.objects.using('FleetDataCollection').get(unit_number=id)
         if column == 'PMS':
