@@ -447,14 +447,19 @@ def UpdateM5DriverVehicleDataConfirmations(request):
         if column == 'PMS':
             ## make sure client has permission to the requested pms
             if new_value is not None:
-                permitted_pms_list_obj = get_allowed_list_of_pms(remote_user)
-                if permitted_pms_list_obj['success'] == False:
-                    raise ValueError(permitted_pms_list_obj['err'])
+                ## If client is not admin, make sure client has permission to the pms for current row
+                if client_is_admin == True:
+                    ## Important that you check client_is_admin == True, since it could possible be False or None, where the former means client is not admin, and the latter means something functions failed and was unhandled.
+                    pass
                 else:
-                    permitted_pms_list = permitted_pms_list_obj['pms_list']
+                    permitted_pms_list_obj = get_allowed_list_of_pms(remote_user)
+                    if permitted_pms_list_obj['success'] == False:
+                        raise ValueError(permitted_pms_list_obj['err'])
+                    else:
+                        permitted_pms_list = permitted_pms_list_obj['pms_list']
 
-                if new_value not in permitted_pms_list:
-                    raise ValueError("Client '{}' does not have permission for PMS '{}'".format(remote_user, new_value))
+                    if new_value not in permitted_pms_list:
+                        raise ValueError("Client '{}' does not have permission for PMS '{}'".format(remote_user, new_value))
 
             row.pms = new_value
         elif column == 'Class2':
