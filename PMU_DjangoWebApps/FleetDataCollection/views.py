@@ -233,6 +233,48 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
             context["client_is_admin"] = False
             return context
 
+class AdminPanelPageView(generic.ListView):
+    template_name = 'FleetDataCollection.template.adminpanel.html'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        ## Check for Active Admins
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            print(self.err_msg)
+            return
+
+        self.req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
 ## Returns a list of json objects with respect to client wu permission, each json object is a row in the tblEmployees, containing pms, first_name, last_name and wu
 def GetPermittedEmpDataList(request):
     ## Authenticate User
