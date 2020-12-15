@@ -526,3 +526,419 @@ def UpdateM5DriverVehicleDataConfirmations(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
+
+
+
+
+
+
+
+
+
+
+class WuPermissionsPanelPageView(generic.ListView):
+    template_name = 'FleetDataCollection.template.wupermissionspanel.html'
+    context_object_name = 'permission_data_entries'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        ## Check for Active Admins
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "WuPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            print(self.err_msg)
+            return WUPermissions.objects.none()
+
+        ## Get the permissions data
+        try:
+            permission_data_entries = WUPermissions.objects.using('FleetDataCollection').all().order_by('window_username')
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return WUPermissions.objects.none()
+
+        self.req_success = True
+        return permission_data_entries
+
+    def get_context_data(self, **kwargs):
+        try:
+            ## Call the base implementation first to get a context
+            context = super().get_context_data(**kwargs)
+
+            ## Finally, setting the context variables
+            ## Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+
+            return context
+
+# ## Post request - for single cell edits
+# def WUPermissionsPanelApiUpdateData(request):
+#     ## Read the json request body
+#     try:
+#         json_blob = json.loads(request.body)
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
+#         })
+
+#     try:
+#         id = json_blob['id']
+#         table = json_blob['table']
+#         column = json_blob['column']
+#         new_value = json_blob['new_value']
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nError: {}".format(e),
+#         })
+
+#     ## Authenticate User
+#     remote_user = None
+#     if request.user.is_authenticated:
+#         remote_user = request.user.username
+#     else:
+#         print('Warning: WUPermissionsPanelApiUpdateData(): UNAUTHENTICATE USER!')
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
+#             "post_data": None,
+#         })
+
+#     ## Check active user
+#     is_active_user = user_is_active_user(request.user)
+#     if is_active_user["success"] == True:
+#         pass
+#     else:
+#         print("WUPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
+#             "post_data": None,
+#         })
+
+#     ## Check active admin
+#     is_active_admin = user_is_active_admin(request.user)
+#     if is_active_admin["success"] == True:
+#         pass
+#     else:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiUpdateData(): {}".format(is_active_admin["err"]),
+#             "post_data": None,
+#         })
+
+#     ## Save the data
+#     if table == "Users":
+
+#         ## Make sure new_value is convertable to its respective data type
+#         if column == "Active_User":
+#             try:
+#                 new_value = bool(new_value)
+#             except Exception as e:
+#                 print("Error: WUPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+#                 return JsonResponse({
+#                     "post_success": False,
+#                     "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+#                 })
+#         else:
+#             try:
+#                 new_value = str(new_value)
+#             except Exception as e:
+#                 print("Error: WUPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+#                 return JsonResponse({
+#                     "post_success": False,
+#                     "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+#                 })
+
+#         ## Save the value
+#         try:
+#             row = WUPermissions.objects.get(user_permission_id=id)
+#             if column == "Login":
+#                 try:
+#                     user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+#                     row.user = user_obj
+
+#                     row.save()
+
+#                     # # Temp
+#                     # return JsonResponse({
+#                     #     "post_success": False,
+#                     #     "post_msg": "trying to save: '{}'".format(new_value),
+#                     # })
+
+#                     print("Api Log: WUPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+#                     return JsonResponse({
+#                         "post_success": True,
+#                         "post_msg": "",
+#                     })
+#                 except Exception as e:
+#                     print("Error: WUPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+#                     return JsonResponse({
+#                         "post_success": False,
+#                         "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+#                     })
+#         except Exception as e:
+#             print("Error: WUPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+#             })
+
+#     # elif table == "":
+#     #     pass
+
+
+#     print("Warning: WUPermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+#     return JsonResponse({
+#         "post_success": False,
+#         "post_msg": "Warning: WUPermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+#     })
+
+# ## For form add row
+# def WUPermissionsPanelApiAddRow(request):
+#     """
+#         Expects the post request to post a JSON object, and that it will contain login_selection and category_selection. Like so:
+#         {
+#             login_selection: "Some value",
+#             category_selection: "Some other value"
+#         }
+#         Will create a new row in the Permissions table with the selected login and category
+#     """
+
+#     ## Authenticate User
+#     remote_user = None
+#     if request.user.is_authenticated:
+#         remote_user = request.user.username
+#     else:
+#         print('Warning: WUPermissionsPanelApiAddRow(): UNAUTHENTICATE USER!')
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
+#         })
+
+#     ## Check active user
+#     is_active_user = user_is_active_user(request.user)
+#     if is_active_user["success"] == True:
+#         pass
+#     else:
+#         print("WUPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]))
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]),
+#         })
+
+#     ## Check active admin
+#     is_active_admin = user_is_active_admin(request.user)
+#     if is_active_admin["success"] == True:
+#         pass
+#     else:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiAddRow(): {}".format(is_active_admin["err"]),
+#         })
+
+#     ## Read the json request body
+#     try:
+#         json_blob = json.loads(request.body)
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
+#         })
+
+#     ## Check login_selection and category_selection is not empty string
+#     try:
+#         login_selection = json_blob['login_selection']
+#         category_selection = json_blob['category_selection']
+
+#         if login_selection == "":
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "login_selection cannot be an empty string".format(login_selection, category_selection),
+#             })
+
+#         if category_selection == "":
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "category_selection cannot be an empty string".format(login_selection, category_selection),
+#             })
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+#         })
+
+#     ## Check that the login_selection and category_selection exists
+#     try:
+#         if not Users.objects.filter(login__exact=login_selection, active_user__exact=True).exists():
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "'{}' doesn't exists or it's not an active user".format(login_selection),
+#             })
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow(): {}".format(e),
+#         })
+
+#     try:
+#          if not Category.objects.filter(category_name__exact=category_selection).exists():
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "'{}' doesn't exists as a Category".format(category_selection),
+#             })
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow(): {}".format(e),
+#         })
+
+#     ## Check for duplication of login and category
+#     try:
+#         if WUPermissions.objects.filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "'{}' already has access to '{}'".format(login_selection, category_selection),
+#             })
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow(): {}".format(e),
+#         })
+
+#     ## Create the row!
+#     try:
+#         user_obj = Users.objects.get(login=login_selection, active_user=True)
+#         category_obj = Category.objects.get(category_name=category_selection)
+#         new_permission = WUPermissions(user=user_obj, category=category_obj)
+#         new_permission.save()
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiAddRow(): {}".format(e),
+#         })
+
+#     return JsonResponse({
+#         "post_success": True,
+#         "post_msg": "",
+#         "permission_id": new_permission.user_permission_id,
+#         "first_name": user_obj.first_name,
+#         "last_name": user_obj.last_name,
+#         "active_user": user_obj.active_user,
+#         "login": user_obj.login,
+#         "category_name": category_obj.category_name,
+#     })
+
+# ## For JS datatable delete row
+# def WUPermissionsPanelApiDeleteRow(request):
+#     """
+#         Expects the post request to post a JSON object, and that it will contain user_permission_id. Like so:
+#         {
+#             user_permission_id: "Some value"
+#         }
+#         Will delete row in the Permissions table with the given user_permission_id
+#     """
+
+#     ## Authenticate User
+#     remote_user = None
+#     if request.user.is_authenticated:
+#         remote_user = request.user.username
+#     else:
+#         print('Warning: WUPermissionsPanelApiDeleteRow(): UNAUTHENTICATE USER!')
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiDeleteRow():\n\nUNAUTHENTICATE USER!",
+#         })
+
+#     ## Check active user
+#     is_active_user = user_is_active_user(request.user)
+#     if is_active_user["success"] == True:
+#         pass
+#     else:
+#         print("WUPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]))
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]),
+#         })
+
+#     ## Check active admin
+#     is_active_admin = user_is_active_admin(request.user)
+#     if is_active_admin["success"] == True:
+#         pass
+#     else:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "WUPermissionsPanelApiDeleteRow(): {}".format(is_active_admin["err"]),
+#         })
+
+#     ## Read the json request body
+#     try:
+#         json_blob = json.loads(request.body)
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiDeleteRow():\n\nUnable to load request.body as a json object: {}".format(e),
+#         })
+
+#     ## Make sure user_permission_id is convertable to a unsign int
+#     try:
+#         user_permission_id = json_blob['user_permission_id']
+
+#         try:
+#             user_permission_id = int(user_permission_id)
+#         except Exception as e:
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "user_permission_id cannot be converted to an int: '{}'".format(user_permission_id),
+#             })
+
+#         if user_permission_id <= 0:
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "user_permission_id is less than or equal to zero: '{}'".format(user_permission_id),
+#             })
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+#         })
+
+#     ## Remove the permission row
+#     try:
+#         permission_row = WUPermissions.objects.get(user_permission_id=user_permission_id)
+#         permission_row.delete()
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: WUPermissionsPanelApiDeleteRow():\n\nFailed to remove user_permission_id '{}' from database: '{}'".format(user_permission_id, e),
+#         })
+
+#     return JsonResponse({
+#         "post_success": True,
+#         "post_msg": "",
+#     })
