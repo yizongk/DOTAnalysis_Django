@@ -219,7 +219,8 @@
                     select_list_values = ['None']
                     select_list_values = select_list_values.concat(select_permitted_pms_list)
                 } else if ( $(this).data('column') == 'Class2' ) {
-                    select_list_values = ['None', 'Commuter', 'Non-Commuter']
+                    //select_list_values = ['None', 'Commuter', 'Non-Commuter']
+                    select_list_values = ['Commuter', 'Non-Commuter']
                 } else {
                     console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
                     alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
