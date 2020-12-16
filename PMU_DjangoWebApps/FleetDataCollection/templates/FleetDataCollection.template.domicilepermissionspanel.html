@@ -9,7 +9,7 @@
 {% block content %}
     <div class="navbar navbar-expand-lg">
         <h2 class="mt-3">
-            Work Unit Permissions Panel
+            Domicile Permissions Panel
         </h2>
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
@@ -31,13 +31,13 @@
                             <input type="text" id="modalNewRowFormLoginInput" class="form-control">
                         </div>
 
-                        <div>Select Division</div>
-                        <div id="modalNewRowFormDivisionSelectBorder" class="md-form mb-4">
-                            <select id="modalNewRowFormDivisionSelect" class="browser-default custom-select">
+                        <div>Select Domicile</div>
+                        <div id="modalNewRowFormDomicileSelectBorder" class="md-form mb-4">
+                            <select id="modalNewRowFormDomicileSelect" class="browser-default custom-select">
                                 <option></option>
 
-                                {% for each in division_list %}
-                                <option>{{ each.div_group }}</option>
+                                {% for each in domicile_list %}
+                                <option>{{ each.domicile }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -61,7 +61,7 @@
         <thead>
             <tr>
                 <th>Windows Username</th>
-                <th>WU</th>
+                <th>Domicile</th>
                 <th>Delete?</th>
             </tr>
         </thead>
@@ -69,9 +69,9 @@
         <tbody>
             {% for entry in permission_data_entries %}
             <tr>
-                <td data-id="{{ entry.wu_permission_id }}" data-table="FleetDataCollectionWUPermissions" data-column="WindowUsername">{{ entry.window_username }}</td>
-                <td data-id="{{ entry.wu_permission_id }}" data-table="FleetDataCollectionWUPermissions" data-column="WU">{{ entry.wu }}</td>
-                <td class="text-center" data-id="{{ entry.wu_permission_id }}" ></td>
+                <td data-id="{{ entry.domicile_permission_id }}" data-table="FleetDataCollectionDomicilePermissions" data-column="WindowUsername">{{ entry.window_username }}</td>
+                <td data-id="{{ entry.domicile_permission_id }}" data-table="FleetDataCollectionDomicilePermissions" data-column="Domicile">{{ entry.domicile }}</td>
+                <td class="text-center" data-id="{{ entry.domicile_permission_id }}" ></td>
             </tr>
             {% endfor %}
         </tbody>
@@ -136,10 +136,10 @@
 
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
-                if (confirm(`Are you sure you want to delete '${$(this).parent().parent().find(`[data-column='WU']`).html()}' from '${$(this).parent().parent().find(`[data-column='WindowUsername']`).html()}'?`)) {
-                    wu_permission_id = $(this).parent().attr('data-id')
+                if (confirm(`Are you sure you want to delete '${$(this).parent().parent().find(`[data-column='Domicile']`).html()}' from '${$(this).parent().parent().find(`[data-column='WindowUsername']`).html()}'?`)) {
+                    domicile_permission_id = $(this).parent().attr('data-id')
                     json_blob = {
-                        'wu_permission_id': wu_permission_id
+                        'domicile_permission_id': domicile_permission_id
                     }
 
                     props = {
@@ -147,7 +147,7 @@
                         'tr_row': $(this).parent().parent()
                     }
 
-                    deleteRecordToServer( json_blob, 'wu_permissions_delete_row', function(json_response, props) {
+                    deleteRecordToServer( json_blob, 'domicile_permissions_delete_row', function(json_response, props) {
                         // successful api call
                         table = props['table']
                         tr_row = props['tr_row']
@@ -168,47 +168,47 @@
 
             $('#modalNewRowFormAddButton').on("click", function() {
                 let loginSelect = $("#modalNewRowFormLoginInput").val()
-                let divisionSelect = $("#modalNewRowFormDivisionSelect").val()
+                let domicileSelect = $("#modalNewRowFormDomicileSelect").val()
 
                 $('#modalNewRowFormLoginSelectBorder').css("border", "")
-                $('#modalNewRowFormDivisionSelectBorder').css("border", "")
+                $('#modalNewRowFormDomicileSelectBorder').css("border", "")
 
                 if (loginSelect == '') {
                     $('#modalNewRowFormLoginSelectBorder').css("border", "2px solid red")
                     return
                 }
 
-                if (divisionSelect == '') {
-                    $('#modalNewRowFormDivisionSelectBorder').css("border", "2px solid red")
+                if (domicileSelect == '') {
+                    $('#modalNewRowFormDomicileSelectBorder').css("border", "2px solid red")
                     return
                 }
 
                 json_blob = {
                     "login_selection": loginSelect,
-                    "division_selection": divisionSelect,
+                    "domicile_selection": domicileSelect,
                 }
 
-                sendModalFormDataToServer( json_blob, "wu_permissions_add_division_group", function(json_response) {
-                    alert(`'${loginSelect}' granted access to '${divisionSelect}' successfully!`)
+                sendModalFormDataToServer( json_blob, "domicile_permissions_add_row", function(json_response) {
+                    alert(`'${loginSelect}' granted access to '${domicileSelect}' successfully!`)
 
                     let new_rows = json_response.new_rows_list_of_json
 
                     new_rows.forEach(function(each_row, index) {
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ each_row.window_username, each_row.wu, ] )
+                        var rowNode = table.row.add( [ each_row.window_username, each_row.domicile, ] )
                         .draw()
                         .node();
 
                         // Add permission_id to all child cells
-                        $(rowNode).children().attr("data-id", each_row.wu_permission_id);
+                        $(rowNode).children().attr("data-id", each_row.domicile_permission_id);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
-                                $(childNode).attr("data-table", "FleetDataCollectionWUPermissions")
+                                $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
                                 $(childNode).attr("data-column", "WindowUsername")
                             } else if (index == 1) {
-                                $(childNode).attr("data-table", "FleetDataCollectionWUPermissions")
-                                $(childNode).attr("data-column", "WU")
+                                $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
+                                $(childNode).attr("data-column", "Domicile")
                             } else if (index == 2) {
                                 // Nothing to add for the Delete icon
                             } else {

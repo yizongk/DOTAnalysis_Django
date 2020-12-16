@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, DriverAndTypeAssignmentConfirmationPageView, GetPermittedEmpDataList, UpdateM5DriverVehicleDataConfirmations, GetM5LookUpDataList, GetEmpLookUpDataList, AdminPanelPageView, WuPermissionsPanelPageView, WUPermissionsPanelApiAddDivisionGroup, WUPermissionsPanelApiDeleteRow
+from .views import HomePageView, AboutPageView, ContactPageView, DriverAndTypeAssignmentConfirmationPageView, GetPermittedEmpDataList, UpdateM5DriverVehicleDataConfirmations, GetM5LookUpDataList, GetEmpLookUpDataList, AdminPanelPageView, WuPermissionsPanelPageView, WUPermissionsPanelApiAddDivisionGroup, WUPermissionsPanelApiDeleteRow, DomicilePermissionsPanelPageView, DomicilePermissionsPanelApiAddRow, DomicilePermissionsPanelApiDeleteRow
 urlpatterns = [
 
     path('', HomePageView.as_view(), name='fleetdatacollection_home_view'),
@@ -15,5 +15,8 @@ urlpatterns = [
     path('wupermissionspanel', WuPermissionsPanelPageView.as_view(), name='fleetdatacollection_wupermissionspanel_view'),
     path('wu_permissions_add_division_group', views.WUPermissionsPanelApiAddDivisionGroup, name='fleetdatacollection_wu_permissions_add_division_group'),
     path('wu_permissions_delete_row', views.WUPermissionsPanelApiDeleteRow, name='fleetdatacollection_wu_permissions_delete_row'),
+    path('domicilepermissionspanel', DomicilePermissionsPanelPageView.as_view(), name='fleetdatacollection_domicilepermissionspanel_view'),
+    path('domicile_permissions_add_row', views.DomicilePermissionsPanelApiAddRow, name='fleetdatacollection_domicile_permissions_add_row'),
+    path('domicile_permissions_delete_row', views.DomicilePermissionsPanelApiDeleteRow, name='fleetdatacollection_domicile_permissions_delete_row'),
 
 ]

@@ -568,8 +568,7 @@ class WuPermissionsPanelPageView(generic.ListView):
             print(self.err_msg)
             return WUPermissions.objects.none()
 
-        ## Get the existing wu data from tblEmployees
-        ## Get the active users login list
+        ## Get the existing wu permission data from tblEmployees
         try:
             self.division_list = TblWorkUnitDivisionJoeSubs.objects.using('Orgchart').exclude(div_group__isnull=True).values('div_group').distinct()
         except Exception as e:
@@ -908,6 +907,394 @@ def WUPermissionsPanelApiDeleteRow(request):
         return JsonResponse({
             "post_success": False,
             "post_msg": "Error: WUPermissionsPanelApiDeleteRow():\n\nFailed to remove wu_permission_id '{}' from database: '{}'".format(wu_permission_id, e),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "",
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DomicilePermissionsPanelPageView(generic.ListView):
+    template_name = 'FleetDataCollection.template.domicilepermissionspanel.html'
+    context_object_name = 'permission_data_entries'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    domicile_list = []
+
+    def get_queryset(self):
+        ## Check for Active Admins
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["success"] == True:
+            self.client_is_admin = True
+        else:
+            self.req_success = False
+            self.err_msg = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            print(self.err_msg)
+            return WUPermissions.objects.none()
+
+        ## Get the permissions data
+        try:
+            permission_data_entries = DomicilePermissions.objects.using('FleetDataCollection').all().order_by('window_username')
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return DomicilePermissions.objects.none()
+
+        ## Get the existing domicile permission data from tblEmployees
+        try:
+            self.domicile_list = NYC_DOTR_UNIT_MAIN.objects.using('M5').filter(status__in=['A', 'R']).values('domicile').distinct()
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return DomicilePermissions.objects.none()
+
+        self.req_success = True
+        return permission_data_entries
+
+    def get_context_data(self, **kwargs):
+        try:
+            ## Call the base implementation first to get a context
+            context = super().get_context_data(**kwargs)
+
+            ## Finally, setting the context variables
+            ## Add my own variables to the context for the front end to shows
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["domicile_list"] = self.domicile_list
+
+            context["client_is_admin"] = self.client_is_admin
+
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["domicile_list"] = []
+
+            context["client_is_admin"] = False
+
+            return context
+
+# ## Post request - for single cell edits
+# def DomicilePermissionsPanelApiUpdateData(request):
+#     ## Read the json request body
+#     try:
+#         json_blob = json.loads(request.body)
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
+#         })
+
+#     try:
+#         id = json_blob['id']
+#         table = json_blob['table']
+#         column = json_blob['column']
+#         new_value = json_blob['new_value']
+#     except Exception as e:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nError: {}".format(e),
+#         })
+
+#     ## Authenticate User
+#     remote_user = None
+#     if request.user.is_authenticated:
+#         remote_user = request.user.username
+#     else:
+#         print('Warning: DomicilePermissionsPanelApiUpdateData(): UNAUTHENTICATE USER!')
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "DomicilePermissionsPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
+#             "post_data": None,
+#         })
+
+#     ## Check active user
+#     is_active_user = user_is_active_user(request.user)
+#     if is_active_user["success"] == True:
+#         pass
+#     else:
+#         print("DomicilePermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "DomicilePermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
+#             "post_data": None,
+#         })
+
+#     ## Check active admin
+#     is_active_admin = user_is_active_admin(request.user)
+#     if is_active_admin["success"] == True:
+#         pass
+#     else:
+#         return JsonResponse({
+#             "post_success": False,
+#             "post_msg": "DomicilePermissionsPanelApiUpdateData(): {}".format(is_active_admin["err"]),
+#             "post_data": None,
+#         })
+
+#     ## Save the data
+#     if table == "Users":
+
+#         ## Make sure new_value is convertable to its respective data type
+#         if column == "Active_User":
+#             try:
+#                 new_value = bool(new_value)
+#             except Exception as e:
+#                 print("Error: DomicilePermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
+#                 return JsonResponse({
+#                     "post_success": False,
+#                     "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
+#                 })
+#         else:
+#             try:
+#                 new_value = str(new_value)
+#             except Exception as e:
+#                 print("Error: DomicilePermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
+#                 return JsonResponse({
+#                     "post_success": False,
+#                     "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
+#                 })
+
+#         ## Save the value
+#         try:
+#             row = DomicilePermissions.objects.get(user_permission_id=id)
+#             if column == "Login":
+#                 try:
+#                     user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+#                     row.user = user_obj
+
+#                     row.save()
+
+#                     # # Temp
+#                     # return JsonResponse({
+#                     #     "post_success": False,
+#                     #     "post_msg": "trying to save: '{}'".format(new_value),
+#                     # })
+
+#                     print("Api Log: DomicilePermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
+#                     return JsonResponse({
+#                         "post_success": True,
+#                         "post_msg": "",
+#                     })
+#                 except Exception as e:
+#                     print("Error: DomicilePermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+#                     return JsonResponse({
+#                         "post_success": False,
+#                         "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+#                     })
+#         except Exception as e:
+#             print("Error: DomicilePermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
+#             return JsonResponse({
+#                 "post_success": False,
+#                 "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
+#             })
+
+#     # elif table == "":
+#     #     pass
+
+
+#     print("Warning: DomicilePermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
+#     return JsonResponse({
+#         "post_success": False,
+#         "post_msg": "Warning: DomicilePermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
+#     })
+
+## For form add row
+def DomicilePermissionsPanelApiAddRow(request):
+    """
+        Expects the post request to post a JSON object, and that it will contain login_selection and domicile_selection. Like so:
+        {
+            login_selection: "Some value",
+            domicile_selection: "Some other value"
+        }
+        Will create new domicile permission rows in the Permissions table with the selected login and domicile
+    """
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: DomicilePermissionsPanelApiAddRow(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DomicilePermissionsPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DomicilePermissionsPanelApiAddRow(): {}".format(is_active_admin["err"]),
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Check login_selection and domicile_selection is not empty string
+    try:
+        login_selection = json_blob['login_selection']
+        domicile_selection = json_blob['domicile_selection']
+
+        if login_selection == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "login_selection cannot be an empty string".format(login_selection, domicile_selection),
+            })
+
+        if domicile_selection == "":
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "domicile_selection cannot be an empty string".format(login_selection, domicile_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
+
+    ## Check that the domicile_selection exists
+    try:
+         if not NYC_DOTR_UNIT_MAIN.objects.using('M5').filter(domicile__exact=domicile_selection).exists():
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "'{}' doesn't exists as a Domicile in M5".format(domicile_selection),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiAddRow(): {}".format(e),
+        })
+
+    ## Create the row!
+    try:
+        new_permission_list = []
+        new_permission = DomicilePermissions(window_username=login_selection, domicile=domicile_selection)
+        new_permission.save(using='FleetDataCollection')
+        new_permission_list.append({
+            'domicile_permission_id': new_permission.domicile_permission_id
+            ,'window_username': new_permission.window_username
+            ,'domicile': new_permission.domicile
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiAddRow(): {}".format(e),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": "",
+        "new_rows_list_of_json": new_permission_list,
+    })
+
+## For JS datatable delete row
+def DomicilePermissionsPanelApiDeleteRow(request):
+    """
+        Expects the post request to post a JSON object, and that it will contain domicile_permission_id. Like so:
+        {
+            domicile_permission_id: "Some value"
+        }
+        Will delete row in the DomicilePermissions table with the given domicile_permission_id
+    """
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: DomicilePermissionsPanelApiDeleteRow(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DomicilePermissionsPanelApiDeleteRow():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Check active admin
+    is_active_admin = user_is_active_admin(request.user)
+    if is_active_admin["success"] == True:
+        pass
+    else:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DomicilePermissionsPanelApiDeleteRow(): {}".format(is_active_admin["err"]),
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiDeleteRow():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Make sure domicile_permission_id is convertable to a unsign int
+    try:
+        domicile_permission_id = json_blob['domicile_permission_id']
+
+        try:
+            domicile_permission_id = int(domicile_permission_id)
+        except Exception as e:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "domicile_permission_id cannot be converted to an int: '{}'".format(domicile_permission_id),
+            })
+
+        if domicile_permission_id <= 0:
+            return JsonResponse({
+                "post_success": False,
+                "post_msg": "domicile_permission_id is less than or equal to zero: '{}'".format(domicile_permission_id),
+            })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
+        })
+
+    ## Remove the permission row
+    try:
+        permission_row = DomicilePermissions.objects.using('FleetDataCollection').get(domicile_permission_id=domicile_permission_id)
+        permission_row.delete(using='FleetDataCollection')
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Error: DomicilePermissionsPanelApiDeleteRow():\n\nFailed to remove domicile_permission_id '{}' from database: '{}'".format(domicile_permission_id, e),
         })
 
     return JsonResponse({
