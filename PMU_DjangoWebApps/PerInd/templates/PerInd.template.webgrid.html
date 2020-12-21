@@ -157,7 +157,6 @@
             </form>
         </div>
 
-        {% comment %}
         <!-- Year Dropdown -->
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -203,7 +202,6 @@
                 </div>
             </form>
         </div>
-        {% endcomment %}
 
         <!-- Fiscal Year Dropdown -->
         <div class="dropdown">
@@ -382,7 +380,6 @@
                         </a>
                     </th>
 
-                    {% comment %}
                     <th>
                         <a class="blue-text" href="?{{ yyyy_sort_anchor_GET_param }}">
                             Calendar Year
@@ -393,7 +390,6 @@
                             {% endif %}
                         </a>
                     </th>
-                    {% endcomment %}
 
                     <th>
                         <a class="blue-text" href="?{{ mm_sort_anchor_GET_param }}">
@@ -418,9 +414,7 @@
                     <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
                     <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
                     <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="Fiscal_YYYY">{{ entry.year_month.fiscal_year }}</td>
-                    {% comment %}
                     <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
-                    {% endcomment %}
                     <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">
                         {% if entry.year_month.mm == 1 %}
                         Jan
