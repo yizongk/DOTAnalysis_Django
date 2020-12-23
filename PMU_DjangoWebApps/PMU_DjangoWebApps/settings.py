@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
     'FleetDataCollection.apps.FleetdatacollectionConfig', # Added by Yi Zong Kuang
+    'OrgChartPortal.apps.OrgchartportalConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,8 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'templates'),
             os.path.join(BASE_DIR, 'PerInd/templates'),
             os.path.join(BASE_DIR, 'MapsApp/templates'),
+            os.path.join(BASE_DIR, 'FleetDataCollection/templates'),
+            os.path.join(BASE_DIR, 'OrgChartPortal/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -146,11 +149,11 @@ else:
         },
     }
 
-if OrgChart_UseWinAuth:
-    DATABASES['Orgchart'] = {
+if OrgChartRead_UseWinAuth:
+    DATABASES['OrgChartRead'] = {
         'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChart_SQLServerHost,
-        'NAME' :        OrgChart_SQLServerDbName,
+        'HOST' :        OrgChartRead_SQLServerHost,
+        'NAME' :        OrgChartRead_SQLServerDbName,
         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
@@ -159,12 +162,12 @@ if OrgChart_UseWinAuth:
         },
     }
 else:
-    DATABASES['Orgchart'] = {
+    DATABASES['OrgChartRead'] = {
         'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChart_SQLServerHost,
-        'NAME' :        OrgChart_SQLServerDbName,
-        'USER' :        OrgChart_SQLServerUID,
-        'PASSWORD' :    OrgChart_SQLServerPWD,
+        'HOST' :        OrgChartRead_SQLServerHost,
+        'NAME' :        OrgChartRead_SQLServerDbName,
+        'USER' :        OrgChartRead_SQLServerUID,
+        'PASSWORD' :    OrgChartRead_SQLServerPWD,
         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
@@ -192,6 +195,33 @@ else:
         'NAME' :        M5_SQLServerDbName,
         'USER' :        M5_SQLServerUID,
         'PASSWORD' :    M5_SQLServerPWD,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+
+if OrgChartWrite_UseWinAuth:
+    DATABASES['OrgChartWrite'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        OrgChartWrite_SQLServerHost,
+        'NAME' :        OrgChartWrite_SQLServerDbName,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+else:
+    DATABASES['OrgChartWrite'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        OrgChartWrite_SQLServerHost,
+        'NAME' :        OrgChartWrite_SQLServerDbName,
+        'USER' :        OrgChartWrite_SQLServerUID,
+        'PASSWORD' :    OrgChartWrite_SQLServerPWD,
         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 

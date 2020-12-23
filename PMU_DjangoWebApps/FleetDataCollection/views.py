@@ -64,7 +64,7 @@ def get_allowed_list_of_pms(username):
         allowed_wu_list = allowed_wu_list_response['wu_list']
 
 
-    pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+    pms_list_query = TblEmployees.objects.using('OrgChartRead').filter(
         wu__in=allowed_wu_list
     ).order_by('last_name')
 
@@ -303,7 +303,7 @@ def GetPermittedEmpDataList(request):
     ## Get the data
     try:
         if client_is_admin == True:
-            pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+            pms_list_query = TblEmployees.objects.using('OrgChartRead').filter(
                 lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
             ).order_by('last_name')
         else:
@@ -317,7 +317,7 @@ def GetPermittedEmpDataList(request):
                 allowed_wu_list = allowed_wu_list_response['wu_list']
 
 
-            pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+            pms_list_query = TblEmployees.objects.using('OrgChartRead').filter(
                 wu__in=allowed_wu_list,
                 lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
             ).order_by('last_name')
@@ -353,7 +353,7 @@ def GetEmpLookUpDataList(request):
 
     ## Get the data
     try:
-        pms_list_query = TblEmployees.objects.using('Orgchart').filter(
+        pms_list_query = TblEmployees.objects.using('OrgChartRead').filter(
             lv__in=['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']  # Active Employee Lv Status
         ).order_by('last_name')
 
@@ -570,7 +570,7 @@ class WuPermissionsPanelPageView(generic.ListView):
 
         ## Get the existing wu permission data from tblEmployees
         try:
-            self.division_list = TblWorkUnitDivisionJoeSubs.objects.using('Orgchart').exclude(div_group__isnull=True).values('div_group').distinct()
+            self.division_list = TblWorkUnitDivisionJoeSubs.objects.using('OrgChartRead').exclude(div_group__isnull=True).values('div_group').distinct()
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
@@ -799,7 +799,7 @@ def WUPermissionsPanelApiAddDivisionGroup(request):
 
     ## Check that the division_selection exists
     try:
-         if not TblWorkUnitDivisionJoeSubs.objects.using('Orgchart').filter(div_group__exact=division_selection).exists():
+         if not TblWorkUnitDivisionJoeSubs.objects.using('OrgChartRead').filter(div_group__exact=division_selection).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' doesn't exists as a Division".format(division_selection),
@@ -812,7 +812,7 @@ def WUPermissionsPanelApiAddDivisionGroup(request):
 
     ## Create the row!
     try:
-        wu_for_division = TblWorkUnitDivisionJoeSubs.objects.using('Orgchart').filter(div_group__exact=division_selection)
+        wu_for_division = TblWorkUnitDivisionJoeSubs.objects.using('OrgChartRead').filter(div_group__exact=division_selection)
 
         new_permission_list = []
         for each in wu_for_division:

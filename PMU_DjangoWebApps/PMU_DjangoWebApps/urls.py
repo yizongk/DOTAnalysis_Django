@@ -20,5 +20,6 @@ urlpatterns = [
     path('PerInd/', include('PerInd.urls')),
     path('MapsApp/', include('MapsApp.urls')),
     path('FleetDataCollection/', include('FleetDataCollection.urls')),
+    path('OrgChartPortal/', include('OrgChartPortal.urls')),
     path('admin/', admin.site.urls),
 ]
