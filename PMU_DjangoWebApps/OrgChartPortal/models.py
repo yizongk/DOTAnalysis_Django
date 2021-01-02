@@ -77,7 +77,7 @@ class TblEmployees(models.Model):
     pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
 
     title = models.CharField(db_column='Title', max_length=255)
-    supervisor_pms = models.CharField(db_column='SupervisorPMS', max_length=7)
+    supervisor_pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='SupervisorPMS', max_length=7, on_delete=models.DO_NOTHING)
     office_title = models.CharField(db_column='OfficeTitle', max_length=255)  ## Should a foreign key to tblOfficeTitles, but this logic is not in the over arching umbrella yet.
 
     actual_site_id = models.ForeignKey(TblDOTSites, to_field='site_id', db_column='ActualSiteId', max_length=255, on_delete=models.DO_NOTHING)
@@ -107,19 +107,6 @@ class TblOfficeTitles(models.Model):
     def __str__(self):
         return self.office_title
 
-class TblPermissions(models.Model):
-    id = models.AutoField(db_column='ID', primary_key=True)
-    wu = models.ForeignKey(db_column='WU', to='TblWorkUnitDivisionJoeSubs', to_field='wu', on_delete=models.DO_NOTHING)
-    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
-    windows_username = models.CharField(db_column='WindowsUserName', max_length=255)
-
-    class meta:
-        managed = False
-        db_table = 'tblPermissions'
-
-    def __str__(self):
-        return self.wu
-
 class TblWorkUnitDivisionJoeSubs(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True)
     wu = models.CharField(db_column='WU', max_length=4, unique=True)
@@ -135,3 +122,15 @@ class TblWorkUnitDivisionJoeSubs(models.Model):
     def __str__(self):
         return self.subdiv
 
+class TblPermissions(models.Model):
+    id = models.AutoField(db_column='ID', primary_key=True)
+    wu = models.ForeignKey(db_column='WU', to='TblWorkUnitDivisionJoeSubs', to_field='wu', on_delete=models.DO_NOTHING)
+    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
+    windows_username = models.CharField(db_column='WindowsUserName', max_length=255)
+
+    class meta:
+        managed = False
+        db_table = 'tblPermissions'
+
+    def __str__(self):
+        return self.wu
