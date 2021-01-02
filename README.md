@@ -401,6 +401,19 @@ So far It seems my app needs to be in dbo schema for it to compile properly.
 
 To fix this, when you edit the user's permission in SSMS, under General tab on the left side, make sure the Default schema is set to 'dbo'
 
+# More on manage.py migrate
+If you happen to want to reset the migration history, and is running into situation where tables are being created even though class Meta's managed is set to False in the models.py:
+
+To reset the migration, delete:
+```
+python .\manage.py migrate your_app_name zero
+# Delete your migrations folder
+python .\manage.py makemigrations your_app_name
+python .\manage.py migrate your_app_name --fake-initial
+```
+Look at https://docs.djangoproject.com/en/3.1/topics/migrations/, where it says:
+run python manage.py migrate --fake-initial, and Django will detect that you have an initial migration and that the tables it wants to create already exist, and will mark the migration as already applied. (Without the migrate --fake-initial flag, the command would error out because the tables it wants to create already exist.)
+
 # ogr2ogr commands
 ## Convert .shp (plus its dbf, prj, and shx existing in the samed directory), run the following command
 ```
@@ -419,3 +432,21 @@ ALTER TABLE [Users]
 ADD CONSTRAINT [AK_Users_Login] UNIQUE (Login);
 ```
 There's more, take a look at PMU_DjangoWebApps/PerInd/models.py for their comments for SQLs to run, after database creation.
+
+## Error: '('42S02', "[42S02] [Microsoft][SQL Server Native Client 11.0][SQL Server]Invalid object name 'OrgChartPortal_tblpermissions'. (208) (SQLExecDirectW); [42S02] [Microsoft][SQL Server Native Client 11.0][SQL Server]Statement(s) could not be prepared. (8180)")'
+The cause of this issue is that the migration files were not done correctly, some of the model has managed = True. Check the models.py, and make sure
+```
+class Meta:
+    managed = False
+    db_table = '...'
+```
+is capitalized correctly. If you enter with a lower case 'm'
+```
+class meta:
+    managed = False
+    db_table = '...'
+```
+There will be no error message, and the model will not be correctly configured in the migration files when you run python manage.py makemigrations
+
+To fix this error/issue, reset the migration to zero, delete the migration files with the exception of \_\_init\_\_.py, remake the migration, and then apply the migration. This should fix the issue.
+(Instruction to reset the migration comes from this link: https://simpleisbetterthancomplex.com/tutorial/2016/07/26/how-to-reset-migrations.html, although you don't need to do a fake migration when you regenerate the correct migration files, because we already set managed=False, so django will assume the tables is already in the database and will not issue a CREATE query.)

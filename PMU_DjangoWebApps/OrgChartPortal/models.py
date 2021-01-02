@@ -51,7 +51,7 @@ class TblDOTSiteTypes(models.Model):
     site_type = models.CharField(db_column='SiteType', max_length=255, blank=False, null=False)
     site_description = models.CharField(db_column='SiteDescription', max_length=255, blank=False, null=False)
 
-    class meta:
+    class Meta:
         managed = False
         db_table = 'tblDOTSiteTypes'
 
@@ -100,7 +100,7 @@ class TblOfficeTitles(models.Model):
     office_title = models.CharField(db_column='OfficeTitle', max_length=255, blank=False, null=False)
     active = models.BooleanField(db_column='Active', blank=False, null=False)
 
-    class meta:
+    class Meta:
         managed = False
         db_table = 'tblOfficeTitles'
 
@@ -128,7 +128,7 @@ class TblPermissions(models.Model):
     pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
     windows_username = models.CharField(db_column='WindowsUserName', max_length=255)
 
-    class meta:
+    class Meta:
         managed = False
         db_table = 'tblPermissions'
 
