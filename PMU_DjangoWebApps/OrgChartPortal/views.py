@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views import generic
+from django.http import HttpResponse, JsonResponse
 from .models import *
+from django.db.models import Min
 
 
 # Create your views here.
@@ -109,3 +111,74 @@ class EmpGridPageView(generic.ListView):
             context["client_is_admin"] = False
             return context
 
+def GetClientWUPermissions(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetClientWUPermissions(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetClientWUPermissions():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        wu_permissions_query = TblPermissions.objects.using('OrgChartWrite').filter(
+                windows_username=remote_user
+            ).order_by('wu__wu')
+
+        wu_permissions_list_json_str = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": wu_permissions_list_json_str,
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+def GetClientTeammates(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetClientTeammates(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetClientTeammates():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        wu_permissions_query = TblPermissions.objects.using('OrgChartWrite').filter(
+                windows_username=remote_user
+            ).order_by('wu__wu')
+
+        wu_permissions_list_json_str = wu_permissions_query.values('wu__wu')
+
+        teammates_query = TblPermissions.objects.using('OrgChartWrite').filter(
+                wu__wu__in=wu_permissions_list_json_str
+            ).order_by('pms__pms')
+
+        teammates_list_json_str = list(teammates_query.values('pms__pms').annotate(pms__first_name=Min('pms__first_name'), pms__last_name=Min('pms__last_name')))
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": teammates_list_json_str,
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
