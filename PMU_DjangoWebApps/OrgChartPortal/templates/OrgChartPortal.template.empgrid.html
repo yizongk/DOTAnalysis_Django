@@ -117,7 +117,7 @@
             } );
 
             var table = $('#JSDataTable').DataTable({
-                dom: 'Bfstip',
+                // dom: 'Bfstip',  // This took away the Show number entries feature, look at the documention on the possible options: https://datatables.net/reference/option/dom
                 buttons: [
                     {
                         extend: 'csv',
@@ -125,7 +125,9 @@
                     }
                 ],
                 orderCellsTop: true,
-                fixedHeader: true
+                fixedHeader: true,
+                pageLength: 10,
+                lengthMenu: [ 10, 25, 50, 75, 100 ]
             });
 
             {% comment %}
