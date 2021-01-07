@@ -79,6 +79,19 @@
             {% endfor %}
         </body>
     </table>
+
+    {% comment %} Footer {% endcomment %}
+    <div>
+        <div>Supervisor Field Complete</div>
+        <div>OfficeTitle Field Complete</div>
+        <div>Refresh button??? or just ask user to refresh page?</div>
+        <div>Last Time List's Been Updated:</div>
+        <div>List Last Updated By:</div>
+        <div>Inactive Supervisor Stuff</div>
+        <div>Empty or Invalid Floor Combination with WorkLocation: Floor needs updating</div>
+        <div>Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating</div>
+    </div>
+
 {% endblock content %}
 
 {% block custom_js %}
@@ -279,6 +292,30 @@
                         $('#client_data_entry_team_info').append(`<p class='item'>${first_name}, ${last_name}</p>`)
                     })
 
+                }
+                return true;
+            })
+            .fail(function(json_response) {
+                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+                return false;
+            });
+
+            // Get emp grid stats
+            $.ajax({
+                url: "/OrgChartPortal/get_emp_grid_stats",
+                type: "POST",
+            })
+            .done(function(json_response) {
+                if (json_response["post_success"] == false) {
+                    console.log(`Error: Ajax calling GetEmpGridStats: Server Response: ${json_response["post_msg"]}`);
+                    alert(`Something went wrong while trying to get emp grid stats for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_emp_grid_stats: Server Response: ${json_response["post_msg"]}`);
+                } else { // Api call successful
+                    list_of_json_client_emp_grid_stats_response = json_response["post_data"]
+
+                    console.log('Dev purpose: GetEmpGridStats: ')
+                    console.log(list_of_json_client_emp_grid_stats_response)
                 }
                 return true;
             })
