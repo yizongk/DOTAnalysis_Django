@@ -74,7 +74,7 @@
                     </th>
                     <th>Indicator Title</th>
                     <th>Fiscal Year</th>
-                    {% comment %} <th>Calendar Year</th> {% endcomment %}
+                    <th>Calendar Year</th>
                     <th>Month</th>
                     <th>Updated Date</th>
                     <th>Last Updated By</th>
@@ -87,7 +87,7 @@
                     <td data-id="{{ entry.record_id }}" data-table="Category" data-column="Category_Name">{{ entry.indicator.category.category_name }}</td>
                     <td data-id="{{ entry.record_id }}" data-table="IndicatorData" data-column="Indicator">{{ entry.indicator }}</td>
                     <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="Fiscal_YYYY">{{ entry.year_month.fiscal_year }}</td>
-                    {% comment %} <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td> {% endcomment %}
+                    <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="YYYY">{{ entry.year_month.yyyy }}</td>
                     <td data-id="{{ entry.record_id }}" data-table="Year_Month" data-column="MM">
                         {% if entry.year_month.mm == 1 %}
                         Jan
