@@ -1007,20 +1007,20 @@ class PastDueIndicatorsPageView(generic.ListView):
 
             ## Find out out past due entry here
             past_due_record_id_list = []
-            unique_ind_id = base_data_qs.order_by('indicator_id').values('indicator_id').distinct()
-            for each_ind_id in unique_ind_id:
+            unique_ind_ids = base_data_qs.order_by('indicator_id').values('indicator_id').distinct()
+            for each_ind_id in unique_ind_ids:
                 ind_id_related = base_data_qs.filter(indicator_id__exact=each_ind_id['indicator_id']).order_by('indicator_id', '-year_month__yyyy', '-year_month__mm')
 
                 for each_row in ind_id_related:
                     ## Indicator could be up-to-date, current record is for entry for the last two month (Counting current month and last month)
-                    if each_row.year_month.yyyy == timezone.now().year and ( timezone.now().month - each_row.year_month.mm ) < 2:
+                    if ( (each_row.year_month.yyyy == timezone.now().year) and ((timezone.now().month - each_row.year_month.mm) < 2) ) or ( (each_row.year_month.yyyy == timezone.now().year - 1) and ((timezone.now().month == 1 and each_row.year_month.mm == 12)) ) : ## (yyyy = current year and month difference is within 2) OR (yyyy = last year and month difference is within 10)
                         if each_row.updated_date.date().year != datetime(1899, 12, 30).date().year:
                             # Indicator is up-to-date, abort loop and go scan the next Indicator
                             break
                         else:
                             # check the next record
                             continue
-                    ## Indicator is pass-dued (current record is for entry over two months ago, before current month and last month), find the latest record where data was entered.
+                    ## Indicator is past-dued (current record is for entry over two months ago, before current month and last month), find the latest record where data was entered.
                     else:
                         if each_row.updated_date.date().year != datetime(1899, 12, 30).date().year:
                             ## Found latest record where data was entered, break loop and scan the next Indicator
@@ -1030,17 +1030,17 @@ class PastDueIndicatorsPageView(generic.ListView):
                             # check the next record
                             continue
 
-            ## Use the following query to verify what is shown on the website is actaully outdated records by more than 2 month and shows just the latest record that was entered for each indicator title
+            ## Use the following query in SSMS to verify what is shown on the website is actaully outdated records by more than 2 month and shows just the latest record that was entered for each indicator title
             """
             SELECT
-            Indicator_Data.Record_ID,
-            Indicator_Data.Indicator_ID,
-            Year_Month.YYYY,
-            Year_Month.MM,
-            Indicator_Data.Updated_Date,
-            Users.Login
-            ,Indicator_Title
-            --ROW_NUMBER() OVER (PARTITION BY Indicator_Data.Indicator_ID ORDER BY Indicator_Data.Indicator_ID, Fiscal_Year DESC, MM DESC) AS rank
+                Indicator_Data.Record_ID,
+                Indicator_Data.Indicator_ID,
+                Year_Month.YYYY,
+                Year_Month.MM,
+                Indicator_Data.Updated_Date,
+                Users.Login
+                ,Indicator_Title
+                --ROW_NUMBER() OVER (PARTITION BY Indicator_Data.Indicator_ID ORDER BY Indicator_Data.Indicator_ID, Fiscal_Year DESC, MM DESC) AS rank
             FROM Indicator_Data
             LEFT JOIN Indicator_List
             ON Indicator_Data.Indicator_ID = Indicator_List.Indicator_ID
@@ -1051,16 +1051,16 @@ class PastDueIndicatorsPageView(generic.ListView):
             LEFT JOIN Category
             ON Indicator_List.Category_ID = Category.Category_ID
             WHERE
-            Indicator_Title = 'ENTER YOU INDICATOR TITLE HERE' AND
-            Indicator_List.Active = 1 AND
-            --Indicator_Data.Updated_Date = '1899-12-30 00:00:00' AND
-            --Users.Login = 'Unknown' AND
-            Year_Month.YYYY > YEAR(GETDATE()) - 4 AND
-            NOT( Year_Month.YYYY = YEAR(GETDATE()) AND Year_Month.MM > MONTH(GETDATE()) )
+                Indicator_Title = 'ENTER YOU INDICATOR TITLE HERE' AND
+                Indicator_List.Active = 1 AND
+                --Indicator_Data.Updated_Date = '1899-12-30 00:00:00' AND
+                --Users.Login = 'Unknown' AND
+                Year_Month.YYYY > YEAR(GETDATE()) - 4 AND
+                NOT( Year_Month.YYYY = YEAR(GETDATE()) AND Year_Month.MM > MONTH(GETDATE()) )
             ORDER BY
-            Indicator_ID,
-            YYYY DESC,
-            MM DESC
+                Indicator_ID,
+                YYYY DESC,
+                MM DESC
             """
         except Exception as e:
             self.req_success = False
