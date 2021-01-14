@@ -988,7 +988,7 @@ class PastDueIndicatorsPageView(generic.ListView):
             return IndicatorData.objects.none()
 
         ## Use python to process the queryset to find a list of Indicator_Data.Records_IDs that meet the Past-Due-Criteria
-        ## Criteria for past due, last month entered is at least two months in the past (Updated_Date = '1899-12-30', means no data was entered, it is also our default 'NULL/Empty' date)
+        ## Criteria for past due, last month entered is at least three months in the past (Updated_Date = '1899-12-30', means no data was entered, it is also our default 'NULL/Empty' date)
         try:
             base_data_qs = IndicatorData.objects.filter(
                 indicator__active=True, ## Filters for active Indicator titles
@@ -1012,8 +1012,22 @@ class PastDueIndicatorsPageView(generic.ListView):
                 ind_id_related = base_data_qs.filter(indicator_id__exact=each_ind_id['indicator_id']).order_by('indicator_id', '-year_month__yyyy', '-year_month__mm')
 
                 for each_row in ind_id_related:
-                    ## Indicator could be up-to-date, current record is for entry for the last two month (Counting current month and last month)
-                    if ( (each_row.year_month.yyyy == timezone.now().year) and ((timezone.now().month - each_row.year_month.mm) < 2) ) or ( (each_row.year_month.yyyy == timezone.now().year - 1) and ((timezone.now().month == 1 and each_row.year_month.mm == 12)) ) : ## (yyyy = current year and month difference is within 2) OR (yyyy = last year and month difference is within 10)
+                    ## Assumes the ind_id_related doens't contain any records tracking future dates greater than current month and current year, else will return error. Also assumes ind_id_related is sorted by ('indicator_id', '-year_month__yyyy', '-year_month__mm'), but doesn't check nor will return error.
+                    if ( each_row.year_month.yyyy > timezone.now().year ) or ( each_row.year_month.yyyy == timezone.now().year and each_row.year_month.mm > timezone.now().month ):
+                        self.req_success = False
+                        self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): ind_id_related queryset contains records tracking dates greater than current month and current year, the record tracks yyyy: '{}' and mm: '{}'".format(each_row.year_month.yyyy, each_row.year_month.mm)
+                        print(self.err_msg)
+                        return IndicatorData.objects.none()
+
+                    ## Indicator could be up-to-date, current record is for entry for the last three month (Counting current month, last month, and the month before)
+                    if (
+                        ( each_row.year_month.yyyy == timezone.now().year     and timezone.now().month - each_row.year_month.mm < 3 ) or
+                        ( each_row.year_month.yyyy == timezone.now().year - 1 and   (
+                                                                                        (timezone.now().month == 1 and each_row.year_month.mm >= 11) or
+                                                                                        (timezone.now().month == 2 and each_row.year_month.mm == 12)
+                                                                                    )
+                        )
+                    ): ## (yyyy = current year and month difference is within 2) OR (yyyy = last year and month difference is within 10)
                         if each_row.updated_date.date().year != datetime(1899, 12, 30).date().year:
                             # Indicator is up-to-date, abort loop and go scan the next Indicator
                             break
