@@ -893,7 +893,7 @@ def PerIndApiGetCsv(request):
 
     ## Convert to CSV
     writer = csv.writer(dummy_in_mem_file)
-    writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
+    writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Calendar Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
     ## More on select_related: https://docs.djangoproject.com/en/3.1/ref/models/querysets/ and https://medium.com/@hansonkd/performance-problems-in-the-django-orm-1f62b3d04785
     for each in csv_queryset.select_related():
         if each.year_month.mm == 1:
@@ -927,6 +927,7 @@ def PerIndApiGetCsv(request):
             each.indicator.category.category_name,
             each.indicator,
             each.year_month.fiscal_year,
+            each.year_month.yyyy,
             month_name,
             each.val,
             each.indicator.unit.unit_type,
