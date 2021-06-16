@@ -21,5 +21,6 @@ urlpatterns = [
     path('MapsApp/', include('MapsApp.urls')),
     path('FleetDataCollection/', include('FleetDataCollection.urls')),
     path('OrgChartPortal/', include('OrgChartPortal.urls')),
+    path('DailyPothole/', include('DailyPothole.urls')),
     path('admin/', admin.site.urls),
 ]

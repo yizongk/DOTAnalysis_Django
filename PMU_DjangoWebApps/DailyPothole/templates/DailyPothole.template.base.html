@@ -1,0 +1,26 @@
+{% extends 'template.base.html' %}
+
+{% block customize_logo_link %}
+    {% url 'dailypothole_home_view' %}
+{% endblock %}
+
+{% block customize_home_link %}
+    {% url 'dailypothole_home_view' %}
+{% endblock %}
+{% block customize_home_link_name %}
+    Daily Pothole Home
+{% endblock %}
+
+{% block customize_about_link %}
+    {% url 'dailypothole_about_view' %}
+{% endblock %}
+{% block customize_about_link_name %}
+    About
+{% endblock %}
+
+{% block customize_contact_link %}
+    {% url 'dailypothole_contact_view' %}
+{% endblock %}
+
+{% block customize_nav_items %}
+{% endblock %}

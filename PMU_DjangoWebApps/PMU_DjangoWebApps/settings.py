@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'PerInd.apps.PerindConfig', # Added by Yi Zong Kuang
     'FleetDataCollection.apps.FleetdatacollectionConfig', # Added by Yi Zong Kuang
     'OrgChartPortal.apps.OrgchartportalConfig', # Added by Yi Zong Kuang
+    'DailyPothole.apps.DailypotholeConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
