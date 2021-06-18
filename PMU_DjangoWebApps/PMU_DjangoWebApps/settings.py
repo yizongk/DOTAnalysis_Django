@@ -231,6 +231,34 @@ else:
         },
     }
 
+if DailyPothole_UseWinAuth:
+    DATABASES['DailyPothole'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        DailyPothole_SQLServerHost,
+        'NAME' :        DailyPothole_SQLServerDbName,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+else:
+    DATABASES['DailyPothole'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        DailyPothole_SQLServerHost,
+        'NAME' :        DailyPothole_SQLServerDbName,
+        'USER' :        DailyPothole_SQLServerUID,
+        'PASSWORD' :    DailyPothole_SQLServerPWD,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
