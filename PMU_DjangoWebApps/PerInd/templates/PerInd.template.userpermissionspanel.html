@@ -114,7 +114,7 @@
                 $(document).on("keyup", ".input-data", function (e) {
                     var key = e.which;
                     if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input");
+                        sendCellToServer(node=this, api_url="/PerInd/user_permissions_panel_api_update_data", http_request_method="POST", cell_html_type="input");
                     }
                     if (key === 27) { // 27 is the ESC key
                         cancelEditMode(this);
@@ -140,7 +140,7 @@
                 });
 
                 $(document).on("change", ".input-data-select", function () {
-                    sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "select");
+                    sendCellToServer(node=this, api_url="/PerInd/user_permissions_panel_api_update_data", http_request_method="POST", cell_html_type="select");
                 });
             {% endcomment %}
 
@@ -157,21 +157,23 @@
                         'tr_row': $(this).parent().parent()
                     }
 
-                    deleteRecordToServer( json_blob, 'user_permissions_panel_api_delete_row', function(json_response, props) {
-                        // successful api call
-                        table = props['table']
-                        tr_row = props['tr_row']
-                        table.row(tr_row).remove().draw();
+                    deleteRecordToServer( json_blob=json_blob, api_url='user_permissions_panel_api_delete_row', http_request_method="POST",
+                        successCallbackFct=function(json_response, props) {
+                            // successful api call
+                            table = props['table']
+                            tr_row = props['tr_row']
+                            table.row(tr_row).remove().draw();
 
-                        return;
-                    }, function(json_response, props) {
-                        // On failed api calls do nothing.
-                        return;
-                    }, function(jqXHR, props) {
-                        // On failed ajax request do nothing.
-                        return;
-                    },
-                    props)
+                            return;
+                        }, failCallbackFct=function(json_response, props) {
+                            // On failed api calls do nothing.
+                            return;
+                        }, ajaxFailCallbackFct=function(jqXHR, props) {
+                            // On failed ajax request do nothing.
+                            return;
+                        },
+                        props
+                    )
                 }
 
             })
@@ -198,43 +200,45 @@
                     "category_selection": categorySelect,
                 }
 
-                sendModalFormDataToServer( json_blob, "user_permissions_panel_api_add_row", function(json_response) {
-                    alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
+                sendModalFormDataToServer( json_blob=json_blob, api_url="user_permissions_panel_api_add_row", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${loginSelect}' granted access to '${categorySelect}' successfully!`)
 
-                    // Add the newly added row to the grid, and redraw
-                    var rowNode = table.row.add( [ `${json_response.first_name}, ${json_response.last_name}`, json_response.active_user, json_response.login, json_response.category_name, ] )
-                    .draw()
-                    .node();
+                        // Add the newly added row to the grid, and redraw
+                        var rowNode = table.row.add( [ `${json_response.first_name}, ${json_response.last_name}`, json_response.active_user, json_response.login, json_response.category_name, ] )
+                        .draw()
+                        .node();
 
-                    // Add permission_id to all child cells
-                    $(rowNode).children().attr("data-id", json_response.permission_id);
-                    // Add the proper data-... attribute to the row
-                    $(rowNode).children().each( (index, childNode) => {
-                        if (index == 0) {
-                            $(childNode).attr("data-table", "")
-                            $(childNode).attr("data-column", "")
-                        } else if (index == 1) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "Active_User")
-                        } else if (index == 2) {
-                            $(childNode).attr("data-table", "Users")
-                            $(childNode).attr("data-column", "Login")
-                        } else if (index == 3) {
-                            $(childNode).attr("data-table", "Category")
-                            $(childNode).attr("data-column", "Category_Name")
-                        } else if (index == 4) {
-                            // Nothing to add for the Delete icon
-                        } else {
-                            alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                            console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                        }
-                    })
-                    // Add class to child cell with the delete icon
-                    $(rowNode).find('.deletable').parent().addClass("text-center")
+                        // Add permission_id to all child cells
+                        $(rowNode).children().attr("data-id", json_response.permission_id);
+                        // Add the proper data-... attribute to the row
+                        $(rowNode).children().each( (index, childNode) => {
+                            if (index == 0) {
+                                $(childNode).attr("data-table", "")
+                                $(childNode).attr("data-column", "")
+                            } else if (index == 1) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "Active_User")
+                            } else if (index == 2) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "Login")
+                            } else if (index == 3) {
+                                $(childNode).attr("data-table", "Category")
+                                $(childNode).attr("data-column", "Category_Name")
+                            } else if (index == 4) {
+                                // Nothing to add for the Delete icon
+                            } else {
+                                alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                                console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                            }
+                        })
+                        // Add class to child cell with the delete icon
+                        $(rowNode).find('.deletable').parent().addClass("text-center")
 
-                    $(rowNode).css('color', 'green')
-                    .animate( { color: 'black' } );
-                })
+                        $(rowNode).css('color', 'green')
+                        .animate( { color: 'black' } );
+                    }
+                )
             })
 
         });

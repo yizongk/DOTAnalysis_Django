@@ -159,7 +159,7 @@ function csrfSafeMethod(method) {
     // For its optional 2nd param, it must be props, which contains some props in json form from the parent calling function
 // ajaxFailCallbackFct stores calling parent data that can be pass to the various callback function
 // Returns a promise containing the POST call response data if call was successful.
-async function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -171,7 +171,7 @@ async function sentJsonBlobToApi( json_blob, api_url, successCallbackFct=functio
 
     return await $.ajax({
         url: api_url,
-        type: "POST",
+        type: http_request_method,
         data: JSON.stringify(json_blob),
         contentType: "application/json",
     })
@@ -214,7 +214,8 @@ function finishEditMode(td_node, cell_html_type) {
 // THIS IS THE ENTRY POINT
 // For its first param, the td_node, and then for its second param, the api_url, and for the third, the cell_html_type. The cell_html_type must either by 'select' or 'input'
 // Return a promise returned by sentJsonBlobToApi(), which should contain the POST response data if the api call was successful, and also returns the calling td_node, not the node it self, since the node it self is the select list and it's temporary, and it's a child of the td_node, and the td_node is the cell of the table
-async function sendCellToServer( node, api_url, cell_html_type ) {
+// sql: INSERT
+async function sendCellToServer( node, api_url, http_request_method="POST", cell_html_type ) {
     // console.log(id, new_value, table, column, td_node, old_val);
     var old_val = $(node).attr("old_value")
     var new_value = $(node).val().trim();
@@ -239,33 +240,34 @@ async function sendCellToServer( node, api_url, cell_html_type ) {
         'cell_html_type': cell_html_type,
     }
 
-    api_json_response = await sentJsonBlobToApi( json_obj_to_server, api_url, function(json_response, props) {
-        // successful api call call-back fct
-        td_node = props['td_node']
-        new_value = props['new_value']
-        cell_html_type = props['cell_html_type']
+    api_json_response = await sentJsonBlobToApi( json_blob=json_obj_to_server, api_url=api_url, http_request_method=http_request_method,
+        successCallbackFct=function(json_response, props) {
+            // successful api call call-back fct
+            td_node = props['td_node']
+            new_value = props['new_value']
+            cell_html_type = props['cell_html_type']
 
-        td_node.html(new_value);
-        finishEditMode(td_node, cell_html_type)
-    }, function(json_response, props) {
-        // bad api call call-back fct
-        td_node = props['td_node']
-        old_val = props['old_val']
-        cell_html_type = props['cell_html_type']
+            td_node.html(new_value);
+            finishEditMode(td_node, cell_html_type)
+        }, failCallbackFct=function(json_response, props) {
+            // bad api call call-back fct
+            td_node = props['td_node']
+            old_val = props['old_val']
+            cell_html_type = props['cell_html_type']
 
-        td_node.html(old_val);
-        finishEditMode(td_node, cell_html_type)
-    },
-    function(jqXHR, props) {
-        // bad ajax call
-        td_node = props['td_node']
-        old_val = props['old_val']
-        cell_html_type = props['cell_html_type']
+            td_node.html(old_val);
+            finishEditMode(td_node, cell_html_type)
+        }, ajaxFailCallbackFct=function(jqXHR, props) {
+            // bad ajax call
+            td_node = props['td_node']
+            old_val = props['old_val']
+            cell_html_type = props['cell_html_type']
 
-        td_node.html(old_val);
-        finishEditMode(td_node, cell_html_type)
-    },
-    props );
+            td_node.html(old_val);
+            finishEditMode(td_node, cell_html_type)
+        },
+        props
+    );
     result = {
         'td_node': td_node,
         'api_json_response': api_json_response
@@ -275,10 +277,12 @@ async function sendCellToServer( node, api_url, cell_html_type ) {
 
 };
 
-async function sendModalFormDataToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
+// sql: UPDATE
+async function sendModalFormDataToServer( json_blob, api_url, http_request_method="PUT", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
 };
 
-async function deleteRecordToServer( json_blob, api_url, successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob, api_url, successCallbackFct, failCallbackFct, ajaxFailCallbackFct, props);
+// sql: DELETE
+async function deleteRecordToServer( json_blob, api_url, http_request_method="DELETE", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
 }

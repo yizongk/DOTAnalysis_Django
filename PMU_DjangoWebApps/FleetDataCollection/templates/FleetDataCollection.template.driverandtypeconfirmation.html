@@ -254,7 +254,7 @@
 
             $(document).on("change", ".input-data-select", function () {
                 if ( ($(this).parent().data('column') == 'PMS') || ($(this).parent().data('column') == 'Class2') ) {
-                    sendCellToServer(this, "update_m5_driver_vehicle_data_confirmations", "select")
+                    sendCellToServer(node=this, api_url="update_m5_driver_vehicle_data_confirmations", http_request_method="POST", cell_html_type="select")
                     .then(function(promised_data) {
                         td_node = promised_data.td_node
                         api_json_response = promised_data.api_json_response

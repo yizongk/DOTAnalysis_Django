@@ -104,7 +104,7 @@
                 $(document).on("keyup", ".input-data", function (e) {
                     var key = e.which;
                     if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                        sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "input");
+                        sendCellToServer(node=this, api_url="/PerInd/user_permissions_panel_api_update_data", http_request_method="POST", cell_html_type="input");
                     }
                     if (key === 27) { // 27 is the ESC key
                         cancelEditMode(this);
@@ -130,7 +130,7 @@
                 });
 
                 $(document).on("change", ".input-data-select", function () {
-                    sendCellToServer(this, "/PerInd/user_permissions_panel_api_update_data", "select");
+                    sendCellToServer(node=this, api_url="/PerInd/user_permissions_panel_api_update_data", http_request_method="POST", cell_html_type="select");
                 });
             {% endcomment %}
 
@@ -147,21 +147,23 @@
                         'tr_row': $(this).parent().parent()
                     }
 
-                    deleteRecordToServer( json_blob, 'domicile_permissions_delete_row', function(json_response, props) {
-                        // successful api call
-                        table = props['table']
-                        tr_row = props['tr_row']
-                        table.row(tr_row).remove().draw();
+                    deleteRecordToServer( json_blob=json_blob, api_url='domicile_permissions_delete_row', http_request_method="POST",
+                        successCallbackFct=function(json_response, props) {
+                            // successful api call
+                            table = props['table']
+                            tr_row = props['tr_row']
+                            table.row(tr_row).remove().draw();
 
-                        return;
-                    }, function(json_response, props) {
-                        // On failed api calls do nothing.
-                        return;
-                    }, function(jqXHR, props) {
-                        // On failed ajax request do nothing.
-                        return;
-                    },
-                    props)
+                            return;
+                        }, failCallbackFct=function(json_response, props) {
+                            // On failed api calls do nothing.
+                            return;
+                        }, ajaxFailCallbackFct=function(jqXHR, props) {
+                            // On failed ajax request do nothing.
+                            return;
+                        },
+                        props
+                    )
                 }
 
             })
@@ -188,42 +190,44 @@
                     "domicile_selection": domicileSelect,
                 }
 
-                sendModalFormDataToServer( json_blob, "domicile_permissions_add_row", function(json_response) {
-                    alert(`'${loginSelect}' granted access to '${domicileSelect}' successfully!`)
+                sendModalFormDataToServer( json_blob=json_blob, api_url="domicile_permissions_add_row", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${loginSelect}' granted access to '${domicileSelect}' successfully!`)
 
-                    let new_rows = json_response.new_rows_list_of_json
+                        let new_rows = json_response.new_rows_list_of_json
 
-                    new_rows.forEach(function(each_row, index) {
-                        // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ each_row.window_username, each_row.domicile, ] )
-                        .draw()
-                        .node();
+                        new_rows.forEach(function(each_row, index) {
+                            // Add the newly added row to the grid, and redraw
+                            var rowNode = table.row.add( [ each_row.window_username, each_row.domicile, ] )
+                            .draw()
+                            .node();
 
-                        // Add permission_id to all child cells
-                        $(rowNode).children().attr("data-id", each_row.domicile_permission_id);
-                        // Add the proper data-... attribute to the row
-                        $(rowNode).children().each( (index, childNode) => {
-                            if (index == 0) {
-                                $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
-                                $(childNode).attr("data-column", "WindowUsername")
-                            } else if (index == 1) {
-                                $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
-                                $(childNode).attr("data-column", "Domicile")
-                            } else if (index == 2) {
-                                // Nothing to add for the Delete icon
-                            } else {
-                                alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                                console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                            }
+                            // Add permission_id to all child cells
+                            $(rowNode).children().attr("data-id", each_row.domicile_permission_id);
+                            // Add the proper data-... attribute to the row
+                            $(rowNode).children().each( (index, childNode) => {
+                                if (index == 0) {
+                                    $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
+                                    $(childNode).attr("data-column", "WindowUsername")
+                                } else if (index == 1) {
+                                    $(childNode).attr("data-table", "FleetDataCollectionDomicilePermissions")
+                                    $(childNode).attr("data-column", "Domicile")
+                                } else if (index == 2) {
+                                    // Nothing to add for the Delete icon
+                                } else {
+                                    alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                                    console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                                }
+                            })
+                            // Add class to child cell with the delete icon
+                            $(rowNode).find('.deletable').parent().addClass("text-center")
+
+                            $(rowNode).css('color', 'green')
+                            .animate( { color: 'black' } );
                         })
-                        // Add class to child cell with the delete icon
-                        $(rowNode).find('.deletable').parent().addClass("text-center")
 
-                        $(rowNode).css('color', 'green')
-                        .animate( { color: 'black' } );
-                    })
-
-                })
+                    }
+                )
             })
 
         });

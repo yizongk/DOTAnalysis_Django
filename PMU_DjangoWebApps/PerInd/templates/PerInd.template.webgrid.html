@@ -498,7 +498,7 @@
             $(document).on("keyup", ".input-data", function (e) {
                 var key = e.which;
                 if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendCellToServer(this, "perind_update_data_api", "input")
+                    sendCellToServer(node=this, api_url="perind_update_data_api", http_request_method="POST", cell_html_type="input")
                     .then(function(promised_data) { // Expect promise to contain the post response data if api call was successful
                         td_node = promised_data.td_node
                         api_json_response = promised_data.api_json_response

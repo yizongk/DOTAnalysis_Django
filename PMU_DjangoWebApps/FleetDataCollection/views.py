@@ -187,7 +187,7 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
+            self.client_is_admin = False
 
         ## Get the core data
         try:
