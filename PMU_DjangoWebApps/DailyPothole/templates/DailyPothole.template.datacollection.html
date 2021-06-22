@@ -21,6 +21,8 @@
     </div>
 
 
+    {% comment %}
+    The date is now: {{ today }}
     {% for each in operation_list %}
         <div>{{ each }}</div>
     {% endfor %}
@@ -28,25 +30,28 @@
     {% for each in boro_list %}
         <div>{{ each }}</div>
     {% endfor %}
+    {% endcomment %}
     <div>
         <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
-                    <div class="modal-header text-center">
+                    {% comment %} <div class="modal-header text-center">
                         <h4 class="modal-title w-100 font-weight-bold">Input Pothole Data</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
-                    </div>
+                    </div> {% endcomment %}
                     <div class="modal-body mx-3">
+                        <div class="ui horizontal divider">Enter potholes data</div>
+
                         <div>Date of repair</div>
-                        <div id="modalNewRowFormDateOfRepairInputBorder" class="md-form mb-5">
+                        <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
                             <input type="date" id="modalNewRowFormDateOfRepairInput">
                         </div>
 
                         <div>Select operation</div>
-                        <div id="modalNewRowFormSelectOperationInputBorder" class="md-form mb-5">
-                            <select id="modalNewRowFormSelectOperationInput">
+                        <div id="modalNewRowFormSelectOperationInputBorder">
+                            <select id="modalNewRowFormSelectOperationInput" class="ui selection dropdown">
                                 {% for each in operation_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -54,8 +59,8 @@
                         </div>
 
                         <div>Select borough</div>
-                        <div id="modalNewRowFormSelectBoroughInputBorder" class="md-form mb-5">
-                            <select id="modalNewRowFormSelectBoroughInput">
+                        <div id="modalNewRowFormSelectBoroughInputBorder">
+                            <select id="modalNewRowFormSelectBoroughInput" class="ui selection dropdown">
                                 {% for each in boro_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -63,33 +68,39 @@
                         </div>
 
                         <div>Enter pothole crew count</div>
-                        <div id="modalNewRowFormPotholeCrewCountInputBorder" class="md-form mb-5">
+                        <div id="modalNewRowFormPotholeCrewCountInputBorder" class="ui input">
                             <input id="modalNewRowFormPotholeCrewCountInput">
                         </div>
 
                         <div>Enter potholes repaired</div>
-                        <div id="modalNewRowFormRegularHolesRepairedInputBorder" class="md-form mb-5">
+                        <div id="modalNewRowFormRegularHolesRepairedInputBorder" class="ui input">
                             <input id="modalNewRowFormRegularHolesRepairedInput">
                         </div>
 
+                        <div class="d-flex justify-content-center">
+                            <button id="modalNewRowFormAddButtonPotholeInfo" class="btn btn-default">Save Pothole Info</button>
+                        </div>
 
-                        <div>------------------------------------</div>
-                        <div>Enter information for today's crews</div>
+
+                        <div class="ui horizontal divider">Enter information for today's crews</div>
 
                         <div>Today's pothole crew count</div>
-                        <div id="modalNewRowFormTodayPotholeCrewCountInputBorder" class="md-form mb-5">
+                        <div id="modalNewRowFormTodayPotholeCrewCountInputBorder" class="ui input">
                             <input id="modalNewRowFormTodayPotholeCrewCountInput">
                         </div>
 
                         <div>Date</div>
-                        <div id="modalNewRowFormTodayDateInputBorder" class="md-form mb-5">
-                            <input type="date" id="modalNewRowFormTodayDateInput">
+                        <div id="modalNewRowFormTodayDateInputBorder" class="ui input">
+                            <input type="date" id="modalNewRowFormTodayDateInput" value="{{ today }}">
                         </div>
 
+                        <div class="d-flex justify-content-center">
+                            <button id="modalNewRowFormAddButtonTodayCrewData" class="btn btn-default">Save Today's Crew</button>
+                        </div>
                     </div>
-                    <div class="modal-footer d-flex justify-content-center">
+                    {% comment %} <div class="modal-footer d-flex justify-content-center">
                         <button id="modalNewRowFormAddButton" class="btn btn-default">Add</button>
-                    </div>
+                    </div> {% endcomment %}
                     <div id='successMsg'></div>
                 </div>
             </div>
@@ -109,6 +120,9 @@
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
         $(document).ready( function () {
+            // Initializing the existing select divs into a dropdown menu in Formantic
+            $('#modalNewRowFormSelectOperationInput').dropdown();
+            $('#modalNewRowFormSelectBoroughInput').dropdown();
 
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
@@ -120,66 +134,132 @@
             });
 
             // For row add, with support for only JS Datatable
-            $('#modalNewRowFormAddButton').on("click", function() {
+            $('#modalNewRowFormAddButtonTodayCrewData').on("click", function() {
 
                 let DateOfRepairInput           = $("#modalNewRowFormDateOfRepairInput").val()
                 let SelectOperationInput        = $("#modalNewRowFormSelectOperationInput").val()
                 let SelectBoroughInput          = $("#modalNewRowFormSelectBoroughInput").val()
                 let PotholeCrewCountInput       = $("#modalNewRowFormPotholeCrewCountInput").val()
                 let RegularHolesRepairedInput   = $("#modalNewRowFormRegularHolesRepairedInput").val()
-                let TodayPotholeCrewCountInput  = $("#modalNewRowFormTodayPotholeCrewCountInput").val()
-                let TodayDateInput              = $("#modalNewRowFormTodayDateInput").val()
 
-                $('#modalNewRowFormDateOfRepairInputBorder'             ).css("border", "")
-                $('#modalNewRowFormSelectOperationInputBorder'          ).css("border", "")
-                $('#modalNewRowFormSelectBoroughInputBorder'            ).css("border", "")
-                $('#modalNewRowFormPotholeCrewCountInputBorder'         ).css("border", "")
-                $('#modalNewRowFormRegularHolesRepairedInputBorder'     ).css("border", "")
-                $('#modalNewRowFormTodayPotholeCrewCountInputBorder'    ).css("border", "")
-                $('#modalNewRowFormTodayDateInputBorder'                ).css("border", "")
+                $('#modalNewRowFormDateOfRepairInputBorder'             ).removeClass("error")
+                $('#modalNewRowFormSelectOperationInput'                ).removeClass("error")
+                $('#modalNewRowFormSelectBoroughInput'                  ).removeClass("error")
+                $('#modalNewRowFormPotholeCrewCountInputBorder'         ).removeClass("error")
+                $('#modalNewRowFormRegularHolesRepairedInputBorder'     ).removeClass("error")
 
 
                 if (DateOfRepairInput == '') {
-                    $('#modalNewRowFormDateOfRepairInputBorder').css("border", "2px solid red")
+                    $('#modalNewRowFormDateOfRepairInputBorder').addClass("error")
                     return
                 }
 
                 if (SelectOperationInput == '') {
-                    $('#modalNewRowFormSelectOperationInputBorder').css("border", "2px solid red")
+                    $('#modalNewRowFormSelectOperationInput').addClass("error")
                     return
                 }
 
                 if (SelectBoroughInput == '') {
-                    $('#modalNewRowFormSelectBoroughInputBorder').css("border", "2px solid red")
+                    $('#modalNewRowFormSelectBoroughInput').addClass("error")
                     return
                 }
 
                 if (PotholeCrewCountInput == '') {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').css("border", "2px solid red")
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error")
                     return
                 }
 
                 if (RegularHolesRepairedInput == '') {
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                if (TodayPotholeCrewCountInput == '') {
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                if (TodayDateInput == '') {
-                    $('#modalNewRowFormTodayDateInputBorder').css("border", "2px solid red")
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error")
                     return
                 }
 
                 json_blob = {
+                    "type_of_pothole_info": "PotholeData",
                     "date_of_repair_input": DateOfRepairInput,
                     "select_operation_input": SelectOperationInput,
                     "select_borough_input": SelectBoroughInput,
                     "pothole_crew_count_input": PotholeCrewCountInput,
                     "regular_holes_repaired_input": RegularHolesRepairedInput,
+                    "today_pothole_crew_count_input": null,
+                    "today_date_input": null,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        /*
+                        alert(`'${loginInput}' added to Users table successfully!`)
+
+                        // Add the newly added row to the grid, and redraw
+                        var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, ] )
+                        .draw()
+                        .node();
+
+                        // Add user_id to all child cells
+                        $(rowNode).children().attr("data-id", json_response.user_id);
+                        // Add the proper data-... attribute to the row
+                        $(rowNode).children().each( (index, childNode) => {
+                            if (index == 0) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "First_Name")
+                                $(childNode).attr("class", "editable")
+                            } else if (index == 1) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "Last_Name")
+                                $(childNode).attr("class", "editable")
+                            } else if (index == 2) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "Active_User")
+                                $(childNode).attr("class", "editable-select")
+                            } else if (index == 3) {
+                                $(childNode).attr("data-table", "Users")
+                                $(childNode).attr("data-column", "Login")
+                            } else if (index == 4) {
+                                // Nothing to add for the Delete icon
+                            } else {
+                                alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                                console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                            }
+                        })
+                        // Add class to child cell with the delete icon
+                        $(rowNode).find('.deletable').parent().addClass("text-center")
+
+                        $(rowNode).css('color', 'green')
+                        .animate( { color: 'black' } );
+                        */
+                        alert(JSON.stringify(json_response, null, 2))
+                    }),
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+            })
+
+            $('#modalNewRowFormAddButtonTodayCrewData').on("click", function() {
+
+                let TodayPotholeCrewCountInput  = $("#modalNewRowFormTodayPotholeCrewCountInput").val()
+                let TodayDateInput              = $("#modalNewRowFormTodayDateInput").val()
+
+                $('#modalNewRowFormTodayPotholeCrewCountInputBorder'    ).removeClass("error")
+                $('#modalNewRowFormTodayDateInputBorder'                ).removeClass("error")
+
+
+                if (TodayPotholeCrewCountInput == '') {
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
+                    return
+                }
+
+                if (TodayDateInput == '') {
+                    $('#modalNewRowFormTodayDateInputBorder').addClass("error")
+                    return
+                }
+
+                json_blob = {
+                    "type_of_pothole_info": "TodayCrewData",
+                    "date_of_repair_input": null,
+                    "select_operation_input": null,
+                    "select_borough_input": null,
+                    "pothole_crew_count_input": null,
+                    "regular_holes_repaired_input": null,
                     "today_pothole_crew_count_input": TodayPotholeCrewCountInput,
                     "today_date_input": TodayDateInput,
                 }

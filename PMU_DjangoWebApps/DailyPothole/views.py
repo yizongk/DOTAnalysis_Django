@@ -91,6 +91,7 @@ class DataCollectionPageView(generic.ListView):
     client_is_admin = False
     operation_list = []
     boro_list = []
+    today = None
 
     def get_queryset(self):
         # Check for Active Admins
@@ -129,6 +130,8 @@ class DataCollectionPageView(generic.ListView):
             context["client_is_admin"] = self.client_is_admin
             context["operation_list"] = self.operation_list
             context["boro_list"] = self.boro_list
+            from django.utils import timezone as tz, dateformat
+            context["today"] = dateformat.format(tz.localtime(tz.now()).date(), 'Y-m-d')
             return context
         except Exception as e:
             self.req_success = False
@@ -142,6 +145,7 @@ class DataCollectionPageView(generic.ListView):
             context["client_is_admin"] = False
             context["operation_list"] = []
             context["boro_list"] = []
+            context["today"] = None
             return context
 
 
