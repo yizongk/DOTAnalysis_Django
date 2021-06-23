@@ -215,7 +215,6 @@ class DataGridPageView(generic.ListView):
 
 ## Create User Mgmt view
 ## Create Backend script to generate the database date
-## Create Update API
 def UpdatePotholesData(request):
 
     if request.method != "POST":
