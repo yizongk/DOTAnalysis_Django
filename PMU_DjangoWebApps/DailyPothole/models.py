@@ -2,6 +2,8 @@ from django.db import models
 
 # Create your models here.
 
+# SQL Server store datetime as UTC time
+
 # All field names made lowercase.
 class TblBoros(models.Model):
     boros_id = models.AutoField(db_column='BorosId', primary_key=True)
@@ -61,4 +63,4 @@ class TblPotholeMaster(models.Model):
         db_table = 'tblPotholeMaster'
 
     def __str__(self):
-        return self.last_edited_by_user_id
+        return self.last_modified_by_user_id

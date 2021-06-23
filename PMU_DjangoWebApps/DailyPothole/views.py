@@ -5,30 +5,34 @@ from django.views import generic
 from .models import *
 from django.http import JsonResponse
 import json
+from django.core.exceptions import ObjectDoesNotExist
 
 
 ## Return a list of Operations that the client has access to. Returns not limited to 1 Operation, can be multiple.
-def get_user_operation_permission(username):
+def get_user_operation_and_boro_permission(username):
     try:
-        operation_permission_query = TblUserList.objects.using('DailyPothole').filter(
+        permission_query = TblUserList.objects.using('DailyPothole').filter(
             username__exact=username
         ).order_by('operation_id')
 
-        if operation_permission_query.count() > 0:
+        if permission_query.count() > 0:
             return {
                 "success": True,
                 "err": "",
-                "operation_permission_list": [each.operation_id for each in operation_permission_query],
+                "operation_permission_list": [each.operation_id for each in permission_query],
+                "operation_long_permission_list": [each.operation_id.operation for each in permission_query],
+                "boro_permission_list": [each.boros_id for each in permission_query],
+                "boro_long_permission_list": [each.boros_id.boro_long for each in permission_query],
             }
         return {
             "success": False,
-            "err": "Cannot find any allowed unit_number for '{}'".format(username),
+            "err": "Cannot find any permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: DailyPothole: get_user_operation_permission(): {}".format(e))
+        print("Exception: DailyPothole: get_user_operation_and_boro_permission(): {}".format(e))
         return {
             "success": False,
-            "err": 'Exception: DailyPothole: get_user_operation_permission(): {}'.format(e),
+            "err": 'Exception: DailyPothole: get_user_operation_and_boro_permission(): {}'.format(e),
         }
 
 
@@ -167,11 +171,11 @@ class DataGridPageView(generic.ListView):
             if self.client_is_admin:
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boros_id', 'operation_id')
             else:
-                # operation_for_user_list = get_user_operation_permission(self.request.user)
-                # if operation_for_user_list['success'] == False:
-                #     raise ValueError('get_user_operation_permission() failed: {}'.format(operation_for_user_list['err']))
+                # user_permissions = get_user_operation_and_boro_permission(self.request.user)
+                # if user_permissions['success'] == False:
+                #     raise ValueError('get_user_operation_and_boro_permission() failed: {}'.format(user_permissions['err']))
                 # else:
-                #     allowed_operation_list = operation_for_user_list['operation_permission_list']
+                #     allowed_operation_list = user_permissions['operation_permission_list']
 
                 # pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                 #     operation_id__in=allowed_operation_list,
@@ -212,8 +216,6 @@ class DataGridPageView(generic.ListView):
 ## Create User Mgmt view
 ## Create Backend script to generate the database date
 ## Create Update API
-## Default the Today's date in the data entry
-## Redesign the data line separation
 def UpdatePotholesData(request):
 
     if request.method != "POST":
@@ -223,17 +225,17 @@ def UpdatePotholesData(request):
         })
 
 
-    # ## Authenticate User
-    # remote_user = None
-    # if request.user.is_authenticated:
-    #     remote_user = request.user.username
-    # else:
-    #     print('Warning: UserPermissionsPanelApiUpdateData(): UNAUTHENTICATE USER!')
-    #     return JsonResponse({
-    #         "post_success": False,
-    #         "post_msg": "UserPermissionsPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
-    #         "post_data": None,
-    #     })
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdatePotholesData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdatePotholesData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
 
 
     ## Read the json request body
@@ -246,16 +248,126 @@ def UpdatePotholesData(request):
         })
 
     try:
-        # id = json_blob['id']
-        # table = json_blob['table']
-        # column = json_blob['column']
-        # new_value = json_blob['new_value']
+        type_of_pothole_info            = json_blob['type_of_pothole_info']
+        date_of_repair_input            = json_blob['date_of_repair_input']
+        operation_input                 = json_blob['select_operation_input']
+        borough_input                   = json_blob['select_borough_input']
+        pothole_crew_count_input        = json_blob['pothole_crew_count_input']
+        regular_holes_repaired_input    = json_blob['regular_holes_repaired_input']
+        today_pothole_crew_count_input  = json_blob['today_pothole_crew_count_input']
+        today_date_input                = json_blob['today_date_input']
 
-        # if new_value == 'None':
-        #     new_value = None
-        pass
+        date_input = None
+        if type_of_pothole_info not in ['PotholeData', 'TodayCrewData']:
+            raise ValueError("Unrecognized input for type_of_pothole_info: '{}'".format(type_of_pothole_info))
+
+        if type_of_pothole_info == 'PotholeData':
+            if date_of_repair_input is None:
+                raise ValueError("date_of_repair_input cannot be None")
+
+            if operation_input is None:
+                raise ValueError("operation_input cannot be None")
+
+            if borough_input is None:
+                raise ValueError("borough_input cannot be None")
+
+            date_input = date_of_repair_input
+
+        if type_of_pothole_info == 'TodayCrewData':
+            if today_date_input is None:
+                raise ValueError("today_date_input cannot be None")
+
+            date_input = today_date_input
+
+        try:
+            if pothole_crew_count_input is not None:
+                pothole_crew_count_input        = int(pothole_crew_count_input)
+        except ValueError as e:
+            raise ValueError("pothole_crew_count_input '{}' cannot be converted into an Int".format(pothole_crew_count_input))
+        except Exception as e:
+            raise
+
+        try:
+            if regular_holes_repaired_input is not None:
+                regular_holes_repaired_input        = int(regular_holes_repaired_input)
+        except ValueError as e:
+            raise ValueError("regular_holes_repaired_input '{}' cannot be converted into an Int".format(regular_holes_repaired_input))
+        except Exception as e:
+            raise
+
+        try:
+            if today_pothole_crew_count_input is not None:
+                today_pothole_crew_count_input        = int(today_pothole_crew_count_input)
+        except ValueError as e:
+            raise ValueError("today_pothole_crew_count_input '{}' cannot be converted into an Int".format(today_pothole_crew_count_input))
+        except Exception as e:
+            raise
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            user_permissions = get_user_operation_and_boro_permission(remote_user)
+            if user_permissions['success'] == False:
+                raise ValueError('get_user_operation_and_boro_permission() failed: {}'.format(user_permissions['err']))
+            else:
+                allowed_operation_list = user_permissions['operation_long_permission_list']
+                allowed_boro_list = user_permissions['boro_long_permission_list']
+
+            if (operation_input not in allowed_operation_list
+                or borough_input not in allowed_boro_list):
+                raise ValueError("'{}' does not have the permission to edit records related to '{}' and '{}'".format(remote_user, operation_input, borough_input))
+
+
+        pothole_data = TblPotholeMaster.objects.using('DailyPothole').get(
+            operation_id__operation__exact=operation_input,
+            boros_id__boro_long__exact=borough_input,
+            repair_date__exact=date_input,
+        )
+
+
+        user_obj = TblUserList.objects.using("DailyPothole").get(
+            username__exact=remote_user,
+        )
+
+        from django.utils import timezone as tz, dateformat
+        timestamp = tz.localtime(tz.now())
+
+        if type_of_pothole_info == 'PotholeData':
+            pothole_data.repair_crew_count = pothole_crew_count_input
+            pothole_data.holes_repaired = regular_holes_repaired_input
+            pothole_data.last_modified_stamp = timestamp
+            pothole_data.last_modified_by_user_id = user_obj
+            pothole_data.save()
+
+        if type_of_pothole_info == 'TodayCrewData':
+            pothole_data.daily_crew_count = today_pothole_crew_count_input
+            pothole_data.last_modified_stamp = timestamp
+            pothole_data.last_modified_by_user_id = user_obj
+            pothole_data.save()
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            # "type_of_pothole_info": type_of_pothole_info,
+            # "date_of_repair_input": date_of_repair_input,
+            # "operation_input": operation_input,
+            # "borough_input": borough_input,
+            # "pothole_crew_count_input": pothole_crew_count_input,
+            # "regular_holes_repaired_input": regular_holes_repaired_input,
+            # "today_pothole_crew_count_input": today_pothole_crew_count_input,
+            # "today_date_input": today_date_input,
+            # "timestamp": timestamp,
+            # "user_id": user_obj.user_id,
+            # "record": [pothole_data.pothole_master_id, pothole_data.repair_date, pothole_data.operation_id.operation_id, pothole_data.boros_id.boros_id, pothole_data.repair_crew_count, pothole_data.holes_repaired, pothole_data.daily_crew_count, pothole_data.last_modified_stamp, pothole_data.last_modified_by_user_id.user_id],
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}. For '{}', '{}' and '{}'".format(e, date_input, operation_input, borough_input),
+        })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
             "post_msg": "DailyPothole:\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
