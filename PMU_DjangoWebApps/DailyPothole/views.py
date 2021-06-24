@@ -105,7 +105,7 @@ class DataCollectionPageView(generic.ListView):
         try:
             if self.client_is_admin:
                 self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
-                self.boro_list = [each.boro_long for each in TblBoros.objects.using('DailyPothole').all()]
+                self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 ## Get the remote user's Operation list and Borough list
                 user_objs = TblUserList.objects.using('DailyPothole').filter(

@@ -5,7 +5,7 @@ from django.db import models
 # SQL Server store datetime as UTC time
 
 # All field names made lowercase.
-class TblBoros(models.Model):
+class TblBoro(models.Model):
     boros_id = models.AutoField(db_column='BorosId', primary_key=True)
     boro_order = models.IntegerField(db_column='BoroOrder', unique=True)
     boro_code = models.CharField(db_column='BoroCode', max_length=1, blank=False, null=False, unique=True)
@@ -13,7 +13,7 @@ class TblBoros(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'tblBoros'
+        db_table = 'TblBoro'
 
     def __str__(self):
         return self.boro_code
@@ -36,7 +36,7 @@ class TblUserList(models.Model):
     user_id = models.AutoField(db_column='UserId', primary_key=True)
     username = models.CharField(db_column='Username', max_length=50, unique=True)
     operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boros_id = models.ForeignKey(to=TblBoros, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
+    boros_id = models.ForeignKey(to=TblBoro, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
     is_admin = models.BooleanField(db_column='IsAdmin')
 
     class Meta:
@@ -51,7 +51,7 @@ class TblPotholeMaster(models.Model):
     pothole_master_id = models.AutoField(db_column='PotholeMasterId', primary_key=True)
     repair_date = models.DateField(db_column='RepairDate')
     operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boros_id = models.ForeignKey(to=TblBoros, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
+    boros_id = models.ForeignKey(to=TblBoro, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
     repair_crew_count = models.IntegerField(db_column='RepairCrewCount')
     holes_repaired = models.IntegerField(db_column='HolesRepaired')
     daily_crew_count = models.IntegerField(db_column='DailyCrewCount')
