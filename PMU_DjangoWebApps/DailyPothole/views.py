@@ -21,8 +21,8 @@ def get_user_operation_and_boro_permission(username):
                 "err": "",
                 "operation_permission_list": [each.operation_id for each in permission_query],
                 "operation_long_permission_list": [each.operation_id.operation for each in permission_query],
-                "boro_permission_list": [each.boros_id for each in permission_query],
-                "boro_long_permission_list": [each.boros_id.boro_long for each in permission_query],
+                "boro_permission_list": [each.boro_id for each in permission_query],
+                "boro_long_permission_list": [each.boro_id.boro_long for each in permission_query],
             }
         return {
             "success": False,
@@ -113,7 +113,7 @@ class DataCollectionPageView(generic.ListView):
                 ).order_by('operation_id')
 
                 self.operation_list = [each.operation_id.operation for each in user_objs]
-                self.boro_list = [each.boros_id.boro_long for each in user_objs]
+                self.boro_list = [each.boro_id.boro_long for each in user_objs]
 
         except Exception as e:
             self.req_success = False
@@ -169,7 +169,7 @@ class DataGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boros_id', 'operation_id')
+                pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boro_id', 'operation_id')
             else:
                 # user_permissions = get_user_operation_and_boro_permission(self.request.user)
                 # if user_permissions['success'] == False:
@@ -179,7 +179,7 @@ class DataGridPageView(generic.ListView):
 
                 # pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                 #     operation_id__in=allowed_operation_list,
-                # ).order_by('repair_date', 'boros_id', 'operation_id')
+                # ).order_by('repair_date', 'boro_id', 'operation_id')
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
@@ -319,7 +319,7 @@ def UpdatePotholesData(request):
 
         pothole_data = TblPotholeMaster.objects.using('DailyPothole').get(
             operation_id__operation__exact=operation_input,
-            boros_id__boro_long__exact=borough_input,
+            boro_id__boro_long__exact=borough_input,
             repair_date__exact=date_input,
         )
 
@@ -357,7 +357,7 @@ def UpdatePotholesData(request):
             # "today_date_input": today_date_input,
             # "timestamp": timestamp,
             # "user_id": user_obj.user_id,
-            # "record": [pothole_data.pothole_master_id, pothole_data.repair_date, pothole_data.operation_id.operation_id, pothole_data.boros_id.boros_id, pothole_data.repair_crew_count, pothole_data.holes_repaired, pothole_data.daily_crew_count, pothole_data.last_modified_stamp, pothole_data.last_modified_by_user_id.user_id],
+            # "record": [pothole_data.pothole_master_id, pothole_data.repair_date, pothole_data.operation_id.operation_id, pothole_data.boro_id.boro_id, pothole_data.repair_crew_count, pothole_data.holes_repaired, pothole_data.daily_crew_count, pothole_data.last_modified_stamp, pothole_data.last_modified_by_user_id.user_id],
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
