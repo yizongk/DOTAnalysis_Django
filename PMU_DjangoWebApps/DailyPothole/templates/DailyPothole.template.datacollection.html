@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load tz %}
+{% load extra_tags %}
 
 {% block custom_css %}
     <!-- You MUST include jQuery before Fomantic -->
@@ -36,7 +37,7 @@
 
                         <div>Date of repair</div>
                         <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
-                            <input type="date" id="modalNewRowFormDateOfRepairInput">
+                            <input type="date" id="modalNewRowFormDateOfRepairInput" value="{{ -1|addDaysFromToday }}">
                         </div>
 
                         <div>Select operation</div>
