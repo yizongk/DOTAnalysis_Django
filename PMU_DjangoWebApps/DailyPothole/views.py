@@ -169,7 +169,14 @@ class DataGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boro_id', 'operation_id')
+                # pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boro_id', 'operation_id')
+                import datetime
+                from dateutil.relativedelta import relativedelta
+                now = datetime.datetime.now().strftime("%Y-%m-%d")
+                then = (datetime.datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
+                pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
+                    repair_date__range=[then, now]
+                ).order_by('repair_date', 'boro_id', 'operation_id')
             else:
                 # user_permissions = get_user_operation_and_boro_permission(self.request.user)
                 # if user_permissions['success'] == False:

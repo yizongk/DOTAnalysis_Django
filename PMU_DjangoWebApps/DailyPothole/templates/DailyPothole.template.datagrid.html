@@ -45,7 +45,7 @@
                 <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="HolesRepaired"     >{{ entry.holes_repaired                    }}</td>
                 <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="DailyCrewCount"    >{{ entry.daily_crew_count                  }}</td>
                 <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="LastModifiedStamp" >{{ entry.last_modified_stamp|localtime}}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblUserList"      data-column="Username"          >{{ entry.last_modified_by_user_id.username }}</td>
+                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblUser"          data-column="Username"          >{{ entry.last_modified_by_user_id.username }}</td>
             </tr>
             {% endfor %}
         </body>
