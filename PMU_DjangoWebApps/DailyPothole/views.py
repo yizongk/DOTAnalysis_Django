@@ -11,8 +11,8 @@ from django.core.exceptions import ObjectDoesNotExist
 ## Return a list of Operations that the client has access to. Returns not limited to 1 Operation, can be multiple.
 def get_user_operation_and_boro_permission(username):
     try:
-        permission_query = TblUserList.objects.using('DailyPothole').filter(
-            username__exact=username
+        permission_query = TblPermission.objects.using('DailyPothole').filter(
+            user_id__username__exact=username
         ).order_by('operation_id')
 
         if permission_query.count() > 0:
@@ -23,6 +23,7 @@ def get_user_operation_and_boro_permission(username):
                 "operation_long_permission_list": [each.operation_id.operation for each in permission_query],
                 "boro_permission_list": [each.boro_id for each in permission_query],
                 "boro_long_permission_list": [each.boro_id.boro_long for each in permission_query],
+                "permission_pair_op_boro_list": [(each.operation_id.operation, each.boro_id.boro_long) for each in permission_query],
             }
         return {
             "success": False,
@@ -39,7 +40,7 @@ def get_user_operation_and_boro_permission(username):
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
-        admin_query = TblUserList.objects.using('DailyPothole').filter(
+        admin_query = TblUser.objects.using('DailyPothole').filter(
             username=username,
             is_admin=True, ## Filters for Admins
         )
@@ -108,12 +109,12 @@ class DataCollectionPageView(generic.ListView):
                 self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 ## Get the remote user's Operation list and Borough list
-                user_objs = TblUserList.objects.using('DailyPothole').filter(
-                    username__exact=self.request.user
+                user_objs = TblPermission.objects.using('DailyPothole').filter(
+                    user_id__username__exact=self.request.user
                 ).order_by('operation_id')
 
-                self.operation_list = [each.operation_id.operation for each in user_objs]
-                self.boro_list = [each.boro_id.boro_long for each in user_objs]
+                self.operation_list = list(set([each.operation_id.operation for each in user_objs]))
+                self.boro_list = list(set([each.boro_id.boro_long for each in user_objs]))
 
         except Exception as e:
             self.req_success = False
@@ -221,7 +222,6 @@ class DataGridPageView(generic.ListView):
 
 
 ## Create User Mgmt view
-## Create Backend script to generate the database date
 def UpdatePotholesData(request):
 
     if request.method != "POST":
@@ -316,11 +316,9 @@ def UpdatePotholesData(request):
             if user_permissions['success'] == False:
                 raise ValueError('get_user_operation_and_boro_permission() failed: {}'.format(user_permissions['err']))
             else:
-                allowed_operation_list = user_permissions['operation_long_permission_list']
-                allowed_boro_list = user_permissions['boro_long_permission_list']
+                allowed_permission_op_boro_pair = user_permissions['permission_pair_op_boro_list']
 
-            if (operation_input not in allowed_operation_list
-                or borough_input not in allowed_boro_list):
+            if (operation_input, borough_input) not in allowed_permission_op_boro_pair:
                 raise ValueError("'{}' does not have the permission to edit records related to '{}' and '{}'".format(remote_user, operation_input, borough_input))
 
 
@@ -331,7 +329,7 @@ def UpdatePotholesData(request):
         )
 
 
-        user_obj = TblUserList.objects.using("DailyPothole").get(
+        user_obj = TblUser.objects.using("DailyPothole").get(
             username__exact=remote_user,
         )
 
