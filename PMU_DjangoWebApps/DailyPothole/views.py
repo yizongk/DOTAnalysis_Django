@@ -174,7 +174,7 @@ class DataGridPageView(generic.ListView):
                 import datetime
                 from dateutil.relativedelta import relativedelta
                 now = datetime.datetime.now().strftime("%Y-%m-%d")
-                then = (datetime.datetime.now() - relativedelta(years=1)).strftime("%Y-%m-%d")
+                then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                     repair_date__range=[then, now]
                 ).order_by('repair_date', 'boro_id', 'operation_id')
