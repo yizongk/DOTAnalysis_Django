@@ -192,12 +192,69 @@ class DataGridPageView(generic.ListView):
 
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: DateViewPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: DataGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return TblPotholeMaster.objects.none()
 
         self.req_success = True
         return pothole_data
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
+
+class ComplaintsInputPageView(generic.ListView):
+    template_name = 'DailyPothole.template.complaintsinput.html'
+    context_object_name = 'complaints'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        # Check for Active Admins
+        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+
+        ## Get the core data
+        try:
+            if self.client_is_admin:
+                import datetime
+                from dateutil.relativedelta import relativedelta
+                now = datetime.datetime.now().strftime("%Y-%m-%d")
+                then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
+                complaints_data = TblComplaint.objects.using('DailyPothole').filter(
+                    complaint_date__range=[then, now]
+                ).order_by('complaint_date')
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: ComplaintsInputPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return TblComplaint.objects.none()
+
+        self.req_success = True
+        return complaints_data
 
     def get_context_data(self, **kwargs):
         try:
