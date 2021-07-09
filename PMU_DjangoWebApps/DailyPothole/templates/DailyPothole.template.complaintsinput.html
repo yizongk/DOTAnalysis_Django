@@ -78,6 +78,38 @@
         </div>
     </div>
 
+
+    <table class="table table-striped table-hover" id="JSDataTable">
+        <thead>
+            <tr>
+                <th>Complaint Date</th>
+                <th>FITS Complaints</th>
+                <th>FITS Bronx</th>
+                <th>FITS Brooklyn</th>
+                <th>FITS Manhattan</th>
+                <th>FITS Queens</th>
+                <th>FITS Staten Island</th>
+                <th>Siebel Complaints</th>
+            </tr>
+        </thead>
+
+        <body id="JSDataTableBody">
+            {% for entry in complaints %}
+            <tr>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="ComplaintDate"     >{{ entry.complaint_date|date:"Y-m-d"   }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSComplaints"    >{{ entry.fits_complaints               }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSBronx"         >{{ entry.fits_bronx                    }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSBrooklyn"      >{{ entry.fits_brooklyn                 }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSManhattan"     >{{ entry.fits_manhattan                }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSQueens"        >{{ entry.fits_queens                   }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSStatenIsland"  >{{ entry.fits_staten_island            }}</td>
+                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="SiebelComplaints"  >{{ entry.siebel_complaints             }}</td>
+            </tr>
+            {% endfor %}
+        </body>
+    </table>
+
+
 {% endblock content %}
 
 {% block custom_js %}
@@ -87,6 +119,10 @@
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
         $(document).ready( function () {
+            // Reset the default viewport from css class container to container-fluid
+            $(".container").attr('class', 'container-fluid')
+
+
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
                     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -95,6 +131,39 @@
                     }
                 }
             });
+
+
+            // Add extra row to the HTML table's header for individual column filtering
+            $('#JSDataTable thead tr').clone(true).appendTo( '#JSDataTable thead' );
+            $('#JSDataTable thead tr:eq(1) th').each( function (i) {
+                var title = $(this).text();
+                $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+
+                $( 'input', this ).on( 'keyup change', function() {
+                    if ( table.column(i).search() !== this.value ) {
+                        table
+                            .column(i)
+                            .search( this.value )
+                            .draw();
+                    }
+                });
+            } );
+
+
+            var table = $('#JSDataTable').DataTable({
+                dom: 'Blfrtip',  // Look at the documention on the possible options: https://datatables.net/reference/option/dom
+                buttons: [
+                    {
+                        extend: 'csv',
+                        text: 'Download as CSV',
+                    },
+                ],
+                orderCellsTop: true,
+                fixedHeader: true,
+                pageLength: 10,
+                lengthMenu: [ 10, 25, 50, 75, 100 ]
+            });
+
 
             $('#modalNewRowFormAddButtonSubmitComplaintsData').on("click", function() {
 
@@ -123,7 +192,8 @@
                     "open_siebel": OpenSiebel,
                 }
 
-                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                //sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                sendModalFormDataToServer( json_blob=json_blob, api_url="", http_request_method="POST",
                     successCallbackFct=function(json_response) {
                         alert(`data saved successfully!`)
                         //alert(JSON.stringify(json_response, null, 2))
