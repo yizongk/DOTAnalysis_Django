@@ -475,6 +475,13 @@ def UpdateComplaintsData(request):
         open_siebel         = json_blob['open_siebel']
 
 
+        from datetime import datetime
+        datetime_obj = datetime.strptime(complaint_date, '%Y-%m-%d')
+
+        if datetime_obj.date() > datetime.today().date():
+            raise ValueError("Cannot enter data for dates in the future! (Date - '{}')".format(complaint_date))
+
+
         try:
             if fits_bronx is not None and fits_bronx != "":
                 fits_bronx = int(fits_bronx)
