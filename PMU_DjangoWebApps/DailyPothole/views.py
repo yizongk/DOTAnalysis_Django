@@ -432,3 +432,142 @@ def UpdatePotholesData(request):
             "post_msg": "DailyPothole:\n\nError: {}".format(e),
             # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
+
+
+def UpdateComplaintsData(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdateComplaintsData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateComplaintsData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        complaint_date      = json_blob['complaint_date']
+        fits_bronx          = json_blob['fits_bronx']
+        fits_brooklyn       = json_blob['fits_brooklyn']
+        fits_manhattan      = json_blob['fits_manhattan']
+        fits_queens         = json_blob['fits_queens']
+        fits_staten_island  = json_blob['fits_staten_island']
+        open_siebel         = json_blob['open_siebel']
+
+
+        try:
+            if fits_bronx is not None and fits_bronx != "":
+                fits_bronx = int(fits_bronx)
+            elif fits_bronx == "":
+                fits_bronx = None
+        except ValueError as e:
+            raise ValueError("fits_bronx '{}' cannot be converted into an Int".format(fits_bronx))
+        except Exception as e:
+            raise
+
+        try:
+            if fits_brooklyn is not None and fits_brooklyn != "":
+                fits_brooklyn = int(fits_brooklyn)
+            elif fits_brooklyn == "":
+                fits_brooklyn = None
+        except ValueError as e:
+            raise ValueError("fits_brooklyn '{}' cannot be converted into an Int".format(fits_brooklyn))
+        except Exception as e:
+            raise
+
+        try:
+            if fits_manhattan is not None and fits_manhattan != "":
+                fits_manhattan = int(fits_manhattan)
+            elif fits_manhattan == "":
+                fits_manhattan = None
+        except ValueError as e:
+            raise ValueError("fits_manhattan '{}' cannot be converted into an Int".format(fits_manhattan))
+        except Exception as e:
+            raise
+
+        try:
+            if fits_queens is not None and fits_queens != "":
+                fits_queens = int(fits_queens)
+            elif fits_queens == "":
+                fits_queens = None
+        except ValueError as e:
+            raise ValueError("fits_queens '{}' cannot be converted into an Int".format(fits_queens))
+        except Exception as e:
+            raise
+
+        try:
+            if fits_staten_island is not None and fits_staten_island != "":
+                fits_staten_island = int(fits_staten_island)
+            elif fits_staten_island == "":
+                fits_staten_island = None
+        except ValueError as e:
+            raise ValueError("fits_staten_island '{}' cannot be converted into an Int".format(fits_staten_island))
+        except Exception as e:
+            raise
+
+        try:
+            if open_siebel is not None and open_siebel != "":
+                open_siebel = int(open_siebel)
+            elif open_siebel == "":
+                open_siebel = None
+        except ValueError as e:
+            raise ValueError("open_siebel '{}' cannot be converted into an Int".format(open_siebel))
+        except Exception as e:
+            raise
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to edit complaints data".format(remote_user))
+
+
+        complaint_data = TblComplaint.objects.using('DailyPothole').get(
+            complaint_date__exact=complaint_date,
+        )
+
+        complaint_data.fits_bronx         = fits_bronx
+        complaint_data.fits_brooklyn      = fits_brooklyn
+        complaint_data.fits_manhattan     = fits_manhattan
+        complaint_data.fits_queens        = fits_queens
+        complaint_data.fits_staten_island = fits_staten_island
+        complaint_data.siebel_complaints  = open_siebel
+        complaint_data.save()
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+

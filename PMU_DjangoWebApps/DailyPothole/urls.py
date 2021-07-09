@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, DataCollectionPageView, DataGridPageView, ComplaintsInputPageView, UpdatePotholesData
+from .views import HomePageView, AboutPageView, ContactPageView, DataCollectionPageView, DataGridPageView, ComplaintsInputPageView, UpdatePotholesData, UpdateComplaintsData
 urlpatterns = [
 
     path('', HomePageView.as_view(), name='dailypothole_home_view'),
@@ -10,5 +10,6 @@ urlpatterns = [
     path('data_grid', DataGridPageView.as_view(), name='dailypothole_data_grid_view'),
     path('complaints_input', ComplaintsInputPageView.as_view(), name='dailypothole_complaints_input_view'),
     path('update_potholes_data', views.UpdatePotholesData, name='dailypothole_update_potholes_data_api'),
+    path('update_complaints_data', views.UpdateComplaintsData, name='dailypothole_update_complaints_data_api'),
 
 ]
