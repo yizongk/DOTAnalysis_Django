@@ -585,3 +585,82 @@ def UpdateComplaintsData(request):
         })
 
 
+def LookupComplaintsData(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: LookupComplaintsData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "LookupComplaintsData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupComplaintsData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        complaint_date      = json_blob['complaint_date']
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+
+
+        complaint_data = TblComplaint.objects.using('DailyPothole').get(
+            complaint_date__exact=complaint_date,
+        )
+
+        fits_bronx          = complaint_data.fits_bronx
+        fits_brooklyn       = complaint_data.fits_brooklyn
+        fits_manhattan      = complaint_data.fits_manhattan
+        fits_queens         = complaint_data.fits_queens
+        fits_staten_island  = complaint_data.fits_staten_island
+        open_siebel         = complaint_data.siebel_complaints
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "complaint_date": complaint_date,
+            "fits_bronx": fits_bronx,
+            "fits_brooklyn": fits_brooklyn,
+            "fits_manhattan": fits_manhattan,
+            "fits_queens": fits_queens,
+            "fits_staten_island": fits_staten_island,
+            "open_siebel": open_siebel,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
+
+
+
+

@@ -203,8 +203,6 @@
                         let fits_staten_island  = json_response.fits_staten_island == null   ? 'None' : json_response.fits_staten_island
                         let open_siebel         = json_response.open_siebel == null          ? 'None' : json_response.open_siebel
 
-                        console.log(fits_bronx)
-
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).text(        fits_bronx);
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).text(     fits_brooklyn);
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).text(    fits_manhattan);
@@ -218,10 +216,55 @@
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css('color', 'green').animate( { color: 'black' } );
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css('color', 'green').animate( { color: 'black' } );
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css('color', 'green').animate( { color: 'black' } );
-                    }),
+                    },
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))
                     }
+                )
+            })
+
+
+            $('#modalNewRowFormInputComplaintDate').on("change", function() {
+                if ($(this).val() == "") {
+                    // reset field values
+                    $("#modalNewRowFormInputFITSBronx").val(        '')
+                    $("#modalNewRowFormInputFITSBrooklyn").val(     '')
+                    $("#modalNewRowFormInputFITSManhattan").val(    '')
+                    $("#modalNewRowFormInputFITSQueens").val(       '')
+                    $("#modalNewRowFormInputFITSStatenIsland").val( '')
+                    $("#modalNewRowFormInputOpenSiebel").val(       '')
+                    return
+                } else {
+                    // Call lookup api to populate fields
+                    json_blob = {
+                    "complaint_date": $(this).val(),
+                    }
+
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+
+                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx
+                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn
+                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
+                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
+                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
+                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
+
+                            $("#modalNewRowFormInputFITSBronx").val(        fits_bronx);
+                            $("#modalNewRowFormInputFITSBrooklyn").val(     fits_brooklyn);
+                            $("#modalNewRowFormInputFITSManhattan").val(    fits_manhattan);
+                            $("#modalNewRowFormInputFITSQueens").val(       fits_queens);
+                            $("#modalNewRowFormInputFITSStatenIsland").val( fits_staten_island);
+                            $("#modalNewRowFormInputOpenSiebel").val(       open_siebel);
+
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+
+                    return
+                }
             })
 
         });
