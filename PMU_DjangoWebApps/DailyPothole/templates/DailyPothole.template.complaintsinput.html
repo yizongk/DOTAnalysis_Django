@@ -96,14 +96,14 @@
         <body id="JSDataTableBody">
             {% for entry in complaints %}
             <tr>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="ComplaintDate"     >{{ entry.complaint_date|date:"Y-m-d"   }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSComplaints"    >{{ entry.fits_complaints               }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSBronx"         >{{ entry.fits_bronx                    }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSBrooklyn"      >{{ entry.fits_brooklyn                 }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSManhattan"     >{{ entry.fits_manhattan                }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSQueens"        >{{ entry.fits_queens                   }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="FITSStatenIsland"  >{{ entry.fits_staten_island            }}</td>
-                <td data-entryComplaintId="{{ entry.pothole_master_id }}" data-table="tblComplaint" data-column="SiebelComplaints"  >{{ entry.siebel_complaints             }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="ComplaintDate"     >{{ entry.complaint_date|date:"Y-m-d"   }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSComplaints"    >{{ entry.fits_complaints               }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSBronx"         >{{ entry.fits_bronx                    }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSBrooklyn"      >{{ entry.fits_brooklyn                 }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSManhattan"     >{{ entry.fits_manhattan                }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSQueens"        >{{ entry.fits_queens                   }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSStatenIsland"  >{{ entry.fits_staten_island            }}</td>
+                <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="SiebelComplaints"  >{{ entry.siebel_complaints             }}</td>
             </tr>
             {% endfor %}
         </body>
@@ -195,7 +195,29 @@
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_complaints_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
                         alert(`data saved successfully!`)
-                        //alert(JSON.stringify(json_response, null, 2))
+
+                        let fits_bronx          = json_response.fits_bronx == null           ? 'None' : json_response.fits_bronx
+                        let fits_brooklyn       = json_response.fits_brooklyn == null        ? 'None' : json_response.fits_brooklyn
+                        let fits_manhattan      = json_response.fits_manhattan == null       ? 'None' : json_response.fits_manhattan
+                        let fits_queens         = json_response.fits_queens == null          ? 'None' : json_response.fits_queens
+                        let fits_staten_island  = json_response.fits_staten_island == null   ? 'None' : json_response.fits_staten_island
+                        let open_siebel         = json_response.open_siebel == null          ? 'None' : json_response.open_siebel
+
+                        console.log(fits_bronx)
+
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).text(        fits_bronx);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).text(     fits_brooklyn);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).text(    fits_manhattan);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).text(       fits_queens);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).text( fits_staten_island);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).text( open_siebel);
+
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css('color', 'green').animate( { color: 'black' } );
                     }),
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))

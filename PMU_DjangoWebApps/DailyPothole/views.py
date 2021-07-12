@@ -564,6 +564,13 @@ def UpdateComplaintsData(request):
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
+            "complaint_date": complaint_date,
+            "fits_bronx": fits_bronx,
+            "fits_brooklyn": fits_brooklyn,
+            "fits_manhattan": fits_manhattan,
+            "fits_queens": fits_queens,
+            "fits_staten_island": fits_staten_island,
+            "open_siebel": open_siebel,
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
