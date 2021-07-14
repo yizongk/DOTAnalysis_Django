@@ -92,6 +92,7 @@
 {% block custom_js %}
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
 
     <script>
         $(document).ready( function () {
@@ -145,7 +146,7 @@
             {% endcomment %}
 
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
-            $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
+            $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because the delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
                 if (confirm(`Are you sure you want to delete '${$(this).parent().parent().find(`[data-column='Category_Name']`).html()}' from '${$(this).parent().parent().find(`[data-column='Login']`).html()}'?`)) {
                     user_permission_id = $(this).parent().attr('data-id')
                     json_blob = {
