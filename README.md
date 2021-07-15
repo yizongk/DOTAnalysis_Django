@@ -95,6 +95,15 @@ $.ajaxSetup({
 });
 ```
 
+In the event that you any error related to newer version of js-cookie), use this instead of the normal <script>...js-cookie...</script>:
+```
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.0-rc.1/dist/js.cookie.min.js"></script>
+```
+Take a look at what happened once, when the new js-cookie release broke my sites:
+https://github.com/js-cookie/js-cookie/issues/698
+https://stackoverflow.com/questions/68383988/firefox-and-chrome-error-when-linking-js-cookie-uncaught-referenceerror-module/68386837#68386837
+
+
 Note that if you are using Django official doc's answer (Our 2nd solution, https://docs.djangoproject.com/en/2.2/ref/csrf/) regarding .ajaxSetup, it will not work if in your Settings.py you have: (Delete the line! or set it to False!)
 ```
 CSRF_USE_SESSIONS = True
