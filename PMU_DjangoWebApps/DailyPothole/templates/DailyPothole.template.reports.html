@@ -71,6 +71,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
@@ -106,11 +107,16 @@
                     "complaint_date": ComplaintDate,
                 }
 
-                //sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_complaints_data_api' %}", http_request_method="POST",
-                sendModalFormDataToServer( json_blob=json_blob, api_url="", http_request_method="POST",
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_pdf_report_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
                         alert(`data saved successfully!`)
                         //let open_siebel = json_response.open_siebel == null ? 'None' : json_response.open_siebel
+
+                        fun_bytes_str = json_response.pdf_bytes
+                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
+                        var fileName = "test.pdf";
+                        saveAs(blob, fileName);
+
                     },
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))

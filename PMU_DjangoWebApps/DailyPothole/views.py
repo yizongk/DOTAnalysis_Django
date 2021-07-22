@@ -711,7 +711,254 @@ def LookupComplaintsData(request):
         })
 
 
+def GetPDFReport(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
 
 
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: GetPDFReport(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "GetPDFReport():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: GetPDFReport():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        complaint_date      = json_blob['complaint_date']
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+
+        from datetime import datetime, timedelta
+        daydelta = 6
+        now = datetime.now()
+        now_str = now.strftime("%Y-%m-%d")
+        start = now - timedelta(days=now.weekday()+2) # Get last week's weekends and current week's weekdays
+        end = start + timedelta(days=daydelta)
+        start_str = start.strftime("%Y-%m-%d")
+        end_str = end.strftime("%Y-%m-%d")
+
+        complaint_data = TblComplaint.objects.using('DailyPothole').get(
+            complaint_date__exact=now_str,
+        )
+
+        potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
+            repair_date__range=[start_str, end_str],
+        ).order_by('operation_id', 'boro_id', 'repair_date')
+
+        import io
+        # from reportlab.pdfgen import canvas
+        buffer = io.BytesIO()
+
+
+        from reportlab.lib import colors, pagesizes
+        from reportlab.platypus import SimpleDocTemplate
+        from reportlab.platypus.tables import Table, TableStyle
+        cm = 2.54
+
+        elements = []
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=pagesizes.A1,
+            rightMargin=0,
+            leftMargin=6.5 * cm,
+            topMargin=0.3 * cm,
+            bottomMargin=0,
+        )
+
+        header = ('Daily Pothole Report', '', now.strftime("%A, %B %#d, %Y"))
+        dates_header = ('', '', 'Saturday', '', 'Sunday', '', 'Monday', '', 'Tuesday', '', 'Wednesday', '', 'Thursday', '', 'Friday', '', 'Weekly Total', '')
+        column_header = ('Borough\nOperation', '', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired')
+
+        format_data = [
+            header,
+            dates_header,
+            column_header,
+        ]
+
+        # data = [
+        #     ('', 1          , 2         ),
+        #     ('', 3          , 4         ),
+        # ]
+        data = []
+        day_i = 0
+        out_row = []
+        crews_total = 0
+        holes_total = 0
+        for each in potholes_data:
+            # On first day of the tracking week, append boro operation info
+            if day_i == 0:
+                out_row.append("{}\n{}".format(each.boro_id.boro_long, each.operation_id.operation))
+                out_row.append('')
+
+            crews_total += each.repair_crew_count if each.repair_crew_count is not None else 0
+            holes_total += each.holes_repaired if each.holes_repaired is not None else 0
+
+            out_row.append(each.repair_crew_count if each.repair_crew_count is not None else '')
+            out_row.append(each.holes_repaired if each.holes_repaired is not None else '')
+
+            # One week (7 days) worth of data has been processed, save it, and reset variables
+            if day_i == daydelta:
+                out_row.append(crews_total)
+                out_row.append(holes_total)
+                out_row_tuple = (out_row)
+                data.append(out_row_tuple)
+
+                day_i = 0
+                out_row = []
+                crews_total = 0
+                holes_total = 0
+            else:
+                day_i += 1
+
+        # Calculate Totals row
+        sat_total_crews = 0
+        sat_total_holes = 0
+        sun_total_crews = 0
+        sun_total_holes = 0
+        mon_total_crews = 0
+        mon_total_holes = 0
+        tue_total_crews = 0
+        tue_total_holes = 0
+        wed_total_crews = 0
+        wed_total_holes = 0
+        thu_total_crews = 0
+        thu_total_holes = 0
+        fri_total_crews = 0
+        fri_total_holes = 0
+        week_tota_crewls = 0
+        week_total_holes = 0
+        for each in data:
+            sat_total_crews += each[2] if isinstance(each[2], int) else 0
+            sat_total_holes += each[3] if isinstance(each[3], int) else 0
+            sun_total_crews += each[4] if isinstance(each[4], int) else 0
+            sun_total_holes += each[5] if isinstance(each[5], int) else 0
+            mon_total_crews += each[6] if isinstance(each[6], int) else 0
+            mon_total_holes += each[7] if isinstance(each[7], int) else 0
+            tue_total_crews += each[8] if isinstance(each[8], int) else 0
+            tue_total_holes += each[9] if isinstance(each[9], int) else 0
+            wed_total_crews += each[10] if isinstance(each[10], int) else 0
+            wed_total_holes += each[11] if isinstance(each[11], int) else 0
+            thu_total_crews += each[12] if isinstance(each[12], int) else 0
+            thu_total_holes += each[13] if isinstance(each[13], int) else 0
+            fri_total_crews += each[14] if isinstance(each[14], int) else 0
+            fri_total_holes += each[15] if isinstance(each[15], int) else 0
+            week_tota_crewls += each[16] if isinstance(each[16], int) else 0
+            week_total_holes += each[17] if isinstance(each[17], int) else 0
+
+        totals_tuple_row = (
+            'Total'
+            ,''
+            ,sat_total_crews
+            ,sat_total_holes
+            ,sun_total_crews
+            ,sun_total_holes
+            ,mon_total_crews
+            ,mon_total_holes
+            ,tue_total_crews
+            ,tue_total_holes
+            ,wed_total_crews
+            ,wed_total_holes
+            ,thu_total_crews
+            ,thu_total_holes
+            ,fri_total_crews
+            ,fri_total_holes
+            ,week_tota_crewls
+            ,week_total_holes
+        )
+        data.append(totals_tuple_row)
+
+
+        for each in data:
+            format_data.append(each)
+
+
+        table = Table(
+            format_data,
+            colWidths=70,
+        )
+        ## The coordinates are given as (column, row) which follows the spreadsheet'A1' model,
+        ## but not the more natural (for mathematicians) 'RC' ordering.
+        ## The top left cell is (0, 0) the bottomright is (-1, -1).
+        table.setStyle(TableStyle([
+            ('LINEABOVE', (2,3), (-1,-1), 0.25, colors.black),
+            ('INNERGRID', (2,3), (-1,-1), 0.25, colors.black),
+            ('LINEABOVE', (0,3), (1,-1), 0.25, colors.black),
+            ('BOX', (0,3), (1,-1), 0.25, colors.black),
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+            # For top header
+            ('SPAN', (0,0), (1,0)),
+
+            # For dates header
+            ('SPAN', (2,1), (3,1)),
+            ('SPAN', (4,1), (5,1)),
+            ('SPAN', (6,1), (7,1)),
+            ('SPAN', (8,1), (9,1)),
+            ('SPAN', (10,1), (11,1)),
+            ('SPAN', (12,1), (13,1)),
+            ('SPAN', (14,1), (15,1)),
+            ('ALIGN',(2,1),(15,1),'CENTER'),
+
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+
+        # Move the read head to position 0, so when we call read(), it will read starting at the correct position
+        buffer.seek(0)
+        buffer_decoded = io.TextIOWrapper(buffer, encoding='utf-8', errors='ignore').read()
+
+
+        # fits_bronx          = complaint_data.fits_bronx
+        # fits_brooklyn       = complaint_data.fits_brooklyn
+        # fits_manhattan      = complaint_data.fits_manhattan
+        # fits_queens         = complaint_data.fits_queens
+        # fits_staten_island  = complaint_data.fits_staten_island
+        # open_siebel         = complaint_data.siebel_complaints
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            # "complaint_date": complaint_date,
+            # "fits_bronx": fits_bronx,
+            # "fits_brooklyn": fits_brooklyn,
+            # "fits_manhattan": fits_manhattan,
+            # "fits_queens": fits_queens,
+            # "fits_staten_island": fits_staten_island,
+            # "open_siebel": open_siebel,
+            "pdf_bytes": buffer_decoded,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole:\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
 
 
