@@ -22,11 +22,11 @@
     </div>
 
 
-    <div class="ui horizontal divider">Choose your Complaint date</div>
+    <div class="ui horizontal divider">Choose a date in your Reporting week</div>
     <div class="ui one column stackable center aligned page grid">
         <div class="ui form">
-            <div id="reportingFormInputBorderComplaintDate" class="field">
-                <input type="date" id="reportingFormInputComplaintDate" value="{{ today }}">
+            <div id="reportingFormInputBorderReportDate" class="field">
+                <input type="date" id="reportingFormInputReportDate" value="{{ today }}">
             </div>
 
             <div class="fields">
@@ -54,7 +54,7 @@
                     <input id="reportingFormInputFITSStatenIsland"  readonly>
                 </div>
                 <div class="disabled field">
-                    <div>Open Siebel Complaints</div>
+                    <div>Open Siebel Reports</div>
                     <input id="reportingFormInputOpenSiebel"        readonly>
                 </div>
             </div>
@@ -94,22 +94,22 @@
 
             $('#reportingFormSubmit').on("click", function() {
 
-                let ComplaintDate = $("#reportingFormInputComplaintDate").val()
+                let ReportDate = $("#reportingFormInputReportDate").val()
 
-                $('#reportingFormInputBorderComplaintDate').removeClass("error")
+                $('#reportingFormInputBorderReportDate').removeClass("error")
 
-                if (ComplaintDate == '') {
-                    $('#reportingFormInputBorderComplaintDate').addClass("error")
+                if (ReportDate == '') {
+                    $('#reportingFormInputBorderReportDate').addClass("error")
                     return
                 }
 
                 json_blob = {
-                    "complaint_date": ComplaintDate,
+                    "report_date": ReportDate,
                 }
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_pdf_report_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`data saved successfully!`)
+                        //alert(`data saved successfully!`)
                         //let open_siebel = json_response.open_siebel == null ? 'None' : json_response.open_siebel
 
                         fun_bytes_str = json_response.pdf_bytes
@@ -124,7 +124,7 @@
                 )
             })
 
-            $('#reportingFormInputComplaintDate').on("change", function() {
+            $('#reportingFormInputReportDate').on("change", function() {
                 if ($(this).val() == "") {
                     // reset field values
                     $("#reportingFormInputFITSBronx").val(        '')
@@ -137,7 +137,7 @@
                 } else {
                     // Call lookup api to populate fields
                     json_blob = {
-                    "complaint_date": $(this).val(),
+                        "complaint_date": $(this).val(),
                     }
 
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
