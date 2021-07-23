@@ -742,28 +742,41 @@ def GetPDFReport(request):
         })
 
     try:
-        complaint_date      = json_blob['complaint_date']
+        report_date      = json_blob['report_date']
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
 
+        from django.db.models import Sum
         from datetime import datetime, timedelta
         daydelta = 6
-        now = datetime.now()
-        now_str = now.strftime("%Y-%m-%d")
-        start = now - timedelta(days=now.weekday()+2) # Get last week's weekends and current week's weekdays
+        report_date_obj = datetime.strptime(report_date, '%Y-%m-%d')
+
+        start = report_date_obj - timedelta(days=report_date_obj.weekday()+2) # Get last week's weekends and current week's weekdays
         end = start + timedelta(days=daydelta)
         start_str = start.strftime("%Y-%m-%d")
         end_str = end.strftime("%Y-%m-%d")
 
-        complaint_data = TblComplaint.objects.using('DailyPothole').get(
-            complaint_date__exact=now_str,
-        )
 
         potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[start_str, end_str],
         ).order_by('operation_id', 'boro_id', 'repair_date')
+
+        complaint_data = TblComplaint.objects.using('DailyPothole').get(
+            complaint_date__exact=report_date,
+        )
+
+        today_crew_count = TblPotholeMaster.objects.using('DailyPothole').filter(
+            repair_date__exact=report_date,
+        )
+
+        # Assuming a new FY starts at July 1st
+        fytd_start_str = "{}-07-01".format(report_date_obj.year - 1 if report_date_obj.month < 7 else report_date_obj.year)
+        fytd_total_pothole_repair = TblPotholeMaster.objects.using('DailyPothole').filter(
+            repair_date__range=[fytd_start_str, report_date],
+        ).aggregate(total_repaired=Sum('holes_repaired'))
+
 
         import io
         # from reportlab.pdfgen import canvas
@@ -771,11 +784,11 @@ def GetPDFReport(request):
 
 
         from reportlab.lib import colors, pagesizes
-        from reportlab.platypus import SimpleDocTemplate
+        from reportlab.platypus import SimpleDocTemplate, PageBreak
         from reportlab.platypus.tables import Table, TableStyle
         cm = 2.54
 
-        elements = []
+        whole_doc_elements = []
         doc = SimpleDocTemplate(
             buffer,
             pagesize=pagesizes.A1,
@@ -785,7 +798,9 @@ def GetPDFReport(request):
             bottomMargin=0,
         )
 
-        header = ('Daily Pothole Report', '', now.strftime("%A, %B %#d, %Y"))
+        ## Page 1
+        ## General Grid
+        header = ('Daily Pothole Report', '', report_date_obj.strftime("%A, %B %#d, %Y"))
         dates_header = ('', '', 'Saturday', '', 'Sunday', '', 'Monday', '', 'Tuesday', '', 'Wednesday', '', 'Thursday', '', 'Friday', '', 'Weekly Total', '')
         column_header = ('Borough\nOperation', '', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired')
 
@@ -900,16 +915,18 @@ def GetPDFReport(request):
         ## but not the more natural (for mathematicians) 'RC' ordering.
         ## The top left cell is (0, 0) the bottomright is (-1, -1).
         table.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
             ('LINEABOVE', (2,3), (-1,-1), 0.25, colors.black),
             ('INNERGRID', (2,3), (-1,-1), 0.25, colors.black),
             ('LINEABOVE', (0,3), (1,-1), 0.25, colors.black),
             ('BOX', (0,3), (1,-1), 0.25, colors.black),
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
 
             # For top header
             ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
 
-            # For dates header
+            # For week days header
             ('SPAN', (2,1), (3,1)),
             ('SPAN', (4,1), (5,1)),
             ('SPAN', (6,1), (7,1)),
@@ -917,36 +934,107 @@ def GetPDFReport(request):
             ('SPAN', (10,1), (11,1)),
             ('SPAN', (12,1), (13,1)),
             ('SPAN', (14,1), (15,1)),
-            ('ALIGN',(2,1),(15,1),'CENTER'),
+            ('ALIGN',(2,1),(-1,1),'CENTER'),
 
         ]))
+        whole_doc_elements.append(table)
 
-        elements.append(table)
-        doc.build(elements)
+
+        ## FITS grid
+        data = [('Open FITS Complaints', 'Open Siebel Complaints')]
+        complaints_tuple = (
+            complaint_data.fits_bronx + complaint_data.fits_brooklyn + complaint_data.fits_manhattan + complaint_data.fits_queens + complaint_data.fits_staten_island
+            ,complaint_data.siebel_complaints
+        )
+        data.append(complaints_tuple)
+        table_fits_complaints = Table(
+            data,
+            colWidths=150,
+        )
+        table_fits_complaints.setStyle(TableStyle([
+            ('BOX', (0,1), (-1,-1), 0.25, colors.black),
+            ('ALIGN',(0,0),(-1,-1),'CENTER'),
+
+            # ('LINEABOVE', (0,1), (-1,-1), 0.25, colors.black),
+            ('INNERGRID', (0,1), (-1,-1), 0.25, colors.black),
+
+            ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+        ]))
+        # whole_doc_elements.append(table_fits_complaints)
+
+
+        ## Today Crew Count Grid
+        data = [("Today's Crew Count", "", "")]
+        total_crew_count = 0
+        for each in today_crew_count:
+            row_tuple = (
+                "{}".format(each.boro_id.boro_long)
+                ,"{}".format(each.operation_id.operation)
+                ,each.daily_crew_count if each.daily_crew_count is not None else ''
+            )
+            data.append(row_tuple)
+            total_crew_count += each.daily_crew_count if each.daily_crew_count is not None else 0
+
+        data.append(('', '', total_crew_count))
+
+        table_daily_crew_count = Table(
+            data,
+            colWidths=150,
+        )
+        table_daily_crew_count.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+            ('LINEABOVE', (0,1), (-1,-2), 0.25, colors.black),
+            ('LINEBELOW', (0,1), (-1,-2), 0.25, colors.black),
+            ('INNERGRID', (0,1), (-1,-2), 0.25, colors.black),
+
+        ]))
+        # whole_doc_elements.append(table_daily_crew_count)
+
+
+        ## Total FYTD Pothole Repaired Count Grid
+        data = [("Total Pothole Repairs - FYTD",)]
+        data.append((fytd_total_pothole_repair['total_repaired'],))
+
+        table_fytd_pothole_repaired = Table(
+            data,
+            colWidths=150,
+        )
+        table_fytd_pothole_repaired.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+        ]))
+        # whole_doc_elements.append(table_fytd_pothole_repaired)
+
+
+        midsection_data = [[table_fits_complaints, table_daily_crew_count, table_fytd_pothole_repaired]]
+        midsection_table = Table(
+            midsection_data,
+            # colWidths=[300, 300, 300],
+            colWidths=[350, 500, 200],
+        )
+        midsection_table.setStyle(TableStyle([
+            ('VALIGN',(0,0),(-1,-1),'TOP'),
+
+        ]))
+        whole_doc_elements.append(midsection_table)
+
+
+        whole_doc_elements.append(PageBreak())
+        ## Page 2
+
+
+        doc.build(whole_doc_elements)
 
         # Move the read head to position 0, so when we call read(), it will read starting at the correct position
         buffer.seek(0)
         buffer_decoded = io.TextIOWrapper(buffer, encoding='utf-8', errors='ignore').read()
 
 
-        # fits_bronx          = complaint_data.fits_bronx
-        # fits_brooklyn       = complaint_data.fits_brooklyn
-        # fits_manhattan      = complaint_data.fits_manhattan
-        # fits_queens         = complaint_data.fits_queens
-        # fits_staten_island  = complaint_data.fits_staten_island
-        # open_siebel         = complaint_data.siebel_complaints
-
-
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
-            # "complaint_date": complaint_date,
-            # "fits_bronx": fits_bronx,
-            # "fits_brooklyn": fits_brooklyn,
-            # "fits_manhattan": fits_manhattan,
-            # "fits_queens": fits_queens,
-            # "fits_staten_island": fits_staten_island,
-            # "open_siebel": open_siebel,
             "pdf_bytes": buffer_decoded,
         })
     except ObjectDoesNotExist as e:
