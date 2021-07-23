@@ -788,9 +788,16 @@ def GetPDFReport(request):
 
         unique_boro = TblPotholeMaster.objects.using('DailyPothole').values('boro_id__boro_long').order_by('boro_id__boro_long').distinct()
 
+        fiscal_year_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
+            repair_date__range=[fytd_start_str, report_date],
+        ).values(
+            'operation_id__operation'
+            ,'boro_id__boro_long'
+        ).annotate(
+            total_repaired=Sum('holes_repaired')
+        ).order_by('operation_id__operation', 'boro_id__boro_long')
 
         import io
-        # from reportlab.pdfgen import canvas
         buffer = io.BytesIO()
 
 
@@ -1113,17 +1120,88 @@ def GetPDFReport(request):
 
 
         # ## Page 3
-        # data = [()]
+        header = ('Pothole Repairs: Fiscal Year per Borough', '', report_date_obj.strftime("%A, %B %#d, %Y"))
+        dates_header_1 = ('From', fytd_start_str)
+        dates_header_2 = ('To', report_date)
+        fytd_start_obj = datetime.strptime(fytd_start_str, '%Y-%m-%d')
+        dates_header_3 = ('Fiscal Year:', fytd_start_obj.year+1)
+        # Should results in this: column_header = ('Operation', 'Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island', 'Operation Total')
+        column_header = ['Operation']
+        for each in unique_boro:
+            column_header.append(each['boro_id__boro_long'])
+        column_header.append('Operation Total')
+        column_header = (column_header) # Convert to tuple, for immutability
 
-        # table_fy_by_boro = Table(
-        #     data,
-        #     colWidths=150
-        # )
-        # table_fy_by_boro.setStyle(TableStyle([
-        #     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+        data = [
+            header,
+            dates_header_1,
+            dates_header_2,
+            dates_header_3,
+            column_header,
+        ]
 
-        # ]))
-        # whole_doc_elements.append(table_fy_by_boro)
+        body_data = []
+        boro_i = 0
+        boro_count = unique_boro.count()
+        out_row = []
+        holes_total = 0
+        for each in fiscal_year_by_boro:
+            # On first day of the tracking week, append boro operation info
+            if boro_i == 0:
+                out_row.append("{}".format(each['operation_id__operation']))
+
+            holes_total += each['total_repaired'] if each['total_repaired'] is not None else 0
+            out_row.append(each['total_repaired'] if each['total_repaired'] is not None else '')
+
+            # 5 unique boro worth of data has been processed, save it, and reset variables
+            if boro_i == boro_count-1:
+                out_row.append(holes_total)
+                out_row_tuple = (out_row)
+                body_data.append(out_row_tuple)
+
+                boro_i = 0
+                out_row = []
+                holes_total = 0
+            else:
+                boro_i += 1
+
+        # Calculate Totals row (Last row of the table)
+        bronx_total             = 0
+        brooklyn_total          = 0
+        manhattan_total         = 0
+        queens_total            = 0
+        staten_island_total     = 0
+        operation_total_total   = 0
+        for each in body_data:
+            bronx_total             += each[1] if isinstance(each[1], int) else 0
+            brooklyn_total          += each[2] if isinstance(each[2], int) else 0
+            manhattan_total         += each[3] if isinstance(each[3], int) else 0
+            queens_total            += each[4] if isinstance(each[4], int) else 0
+            staten_island_total     += each[5] if isinstance(each[5], int) else 0
+            operation_total_total   += each[6] if isinstance(each[6], int) else 0
+
+        totals_tuple_row = (
+            'Total'
+            ,bronx_total
+            ,brooklyn_total
+            ,manhattan_total
+            ,queens_total
+            ,staten_island_total
+            ,operation_total_total
+        )
+        body_data.append(totals_tuple_row)
+
+        data = data + body_data # Concate the two list
+
+        table_fiscal_year_by_boro = Table(
+            data,
+            colWidths=150
+        )
+        table_fiscal_year_by_boro.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+        ]))
+        whole_doc_elements.append(table_fiscal_year_by_boro)
 
 
         ## Build the doc
