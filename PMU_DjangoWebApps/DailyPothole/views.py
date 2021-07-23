@@ -748,7 +748,7 @@ def GetPDFReport(request):
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
 
-        from django.db.models import Sum
+        from django.db.models import Sum, Count
         from datetime import datetime, timedelta
         daydelta = 6
         report_date_obj = datetime.strptime(report_date, '%Y-%m-%d')
@@ -776,6 +776,17 @@ def GetPDFReport(request):
         fytd_total_pothole_repair = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[fytd_start_str, report_date],
         ).aggregate(total_repaired=Sum('holes_repaired'))
+
+        weekly_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
+            repair_date__range=[start_str, end_str],
+        ).values(
+            'operation_id__operation'
+            ,'boro_id__boro_long'
+        ).annotate( ## When combining .values() and .annotate(), it is effectively an aggregation (From .annotate()) with a group by of the columns specified in .values()
+            total_repaired=Sum('holes_repaired')
+        ).order_by('operation_id__operation', 'boro_id__boro_long')
+
+        unique_boro = TblPotholeMaster.objects.using('DailyPothole').values('boro_id__boro_long').order_by('boro_id__boro_long').distinct()
 
 
         import io
@@ -845,7 +856,7 @@ def GetPDFReport(request):
             else:
                 day_i += 1
 
-        # Calculate Totals row
+        # Calculate Totals row (Last row of the table)
         sat_total_crews = 0
         sat_total_holes = 0
         sun_total_crews = 0
@@ -961,7 +972,6 @@ def GetPDFReport(request):
             ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
             ('FONTSIZE', (0,0), (-1,0), 10),
         ]))
-        # whole_doc_elements.append(table_fits_complaints)
 
 
         ## Today Crew Count Grid
@@ -990,7 +1000,6 @@ def GetPDFReport(request):
             ('INNERGRID', (0,1), (-1,-2), 0.25, colors.black),
 
         ]))
-        # whole_doc_elements.append(table_daily_crew_count)
 
 
         ## Total FYTD Pothole Repaired Count Grid
@@ -1005,26 +1014,119 @@ def GetPDFReport(request):
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
 
         ]))
-        # whole_doc_elements.append(table_fytd_pothole_repaired)
 
 
         midsection_data = [[table_fits_complaints, table_daily_crew_count, table_fytd_pothole_repaired]]
         midsection_table = Table(
             midsection_data,
-            # colWidths=[300, 300, 300],
-            colWidths=[350, 500, 200],
+            colWidths=[350, 500, 200], # Set to 50 above what each table's total width is
         )
         midsection_table.setStyle(TableStyle([
             ('VALIGN',(0,0),(-1,-1),'TOP'),
 
         ]))
         whole_doc_elements.append(midsection_table)
-
-
         whole_doc_elements.append(PageBreak())
+
+
         ## Page 2
+        header = ('Weekly Pothole Repairs by Borough', '', report_date_obj.strftime("%A, %B %#d, %Y"))
+        dates_header_1 = ('From', start_str)
+        dates_header_2 = ('To', end_str)
+        # Should results in this: column_header = ('Operation', 'Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island', 'Operation Total')
+        column_header = ['Operation']
+        for each in unique_boro:
+            column_header.append(each['boro_id__boro_long'])
+        column_header.append('Operation Total')
+        column_header = (column_header) # Convert to tuple, for immutability
+
+        data = [
+            header,
+            dates_header_1,
+            dates_header_2,
+            column_header,
+        ]
+
+        body_data = []
+        boro_i = 0
+        boro_count = unique_boro.count()
+        out_row = []
+        holes_total = 0
+        for each in weekly_by_boro:
+            # On first day of the tracking week, append boro operation info
+            if boro_i == 0:
+                out_row.append("{}".format(each['operation_id__operation']))
+
+            holes_total += each['total_repaired'] if each['total_repaired'] is not None else 0
+            out_row.append(each['total_repaired'] if each['total_repaired'] is not None else '')
+
+            # 5 unique boro worth of data has been processed, save it, and reset variables
+            if boro_i == boro_count-1:
+                out_row.append(holes_total)
+                out_row_tuple = (out_row)
+                body_data.append(out_row_tuple)
+
+                boro_i = 0
+                out_row = []
+                holes_total = 0
+            else:
+                boro_i += 1
+
+        # Calculate Totals row (Last row of the table)
+        bronx_total             = 0
+        brooklyn_total          = 0
+        manhattan_total         = 0
+        queens_total            = 0
+        staten_island_total     = 0
+        operation_total_total   = 0
+        for each in body_data:
+            bronx_total             += each[1] if isinstance(each[1], int) else 0
+            brooklyn_total          += each[2] if isinstance(each[2], int) else 0
+            manhattan_total         += each[3] if isinstance(each[3], int) else 0
+            queens_total            += each[4] if isinstance(each[4], int) else 0
+            staten_island_total     += each[5] if isinstance(each[5], int) else 0
+            operation_total_total   += each[6] if isinstance(each[6], int) else 0
+
+        totals_tuple_row = (
+            'Total'
+            ,bronx_total
+            ,brooklyn_total
+            ,manhattan_total
+            ,queens_total
+            ,staten_island_total
+            ,operation_total_total
+        )
+        body_data.append(totals_tuple_row)
+
+        data = data + body_data # Concate the two list
+
+        table_weekly_by_boro = Table(
+            data,
+            colWidths=150
+        )
+        table_weekly_by_boro.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+        ]))
+        whole_doc_elements.append(table_weekly_by_boro)
+        whole_doc_elements.append(PageBreak())
 
 
+        # ## Page 3
+        # data = [()]
+
+        # table_fy_by_boro = Table(
+        #     data,
+        #     colWidths=150
+        # )
+        # table_fy_by_boro.setStyle(TableStyle([
+        #     ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+
+        # ]))
+        # whole_doc_elements.append(table_fy_by_boro)
+
+
+        ## Build the doc
         doc.build(whole_doc_elements)
 
         # Move the read head to position 0, so when we call read(), it will read starting at the correct position
