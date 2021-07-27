@@ -110,11 +110,12 @@
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_pdf_report_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
                         //alert(`data saved successfully!`)
-                        //let open_siebel = json_response.open_siebel == null ? 'None' : json_response.open_siebel
 
                         fun_bytes_str = json_response.pdf_bytes
                         var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
-                        var fileName = "test.pdf";
+                        let date_name = `${ ReportDate.substring(5, ReportDate.length) + '-' + ReportDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        date_name = date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        var fileName = `Daily Pothole Report_${date_name}.pdf`;
                         saveAs(blob, fileName);
 
                     },
