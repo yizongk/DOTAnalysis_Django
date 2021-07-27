@@ -80,9 +80,18 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                ## Added by Yi Zong Kuang
+                'django_settings_export.settings_export',
             ],
         },
     },
+]
+
+## Added by Yi Zong Kuang
+SETTINGS_EXPORT = [
+    ## SERVER_TYPE is only recognized by "Dev", "QA", or "Prod"
+    'SERVER_TYPE',
 ]
 
 WSGI_APPLICATION = 'PMU_DjangoWebApps.wsgi.application'

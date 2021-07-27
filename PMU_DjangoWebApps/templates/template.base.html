@@ -33,6 +33,15 @@
 
         {% block custom_css %}{% endblock %}
 
+        {% if settings.SERVER_TYPE == "Dev" %}
+            <div>This is a DEV Server</div>
+        {% elif settings.SERVER_TYPE == "QA" %}
+            <div>This is a QA Server</div>
+        {% elif settings.SERVER_TYPE == 'Prod' %}
+        {% else %}
+            <div>Setting variable "SERVER_TYPE" is not recognized: '{{ settings.SERVER_TYPE }}'</div>
+        {% endif %}
+
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Performance Unit WebApps</title>
