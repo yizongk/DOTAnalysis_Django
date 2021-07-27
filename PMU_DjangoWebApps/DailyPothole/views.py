@@ -995,7 +995,7 @@ def GetPDFReport(request):
 
         ## Today Crew Count Grid
         data = [
-            ("Today's Crew Count", "", ""),
+            ("Today's Crew Count ({})".format(report_date), "", ""),
             ('',) # Empty row
         ]
         total_crew_count = 0
