@@ -818,12 +818,13 @@ def GetPDFReport(request):
 
         ## Page 1
         ## General Grid
-        header = ('Daily Pothole Report', '', report_date_obj.strftime("%A, %B %#d, %Y"))
+        header = ('Daily Pothole Report', '', '', report_date_obj.strftime("%A, %B %#d, %Y"))
         dates_header = ('', '', 'Saturday', '', 'Sunday', '', 'Monday', '', 'Tuesday', '', 'Wednesday', '', 'Thursday', '', 'Friday', '', 'Weekly Total', '')
         column_header = ('Borough\nOperation', '', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired', 'Crews\nFielded', 'Holes\nRepaired')
 
         format_data = [
             header,
+            '', # Extra empty row
             dates_header,
             column_header,
         ]
@@ -920,9 +921,8 @@ def GetPDFReport(request):
         )
         data.append(totals_tuple_row)
 
-
-        for each in data:
-            format_data.append(each)
+        for each_row in data:
+            format_data.append(each_row)
 
 
         table = Table(
@@ -933,26 +933,38 @@ def GetPDFReport(request):
         ## but not the more natural (for mathematicians) 'RC' ordering.
         ## The top left cell is (0, 0) the bottomright is (-1, -1).
         table.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+            ('BOX', (0,4), (-1,-1), 0.25, colors.black),
 
-            ('LINEABOVE', (2,3), (-1,-1), 0.25, colors.black),
-            ('INNERGRID', (2,3), (-1,-1), 0.25, colors.black),
-            ('LINEABOVE', (0,3), (1,-1), 0.25, colors.black),
-            ('BOX', (0,3), (1,-1), 0.25, colors.black),
+            ('LINEABOVE',   (2,4),      (-1,-1),    0.25,   colors.black),
+            ('INNERGRID',   (2,4),      (-1,-1),    0.25,   colors.black),
+            ('LINEABOVE',   (0,4),      (1,-1),     0.25,   colors.black),
+            ('BOX',         (0,4),      (1,-1),     0.25,   colors.black),
+            ('LINEAFTER',   (3,3),      (3,-1),     2.00,   colors.black),
+            ('LINEAFTER',   (5,3),      (5,-1),     2.00,   colors.black),
+            ('LINEAFTER',   (7,3),      (7,-1),     2.00,   colors.black),
+            ('LINEAFTER',   (9,3),      (9,-1),     2.00,   colors.black),
+            ('LINEAFTER',   (11,3),     (11,-1),    2.00,   colors.black),
+            ('LINEAFTER',   (13,3),     (13,-1),    2.00,   colors.black),
+            ('LINEAFTER',   (15,3),     (15,-1),    2.00,   colors.black),
+            ('LINEABOVE',   (0,-1),     (-1,-1),    2.00,   colors.black),
 
             # For top header
             ('SPAN', (0,0), (1,0)),
-            ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
+            ('BACKGROUND', (0,0), (-1,1), colors.lightblue),
+            ('FONTNAME', (0,0), (-1,1), 'Courier-Bold'),
+            ('FONTSIZE', (3,0), (-1,0), 10),
+            ('FONTSIZE', (0,0), (1,1), 17),
+
 
             # For week days header
-            ('SPAN', (2,1), (3,1)),
-            ('SPAN', (4,1), (5,1)),
-            ('SPAN', (6,1), (7,1)),
-            ('SPAN', (8,1), (9,1)),
-            ('SPAN', (10,1), (11,1)),
-            ('SPAN', (12,1), (13,1)),
-            ('SPAN', (14,1), (15,1)),
-            ('ALIGN',(2,1),(-1,1),'CENTER'),
+            ('SPAN', (2,2), (3,2)),
+            ('SPAN', (4,2), (5,2)),
+            ('SPAN', (6,2), (7,2)),
+            ('SPAN', (8,2), (9,2)),
+            ('SPAN', (10,2), (11,2)),
+            ('SPAN', (12,2), (13,2)),
+            ('SPAN', (14,2), (15,2)),
+            ('ALIGN',(2,2),(-1,2),'CENTER'),
 
         ]))
         whole_doc_elements.append(table)
@@ -977,12 +989,15 @@ def GetPDFReport(request):
             ('INNERGRID', (0,1), (-1,-1), 0.25, colors.black),
 
             ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
-            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('FONTSIZE', (0,0), (-1,0), 11),
         ]))
 
 
         ## Today Crew Count Grid
-        data = [("Today's Crew Count", "", "")]
+        data = [
+            ("Today's Crew Count", "", ""),
+            ('',) # Empty row
+        ]
         total_crew_count = 0
         for each in today_crew_count:
             row_tuple = (
@@ -993,24 +1008,32 @@ def GetPDFReport(request):
             data.append(row_tuple)
             total_crew_count += each.daily_crew_count if each.daily_crew_count is not None else 0
 
-        data.append(('', '', total_crew_count))
+        data.append(('Total', '', total_crew_count))
 
         table_daily_crew_count = Table(
             data,
             colWidths=150,
         )
         table_daily_crew_count.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+            ('BOX', (0,2), (-1,-1), 0.25, colors.black),
 
-            ('LINEABOVE', (0,1), (-1,-2), 0.25, colors.black),
-            ('LINEBELOW', (0,1), (-1,-2), 0.25, colors.black),
-            ('INNERGRID', (0,1), (-1,-2), 0.25, colors.black),
+            ('LINEABOVE', (0,2), (-1,-2), 0.25, colors.black),
+            ('LINEBELOW', (0,2), (-1,-2), 0.25, colors.black),
+            ('INNERGRID', (0,2), (-1,-2), 0.25, colors.black),
+            ('LINEABOVE', (0,-1),(-1,-1), 2.00, colors.black),
+
+            ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('FONTSIZE', (0,0), (0,0), 17),
 
         ]))
 
 
         ## Total FYTD Pothole Repaired Count Grid
-        data = [("Total Pothole Repairs - FYTD",)]
+        data = [
+            ("Total Pothole Repairs - FYTD",),
+            ('',) # Empty row
+        ]
         data.append((fytd_total_pothole_repair['total_repaired'],))
 
         table_fytd_pothole_repaired = Table(
@@ -1018,7 +1041,11 @@ def GetPDFReport(request):
             colWidths=150,
         )
         table_fytd_pothole_repaired.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+            ('BOX', (0,2), (-1,-1), 0.25, colors.black),
+
+            ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('FONTSIZE', (0,0), (0,0), 17),
 
         ]))
 
@@ -1037,7 +1064,7 @@ def GetPDFReport(request):
 
 
         ## Page 2
-        header = ('Weekly Pothole Repairs by Borough', '', report_date_obj.strftime("%A, %B %#d, %Y"))
+        header = ('Weekly Pothole Repairs by Borough', '', '', report_date_obj.strftime("%A, %B %#d, %Y"))
         dates_header_1 = ('From', start_str)
         dates_header_2 = ('To', end_str)
         # Should results in this: column_header = ('Operation', 'Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island', 'Operation Total')
@@ -1049,6 +1076,7 @@ def GetPDFReport(request):
 
         data = [
             header,
+            '', # Empty row
             dates_header_1,
             dates_header_2,
             column_header,
@@ -1112,7 +1140,16 @@ def GetPDFReport(request):
             colWidths=150
         )
         table_weekly_by_boro.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+            ('BOX', (0,5), (-1,-1), 0.25, colors.black),
+            ('INNERGRID', (0,5), (-1,-1), 0.25, colors.black),
+            ('LINEABOVE', (0,-1),(-1,-1), 2.00, colors.black),
+
+            # For top header
+            ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (-1,3), colors.lightblue),
+            ('FONTNAME', (0,0), (-1,3), 'Courier-Bold'),
+            ('FONTSIZE', (0,0), (-1,3), 10),
+            ('FONTSIZE', (0,0), (1,1), 17),
 
         ]))
         whole_doc_elements.append(table_weekly_by_boro)
@@ -1120,7 +1157,7 @@ def GetPDFReport(request):
 
 
         # ## Page 3
-        header = ('Pothole Repairs: Fiscal Year per Borough', '', report_date_obj.strftime("%A, %B %#d, %Y"))
+        header = ('Pothole Repairs: Fiscal Year per Borough', '', '', report_date_obj.strftime("%A, %B %#d, %Y"))
         dates_header_1 = ('From', fytd_start_str)
         dates_header_2 = ('To', report_date)
         fytd_start_obj = datetime.strptime(fytd_start_str, '%Y-%m-%d')
@@ -1134,6 +1171,7 @@ def GetPDFReport(request):
 
         data = [
             header,
+            '', # Empty row
             dates_header_1,
             dates_header_2,
             dates_header_3,
@@ -1198,7 +1236,17 @@ def GetPDFReport(request):
             colWidths=150
         )
         table_fiscal_year_by_boro.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+            ('BOX', (0,6), (-1,-1), 0.25, colors.black),
+            ('INNERGRID', (0,6), (-1,-1), 0.25, colors.black),
+            ('LINEABOVE', (0,-1),(-1,-1), 2.00, colors.black),
+
+            # For top header
+            ('SPAN', (0,0), (1,0)),
+            ('BACKGROUND', (0,0), (-1,4), colors.lightblue),
+            ('FONTNAME', (0,0), (-1,4), 'Courier-Bold'),
+            ('FONTSIZE', (0,0), (-1,4), 10),
+            ('FONTSIZE', (0,0), (1,1), 17),
+
 
         ]))
         whole_doc_elements.append(table_fiscal_year_by_boro)
