@@ -972,9 +972,25 @@ def GetPDFReport(request):
 
         ## FITS grid
         data = [('Open FITS Complaints', 'Open Siebel Complaints')]
+
+        if (
+            complaint_data.fits_bronx is None
+            and complaint_data.fits_brooklyn is None
+            and complaint_data.fits_manhattan is None
+            and complaint_data.fits_queens is None
+            and complaint_data.fits_staten_island is None
+            ):
+            fits_total = 'No Data'
+        else:
+            fits_total = complaint_data.fits_bronx if complaint_data.fits_bronx is not None else 0\
+                + complaint_data.fits_brooklyn if complaint_data.fits_brooklyn is not None else 0\
+                + complaint_data.fits_manhattan if complaint_data.fits_manhattan is not None else 0\
+                + complaint_data.fits_queens if complaint_data.fits_queens is not None else 0\
+                + complaint_data.fits_staten_island if complaint_data.fits_staten_island is not None else 0
+
         complaints_tuple = (
-            complaint_data.fits_bronx + complaint_data.fits_brooklyn + complaint_data.fits_manhattan + complaint_data.fits_queens + complaint_data.fits_staten_island
-            ,complaint_data.siebel_complaints
+            fits_total
+            ,complaint_data.siebel_complaints if complaint_data.siebel_complaints is not None else 'No Data'
         )
         data.append(complaints_tuple)
         table_fits_complaints = Table(
