@@ -475,13 +475,13 @@ def UpdatePotholesData(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}. For '{}', '{}' and '{}'".format(e, date_input, operation_input, borough_input),
+            "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}. For '{}', '{}' and '{}'".format(e, date_input, operation_input, borough_input),
         })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
 
@@ -626,13 +626,13 @@ def UpdateComplaintsData(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
         })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
 
@@ -701,13 +701,13 @@ def LookupComplaintsData(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
         })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
 
@@ -1295,13 +1295,81 @@ def GetPDFReport(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. For '{}'".format(e, complaint_date),
         })
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole:\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole:\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
+def LookupPotholesAndCrewData(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: LookupPotholesAndCrewData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "LookupPotholesAndCrewData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        look_up_date    = json_blob['look_up_date']
+        operation       = json_blob['operation']
+        borough         = json_blob['borough']
+
+        pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get(
+            repair_date__exact=look_up_date,
+            operation_id__operation__exact=operation,
+            boro_id__boro_long__exact=borough,
+        )
+
+        repair_crew_count   = pothole_and_crew_data.repair_crew_count
+        holes_repaired      = pothole_and_crew_data.holes_repaired
+        daily_crew_count    = pothole_and_crew_data.daily_crew_count
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "look_up_date": look_up_date,
+            "repair_crew_count": repair_crew_count,
+            "holes_repaired": holes_repaired,
+            "daily_crew_count": daily_crew_count,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. For '{}'".format(e, look_up_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
 
