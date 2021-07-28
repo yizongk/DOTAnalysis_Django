@@ -809,7 +809,10 @@ def GetPDFReport(request):
         whole_doc_elements = []
         doc = SimpleDocTemplate(
             buffer,
-            pagesize=pagesizes.A1,
+            # pagesize=pagesizes.landscape(pagesizes.letter),
+            # pagesize=pagesizes.landscape(pagesizes.A1),
+            pagesize=pagesizes.landscape(pagesizes.A2),
+            # pagesize=pagesizes.A1,
             rightMargin=0,
             leftMargin=6.5 * cm,
             topMargin=0.3 * cm,
