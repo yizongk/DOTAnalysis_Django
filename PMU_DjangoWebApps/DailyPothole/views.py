@@ -842,13 +842,13 @@ def GetPDFReport(request):
             # On first day of the tracking week, append boro operation info
             if day_i == 0:
                 out_row.append("{}\n{}".format(each.boro_id.boro_long, each.operation_id.operation))
-                out_row.append('')
+                out_row.append(None)
 
             crews_total += each.repair_crew_count if each.repair_crew_count is not None else 0
             holes_total += each.holes_repaired if each.holes_repaired is not None else 0
 
-            out_row.append(each.repair_crew_count if each.repair_crew_count is not None else '')
-            out_row.append(each.holes_repaired if each.holes_repaired is not None else '')
+            out_row.append(each.repair_crew_count if each.repair_crew_count is not None else None)
+            out_row.append(each.holes_repaired if each.holes_repaired is not None else None)
 
             # One week (7 days) worth of data has been processed, save it, and reset variables
             if day_i == daydelta:
@@ -879,7 +879,7 @@ def GetPDFReport(request):
         thu_total_holes = 0
         fri_total_crews = 0
         fri_total_holes = 0
-        week_tota_crewls = 0
+        week_total_crews = 0
         week_total_holes = 0
         for each in data:
             sat_total_crews += each[2] if isinstance(each[2], int) else 0
@@ -896,7 +896,7 @@ def GetPDFReport(request):
             thu_total_holes += each[13] if isinstance(each[13], int) else 0
             fri_total_crews += each[14] if isinstance(each[14], int) else 0
             fri_total_holes += each[15] if isinstance(each[15], int) else 0
-            week_tota_crewls += each[16] if isinstance(each[16], int) else 0
+            week_total_crews += each[16] if isinstance(each[16], int) else 0
             week_total_holes += each[17] if isinstance(each[17], int) else 0
 
         totals_tuple_row = (
@@ -916,13 +916,20 @@ def GetPDFReport(request):
             ,thu_total_holes
             ,fri_total_crews
             ,fri_total_holes
-            ,week_tota_crewls
+            ,week_total_crews
             ,week_total_holes
         )
         data.append(totals_tuple_row)
 
         for each_row in data:
-            format_data.append(each_row)
+            ## For last two element in each_row (Which is week_total_crews and week_total_holes), we assume it to be null (by assigning it True to the null check) because we are nulling checking the content of the each cell, and not the totals.
+            ## We also assume first two element is null, because it's boro/operation info and an empty cell placeholder
+            null_list = [each_cell is None if i > 1 and len(each_row) - i > 2 else True for i, each_cell in enumerate(each_row)]
+            ## If entire row is null (not checking week_total_crews and week_total_holes, and assumed those two is null), don't add it to the final table
+            if all(null_check == True for null_check in null_list):
+                pass
+            else:
+                format_data.append(each_row)
 
 
         table = Table(
@@ -1019,9 +1026,13 @@ def GetPDFReport(request):
             row_tuple = (
                 "{}".format(each.boro_id.boro_long)
                 ,"{}".format(each.operation_id.operation)
-                ,each.daily_crew_count if each.daily_crew_count is not None else ''
+                ,each.daily_crew_count if each.daily_crew_count is not None else None
             )
-            data.append(row_tuple)
+            ## Only add row to the table if the daily_crew_count is not null
+            if each.daily_crew_count is None:
+                pass
+            else:
+                data.append(row_tuple)
             total_crew_count += each.daily_crew_count if each.daily_crew_count is not None else 0
 
         data.append(('Total', '', total_crew_count))
