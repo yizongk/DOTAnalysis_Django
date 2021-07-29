@@ -40,15 +40,13 @@
                 <div class="view overlay">
                     <!-- Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
                     <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/512x512/user_permissions.png' %}" alt="User Permissions Panel Logo">
-                    {% comment %}
-                    <a href="{% url 'perind_userpermissionspanel' %}">
+                    <a href="{% url 'dailypothole_user_permissions_panel_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
-                    {% endcomment %}
                 </div>
 
                 <div class="card-body">
-                    {% comment %} <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_userpermissionspanel' %}">Head Over &raquo;</a> {% endcomment %}
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_user_permissions_panel_view' %}">Head Over &raquo;</a>
                 </div>
             </div>
 
