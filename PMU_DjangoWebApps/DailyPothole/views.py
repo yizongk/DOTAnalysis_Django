@@ -1701,7 +1701,7 @@ def DeleteUser(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole: DeleteUser():\n\nError: {}. For '{}' and '{}'".format(e, user_id, is_admin_input),
+            "post_msg": "DailyPothole: DeleteUser():\n\nError: {}. For '{}'".format(e, user_id),
         })
     except Exception as e:
         return JsonResponse({
@@ -1970,6 +1970,74 @@ def UpdateUserPermission(request):
             "post_success": False,
             "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}".format(e),
             # "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
+def DeleteUserPermission(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: DeleteUserPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: DeleteUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        permission_id               = json_blob['permission_id']
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        try:
+            permission_id = int(permission_id)
+        except Exception as e:
+            raise ValueError("Cannot convert '{}' to int".format(permission_id))
+
+
+        try:
+            permission = TblPermission.objects.using("DailyPothole").get(permission_id=permission_id)
+            permission.delete()
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}. For '{}'".format(e, permission_id),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
 
