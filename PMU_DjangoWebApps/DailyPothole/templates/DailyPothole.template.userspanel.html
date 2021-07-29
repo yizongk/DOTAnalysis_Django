@@ -211,10 +211,10 @@
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
-                                $(childNode).attr("data-table", "TblUser")
+                                $(childNode).attr("data-table", "tblUser")
                                 $(childNode).attr("data-column", "Username")
                             } else if (index == 1) {
-                                $(childNode).attr("data-table", "TblUser")
+                                $(childNode).attr("data-table", "tblUser")
                                 $(childNode).attr("data-column", "IsAdmin")
                                 $(childNode).attr("class", "editable-select")
                             } else if (index == 2) {
