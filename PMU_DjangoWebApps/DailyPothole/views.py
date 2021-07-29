@@ -1556,3 +1556,93 @@ def AddUser(request):
             # "post_msg": "DailyPothole: AddUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
+
+def UpdateUser(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdateUser(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateUser():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUser():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        table               = json_blob['table']
+        column              = json_blob['column']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        if table == 'TblUser' and column == 'IsAdmin':
+            user_id             = json_blob['id']
+            is_admin_input      = json_blob['new_value']
+        else:
+            raise ValueError("table '{}' and column '{}' is not recognized for this api".format(table, column))
+
+        try:
+            user_id = int(user_id)
+        except Exception as e:
+            raise ValueError("Cannot convert '{}' to int".format(user_id))
+
+        if is_admin_input is None:
+            raise ValueError("is_admin_input cannot be null")
+
+        if is_admin_input not in ['True', 'False']:
+            raise ValueError("Unrecognized is_admin_input value '{}', must be either 'True' or 'False'".format(is_admin_input))
+
+
+        try:
+            user = TblUser.objects.using("DailyPothole").get(user_id=user_id)
+            user.is_admin = is_admin_input
+            user.save(using='DailyPothole')
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "user_id": user.user_id,
+            "username": user.username,
+            "is_admin": user.is_admin,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUser():\n\nError: {}. For '{}' and '{}'".format(e, user_id, is_admin_input),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUser():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: UpdateUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
+
+
+

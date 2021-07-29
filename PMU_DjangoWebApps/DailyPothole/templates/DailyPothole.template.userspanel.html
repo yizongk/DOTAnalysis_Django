@@ -70,7 +70,7 @@
             {% for entry in users %}
             <tr>
                 <td data-id="{{ entry.user_id }}" data-table="TblUser" data-column="Username">{{ entry.username }}</td>
-                <td data-id="{{ entry.user_id }}" data-table="TblUser" data-column="IsAdmin">{{ entry.is_admin }}</td>
+                <td data-id="{{ entry.user_id }}" data-table="TblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
                 <td data-id="{{ entry.user_id }}" ></td>
             </tr>
             {% endfor %}
@@ -115,16 +115,16 @@
             });
             */
 
-            /* @TODO need to implement this update api and replace it
+            // @TODO need to implement this update api and replace it
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
-                Usernames_array = ['True', 'False']
+                select_array = ['True', 'False']
                 // Move current select element to the top of the array
                 var current_value = $(this).text()
-                Usernames_array.sort(function(x, y) {
+                select_array.sort(function(x, y) {
                     return x == current_value ? -1 : y == current_value ? 1 : 0;
                 });
-                enterCellEditSelectMode($(this), Usernames_array)
+                enterCellEditSelectMode($(this), select_array)
             });
 
             $(document).on("keyup", ".input-data-select", function (e) {
@@ -135,9 +135,8 @@
             });
 
             $(document).on("change", ".input-data-select", function () {
-                sendCellToServer(node=this, api_url="users_panel_api_update_row", http_request_method="POST", cell_html_type="select");
+                sendCellToServer(node=this, api_url="{% url 'dailypothole_update_user_api' %}", http_request_method="POST", cell_html_type="select");
             });
-            */
 
             /*
             // For row delete, with support for only JS Datatable
@@ -220,7 +219,7 @@
                             } else if (index == 1) {
                                 $(childNode).attr("data-table", "TblUser")
                                 $(childNode).attr("data-column", "IsAdmin")
-                                //@TODO $(childNode).attr("class", "editable")
+                                $(childNode).attr("class", "editable-select")
                             } else if (index == 2) {
                                 // Nothing to add for the Delete icon
                             } else {
