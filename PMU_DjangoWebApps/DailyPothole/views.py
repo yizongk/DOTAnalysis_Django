@@ -1598,7 +1598,7 @@ def UpdateUser(request):
             raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
 
 
-        if table == 'TblUser' and column == 'IsAdmin':
+        if table == 'tblUser' and column == 'IsAdmin':
             user_id             = json_blob['id']
             is_admin_input      = json_blob['new_value']
         else:

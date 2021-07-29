@@ -69,8 +69,8 @@
         <tbody>
             {% for entry in users %}
             <tr>
-                <td data-id="{{ entry.user_id }}" data-table="TblUser" data-column="Username">{{ entry.username }}</td>
-                <td data-id="{{ entry.user_id }}" data-table="TblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
+                <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="Username">{{ entry.username }}</td>
+                <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
                 <td data-id="{{ entry.user_id }}" ></td>
             </tr>
             {% endfor %}
@@ -115,7 +115,6 @@
             });
             */
 
-            // @TODO need to implement this update api and replace it
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
                 select_array = ['True', 'False']
