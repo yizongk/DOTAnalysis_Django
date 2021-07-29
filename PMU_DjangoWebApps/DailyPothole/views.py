@@ -1777,6 +1777,100 @@ class UserPermissionsPanelPageView(generic.ListView):
             return context
 
 
+def AddUserPermission(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AddUserPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        username_input      = json_blob['username_input']
+        operation_input     = json_blob['operation_input']
+        boro_input          = json_blob['boro_input']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        if username_input is None:
+            raise ValueError("username_input cannot be null")
+
+        if username_input == '':
+            raise ValueError("username_input cannot be empty string")
+
+        if operation_input is None:
+            raise ValueError("operation_input cannot be null")
+
+        if operation_input == '':
+            raise ValueError("operation_input cannot be empty string")
+
+        if boro_input is None:
+            raise ValueError("boro_input cannot be null")
+
+        if boro_input == '':
+            raise ValueError("boro_input cannot be empty string")
+
+
+
+        try:
+            user = TblUser.objects.using("DailyPothole").get(username=username_input)
+            operation = TblOperation.objects.using("DailyPothole").get(operation=operation_input)
+            boro = TblBoro.objects.using("DailyPothole").get(boro_long=boro_input)
+
+            new_permission = TblPermission(
+                user_id=user
+                ,operation_id=operation
+                ,boro_id=boro
+            )
+            new_permission.save(using='DailyPothole')
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "username": new_permission.user_id.username,
+            "operation": new_permission.operation_id.operation,
+            "boro_long": new_permission.boro_id.boro_long,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}. For '{}'".format(e, username_input),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
 
 
 

@@ -194,14 +194,17 @@
 
             })
 
+            */
             // For row add, with support for only JS Datatable
             $('#modalNewRowFormAddButton').on("click", function() {
 
                 let usernameInput = $("#modalNewRowFormSelectUsernameInput").val()
-                let isAdmin = $("#modalNewRowFormSelectOperationInput").val()
+                let operationInput = $("#modalNewRowFormSelectOperationInput").val()
+                let boroInput = $("#modalNewRowFormSelectBoroInput").val()
 
                 $('#modalNewRowFormSelectUsernameInputBorder').css("border", "")
-                $('#modalNewRowFormIsAdminInputBorder').css("border", "")
+                $('#modalNewRowFormSelectOperationInputBorder').css("border", "")
+                $('#modalNewRowFormSelectBoroInputBorder').css("border", "")
 
 
                 if (usernameInput == '') {
@@ -209,22 +212,28 @@
                     return
                 }
 
-                if (isAdmin == '') {
-                    $('#modalNewRowFormIsAdminInputBorder').css("border", "2px solid red")
+                if (operationInput == '') {
+                    $('#modalNewRowFormSelectOperationInputBorder').css("border", "2px solid red")
+                    return
+                }
+
+                if (boroInput == '') {
+                    $('#modalNewRowFormSelectBoroInputBorder').css("border", "2px solid red")
                     return
                 }
 
                 json_blob = {
                     "username_input": usernameInput,
-                    "is_admin_input": isAdmin,
+                    "operation_input": operationInput,
+                    "boro_input": boroInput,
                 }
 
-                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_api' %}", http_request_method="POST",
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_permission_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.username}' added to Users table successfully!`)
+                        alert(`Successfully added permission to User Permissions table!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.username, json_response.is_admin, ] )
+                        var rowNode = table.row.add( [ json_response.username, json_response.operation, json_response.boro_long, ] )
                         .draw()
                         .node();
 
@@ -233,13 +242,17 @@
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
-                                $(childNode).attr("data-table", "TblUser")
+                                $(childNode).attr("data-table", "tblUser")
                                 $(childNode).attr("data-column", "Username")
                             } else if (index == 1) {
-                                $(childNode).attr("data-table", "TblUser")
-                                $(childNode).attr("data-column", "IsAdmin")
-                                $(childNode).attr("class", "editable-select")
+                                $(childNode).attr("data-table", "tblOperation")
+                                $(childNode).attr("data-column", "operation")
+                                //@TODO $(childNode).attr("class", "editable-select")
                             } else if (index == 2) {
+                                $(childNode).attr("data-table", "tblBoro")
+                                $(childNode).attr("data-column", "BoroLong")
+                                //@TODO $(childNode).attr("class", "editable-select")
+                            } else if (index == 3) {
                                 // Nothing to add for the Delete icon
                             } else {
                                 alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
@@ -252,7 +265,6 @@
                     }
                 )
             })
-            */
 
         });
     </script>

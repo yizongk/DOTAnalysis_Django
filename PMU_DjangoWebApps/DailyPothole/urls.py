@@ -21,5 +21,6 @@ urlpatterns = [
     path('update_user', views.UpdateUser, name='dailypothole_update_user_api'),
     path('delete_user', views.DeleteUser, name='dailypothole_delete_user_api'),
     path('user_permissions_panel', UserPermissionsPanelPageView.as_view(), name='dailypothole_user_permissions_panel_view'),
+    path('add_user_permission', views.AddUserPermission, name='dailypothole_add_user_permission_api'),
 
 ]
