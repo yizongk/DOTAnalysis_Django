@@ -96,7 +96,6 @@
                 </div>
             </div>
 
-            {% comment %}
             <div class="card DOT-theme-color">
                 <div class="card-body">
                     <div>
@@ -107,16 +106,15 @@
                 <div class="view overlay">
                     <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
                     <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'fleetdatacollection_adminpanel_view' %}">
+                    <a href="{% url 'dailypothole_admin_panel_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
                 </div>
 
                 <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'fleetdatacollection_adminpanel_view' %}">Head Over &raquo;</a>
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_admin_panel_view' %}">Head Over &raquo;</a>
                 </div>
             </div>
-            {% endcomment %}
         {% endif %}
     </div>
 </div>

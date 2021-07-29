@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, PotholeDataEntryPageView, PotholeDataGridPageView, ComplaintsInputPageView, ReportsPageView, UpdatePotholesData, UpdateComplaintsData, LookupComplaintsData, GetPDFReport, LookupPotholesAndCrewData
+from .views import HomePageView, AboutPageView, ContactPageView, PotholeDataEntryPageView, PotholeDataGridPageView, ComplaintsInputPageView, ReportsPageView, UpdatePotholesData, UpdateComplaintsData, LookupComplaintsData, GetPDFReport, LookupPotholesAndCrewData, AdminPanelPageView
 urlpatterns = [
 
     path('', HomePageView.as_view(), name='dailypothole_home_view'),
@@ -15,5 +15,6 @@ urlpatterns = [
     path('lookup_complaints_data', views.LookupComplaintsData, name='dailypothole_lookup_complaints_data_api'),
     path('get_pdf_report', views.GetPDFReport, name='dailypothole_get_pdf_report_api'),
     path('lookup_potholes_and_crew_data', views.LookupPotholesAndCrewData, name='dailypothole_lookup_potholes_and_crew_data_api'),
+    path('admin_panel', AdminPanelPageView.as_view(), name='dailypothole_admin_panel_view'),
 
 ]
