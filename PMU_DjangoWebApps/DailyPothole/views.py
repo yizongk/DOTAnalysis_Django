@@ -86,7 +86,7 @@ class ContactPageView(TemplateView):
     template_name = 'DailyPothole.template.contact.html'
 
 
-class DataCollectionPageView(generic.ListView):
+class PotholeDataEntryPageView(generic.ListView):
     template_name = 'DailyPothole.template.datacollection.html'
     context_object_name = 'not_used'
 
@@ -154,7 +154,7 @@ class DataCollectionPageView(generic.ListView):
             return context
 
 
-class DataGridPageView(generic.ListView):
+class PotholeDataGridPageView(generic.ListView):
     template_name = 'DailyPothole.template.datagrid.html'
     context_object_name = 'daily_pothole'
 
@@ -192,7 +192,7 @@ class DataGridPageView(generic.ListView):
 
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: DataGridPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return TblPotholeMaster.objects.none()
 
@@ -1374,5 +1374,4 @@ def LookupPotholesAndCrewData(request):
             "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}".format(e),
             # "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
-
 
