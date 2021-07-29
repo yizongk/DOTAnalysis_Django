@@ -87,9 +87,9 @@
         <tbody>
             {% for entry in user_permissions %}
             <tr>
-                <td data-id="{{ entry.permission_id }}" data-table="tblUser" data-column="Username">{{ entry.user_id.username }}</td>
-                <td data-id="{{ entry.permission_id }}" data-table="tblOperation" data-column="operation">{{ entry.operation_id.operation }}</td>
-                <td data-id="{{ entry.permission_id }}" data-table="tblBoro" data-column="BoroLong">{{ entry.boro_id.boro_long }}</td>
+                <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select"     >{{ entry.user_id.username }}</td>
+                <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" class="editable-select">{{ entry.operation_id.operation }}</td>
+                <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select"     >{{ entry.boro_id.boro_long }}</td>
                 <td data-id="{{ entry.permission_id }}" ></td>
             </tr>
             {% endfor %}
@@ -136,10 +136,34 @@
             });
             */
 
-            /*
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
-                select_array = ['True', 'False']
+                if ( $(this).data('table') == 'tblUser' ) {
+                    select_array = [
+                        {% for each in user_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+                if ( $(this).data('table') == 'tblOperation' ) {
+                    select_array = [
+                        {% for each in operation_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+                if ( $(this).data('table') == 'tblBoro' ) {
+                    select_array = [
+                        {% for each in boro_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+
+                //select_array = ['True', 'False']
                 // Move current select element to the top of the array
                 var current_value = $(this).text()
                 select_array.sort(function(x, y) {
@@ -156,9 +180,10 @@
             });
 
             $(document).on("change", ".input-data-select", function () {
-                sendCellToServer(node=this, api_url="{% url 'dailypothole_update_user_api' %}", http_request_method="POST", cell_html_type="select");
+                sendCellToServer(node=this, api_url="{% url 'dailypothole_update_user_permission_api' %}", http_request_method="POST", cell_html_type="select");
             });
 
+            /*
             // For row delete, with support for only JS Datatable
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
@@ -237,21 +262,22 @@
                         .draw()
                         .node();
 
-                        // Add user_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.user_id);
+                        // Add permission_id to all child cells
+                        $(rowNode).children().attr("data-id", json_response.permission_id);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
                                 $(childNode).attr("data-table", "tblUser")
                                 $(childNode).attr("data-column", "Username")
+                                $(childNode).attr("class", "editable-select")
                             } else if (index == 1) {
                                 $(childNode).attr("data-table", "tblOperation")
-                                $(childNode).attr("data-column", "operation")
-                                //@TODO $(childNode).attr("class", "editable-select")
+                                $(childNode).attr("data-column", "Operation")
+                                $(childNode).attr("class", "editable-select")
                             } else if (index == 2) {
                                 $(childNode).attr("data-table", "tblBoro")
                                 $(childNode).attr("data-column", "BoroLong")
-                                //@TODO $(childNode).attr("class", "editable-select")
+                                $(childNode).attr("class", "editable-select")
                             } else if (index == 3) {
                                 // Nothing to add for the Delete icon
                             } else {

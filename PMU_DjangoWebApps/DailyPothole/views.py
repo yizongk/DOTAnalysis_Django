@@ -1856,6 +1856,7 @@ def AddUserPermission(request):
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
+            "permission_id": new_permission.permission_id,
             "username": new_permission.user_id.username,
             "operation": new_permission.operation_id.operation,
             "boro_long": new_permission.boro_id.boro_long,
@@ -1871,6 +1872,106 @@ def AddUserPermission(request):
             "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}".format(e),
             # "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
+
+
+def UpdateUserPermission(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdateUserPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        table               = json_blob['table']
+        column              = json_blob['column']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        if  (
+                ( table == 'tblUser' and column == 'Username' )
+                or ( table == 'tblOperation' and column == 'Operation' )
+                or ( table == 'tblBoro' and column == 'BoroLong' )
+            ):
+            permission_id   = json_blob['id']
+            new_value       = json_blob['new_value']
+        else:
+            raise ValueError("table '{}' and column '{}' is not recognized for this api".format(table, column))
+
+        try:
+            permission_id = int(permission_id)
+        except Exception as e:
+            raise ValueError("Cannot convert '{}' to int".format(permission_id))
+
+        if new_value is None:
+            raise ValueError("new_value cannot be null")
+
+        if new_value == '':
+            raise ValueError("new_value cannot be empty string")
+
+
+        try:
+            permission = TblPermission.objects.using("DailyPothole").get(permission_id=permission_id)
+            if table == 'tblUser' and column == 'Username':
+                user = TblUser.objects.using("DailyPothole").get(username=new_value)
+                permission.user_id = user
+            if table == 'tblOperation' and column == 'Operation':
+                operation = TblOperation.objects.using("DailyPothole").get(operation=new_value)
+                permission.operation_id = operation
+            if table == 'tblBoro' and column == 'BoroLong':
+                boro = TblBoro.objects.using("DailyPothole").get(boro_long=new_value)
+                permission.boro_id = boro
+
+            permission.save(using='DailyPothole')
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "username": permission.user_id.username,
+            "operation": permission.operation_id.operation,
+            "boro_long": permission.boro_id.boro_long,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}. For '{}' and '{}'".format(e, permission_id, new_value),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
 
 
 
