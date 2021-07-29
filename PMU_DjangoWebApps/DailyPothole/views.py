@@ -140,7 +140,7 @@ class PotholeDataEntryPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.err_msg = "Exception: DateCollectionPageView(): get_context_data(): {}".format(e)
             print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
@@ -210,7 +210,7 @@ class PotholeDataGridPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.err_msg = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
             print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
@@ -267,7 +267,7 @@ class ComplaintsInputPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.err_msg = "Exception: ComplaintsInputPageView(): get_context_data(): {}".format(e)
             print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
@@ -318,7 +318,7 @@ class ReportsPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.err_msg = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
             print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
@@ -1415,7 +1415,7 @@ class AdminPanelPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.err_msg = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
             print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
@@ -1426,4 +1426,133 @@ class AdminPanelPageView(generic.ListView):
             return context
 
 
+class UsersPanelPageView(generic.ListView):
+    template_name = 'DailyPothole.template.userspanel.html'
+    context_object_name = 'users'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        # Check for Active Admins
+        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+
+        ## Get the core data
+        try:
+            if self.client_is_admin:
+                users_data = TblUser.objects.using('DailyPothole').all().order_by('username')
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return TblPotholeMaster.objects.none()
+
+        self.req_success = True
+        return users_data
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
+
+def AddUser(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AddUser(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUser():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUser():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        username_input      = json_blob['username_input']
+        is_admin_input      = json_blob['is_admin_input']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        if username_input is None:
+            raise ValueError("username_input cannot be null")
+
+        if username_input == '':
+            raise ValueError("username_input cannot be empty string")
+
+        if is_admin_input is None:
+            raise ValueError("is_admin_input cannot be null")
+
+        if is_admin_input not in ['True', 'False']:
+            raise ValueError("Unrecognized is_admin_input value '{}', must be either 'True' or 'False'".format(is_admin_input))
+
+
+        try:
+            new_user = TblUser(username=username_input, is_admin=is_admin_input)
+            new_user.save(using='DailyPothole')
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "user_id": new_user.user_id,
+            "username": new_user.username,
+            "is_admin": new_user.is_admin,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUser():\n\nError: {}. For '{}'".format(e, username_input),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: AddUser():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: AddUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
 

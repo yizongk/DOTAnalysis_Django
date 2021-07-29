@@ -13,6 +13,26 @@
             <div class="card DOT-theme-color">
                 <div class="card-body">
                     <div>
+                        <h4 class="class-title font-weight-bold mb-2">Users Panel</h4>
+                    </div>
+                </div>
+
+                <div class="view overlay">
+                    <!-- Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
+                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/512x512/users.png' %}" alt="Users Panel Logo">
+                    <a href="{% url 'dailypothole_users_panel_view' %}">
+                        <div class="mask rgba-white-light"></div>
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_users_panel_view' %}">Head Over &raquo;</a>
+                </div>
+            </div>
+
+            <div class="card DOT-theme-color">
+                <div class="card-body">
+                    <div>
                         <h4 class="class-title font-weight-bold mb-2">User Permissions Panel</h4>
                     </div>
                 </div>
@@ -29,28 +49,6 @@
 
                 <div class="card-body">
                     {% comment %} <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_userpermissionspanel' %}">Head Over &raquo;</a> {% endcomment %}
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Users Panel</h4>
-                    </div>
-                </div>
-
-                <div class="view overlay">
-                    <!-- Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/512x512/users.png' %}" alt="User Permissions Panel Logo">
-                    {% comment %}
-                    <a href="{% url 'perind_userspanel' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                    {% endcomment %}
-                </div>
-
-                <div class="card-body">
-                    {% comment %} <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_userspanel' %}">Head Over &raquo;</a> {% endcomment %}
                 </div>
             </div>
 
