@@ -1745,7 +1745,7 @@ class UserPermissionsPanelPageView(generic.ListView):
         try:
             if self.client_is_admin:
                 user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
-                self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all()]
+                self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
                 self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
                 self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
