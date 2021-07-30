@@ -109,12 +109,16 @@ class PotholeDataEntryPageView(generic.ListView):
                 self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 ## Get the remote user's Operation list and Borough list
-                user_objs = TblPermission.objects.using('DailyPothole').filter(
+                permission_obj = TblPermission.objects.using('DailyPothole').filter(
                     user_id__username__exact=self.request.user
                 ).order_by('operation_id')
 
-                self.operation_list = list(set([each.operation_id.operation for each in user_objs]))
-                self.boro_list = list(set([each.boro_id.boro_long for each in user_objs]))
+                if permission_obj.count() == 0:
+                    raise ValueError("'{}' doesn't not have any permission to view this page".format(self.request.user))
+
+
+                self.operation_list = list(set([each.operation_id.operation for each in permission_obj]))
+                self.boro_list = list(set([each.boro_id.boro_long for each in permission_obj]))
 
         except Exception as e:
             self.req_success = False
@@ -1343,6 +1347,15 @@ def LookupPotholesAndCrewData(request):
         look_up_date    = json_blob['look_up_date']
         operation       = json_blob['operation']
         borough         = json_blob['borough']
+
+        permission_obj = TblPermission.objects.using('DailyPothole').filter(
+            user_id__username__exact=remote_user
+            ,operation_id__operation__exact=operation
+            ,boro_id__boro_long__exact=borough
+        )
+
+        if permission_obj.count() == 0:
+            raise ValueError("'{}' doesn't not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
 
         pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get(
             repair_date__exact=look_up_date,
