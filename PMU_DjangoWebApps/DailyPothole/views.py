@@ -1348,14 +1348,20 @@ def LookupPotholesAndCrewData(request):
         operation       = json_blob['operation']
         borough         = json_blob['borough']
 
-        permission_obj = TblPermission.objects.using('DailyPothole').filter(
-            user_id__username__exact=remote_user
-            ,operation_id__operation__exact=operation
-            ,boro_id__boro_long__exact=borough
-        )
+        client_is_admin = user_is_active_admin(remote_user)["isAdmin"]
 
-        if permission_obj.count() == 0:
-            raise ValueError("'{}' doesn't not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
+        ## Get the core data
+        if client_is_admin:
+            pass
+        else:
+            permission_obj = TblPermission.objects.using('DailyPothole').filter(
+                user_id__username__exact=remote_user
+                ,operation_id__operation__exact=operation
+                ,boro_id__boro_long__exact=borough
+            )
+
+            if permission_obj.count() == 0:
+                raise ValueError("'{}' doesn't not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
 
         pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get(
             repair_date__exact=look_up_date,
