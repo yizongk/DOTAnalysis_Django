@@ -2235,7 +2235,7 @@ def GetCsvExport(request):
                 pothole_repaired_sum += each['total_repaired']
 
             writer = csv.writer(dummy_in_mem_file)
-            writer.writerow(['Date Range for each year: Jan 01 to {} {}'.format(end_date_obj.strftime("%b"), end_date_obj.day)])
+            writer.writerow(['Date Range for each year: Jan 01 to {} {}'.format(end_date_obj.strftime("%b"), end_date_obj.strftime("%d"))])
             writer.writerow(['Year', 'BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
 
             for each in potholes_data:
