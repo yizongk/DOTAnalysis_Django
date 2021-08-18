@@ -676,7 +676,7 @@ def LookupComplaintsData(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to the LookupComplaintsData() api".format(remote_user))
 
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
@@ -750,7 +750,7 @@ def GetPDFReport(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to the GetPDFReport() api".format(remote_user))
 
         from django.db.models import Sum, Count
         from datetime import datetime, timedelta
@@ -2152,7 +2152,7 @@ def GetCsvExport(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to the GetCsvExport() api".format(remote_user))
 
         from django.db.models import Sum
         from datetime import datetime
