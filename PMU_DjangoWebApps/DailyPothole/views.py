@@ -1302,7 +1302,7 @@ def GetPDFReport(request):
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. For '{}'".format(e, report_date),
         })
     except Exception as e:
         return JsonResponse({
@@ -2059,6 +2059,158 @@ def DeleteUserPermission(request):
             # "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
 
+
+class CsvExportPageView(generic.ListView):
+    template_name = 'DailyPothole.template.csvexport.html'
+    context_object_name = 'complaints'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        # Check for Active Admins
+        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+
+        ## Get the core data
+        try:
+            if self.client_is_admin:
+                complaints_data = TblComplaint.objects.none()
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return TblComplaint.objects.none()
+
+        self.req_success = True
+        return complaints_data
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
+
+def GetCsvExport(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: GetCsvExport(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "GetCsvExport():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: GetCsvExport():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        import csv
+        from io import StringIO
+        dummy_in_mem_file = StringIO()
+
+        start_date      = json_blob['start_date']
+        end_date        = json_blob['end_date']
+        type_of_query   = json_blob['type_of_query']
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to look up complaints data".format(remote_user))
+
+        from django.db.models import Sum
+        from datetime import datetime
+
+        if type_of_query == 'date_range_summary':
+            potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
+                repair_date__range=[start_date, end_date],
+            ).values(
+                'boro_id__boro_code'
+            ).annotate(
+                total_crew_count=Sum('repair_crew_count')
+                ,total_repaired=Sum('holes_repaired')
+            ).order_by('boro_id__boro_code')
+
+            ## Create the csv
+            crew_count_sum = 0
+            pothole_repaired_sum = 0
+            for each in potholes_data:
+                crew_count_sum += each['total_crew_count']
+                pothole_repaired_sum += each['total_repaired']
+
+            writer = csv.writer(dummy_in_mem_file)
+            writer.writerow(['BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
+
+            for each in potholes_data:
+                eachrow = [
+                    each['boro_id__boro_code']
+                    ,each['total_crew_count']
+                    ,each['total_repaired']
+                ]
+                writer.writerow(eachrow)
+
+            writer.writerow(['', crew_count_sum, pothole_repaired_sum])
+
+
+        elif type_of_query == 'last_five_calendar_year_to_selected_month_and_date':
+            pass
+            ##@TODO Work on this!
+        else:
+            raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_csv_bytes": dummy_in_mem_file.getvalue(),
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}. For '{}'".format(e, start_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
 
 
 

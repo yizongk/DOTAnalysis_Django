@@ -1,0 +1,117 @@
+{% extends 'DailyPothole.template.base.html' %}
+
+{% load static %}
+{% load tz %}
+{% load extra_tags %}
+
+{% block custom_css %}
+    <!-- You MUST include jQuery before Fomantic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="navbar navbar-expand-lg">
+        <h2 class="mt-3">
+            CSV Export
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+
+    <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
+    <div class="ui one column stackable center aligned page grid">
+        <div class="ui form">
+            <div id="dateRangeSummaryInputBorderReportDateStart" class="field">
+                <input type="date" id="dateRangeSummaryInputReportDateStart" value="{{ today }}">
+            </div>
+
+            <div id="dateRangeSummaryInputBorderReportDateEnd" class="field">
+                <input type="date" id="dateRangeSummaryInputReportDateEnd" value="{{ today }}">
+            </div>
+
+
+
+            <div class="d-flex justify-content-center">
+                <button id="dateRangeSummarySubmit" class="btn btn-default">Get CSV</button>
+            </div>
+
+        </div>
+    </div>
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
+
+    {% comment %} JS Datatable stuff {% endcomment %}
+    <script>
+        $(document).ready( function () {
+            // Reset the default viewport from css class container to container-fluid
+            $(".container").attr('class', 'container-fluid')
+
+
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+
+
+
+            $('#dateRangeSummarySubmit').on("click", function() {
+
+                let StartDate = $("#dateRangeSummaryInputReportDateStart").val()
+                let EndDate = $("#dateRangeSummaryInputReportDateEnd").val()
+
+                $('#dateRangeSummaryInputBorderReportDateStart').removeClass("error")
+                $('#dateRangeSummaryInputBorderReportDateEnd').removeClass("error")
+
+                if (StartDate == '') {
+                    $('#dateRangeSummaryInputBorderReportDateStart').addClass("error")
+                    return
+                }
+                if (EndDate == '') {
+                    $('#dateRangeSummaryInputBorderReportDateEnd').addClass("error")
+                    return
+                }
+
+                json_blob = {
+                    "start_date": StartDate,
+                    "end_date": EndDate,
+                    "type_of_query": "date_range_summary",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        //alert(`data saved successfully!`)
+
+                        fun_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
+                        let start_date_name = `${ StartDate.substring(5, StartDate.length) + '-' + StartDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        start_date_name = start_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        let end_date_name = `${ EndDate.substring(5, EndDate.length) + '-' + EndDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        end_date_name = end_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        var fileName = `DateRangeSummary_${start_date_name}_to_${end_date_name}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            })
+
+
+        });
+    </script>
+{% endblock custom_js %}

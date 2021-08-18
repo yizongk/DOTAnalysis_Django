@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, PotholeDataEntryPageView, PotholeDataGridPageView, ComplaintsInputPageView, ReportsPageView, AdminPanelPageView, UsersPanelPageView, UserPermissionsPanelPageView
+from .views import HomePageView, AboutPageView, ContactPageView, PotholeDataEntryPageView, PotholeDataGridPageView, ComplaintsInputPageView, ReportsPageView, AdminPanelPageView, UsersPanelPageView, UserPermissionsPanelPageView, CsvExportPageView
 urlpatterns = [
 
     path('', HomePageView.as_view(), name='dailypothole_home_view'),
@@ -24,5 +24,7 @@ urlpatterns = [
     path('add_user_permission', views.AddUserPermission, name='dailypothole_add_user_permission_api'),
     path('update_user_permission', views.UpdateUserPermission, name='dailypothole_update_user_permission_api'),
     path('delete_user_permission', views.DeleteUserPermission, name='dailypothole_delete_user_permission_api'),
+    path('csv_export', CsvExportPageView.as_view(), name='dailypothole_csv_export_view'),
+    path('get_csv_export', views.GetCsvExport, name='dailypothole_get_csv_export_api'),
 
 ]
