@@ -21,35 +21,37 @@
     </div>
 
 
-    <table class="table table-striped table-hover" id="JSDataTable">
-        <thead>
-            <tr>
-                <th>Repair Date</th>
-                <th>Operation</th>
-                <th>Boro</th>
-                <th>Repair Crew Count</th>
-                <th>Holes Repaired</th>
-                <th>Daily Crew Count</th>
-                <th>Last Modified Timestamp</th>
-                <th>Last Modified by</th>
-            </tr>
-        </thead>
+    {% if client_is_admin %}
+        <table class="table table-striped table-hover" id="JSDataTable">
+            <thead>
+                <tr>
+                    <th>Repair Date</th>
+                    <th>Operation</th>
+                    <th>Boro</th>
+                    <th>Repair Crew Count</th>
+                    <th>Holes Repaired</th>
+                    <th>Daily Crew Count</th>
+                    <th>Last Modified Timestamp</th>
+                    <th>Last Modified by</th>
+                </tr>
+            </thead>
 
-        <body id="JSDataTableBody">
-            {% for entry in daily_pothole %}
-            <tr>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairDate"        >{{ entry.repair_date|date:"Y-m-d"          }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblOperation"     data-column="Operation"         >{{ entry.operation_id.operation            }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblBoro"          data-column="BoroLong"          >{{ entry.boro_id.boro_long                }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairCrewCount"   >{{ entry.repair_crew_count                 }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="HolesRepaired"     >{{ entry.holes_repaired                    }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="DailyCrewCount"    >{{ entry.daily_crew_count                  }}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="LastModifiedStamp" >{{ entry.last_modified_stamp|localtime}}</td>
-                <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblUser"          data-column="Username"          >{{ entry.last_modified_by_user_id.username }}</td>
-            </tr>
-            {% endfor %}
-        </body>
-    </table>
+            <body id="JSDataTableBody">
+                {% for entry in daily_pothole %}
+                <tr>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairDate"        >{{ entry.repair_date|date:"Y-m-d"          }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblOperation"     data-column="Operation"         >{{ entry.operation_id.operation            }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblBoro"          data-column="BoroLong"          >{{ entry.boro_id.boro_long                }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairCrewCount"   >{{ entry.repair_crew_count                 }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="HolesRepaired"     >{{ entry.holes_repaired                    }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="DailyCrewCount"    >{{ entry.daily_crew_count                  }}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="LastModifiedStamp" >{{ entry.last_modified_stamp|localtime}}</td>
+                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblUser"          data-column="Username"          >{{ entry.last_modified_by_user_id.username }}</td>
+                </tr>
+                {% endfor %}
+            </body>
+        </table>
+    {% endif %}
 {% endblock content %}
 
 {% block custom_js %}

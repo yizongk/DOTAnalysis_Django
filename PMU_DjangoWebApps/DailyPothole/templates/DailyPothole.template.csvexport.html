@@ -22,42 +22,44 @@
     </div>
 
 
-    <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
-    <div class="ui one column stackable center aligned page grid">
-        <div class="ui form">
-            <div id="dateRangeSummaryInputBorderReportDateStart" class="field">
-                <input type="date" id="dateRangeSummaryInputReportDateStart" value="{{ today }}">
+    {% if client_is_admin %}
+        <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="dateRangeSummaryInputBorderReportDateStart" class="field">
+                    <input type="date" id="dateRangeSummaryInputReportDateStart" value="{{ today }}">
+                </div>
+
+                <div id="dateRangeSummaryInputBorderReportDateEnd" class="field">
+                    <input type="date" id="dateRangeSummaryInputReportDateEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="dateRangeSummarySubmit" class="btn btn-default">Get CSV</button>
+                </div>
+
             </div>
-
-            <div id="dateRangeSummaryInputBorderReportDateEnd" class="field">
-                <input type="date" id="dateRangeSummaryInputReportDateEnd" value="{{ today }}">
-            </div>
-
-
-
-            <div class="d-flex justify-content-center">
-                <button id="dateRangeSummarySubmit" class="btn btn-default">Get CSV</button>
-            </div>
-
         </div>
-    </div>
 
 
-    <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
-    <div class="ui one column stackable center aligned page grid">
-        <div class="ui form">
-            <div id="ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd" class="field">
-                <input type="date" id="ytdRangeLastFiveYearsSummaryInputReportDateEnd" value="{{ today }}">
+        <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd" class="field">
+                    <input type="date" id="ytdRangeLastFiveYearsSummaryInputReportDateEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="ytdRangeLastFiveYearsSummarySubmit" class="btn btn-default">Get CSV</button>
+                </div>
+
             </div>
-
-
-
-            <div class="d-flex justify-content-center">
-                <button id="ytdRangeLastFiveYearsSummarySubmit" class="btn btn-default">Get CSV</button>
-            </div>
-
         </div>
-    </div>
+    {% endif %}
 {% endblock content %}
 
 {% block custom_js %}
