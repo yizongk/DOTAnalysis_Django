@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views import generic
+from django.db.models import Q
 
 from .models import *
 from django.http import JsonResponse
@@ -2175,6 +2176,7 @@ def GetCsvExport(request):
                 pothole_repaired_sum += each['total_repaired']
 
             writer = csv.writer(dummy_in_mem_file)
+            writer.writerow(['Date Range: {} to {}'.format(start_date, end_date)])
             writer.writerow(['BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
 
             for each in potholes_data:
@@ -2185,12 +2187,68 @@ def GetCsvExport(request):
                 ]
                 writer.writerow(eachrow)
 
-            writer.writerow(['', crew_count_sum, pothole_repaired_sum])
+            writer.writerow(['Total', crew_count_sum, pothole_repaired_sum])
 
 
-        elif type_of_query == 'last_five_calendar_year_to_selected_month_and_date':
-            pass
-            ##@TODO Work on this!
+        elif type_of_query == 'ytd_range_last_five_years_summary':
+            from datetime import datetime
+            today = datetime.today()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+
+            if today.year != end_date_obj.year:
+                raise ValueError("EndDate ({}) is not in current Calendar Year. Please give a date in {}".format(end_date, today.year))
+
+            year_1_start = '{}-01-01'.format(today.year)
+            year_2_start = '{}-01-01'.format(today.year-1)
+            year_3_start = '{}-01-01'.format(today.year-2)
+            year_4_start = '{}-01-01'.format(today.year-3)
+            year_5_start = '{}-01-01'.format(today.year-4)
+
+            year_1_end = '{}-{}-{}'.format(today.year, end_date_obj.month, end_date_obj.day )
+            year_2_end = '{}-{}-{}'.format(today.year-1, end_date_obj.month, end_date_obj.day )
+            year_3_end = '{}-{}-{}'.format(today.year-2, end_date_obj.month, end_date_obj.day )
+            year_4_end = '{}-{}-{}'.format(today.year-3, end_date_obj.month, end_date_obj.day )
+            year_5_end = '{}-{}-{}'.format(today.year-4, end_date_obj.month, end_date_obj.day )
+
+
+            potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
+                Q(repair_date__range=[year_1_start, year_1_end])
+                | Q(repair_date__range=[year_2_start, year_2_end])
+                | Q(repair_date__range=[year_3_start, year_3_end])
+                | Q(repair_date__range=[year_4_start, year_4_end])
+                | Q(repair_date__range=[year_5_start, year_5_end])
+            ).values(
+                'repair_date__year'
+                ,'boro_id__boro_code'
+            ).annotate(
+                total_crew_count=Sum('repair_crew_count')
+                ,total_repaired=Sum('holes_repaired')
+            ).order_by(
+                'repair_date__year'
+                ,'boro_id__boro_code'
+            )
+
+            crew_count_sum = 0
+            pothole_repaired_sum = 0
+            for each in potholes_data:
+                crew_count_sum += each['total_crew_count']
+                pothole_repaired_sum += each['total_repaired']
+
+            writer = csv.writer(dummy_in_mem_file)
+            writer.writerow(['Date Range for each year: Jan 01 to {} {}'.format(end_date_obj.strftime("%b"), end_date_obj.day)])
+            writer.writerow(['Year', 'BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
+
+            for each in potholes_data:
+                eachrow = [
+                    each['repair_date__year']
+                    ,each['boro_id__boro_code']
+                    ,each['total_crew_count']
+                    ,each['total_repaired']
+                ]
+                writer.writerow(eachrow)
+
+            writer.writerow(['Total', '', crew_count_sum, pothole_repaired_sum])
+
         else:
             raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))
 

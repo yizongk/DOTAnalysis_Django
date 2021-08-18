@@ -41,6 +41,23 @@
 
         </div>
     </div>
+
+
+    <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
+    <div class="ui one column stackable center aligned page grid">
+        <div class="ui form">
+            <div id="ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd" class="field">
+                <input type="date" id="ytdRangeLastFiveYearsSummaryInputReportDateEnd" value="{{ today }}">
+            </div>
+
+
+
+            <div class="d-flex justify-content-center">
+                <button id="ytdRangeLastFiveYearsSummarySubmit" class="btn btn-default">Get CSV</button>
+            </div>
+
+        </div>
+    </div>
 {% endblock content %}
 
 {% block custom_js %}
@@ -102,6 +119,76 @@
                         let end_date_name = `${ EndDate.substring(5, EndDate.length) + '-' + EndDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         end_date_name = end_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
                         var fileName = `DateRangeSummary_${start_date_name}_to_${end_date_name}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            })
+
+
+            $('#ytdRangeLastFiveYearsSummarySubmit').on("click", function() {
+
+                let EndDate = $("#ytdRangeLastFiveYearsSummaryInputReportDateEnd").val()
+                let today = new Date()
+
+                $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').removeClass("error")
+
+                if (EndDate == '') {
+                    $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').addClass("error")
+                    return
+                }
+
+                if (parseInt(EndDate.substring(0, 4)) != today.getUTCFullYear()) {
+                    alert(`You selected a date (${EndDate}) that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
+                    return
+                }
+
+                json_blob = {
+                    "start_date": null,
+                    "end_date": EndDate,
+                    "type_of_query": "ytd_range_last_five_years_summary",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        //alert(`data saved successfully!`)
+
+                        fun_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
+                        let yyyy = EndDate.substring(0, 4)
+                        let mm = EndDate.substring(5, 7)
+                        let mm_letter
+                        (mm == '01')
+                            ? mm_letter = 'Jan'
+                            : (mm == '02')
+                                ? mm_letter = 'Feb'
+                                : (mm == '03')
+                                    ? mm_letter = 'Mar'
+                                    : (mm == '04')
+                                        ? mm_letter = 'Apr'
+                                        : (mm == '05')
+                                            ? mm_letter = 'May'
+                                            : (mm == '06')
+                                                ? mm_letter = 'Jun'
+                                                : (mm == '07')
+                                                    ? mm_letter = 'Jul'
+                                                    : (mm == '08')
+                                                        ? mm_letter = 'Aug'
+                                                        : (mm == '09')
+                                                            ? mm_letter = 'Sep'
+                                                            : (mm == '10')
+                                                                ? mm_letter = 'Oct'
+                                                                : (mm == '11')
+                                                                    ? mm_letter = 'Nov'
+                                                                    : (mm == '12')
+                                                                        ? mm_letter = 'Dec'
+                                                                        : mm_letter = 'UnknownMonth'
+                        let dd = EndDate.substring(8, 10)
+
+                        var fileName = `YTDRangeSummaryForLastFiveYears_Jan.01_to_${mm_letter}.${dd}.csv`;
                         saveAs(blob, fileName);
 
                     },
