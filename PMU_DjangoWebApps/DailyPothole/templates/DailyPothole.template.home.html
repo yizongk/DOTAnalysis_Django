@@ -11,9 +11,8 @@
 
 <div class="container">
     <div class="jumbotron" style=" font-family:sans-serif;">
-        <h1>Daily Pothole</h1>
+        <h1>RRM Daily Pothole</h1>
         <p class="lead">Welcome!</p>
-        <p class="lead">Daily Pothole</p>
     </div>
 
 
@@ -29,13 +28,13 @@
 
             <div class="view overlay">
                 <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
-                <a href="{% url 'dailypothole_data_collection_view' %}">
+                <a href="{% url 'dailypothole_pothole_data_entry_view' %}">
                     <div class="mask rgba-white-light"></div>
                 </a>
             </div>
 
             <div class="card-body">
-                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_data_collection_view' %}">Head Over &raquo;</a>
+                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_pothole_data_entry_view' %}">Head Over &raquo;</a>
             </div>
         </div>
 
@@ -48,18 +47,55 @@
                 </div>
 
                 <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/admin_logo.png' %}" alt="Data Grid Logo">
-                    <a href="{% url 'dailypothole_data_grid_view' %}">
+                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Data Grid Logo">
+                    <a href="{% url 'dailypothole_pothole_data_grid_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
                 </div>
 
                 <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_data_grid_view' %}">Head Over &raquo;</a>
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_pothole_data_grid_view' %}">Head Over &raquo;</a>
                 </div>
             </div>
 
-            {% comment %}
+            <div class="card DOT-theme-color">
+                <div class="card-body">
+                    <div>
+                        <h4 class="class-title font-weight-bold mb-2">Complaints Input</h4>
+                    </div>
+                </div>
+
+                <div class="view overlay">
+                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
+                    <a href="{% url 'dailypothole_complaints_input_view' %}">
+                        <div class="mask rgba-white-light"></div>
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_complaints_input_view' %}">Head Over &raquo;</a>
+                </div>
+            </div>
+
+            <div class="card DOT-theme-color">
+                <div class="card-body">
+                    <div>
+                        <h4 class="class-title font-weight-bold mb-2">Reports PDF Generation</h4>
+                    </div>
+                </div>
+
+                <div class="view overlay">
+                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Reporting Logo">
+                    <a href="{% url 'dailypothole_reports_view' %}">
+                        <div class="mask rgba-white-light"></div>
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_reports_view' %}">Head Over &raquo;</a>
+                </div>
+            </div>
+
             <div class="card DOT-theme-color">
                 <div class="card-body">
                     <div>
@@ -70,16 +106,34 @@
                 <div class="view overlay">
                     <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
                     <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'fleetdatacollection_adminpanel_view' %}">
+                    <a href="{% url 'dailypothole_admin_panel_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
                 </div>
 
                 <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'fleetdatacollection_adminpanel_view' %}">Head Over &raquo;</a>
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_admin_panel_view' %}">Head Over &raquo;</a>
                 </div>
             </div>
-            {% endcomment %}
+
+            <div class="card DOT-theme-color">
+                <div class="card-body">
+                    <div>
+                        <h4 class="class-title font-weight-bold mb-2">CSV Export</h4>
+                    </div>
+                </div>
+
+                <div class="view overlay">
+                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Reporting Logo">
+                    <a href="{% url 'dailypothole_csv_export_view' %}">
+                        <div class="mask rgba-white-light"></div>
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_csv_export_view' %}">Head Over &raquo;</a>
+                </div>
+            </div>
         {% endif %}
     </div>
 </div>

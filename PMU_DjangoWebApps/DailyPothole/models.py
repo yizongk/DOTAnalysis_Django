@@ -5,15 +5,15 @@ from django.db import models
 # SQL Server store datetime as UTC time
 
 # All field names made lowercase.
-class TblBoros(models.Model):
-    boros_id = models.AutoField(db_column='BorosId', primary_key=True)
+class TblBoro(models.Model):
+    boro_id = models.AutoField(db_column='BoroId', primary_key=True)
     boro_order = models.IntegerField(db_column='BoroOrder', unique=True)
     boro_code = models.CharField(db_column='BoroCode', max_length=1, blank=False, null=False, unique=True)
     boro_long = models.CharField(db_column='BoroLong', max_length=20, blank=False, null=False)
 
     class Meta:
         managed = False
-        db_table = 'tblBoros'
+        db_table = 'TblBoro'
 
     def __str__(self):
         return self.boro_code
@@ -32,31 +32,42 @@ class TblOperation(models.Model):
         return self.operation
 
 
-class TblUserList(models.Model):
+class TblUser(models.Model):
     user_id = models.AutoField(db_column='UserId', primary_key=True)
     username = models.CharField(db_column='Username', max_length=50, unique=True)
-    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boros_id = models.ForeignKey(to=TblBoros, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
     is_admin = models.BooleanField(db_column='IsAdmin')
 
     class Meta:
         managed = False
-        db_table = 'tblUserList'
+        db_table = 'tblUser'
 
     def __str__(self):
         return self.username
+
+class TblPermission(models.Model):
+    permission_id = models.AutoField(db_column='PermissionId', primary_key=True)
+    user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='UserId', on_delete=models.DO_NOTHING)
+    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
+    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'tblPermission'
+
+    def __str__(self):
+        return self.user_id
 
 
 class TblPotholeMaster(models.Model):
     pothole_master_id = models.AutoField(db_column='PotholeMasterId', primary_key=True)
     repair_date = models.DateField(db_column='RepairDate')
     operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boros_id = models.ForeignKey(to=TblBoros, to_field='boros_id', db_column='BorosId', on_delete=models.DO_NOTHING)
-    repair_crew_count = models.IntegerField(db_column='RepairCrewCount')
-    holes_repaired = models.IntegerField(db_column='HolesRepaired')
-    daily_crew_count = models.IntegerField(db_column='DailyCrewCount')
+    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING)
+    daily_crew_count = models.IntegerField(db_column='PlannedCrewCount')
+    repair_crew_count = models.IntegerField(db_column='ActualCrewCount')
+    holes_repaired = models.IntegerField(db_column='ActualPotholesRepaired')
     last_modified_stamp = models.DateTimeField(db_column='LastModifiedStamp')
-    last_modified_by_user_id = models.ForeignKey(to=TblUserList, to_field='user_id', db_column='LastModifiedByUserId', on_delete=models.DO_NOTHING)
+    last_modified_by_user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='LastModifiedByUserId', on_delete=models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -64,3 +75,22 @@ class TblPotholeMaster(models.Model):
 
     def __str__(self):
         return self.last_modified_by_user_id
+
+
+class TblComplaint(models.Model):
+    complaint_id = models.AutoField(db_column='ComplaintId', primary_key=True)
+    complaint_date = models.DateField(db_column='ComplaintDate', unique=True)
+    fits_complaints = models.IntegerField(db_column='FITSComplaints')
+    fits_bronx = models.IntegerField(db_column='FITSBronx')
+    fits_brooklyn = models.IntegerField(db_column='FITSBrooklyn')
+    fits_manhattan = models.IntegerField(db_column='FITSManhattan')
+    fits_queens = models.IntegerField(db_column='FITSQueens')
+    fits_staten_island = models.IntegerField(db_column='FITSStatenIsland')
+    siebel_complaints = models.IntegerField(db_column='SiebelComplaints')
+
+    class Meta:
+        managed = False
+        db_table = 'tblComplaint'
+
+    def __str__(self):
+        return self.complaint_date

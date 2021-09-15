@@ -683,7 +683,6 @@ def PerIndApiUpdateData(request):
 
 ## Post request
 def PerIndApiGetCsv(request):
-    from django.db import connection
     """
     Download WebGrid view with all current context as xlsx.
     Expects all the filter and sort context in the request. (Don't need pagination context)

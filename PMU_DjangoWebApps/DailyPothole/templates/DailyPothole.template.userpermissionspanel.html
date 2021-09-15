@@ -1,0 +1,297 @@
+{% extends 'DailyPothole.template.base.html' %}
+
+{% load static %}
+
+{% block custom_css %}
+    <!-- You MUST include jQuery before Fomantic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="navbar navbar-expand-lg">
+        <h2 class="mt-3">
+            User Permissions Panel
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+    {% if client_is_admin %}
+        <!-- Add new row button and modal form -->
+        <div>
+            <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+
+                        <div class="modal-body mx-3">
+                            <div class="ui horizontal divider">Add new user permission</div>
+
+                            <div>Username</div>
+                            <div id="modalNewRowFormSelectUsernameInputBorder" class="ui input">
+                                <select id="modalNewRowFormSelectUsernameInput" class="ui selection dropdown">
+                                    <option value=""></option>
+                                    {% for each in user_list %}
+                                        <option value="{{ each }}">{{ each }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>Operation</div>
+                            <div id="modalNewRowFormSelectOperationInputBorder">
+                                <select id="modalNewRowFormSelectOperationInput" class="ui selection dropdown">
+                                    <option value=""></option>
+                                    {% for each in operation_list %}
+                                        <option value="{{ each }}">{{ each }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>Boro</div>
+                            <div id="modalNewRowFormSelectBoroInputBorder">
+                                <select id="modalNewRowFormSelectBoroInput" class="ui selection dropdown">
+                                    <option value=""></option>
+                                    {% for each in boro_list %}
+                                        <option value="{{ each }}">{{ each }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-center">
+                                <button id="modalNewRowFormAddButton" class="btn btn-default">Add new user permission</button>
+                            </div>
+                        </div>
+                        <div id='successMsg'></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Add new user permission</a>
+            </div>
+        </div>
+
+
+        <!--admin access control web grid-->
+        <table class="table table-striped table-hover" id="WebGridTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Operation</th>
+                    <th>Boro</th>
+                    <th>Delete?</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for entry in user_permissions %}
+                <tr>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select"     >{{ entry.user_id.username }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" class="editable-select">{{ entry.operation_id.operation }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select"     >{{ entry.boro_id.boro_long }}</td>
+                    <td data-id="{{ entry.permission_id }}" ></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!--End admin access control web grid-->
+    {% endif %}
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+
+    <script>
+        $(document).ready( function () {
+            // Initializing the existing select divs into a dropdown menu for Formantic UI
+            $('#modalNewRowFormSelectUsernameInput').dropdown();
+            $('#modalNewRowFormSelectOperationInput').dropdown();
+            $('#modalNewRowFormSelectBoroInput').dropdown();
+
+            var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
+                "columnDefs": [{
+                    "targets": -1,
+                    "data": null,
+                    "defaultContent": '<a class="deletable"><i class="fas fa-trash-alt"></i></a>'
+                }]
+            });
+
+            /*
+            // Example codes showing how CellEditSave.js works with the html table
+            // For cell edit mode
+            $(document).on("dblclick", ".editable", function () {
+                enterCellEditMode($(this))
+            });
+
+            $(document).on("keyup", ".input-data", function (e) {
+                var key = e.which;
+                if (key === 13) { // 13 is the return key, aka 'ENTER' key
+                    sendCellToServer(node=this, api_url="users_panel_api_update_row", http_request_method="POST", cell_html_type="input");
+                }
+                if (key === 27) { // 27 is the ESC key
+                    cancelEditMode(this);
+                }
+            });
+            */
+
+            // For cell select mode
+            $(document).on("dblclick", ".editable-select", function () {
+                if ( $(this).data('table') == 'tblUser' ) {
+                    select_array = [
+                        {% for each in user_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+                if ( $(this).data('table') == 'tblOperation' ) {
+                    select_array = [
+                        {% for each in operation_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+                if ( $(this).data('table') == 'tblBoro' ) {
+                    select_array = [
+                        {% for each in boro_list %}
+                            '{{ each }}',
+                        {% endfor %}
+                    ]
+                }
+
+
+                //select_array = ['True', 'False']
+                // Move current select element to the top of the array
+                var current_value = $(this).text()
+                select_array.sort(function(x, y) {
+                    return x == current_value ? -1 : y == current_value ? 1 : 0;
+                });
+                enterCellEditSelectMode($(this), select_array)
+            });
+
+            $(document).on("keyup", ".input-data-select", function (e) {
+                var key = e.which;
+                if (key === 27) { // 27 is the ESC key
+                    cancelSelectMode(this);
+                }
+            });
+
+            $(document).on("change", ".input-data-select", function () {
+                sendCellToServer(node=this, api_url="{% url 'dailypothole_update_user_permission_api' %}", http_request_method="POST", cell_html_type="select");
+            });
+
+            // For row delete, with support for only JS Datatable
+            //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
+            $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
+                if (confirm(`Are you sure you want to delete?`)) {
+                    permission_id = $(this).parent().attr('data-id')
+                    json_blob = {
+                        'permission_id': permission_id
+                    }
+
+                    props = {
+                        'table': table,
+                        'tr_row': $(this).parent().parent()
+                    }
+
+                    deleteRecordToServer( json_blob=json_blob, api_url="{% url 'dailypothole_delete_user_permission_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response, props) {
+                            // successful api call
+                            table = props['table']
+                            tr_row = props['tr_row']
+                            table.row(tr_row).remove().draw();
+
+                            return;
+                        }, failCallbackFct=function(json_response, props) {
+                            // On failed api calls do nothing.
+                            return;
+                        }, ajaxFailCallbackFct=function(jqXHR, props) {
+                            // On failed ajax request do nothing.
+                            return;
+                        },
+                        props
+                    )
+                }
+
+            })
+
+            // For row add, with support for only JS Datatable
+            $('#modalNewRowFormAddButton').on("click", function() {
+
+                let usernameInput = $("#modalNewRowFormSelectUsernameInput").val()
+                let operationInput = $("#modalNewRowFormSelectOperationInput").val()
+                let boroInput = $("#modalNewRowFormSelectBoroInput").val()
+
+                $('#modalNewRowFormSelectUsernameInputBorder').css("border", "")
+                $('#modalNewRowFormSelectOperationInputBorder').css("border", "")
+                $('#modalNewRowFormSelectBoroInputBorder').css("border", "")
+
+
+                if (usernameInput == '') {
+                    $('#modalNewRowFormSelectUsernameInputBorder').css("border", "2px solid red")
+                    return
+                }
+
+                if (operationInput == '') {
+                    $('#modalNewRowFormSelectOperationInputBorder').css("border", "2px solid red")
+                    return
+                }
+
+                if (boroInput == '') {
+                    $('#modalNewRowFormSelectBoroInputBorder').css("border", "2px solid red")
+                    return
+                }
+
+                json_blob = {
+                    "username_input": usernameInput,
+                    "operation_input": operationInput,
+                    "boro_input": boroInput,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_permission_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`Successfully added permission to User Permissions table!`)
+
+                        // Add the newly added row to the grid, and redraw
+                        var rowNode = table.row.add( [ json_response.username, json_response.operation, json_response.boro_long, ] )
+                        .draw()
+                        .node();
+
+                        // Add permission_id to all child cells
+                        $(rowNode).children().attr("data-id", json_response.permission_id);
+                        // Add the proper data-... attribute to the row
+                        $(rowNode).children().each( (index, childNode) => {
+                            if (index == 0) {
+                                $(childNode).attr("data-table", "tblUser")
+                                $(childNode).attr("data-column", "Username")
+                                $(childNode).attr("class", "editable-select")
+                            } else if (index == 1) {
+                                $(childNode).attr("data-table", "tblOperation")
+                                $(childNode).attr("data-column", "Operation")
+                                $(childNode).attr("class", "editable-select")
+                            } else if (index == 2) {
+                                $(childNode).attr("data-table", "tblBoro")
+                                $(childNode).attr("data-column", "BoroLong")
+                                $(childNode).attr("class", "editable-select")
+                            } else if (index == 3) {
+                                // Nothing to add for the Delete icon
+                            } else {
+                                alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                                console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
+                            }
+                        })
+
+                        $(rowNode).css('color', 'green')
+                        .animate( { color: 'black' } );
+                    }
+                )
+            })
+
+        });
+    </script>
+{% endblock custom_js %}

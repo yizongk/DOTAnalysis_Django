@@ -2,6 +2,7 @@
 
 {% load static %}
 {% load tz %}
+{% load extra_tags %}
 
 {% block custom_css %}
     <!-- You MUST include jQuery before Fomantic -->
@@ -36,12 +37,12 @@
 
                         <div>Date of repair</div>
                         <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
-                            <input type="date" id="modalNewRowFormDateOfRepairInput">
+                            <input type="date" id="modalNewRowFormDateOfRepairInput" class="pothole_selection" value="{{ -1|addDaysFromToday }}">
                         </div>
 
                         <div>Select operation</div>
                         <div id="modalNewRowFormSelectOperationInputForPotholeDataBorder">
-                            <select id="modalNewRowFormSelectOperationInputForPotholeData" class="ui selection dropdown">
+                            <select id="modalNewRowFormSelectOperationInputForPotholeData" class="ui selection dropdown pothole_selection">
                                 {% for each in operation_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -50,7 +51,7 @@
 
                         <div>Select borough</div>
                         <div id="modalNewRowFormSelectBoroughInputForPotholeDataBorder">
-                            <select id="modalNewRowFormSelectBoroughInputForPotholeData" class="ui selection dropdown">
+                            <select id="modalNewRowFormSelectBoroughInputForPotholeData" class="ui selection dropdown pothole_selection">
                                 {% for each in boro_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -83,12 +84,12 @@
 
                         <div>Date</div>
                         <div id="modalNewRowFormTodayDateInputBorder" class="ui input">
-                            <input type="date" id="modalNewRowFormTodayDateInput" value="{{ today }}">
+                            <input type="date" id="modalNewRowFormTodayDateInput" class="today_crew_count_selection" value="{{ today }}">
                         </div>
 
                         <div>Select operation</div>
                         <div id="modalNewRowFormSelectOperationInputForTodayCrewBorder">
-                            <select id="modalNewRowFormSelectOperationInputForTodayCrew" class="ui selection dropdown">
+                            <select id="modalNewRowFormSelectOperationInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
                                 {% for each in operation_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -97,7 +98,7 @@
 
                         <div>Select borough</div>
                         <div id="modalNewRowFormSelectBoroughInputForTodayCrewBorder">
-                            <select id="modalNewRowFormSelectBoroughInputForTodayCrew" class="ui selection dropdown">
+                            <select id="modalNewRowFormSelectBoroughInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
                                 {% for each in boro_list %}
                                     <option value="{{ each }}">{{ each }}</option>
                                 {% endfor %}
@@ -126,6 +127,7 @@
 {% block custom_js %}
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
@@ -145,7 +147,6 @@
                 }
             });
 
-            // For row add, with support for only JS Datatable
             $('#modalNewRowFormAddButtonPotholeData').on("click", function() {
 
                 let DateOfRepairInput           = $("#modalNewRowFormDateOfRepairInput").val()
@@ -259,6 +260,117 @@
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))
                     }
+            })
+
+
+            // An initial load of the pothole and crew data if it already exists
+            json_blob = {
+                "look_up_date": $('#modalNewRowFormDateOfRepairInput').val(),
+                "operation": $('#modalNewRowFormSelectOperationInputForPotholeData').val(),
+                "borough": $('#modalNewRowFormSelectBoroughInputForPotholeData').val(),
+            }
+            sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
+                successCallbackFct=function(json_response) {
+
+                    let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
+                    let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
+
+                    $("#modalNewRowFormPotholeCrewCountInput").val(     repair_crew_count);
+                    $("#modalNewRowFormRegularHolesRepairedInput").val( holes_repaired);
+
+                },
+                failCallbackFct=function(json_response) {
+                    alert(JSON.stringify(json_response, null, 2))
+                }
+            )
+
+            json_blob = {
+                "look_up_date": $('#modalNewRowFormTodayDateInput').val(),
+                "operation": $('#modalNewRowFormSelectOperationInputForTodayCrew').val(),
+                "borough": $('#modalNewRowFormSelectBoroughInputForTodayCrew').val(),
+            }
+            sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
+                successCallbackFct=function(json_response) {
+
+                    let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
+
+                    $("#modalNewRowFormTodayPotholeCrewCountInput").val(daily_crew_count);
+
+                },
+                failCallbackFct=function(json_response) {
+                    alert(JSON.stringify(json_response, null, 2))
+                }
+            )
+            // Now on date change, refresh those data
+            $('.pothole_selection').on("change", function() {
+                if ($(this).attr('id') == 'modalNewRowFormDateOfRepairInput' && $(this).val() == "") {
+                    // reset field values
+                    $("#modalNewRowFormPotholeCrewCountInput").val('')
+                    $("#modalNewRowFormRegularHolesRepairedInput").val('')
+                    return
+                } else {
+                    // Call lookup api to populate fields
+                    // If the date input is not entered, skip the api call
+                    if ($('#modalNewRowFormDateOfRepairInput').val() == "") {
+                        return
+                    }
+
+                    json_blob = {
+                        "look_up_date": $('#modalNewRowFormDateOfRepairInput').val(),
+                        "operation": $('#modalNewRowFormSelectOperationInputForPotholeData').val(),
+                        "borough": $('#modalNewRowFormSelectBoroughInputForPotholeData').val(),
+                    }
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+
+                            let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
+                            let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
+
+                            $("#modalNewRowFormPotholeCrewCountInput").val(     repair_crew_count);
+                            $("#modalNewRowFormRegularHolesRepairedInput").val( holes_repaired);
+
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+
+                    return
+                }
+            })
+
+            $('.today_crew_count_selection').on("change", function() {
+                if ($(this).attr('id') == 'modalNewRowFormTodayDateInput' && $(this).val() == "") {
+                    // reset field values
+                    $("#modalNewRowFormTodayPotholeCrewCountInput").val('')
+                    return
+                } else {
+                    // Call lookup api to populate fields
+                    // If the date input is not entered, skip the api call
+                    if ($('#modalNewRowFormTodayDateInput').val() == "") {
+                        return
+                    }
+
+                    json_blob = {
+                        "look_up_date": $('#modalNewRowFormTodayDateInput').val(),
+                        "operation": $('#modalNewRowFormSelectOperationInputForTodayCrew').val(),
+                        "borough": $('#modalNewRowFormSelectBoroughInputForTodayCrew').val(),
+                    }
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+
+                            let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
+
+                            $("#modalNewRowFormTodayPotholeCrewCountInput").val(daily_crew_count);
+
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+
+                    return
+                }
             })
 
         });

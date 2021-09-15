@@ -14,7 +14,9 @@
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.1/js/bootstrap.min.js" integrity="sha384-XEerZL0cuoUbHE4nZReLT7nx9gQrQreJekYhJD9WNWhH8nEW+0c5qq7aIo2Wl30J" crossorigin="anonymous"></script>
 
         <!-- For getting CSRF Token from cookie on the front end -->
-        <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+        <!--  <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script> -->
+        <script src="//cdn.jsdelivr.net/npm/js-cookie@rc"></script>
+
 
         <!-- For the sort arrow css class -->
         <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
@@ -30,6 +32,15 @@
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
 
         {% block custom_css %}{% endblock %}
+
+        {% if settings.SERVER_TYPE == "Dev" %}
+            <div>This is a DEV Server</div>
+        {% elif settings.SERVER_TYPE == "QA" %}
+            <div>This is a QA Server</div>
+        {% elif settings.SERVER_TYPE == 'Prod' %}
+        {% else %}
+            <div>Setting variable "SERVER_TYPE" is not recognized: '{{ settings.SERVER_TYPE }}'</div>
+        {% endif %}
 
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">

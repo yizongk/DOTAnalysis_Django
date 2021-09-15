@@ -1,0 +1,175 @@
+{% extends 'DailyPothole.template.base.html' %}
+
+{% load static %}
+{% load tz %}
+{% load extra_tags %}
+
+{% block custom_css %}
+    <!-- You MUST include jQuery before Fomantic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="navbar navbar-expand-lg">
+        <h2 class="mt-3">
+            PDF Reports generation
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+
+    {% if client_is_admin %}
+        <div class="ui horizontal divider">Choose a date in your Reporting week</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="reportingFormInputBorderReportDate" class="field">
+                    <input type="date" id="reportingFormInputReportDate" value="{{ today }}">
+                </div>
+
+                <div class="fields">
+                    <div class="disabled field">
+                        <div>FITS X (Bronx)</div>
+                        <input id="reportingFormInputFITSBronx"         readonly>
+                    </div>
+                    <div class="disabled field">
+                        <div>FITS K (Brooklyn)</div>
+                        <input id="reportingFormInputFITSBrooklyn"      readonly>
+                    </div>
+                    <div class="disabled field">
+                        <div>FITS M (Manhattan)</div>
+                        <input id="reportingFormInputFITSManhattan"     readonly>
+                    </div>
+                </div>
+
+                <div class="fields">
+                    <div class="disabled field">
+                        <div>FITS Q (Queens)</div>
+                        <input id="reportingFormInputFITSQueens"        readonly>
+                    </div>
+                    <div class="disabled field">
+                        <div>FITS R (Staten Island)</div>
+                        <input id="reportingFormInputFITSStatenIsland"  readonly>
+                    </div>
+                    <div class="disabled field">
+                        <div>Open Siebel Reports</div>
+                        <input id="reportingFormInputOpenSiebel"        readonly>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <button id="reportingFormSubmit" class="btn btn-default">Generate PDF</button>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src={% static 'PMU_DjangoWebApps/js/FileSaver.min.js' %}></script>
+
+    {% comment %} JS Datatable stuff {% endcomment %}
+    <script>
+        $(document).ready( function () {
+            // Reset the default viewport from css class container to container-fluid
+            $(".container").attr('class', 'container-fluid')
+
+
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+
+
+
+            $('#reportingFormSubmit').on("click", function() {
+
+                let ReportDate = $("#reportingFormInputReportDate").val()
+
+                $('#reportingFormInputBorderReportDate').removeClass("error")
+
+                if (ReportDate == '') {
+                    $('#reportingFormInputBorderReportDate').addClass("error")
+                    return
+                }
+
+                json_blob = {
+                    "report_date": ReportDate,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_pdf_report_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        //alert(`data saved successfully!`)
+
+                        fun_bytes_str = json_response.pdf_bytes
+                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
+                        let date_name = `${ ReportDate.substring(5, ReportDate.length) + '-' + ReportDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        date_name = date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        var fileName = `Daily Pothole Report_${date_name}.pdf`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            })
+
+            $('#reportingFormInputReportDate').on("change", function() {
+                if ($(this).val() == "") {
+                    // reset field values
+                    $("#reportingFormInputFITSBronx").val(        '')
+                    $("#reportingFormInputFITSBrooklyn").val(     '')
+                    $("#reportingFormInputFITSManhattan").val(    '')
+                    $("#reportingFormInputFITSQueens").val(       '')
+                    $("#reportingFormInputFITSStatenIsland").val( '')
+                    $("#reportingFormInputOpenSiebel").val(       '')
+                    return
+                } else {
+                    // Call lookup api to populate fields
+                    json_blob = {
+                        "complaint_date": $(this).val(),
+                    }
+
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+
+                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx
+                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn
+                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
+                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
+                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
+                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
+
+                            $("#reportingFormInputFITSBronx").val(        fits_bronx);
+                            $("#reportingFormInputFITSBrooklyn").val(     fits_brooklyn);
+                            $("#reportingFormInputFITSManhattan").val(    fits_manhattan);
+                            $("#reportingFormInputFITSQueens").val(       fits_queens);
+                            $("#reportingFormInputFITSStatenIsland").val( fits_staten_island);
+                            $("#reportingFormInputOpenSiebel").val(       open_siebel);
+
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+
+                    return
+                }
+            })
+
+        });
+    </script>
+{% endblock custom_js %}
