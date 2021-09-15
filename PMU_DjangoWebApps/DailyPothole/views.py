@@ -2155,7 +2155,7 @@ def GetCsvExport(request):
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to the GetCsvExport() api".format(remote_user))
 
-        from django.db.models import Sum
+        from django.db.models import Sum, Max
         from datetime import datetime
 
         if type_of_query == 'date_range_summary':
@@ -2189,7 +2189,6 @@ def GetCsvExport(request):
 
             writer.writerow(['Total', crew_count_sum, pothole_repaired_sum])
 
-
         elif type_of_query == 'ytd_range_last_five_years_summary':
             from datetime import datetime
             today = datetime.today()
@@ -2217,37 +2216,58 @@ def GetCsvExport(request):
                 | Q(repair_date__range=[year_3_start, year_3_end])
                 | Q(repair_date__range=[year_4_start, year_4_end])
                 | Q(repair_date__range=[year_5_start, year_5_end])
-            ).values(
+            )
+
+
+            by_year_sum = potholes_data.values(
                 'repair_date__year'
-                ,'boro_id__boro_code'
             ).annotate(
-                total_crew_count=Sum('repair_crew_count')
+                max_repair_date=Max('repair_date')
+                ,total_crew_count=Sum('repair_crew_count')
                 ,total_repaired=Sum('holes_repaired')
             ).order_by(
                 'repair_date__year'
-                ,'boro_id__boro_code'
             )
 
-            crew_count_sum = 0
-            pothole_repaired_sum = 0
-            for each in potholes_data:
-                crew_count_sum += each['total_crew_count']
-                pothole_repaired_sum += each['total_repaired']
-
             writer = csv.writer(dummy_in_mem_file)
-            writer.writerow(['Date Range for each year: Jan 01 to {} {}'.format(end_date_obj.strftime("%b"), end_date_obj.strftime("%d"))])
-            writer.writerow(['Year', 'BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
+            row_header = ['Calendar Year To Date as of:']
+            crew_row_list = ['Crews']
+            for each in by_year_sum:
+                row_header.append(each['max_repair_date'])
+                crew_row_list.append(each['total_crew_count'])
+            writer.writerow(row_header)
+            writer.writerow(crew_row_list)
+            writer.writerow([''])
 
-            for each in potholes_data:
-                eachrow = [
-                    each['repair_date__year']
-                    ,each['boro_id__boro_code']
-                    ,each['total_crew_count']
-                    ,each['total_repaired']
-                ]
-                writer.writerow(eachrow)
+            by_year_boro_sum = potholes_data.values(
+                'repair_date__year'
+                ,'boro_id__boro_long'
+            ).annotate(
+                total_repaired=Sum('holes_repaired')
+            ).order_by(
+                'boro_id__boro_long'
+                ,'repair_date__year'
+            )
 
-            writer.writerow(['Total', '', crew_count_sum, pothole_repaired_sum])
+
+            writer.writerow(['Potholes'])
+            ordered_boro_long_list = list(by_year_boro_sum.order_by('boro_id__boro_long').values_list('boro_id__boro_long', flat=True).distinct())
+            for each in ordered_boro_long_list:
+                pothole_fixed_row_list = []
+                pothole_fixed_row_list.append(each)
+
+                for each_row in by_year_boro_sum.filter(boro_id__boro_long=each):
+                    pothole_fixed_row_list.append(each_row['total_repaired'])
+
+                writer.writerow(pothole_fixed_row_list)
+
+
+            pothole_fixed_year_summary_row = ['Total']
+
+            for each in by_year_sum.order_by('repair_date__year'):
+                pothole_fixed_year_summary_row.append(each['total_repaired'])
+
+            writer.writerow(pothole_fixed_year_summary_row)
 
         else:
             raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))
