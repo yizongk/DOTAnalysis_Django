@@ -182,7 +182,7 @@ class PotholeDataGridPageView(generic.ListView):
                 then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                     repair_date__range=[then, now]
-                ).order_by('repair_date', 'operation_id', 'boro_id')
+                ).order_by('-repair_date', 'operation_id', 'boro_id')
             else:
                 # user_permissions = get_user_operation_and_boro_permission(self.request.user)
                 # if user_permissions['success'] == False:
