@@ -70,18 +70,6 @@ $(document).ajaxStart(function () {
 });
 
 
-function setDatabaseStatus(good, msg) {
-    // Set status light and error message to red and response error msg
-    if (good == true) {
-        $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
-        $('.status_info.err_msg').html("");
-    } else {
-        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-        $('.status_info.err_msg').html("Error: " + msg);
-    }
-};
-
-
 function finishCellEditMode(td_node) {
     td_node.addClass("editable");
 };

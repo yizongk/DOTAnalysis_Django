@@ -4,6 +4,18 @@ function csrfSafeMethod(method) {
 };
 
 
+function setDatabaseStatus(good, msg) {
+    // Set status light and error message to red and response error msg
+    if (good == true) {
+        $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
+        $('.status_info.err_msg').html("");
+    } else {
+        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
+        $('.status_info.err_msg').html("Error: " + msg);
+    }
+};
+
+
 // Sends a json blob to the api end point. Assumes the api end will know how to handle the json blob
 // Expects a json obj in response, and must have the following variable "post_success" and "post_msg", ex. json_response["post_success"] and json_response["post_msg"]
 // successCallbackFct and failCallbackFct's optional first param, must be the json_response obj. The success/fail fct can be used to do any work after the respective successful/fail api call, such as displaying a message etc
