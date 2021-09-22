@@ -20,7 +20,7 @@
     </div>
 
     {% comment %} Side Bar {% endcomment %}
-    <div>
+    {% comment %} <div>
         <div class="ui secondary labeled icon toggle button" id="left-sidebar-toggle">
             <i class="left arrow icon"></i>
             Show my profile (Hide/Show)
@@ -36,13 +36,26 @@
 
             <p class="active item">*To add someone to your data entry team, please email: <br>** Max Siegel<br>(msiegel@dot.nyc.gov) or <br>** Yi Zong Kuang<br>(ykuang@dot.nyc.gov)</p>
         </div>
-    </div>
+    </div> {% endcomment %}
 
     {% comment %} JS Datatable {% endcomment %}
     <table class="table table-striped table-hover" id="JSDataTable">
         <thead>
             <tr>
-                <th>WU</th>
+                <th>Position ID</th>
+                <th>Reports to Position ID</th>
+                <th>Budgeted BC</th>
+                <th>Position Filled</th>
+                <th>PMS</th>
+                <th>Lv Status</th>
+                <th>Last Name</th>
+                <th>First Name</th>
+                <th>PMS BC</th>
+                <th>T-Code</th>
+                <th>Salary</th>
+                <th>Title</th>
+
+                {% comment %} <th>WU</th>
                 <th>L-Name</th>
                 <th>F-Name</th>
                 <th>PMS</th>
@@ -52,13 +65,21 @@
                 <th>Work Location</th>
                 <th>Location Floor</th>
                 <th>Site Type</th>
-                <th>ABC Group</th>
+                <th>ABC Group</th> {% endcomment %}
             </tr>
         </thead>
 
         <body id="JSDataTableBody">
-            {% for entry in emp_entries %}
+            {% for entry in position_entries %}
             <tr>
+                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="PositionID">{{ entry.position_id }}</td>
+                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="ReportsToPositionID">{{ entry.reports_to_position_id }}</td>
+            </tr>
+            {% endfor %}
+
+            {% comment %} {% for entry in emp_entries %}
+            <tr>
+
                 <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
                 <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
                 <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
@@ -76,7 +97,7 @@
                 <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteTypeId">{{ entry.actual_site_type_id.site_type }}</td>
                 <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ABCGroup">{{ entry.abc_group }}</td>
             </tr>
-            {% endfor %}
+            {% endfor %} {% endcomment %}
         </body>
     </table>
 
@@ -225,7 +246,7 @@
     </script>
 
     {% comment %} Side Bar Stuff {% endcomment %}
-    <script>
+    {% comment %} <script>
         function upperCaseFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
@@ -327,7 +348,7 @@
                 return false;
             });
         });
-    </script>
+    </script> {% endcomment %}
 
     {% comment %} Footer Stuff {% endcomment %}
 
