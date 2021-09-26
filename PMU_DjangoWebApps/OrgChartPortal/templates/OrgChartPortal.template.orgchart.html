@@ -1,0 +1,74 @@
+{% extends 'OrgChartPortal.template.base.html' %}
+
+{% load static %}
+
+{% block custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/jquery.orgchart.3.1.1.min.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="navbar navbar-expand-lg">
+        <h2 class="mt-3">
+            Org Chart View
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+
+    <div id='chartContainerId'>
+    </div>
+
+
+
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/jquery.orgchart.3.1.1.min.js' %}"></script>
+    <script>
+        $(document).ready( function () {
+
+            sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
+                successCallbackFct=function(json_response) {
+                    //alert(`data saved successfully!`)
+
+                    root_pms = json_response.post_data
+
+
+                    json_blob = {
+                        root_pms: root_pms
+                    }
+
+                    sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_json' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+                            //alert(`data saved successfully!`)
+
+                            emp_data_json = json_response.post_data
+
+                            var oc = $('#chartContainerId').orgchart({
+                                'data': emp_data_json
+                                ,'nodeTitle': 'title'
+                                ,'nodeContent': 'content'
+                                ,'draggable': true
+                            });
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+
+
+
+                },
+                failCallbackFct=function(json_response) {
+                    alert(JSON.stringify(json_response, null, 2))
+                }
+            )
+
+
+
+
+
+        });
+    </script>
+{% endblock custom_js %}

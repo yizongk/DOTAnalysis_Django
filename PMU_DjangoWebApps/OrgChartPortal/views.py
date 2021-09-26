@@ -4,6 +4,7 @@ from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from .models import *
 from django.db.models import Min
+import json
 
 
 # Create your views here.
@@ -21,11 +22,14 @@ class HomePageView(TemplateView):
             context["client_is_admin"] = False
             return context
 
+
 class AboutPageView(TemplateView):
     template_name = 'OrgChartPortal.template.about.html'
 
+
 class ContactPageView(TemplateView):
     template_name = 'OrgChartPortal.template.contact.html'
+
 
 def get_allowed_list_of_wu(username):
     try:
@@ -37,7 +41,7 @@ def get_allowed_list_of_wu(username):
             return {
                 "success": True,
                 "err": "",
-                "wu_list": [each.wu for each in wu_query],
+                "wu_list": [each.wu.wu for each in wu_query],
             }
         return {
             "success": False,
@@ -50,15 +54,17 @@ def get_allowed_list_of_wu(username):
             "err": 'Exception: OrgChartPortal: get_allowed_list_of_wu(): {}'.format(e),
         }
 
+
 class EmpGridPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.empgrid.html'
-    context_object_name = 'position_entries'
+    context_object_name = 'emp_entries'
 
     req_success = False
     err_msg = ""
 
     client_is_admin = False
 
+    ## TODO Implement Admin in database
     # def get_queryset(self):
     #     ## Check for Active Admins
     #     # is_active_admin = user_is_active_admin(self.request.user)
@@ -101,7 +107,7 @@ class EmpGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                position_entries = TblPositions.objects.using('OrgChartWrite').all().order_by('wu')
+                emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -109,17 +115,17 @@ class EmpGridPageView(generic.ListView):
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-                position_entries = TblPositions.objects.using('OrgChartWrite').filter(
+                emp_entries = TblEmployees.objects.using('OrgChartWrite').filter(
                     pms__wu__in=allowed_wu_list,
                 ).order_by('pms__wu')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblPositions.objects.none()
+            return TblEmployees.objects.none()
 
         self.req_success = True
-        return position_entries
+        return emp_entries
 
     def get_context_data(self, **kwargs):
         try:
@@ -141,6 +147,7 @@ class EmpGridPageView(generic.ListView):
 
             context["client_is_admin"] = False
             return context
+
 
 def GetClientWUPermissions(request):
     ## Authenticate User
@@ -174,6 +181,7 @@ def GetClientWUPermissions(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
 
 def GetClientTeammates(request):
     ## Authenticate User
@@ -213,6 +221,7 @@ def GetClientTeammates(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
 
 def GetEmpGridStats(request):
     ## Authenticate User
@@ -267,3 +276,443 @@ def GetEmpGridStats(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
+
+##TODO Add admin check or block?
+class OrgChartPageView(generic.ListView):
+    template_name = 'OrgChartPortal.template.orgchart.html'
+    context_object_name = 'emp_entries'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+
+    def get_queryset(self):
+        ## TODO Implement Admin in database
+        ## Check for Active Admins
+        # is_active_admin = user_is_active_admin(self.request.user)
+        # if is_active_admin["success"] == True:
+        #     self.client_is_admin = True
+        # else:
+        #     self.client_is_admin = False
+
+        ## Get the core data
+        try:
+            # # emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+            # if self.client_is_admin:
+            #     emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+            # else:
+            #     allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
+            #     if allowed_wu_list_obj['success'] == False:
+            #         raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+            #     else:
+            #         allowed_wu_list = allowed_wu_list_obj['wu_list']
+
+            #     emp_entries = TblEmployees.objects.using('OrgChartWrite').filter(
+            #         pms__wu__in=allowed_wu_list,
+            #     ).order_by('pms__wu')
+            emp_entries =  None
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
+            print(self.err_msg)
+            return TblEmployees.objects.none()
+
+        self.req_success = True
+        return emp_entries
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            print(self.err_msg)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
+
+
+##TODO Add admin check and (filter or block?)
+def GetEmpJson(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetEmpJson(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetEmpJson():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## TODO Implement Admin in database
+    ## Check for Active Admins
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetEmpJson():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Get the data
+    try:
+        root_pms = json_blob['root_pms']
+
+        allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
+        if allowed_wu_list_obj['success'] == False:
+            raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+        else:
+            allowed_wu_list = allowed_wu_list_obj['wu_list']
+
+        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
+            wu__in=allowed_wu_list,
+        ).order_by('wu')
+
+        # ## Build a dict of emp pms and a dict of its emp info
+        # ##  {
+        # ##      "1234566":
+        # ##          {
+        # ##              "pms":              "1234567"
+        # ##              "last_name":        "john"
+        # ##              "first_name":       "doe"
+        # ##              "supervisor_pms":   "7654321"
+        # ##          }
+        # ##      ,"7654321": {...}
+        # ##      .
+        # ##      .
+        # ##      .
+        # ##  }
+        # flat_emp_dict = {}
+        # for each in emp_data:
+        #     each_emp_dict = {}
+        #     each_emp_dict[f"pms"] = f"{each.pms}".strip()
+        #     each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
+        #     each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
+        #     try:
+        #         each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
+        #     except TblEmployees.DoesNotExist:
+        #         each_emp_dict[f"supervisor_pms"] = None
+
+        #     flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+
+
+
+
+
+
+        ## Build a dict of Supervisor PMS and its underlings
+        ##  {
+        ##      "1234567": { # Supervisor PMS
+        ##          "pms":              "1234567"
+        ##          "last_name":        "obama"
+        ##          "first_name":       "barack"
+        ##          "lv":               "b"
+        ##          "children": [
+        ##              {        # Underling number 1
+        ##                  "child_pms":              "1155667"
+        ##                  "child_last_name":        "john"
+        ##                  "child_first_name":       "doe"
+        ##                  "child_lv":               "b"
+        ##                  "child_supervisor_pms":   "1234567"
+        ##              },
+        ##              {        # Underling number 2
+        ##                  "child_pms":              "2223333"
+        ##                  "child_last_name":        "macy"
+        ##                  "child_first_name":       "doe"
+        ##                  "child_lv":               "b"
+        ##                  "child_supervisor_pms":   "1234567"
+        ##              },
+        ##          ]
+        ##      },
+        ##      "7654321": {...}
+        ##      .
+        ##      .
+        ##      .
+        ##  }
+
+        emp_data = emp_data.exclude(supervisor_pms__isnull=True).exclude(supervisor_pms__exact='')
+
+        flat_supervisor_dict = {}
+        for each in emp_data:
+            try:
+                sup_pms = f"{each.supervisor_pms.pms}".strip()
+            except TblEmployees.DoesNotExist:
+                sup_pms = None
+
+            # Create supervisor object if it doesn't exists in the dict, creating the child list to store all the child objs
+            if sup_pms not in flat_supervisor_dict:
+                try:
+                    sup_last_name = f"{each.supervisor_pms.last_name}".strip()
+                except TblEmployees.DoesNotExist:
+                    sup_last_name = None
+                try:
+                    sup_first_name = f"{each.supervisor_pms.first_name}".strip()
+                except TblEmployees.DoesNotExist:
+                    sup_first_name = None
+                try:
+                    sup_lv = f"{each.supervisor_pms.lv}".strip()
+                except TblEmployees.DoesNotExist:
+                    sup_lv = None
+
+                flat_supervisor_dict[sup_pms] = {
+                    "pms":          sup_pms,
+                    "last_name":    sup_last_name,
+                    "first_name":   sup_first_name,
+                    "lv":           sup_lv,
+                    "children":        []
+                }
+
+
+            ## Constructing the child object
+            each_emp_obj = {}
+
+            try:
+                pms = f"{each.pms}".strip()
+            except TblEmployees.DoesNotExist:
+                pms = None
+            try:
+                last_name = f"{each.last_name}".strip()
+            except TblEmployees.DoesNotExist:
+                last_name = None
+            try:
+                first_name = f"{each.first_name}".strip()
+            except TblEmployees.DoesNotExist:
+                first_name = None
+            try:
+                lv = f"{each.lv}".strip()
+            except TblEmployees.DoesNotExist:
+                lv = None
+
+
+            each_emp_obj["child_pms"]            = pms
+            each_emp_obj["child_last_name"]      = last_name
+            each_emp_obj["child_first_name"]     = first_name
+            each_emp_obj["child_lv"]             = lv
+            each_emp_obj["child_supervisor_pms"] = sup_pms
+
+
+
+            flat_supervisor_dict[sup_pms]["children"].append(each_emp_obj)
+
+        ## Build a nested tree dict given a root_node
+        ##  {
+        ##      "1234567": { # Root node
+        ##          "id":               "rootNode"
+        ##          "className":        "top-level"
+        ##          "pms":              "1234567"
+        ##          "last_name":        "obama"
+        ##          "first_name":       "barack"
+        ##          "lv":               "B"
+        ##          "relationship":     "001"
+        ##          "children": [
+        ##              {        # Underling number 1
+        ##                  "pms":              "1155667"
+        ##                  "last_name":        "john"
+        ##                  "first_name":       "doe"
+        ##                  "lv":               "B"
+        ##                  "relationship":     "111"
+        ##                  "children": [
+        ##                      {...},
+        ##                      {...}
+        ##                  ]
+        ##              },
+        ##              {        # Underling number 2
+        ##                  "pms":              "2223333"
+        ##                  "last_name":        "macy"
+        ##                  "first_name":       "doe"
+        ##                  "lv":               "L"
+        ##                  "relationship":     "110"
+        ##                  "children": [...]
+        ##              },
+        ##              {...}
+        ##          ]
+        ##      }
+        ##  }
+        ##
+        ## Note:
+        ##  * relationship Value is a string composed of three "0/1" identifier.
+        ##      First character stands for wether current node has parent node;
+        ##      Scond character stands for wether current node has siblings nodes;
+        ##      Third character stands for wether current node has children node.
+        ##      For example: the Root Node should be "relationship": "001", since it has no parent, no sibling and happens to have childs
+        ##
+        ##  * id Value
+        ##      It's a optional property which will be used as id attribute of node
+        ##      and data-parent attribute, which contains the id of the parent node
+        ##
+        ##  For more: https://github.com/dabeng/OrgChart
+
+
+
+        active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
+        ## Returns a child dict obj for a specific node, will contains all sub-childs as well
+        #   Assums cur_node is an active emp in the lv status of ('B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S')
+        def ChildTreeTraverser(cur_node, cur_node_sibling_count, cur_itr_count, max_itr_count):
+            ## Build the relationship val for the current node
+            cur_node_is_supervisor = cur_node["pms"] in flat_supervisor_dict
+
+            # cur_node always have a parent
+            relationship_val = "1"
+            # If cur_node has sibling(s), by checking parent
+            if cur_node_sibling_count > 1:
+                relationship_val += "1"
+            else:
+                relationship_val += "0"
+            # If cur_node has child(s). In other word he/she is supervisor.
+            # Note: If current iteration is last iteration, will mean no child for cur_node.
+            if cur_node_is_supervisor and cur_itr_count <= max_itr_count:
+                relationship_val += "1"
+            else:
+                relationship_val += "0"
+
+
+            final_node = {
+                "pms":              cur_node["pms"],
+                "last_name":        cur_node["last_name"],
+                "first_name":       cur_node["first_name"],
+                "lv":               cur_node["lv"],
+                "relationship":     relationship_val,
+                "title":            f"{cur_node['last_name']}, {cur_node['first_name']}",
+                "content":          "child\nblah blah",
+                "children":         [],
+            }
+
+            # To avoid self reference loop where some employee is their own supervisor
+            if cur_itr_count > max_itr_count:
+                return final_node
+
+            # If cur node is not supervisor, it has no child to keep calling ChildTreeTraverser()
+            if not cur_node_is_supervisor:
+                return final_node
+
+            # At this point, we assume cur_node is a supervisor and will have child data
+            cur_node_with_sup_info = flat_supervisor_dict[cur_node["pms"]]
+            # Count only if child is an active emp
+            cur_node_child_count = sum(1 for each in cur_node_with_sup_info["children"] if each["child_lv"] in active_lv_list)
+
+            for child in cur_node_with_sup_info["children"]:
+                child_of_cur_node_info = {
+                    "pms":              child["child_pms"],
+                    "last_name":        child["child_last_name"],
+                    "first_name":       child["child_first_name"],
+                    "lv":               child["child_lv"],
+                }
+
+                # Child must be active emp to keep calling ChildTreeTraverser()
+                if child_of_cur_node_info["lv"] in active_lv_list:
+                    child_final = ChildTreeTraverser(cur_node=child_of_cur_node_info, cur_node_sibling_count=cur_node_child_count, cur_itr_count=cur_itr_count+1, max_itr_count=max_itr_count)
+                    final_node["children"].append(child_final)
+
+            return final_node
+
+
+
+        root_emp_obj = flat_supervisor_dict[root_pms]
+        # Count only if child is an active emp
+        root_child_count = sum(1 for each in root_emp_obj["children"] if each["child_lv"] in active_lv_list)
+
+        tree_supervisor_dict = {
+            "id":           "rootNode",
+            "className":    "top-level",
+            "pms":          root_emp_obj["pms"],
+            "last_name":    root_emp_obj["last_name"],
+            "first_name":   root_emp_obj["first_name"],
+            "lv":           root_emp_obj["lv"],
+            "relationship": "001",
+            "title": f"{root_emp_obj['last_name']}, {root_emp_obj['first_name']}",
+            "content": "root\nblah blah",
+            "children":        [],
+        }
+
+        ## Build the child nodes to append to current node, and call ChildTreeTraverser() on each of the child node
+        for child in root_emp_obj["children"]:
+            child_of_cur_node_info = {
+                "pms":              child["child_pms"],
+                "last_name":        child["child_last_name"],
+                "first_name":       child["child_first_name"],
+                "lv":               child["child_lv"],
+            }
+
+            # Child must be active emp to start ChildTreeTraverser(). ChildTreeTraverser() Assumes cur_node is an active employee
+            if child_of_cur_node_info["lv"] in active_lv_list:
+                child_final = ChildTreeTraverser(cur_node=child_of_cur_node_info, cur_node_sibling_count=root_child_count, cur_itr_count=0, max_itr_count=9)
+                tree_supervisor_dict["children"].append(child_final)
+
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": tree_supervisor_dict,
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetEmpJson(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+
+##TODO Add admin check and (filter or block?)
+def GetCommissionerPMS(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetCommissionerPMS(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## TODO Implement Admin in database
+    ## Check for Active Admins
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Get the data
+    try:
+        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
+            first_name__exact='Henry',
+            last_name__exact='Gutman',
+        ).first()
+
+        pms = emp_data.pms
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": pms,
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
