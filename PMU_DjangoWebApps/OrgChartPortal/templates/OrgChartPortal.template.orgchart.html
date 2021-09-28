@@ -18,6 +18,12 @@
     <div id='chartContainerId'>
     </div>
 
+    <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
+    <br>
+    <select id="PMSSelect">
+        <option value="abc">abc</option>
+    </select>
+    <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
 
 
 {% endblock content %}
@@ -27,50 +33,112 @@
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/jquery.orgchart.3.1.1.min.js' %}"></script>
     <script>
         $(document).ready( function () {
-            $(document).ajaxStart(function () {
-                $("body").addClass("loading");
-            })
-            .ajaxStop(function () {
-                $("body").removeClass("loading");
-            });
+            var emp_data_json_master
+            var oc
+            var oc_options = {
+                'nodeTitle': 'title'
+                ,'nodeContent': 'content'
+                ,'draggable': true
+                ,'pan': true
+            }
 
-            sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
-                successCallbackFct=function(json_response) {
-                    //alert(`data saved successfully!`)
+            function setInitialMasterOrgChart() {
+                $(document).ajaxStart(function () {
+                    $("body").addClass("loading");
+                })
+                .ajaxStop(function () {
+                    $("body").removeClass("loading");
+                });
 
-                    root_pms = json_response.post_data
+                sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        //alert(`data saved successfully!`)
+
+                        let root_pms = json_response.post_data
 
 
-                    json_blob = {
-                        root_pms: root_pms
-                    }
-
-                    sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_json' %}", http_request_method="POST",
-                        successCallbackFct=function(json_response) {
-                            //alert(`data saved successfully!`)
-
-                            emp_data_json = json_response.post_data
-
-                            var oc = $('#chartContainerId').orgchart({
-                                'data': emp_data_json
-                                ,'nodeTitle': 'title'
-                                ,'nodeContent': 'content'
-                                ,'draggable': true
-                                ,'pan': true
-                            });
-                        },
-                        failCallbackFct=function(json_response) {
-                            alert(JSON.stringify(json_response, null, 2))
+                        let json_blob = {
+                            root_pms: root_pms
                         }
-                    )
+
+                        sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_json' %}", http_request_method="POST",
+                            successCallbackFct=function(json_response) {
+                                //alert(`data saved successfully!`)
+
+                                emp_data_json_master = json_response.post_data
+
+                                let options = {
+                                    'data': emp_data_json_master
+                                }
+
+                                for (let i in oc_options) {
+                                    options[i] = oc_options[i]
+                                }
+
+                                oc = $('#chartContainerId').orgchart(options);
+                            },
+                            failCallbackFct=function(json_response) {
+                                alert(JSON.stringify(json_response, null, 2))
+                            }
+                        )
 
 
 
-                },
-                failCallbackFct=function(json_response) {
-                    alert(JSON.stringify(json_response, null, 2))
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            }
+
+            // find the object in the @tree_root that is equal to @lookup. Returns object if found, and null if not found
+            function traverseAndFindRootByPMS(tree_root, lookup) {
+                if (tree_root['pms'] !== null) {
+                    if (tree_root['pms'] == lookup)
+                        return tree_root
                 }
-            )
+
+                for (let i in tree_root['children']) {
+                    if (tree_root['children'][i] !== null && typeof(tree_root['children'][i]) == "object") { // Not null and it's a json object
+                        //going one step down in the object tree_root!!
+                        let child = traverseAndFindRootByPMS(tree_root['children'][i], lookup)
+                        if (child !== null)
+                            return child
+                    }
+                }
+
+                return null
+            }
+
+            function refreshOrgChart(data) {
+                let options = {
+                    'data': data
+                }
+
+                for (let i in oc_options) {
+                    options[i] = oc_options[i]
+                }
+
+                oc.init(options)
+            }
+
+            setInitialMasterOrgChart()
+
+            $('#resetInitialMasterOrgChartClick').click(function() {
+                oc.init(emp_data_json_master)
+            })
+
+            $("#resetOrgChartWithSelectedPMSClick").click(function() {
+                let pms = $("#PMSSelect").val()
+                let root = traverseAndFindRootByPMS(emp_data_json_master, pms)
+
+                if (root == null) {
+                    alert(`${pms} not found`)
+                } else {
+                    refreshOrgChart(root)
+                }
+            })
+
 
 
 
