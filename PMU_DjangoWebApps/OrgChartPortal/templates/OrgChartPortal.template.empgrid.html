@@ -14,7 +14,7 @@
 {% block content %}
     <div class="navbar navbar-expand-lg">
         <h2 class="mt-3">
-            Orgchart Portal
+            Org Chart Portal
         </h2>
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
@@ -52,10 +52,10 @@
                 <th>First Name</th>
                 <th>PMS BC</th>
                 <th>T-Code</th>
+                {% comment %}
                 <th>Salary</th>
                 <th>Title</th>
-
-                {% comment %} <th>WU</th>
+                <th>WU</th>
                 <th>L-Name</th>
                 <th>F-Name</th>
                 <th>PMS</th>
@@ -65,12 +65,13 @@
                 <th>Work Location</th>
                 <th>Location Floor</th>
                 <th>Site Type</th>
-                <th>ABC Group</th> {% endcomment %}
+                <th>ABC Group</th>
+                {% endcomment %}
             </tr>
         </thead>
 
         <body id="JSDataTableBody">
-            {% for entry in position_entries %}
+            {% for entry in emp_entries %}
             <tr>
                 <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="PositionID">{{ entry.position_id }}</td>
                 <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="ReportsToPositionID">{{ entry.reports_to_position_id }}</td>

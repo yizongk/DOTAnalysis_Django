@@ -135,16 +135,16 @@ class TblPermissions(models.Model):
     def __str__(self):
         return self.wu
 
-class TblPositions(models.Model):
-    position_id = models.AutoField(db_column='PositionID', primary_key=True)
-    reports_to_position_id = models.ForeignKey(to='TblPositions', to_field='position_id', db_column='ReportsToPositionID', max_length=7, on_delete=models.DO_NOTHING)
-    budgeted_bc = models.CharField(db_column='BudgetedBC', max_length=4)
-    position_filled = models.BooleanField(db_column='PositionFilled')
-    pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='PMS', max_length=7, on_delete=models.DO_NOTHING)
+# class TblPositions(models.Model):
+#     position_id = models.AutoField(db_column='PositionID', primary_key=True)
+#     reports_to_position_id = models.ForeignKey(to='TblPositions', to_field='position_id', db_column='ReportsToPositionID', max_length=7, on_delete=models.DO_NOTHING)
+#     budgeted_bc = models.CharField(db_column='BudgetedBC', max_length=4)
+#     position_filled = models.BooleanField(db_column='PositionFilled')
+#     pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='PMS', max_length=7, on_delete=models.DO_NOTHING)
 
-    class Meta:
-        managed = False
-        db_table = 'tblPositions'
+#     class Meta:
+#         managed = False
+#         db_table = 'tblPositions'
 
-    def __str__(self):
-        return self.position_id
+#     def __str__(self):
+#         return self.position_id
