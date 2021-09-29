@@ -3,7 +3,17 @@
 {% load static %}
 
 {% block custom_css %}
-    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/jquery.orgchart.3.1.1.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.css' %}" />
+    {% comment %} <style>
+        #chartContainerId {
+            position: relative;
+            height: 420px;
+            border: 1px solid #aaa;
+            margin: 0.5rem;
+            overflow: auto;
+            text-align: center;
+        }
+    </style> {% endcomment %}
 {% endblock %}
 
 {% block content %}
@@ -30,9 +40,16 @@
 
 {% block custom_js %}
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/jquery.orgchart.3.1.1.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3/d3.v7.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-org-chart/d3-org-chart@2.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
+    {% comment %} <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/es6-promise/4.1.1/es6-promise.auto.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/html2canvas/1.3.2/html2canvas.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/jspdf/2.4.0/jspdf.umd.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.js' %}"></script> {% endcomment %}
     <script>
         $(document).ready( function () {
+            /*
             var emp_data_json_master
             var oc
             var oc_options = {
@@ -40,6 +57,14 @@
                 ,'nodeContent': 'content'
                 ,'draggable': true
                 ,'pan': true
+                ,'zoom': true
+                ,'visibleLevel': 3
+                ,'exportButton': true
+                ,'exportFileextension': 'pdf'
+                ,'exportFilename': 'MyOrgChart'
+                ,'initCompleted': function($chart) {
+                    $('#chartContainerId').scrollLeft( ($('#chartContainerId')[0].scrollWidth - $('#chartContainerId').width())/2 );
+                }
             }
 
             function setInitialMasterOrgChart() {
@@ -138,7 +163,47 @@
                     refreshOrgChart(root)
                 }
             })
+            */
 
+            var emp_data_json_master
+            var chart
+            sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
+                successCallbackFct=function(json_response) {
+                    //alert(`data saved successfully!`)
+
+                    let root_pms = json_response.post_data
+
+
+                    let json_blob = {
+                        //root_pms: '1718537'
+                        //root_pms: '1426465'
+                        //root_pms: '1053788'
+                        //root_pms: '1827345'
+                        root_pms: root_pms
+                    }
+
+                    sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_csv' %}", http_request_method="POST",
+                            successCallbackFct=function(json_response) {
+                                //alert(`data saved successfully!`)
+
+                                emp_data_json_master = json_response.post_data
+                                console.log(emp_data_json_master)
+
+                                //chart = new d3.OrgChart().container('#chartContainerId').data(emp_data_json_master).render();
+
+
+                            },
+                            failCallbackFct=function(json_response) {
+                                alert(JSON.stringify(json_response, null, 2))
+                            }
+                        )
+
+
+                },
+                failCallbackFct=function(json_response) {
+                    alert(JSON.stringify(json_response, null, 2))
+                }
+            )
 
 
 
