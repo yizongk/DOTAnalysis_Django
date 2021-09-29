@@ -11,5 +11,6 @@ urlpatterns = [
     path('get_client_teammates_list', views.GetClientTeammates, name='orgchartportal_get_client_teammates_list'),
     path('get_emp_grid_stats', views.GetEmpGridStats, name='orgchartportal_get_emp_grid_stats'),
     path('get_emp_json', views.GetEmpJson, name='orgchartportal_get_emp_json'),
+    path('get_emp_csv', views.GetEmpCsv, name='orgchartportal_get_emp_csv'),
     path('get_commissioner_pms', views.GetCommissionerPMS, name='orgchartportal_get_commissioner_pms'),
 ]

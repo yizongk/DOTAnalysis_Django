@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.db.models import Min
+from django.db.models import Min, Q
 import json
 
 
@@ -381,34 +381,36 @@ def GetEmpJson(request):
 
         emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
             wu__in=allowed_wu_list,
-        ).order_by('wu')
+        ).order_by('wu').exclude(supervisor_pms__isnull=True).exclude(supervisor_pms__exact='')
 
-        # ## Build a dict of emp pms and a dict of its emp info
-        # ##  {
-        # ##      "1234566":
-        # ##          {
-        # ##              "pms":              "1234567"
-        # ##              "last_name":        "john"
-        # ##              "first_name":       "doe"
-        # ##              "supervisor_pms":   "7654321"
-        # ##          }
-        # ##      ,"7654321": {...}
-        # ##      .
-        # ##      .
-        # ##      .
-        # ##  }
-        # flat_emp_dict = {}
-        # for each in emp_data:
-        #     each_emp_dict = {}
-        #     each_emp_dict[f"pms"] = f"{each.pms}".strip()
-        #     each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
-        #     each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
-        #     try:
-        #         each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
-        #     except TblEmployees.DoesNotExist:
-        #         each_emp_dict[f"supervisor_pms"] = None
+        """
+            ## Build a dict of emp pms and a dict of its emp info
+            ##  {
+            ##      "1234566":
+            ##          {
+            ##              "pms":              "1234567"
+            ##              "last_name":        "john"
+            ##              "first_name":       "doe"
+            ##              "supervisor_pms":   "7654321"
+            ##          }
+            ##      ,"7654321": {...}
+            ##      .
+            ##      .
+            ##      .
+            ##  }
+            flat_emp_dict = {}
+            for each in emp_data:
+                each_emp_dict = {}
+                each_emp_dict[f"pms"] = f"{each.pms}".strip()
+                each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
+                each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
+                try:
+                    each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
+                except TblEmployees.DoesNotExist:
+                    each_emp_dict[f"supervisor_pms"] = None
 
-        #     flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+                flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+        """
 
 
 
@@ -445,7 +447,6 @@ def GetEmpJson(request):
         ##      .
         ##  }
 
-        emp_data = emp_data.exclude(supervisor_pms__isnull=True).exclude(supervisor_pms__exact='')
 
         flat_supervisor_dict = {}
         for each in emp_data:
@@ -667,6 +668,90 @@ def GetEmpJson(request):
             "post_success": False,
             "post_msg": err_msg
         })
+
+
+def GetEmpCsv(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetEmpCsv(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetEmpCsv():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## TODO Implement Admin in database
+    ## Check for Active Admins
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetEmpCsv():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    ## Get the data
+    try:
+        root_pms = json_blob['root_pms']
+
+        allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
+        if allowed_wu_list_obj['success'] == False:
+            raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+        else:
+            allowed_wu_list = allowed_wu_list_obj['wu_list']
+
+        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
+            Q(wu__in=allowed_wu_list)
+        ).order_by(
+            'wu'
+        ).exclude(
+            Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
+            ,~Q(pms__exact=root_pms)
+        )
+
+
+        import csv
+        from io import StringIO
+        dummy_in_mem_file = StringIO()
+
+        ## Create the csv
+        writer = csv.writer(dummy_in_mem_file)
+        # writer.writerow(["pms", "last_name", "first_name", "sup_pms"])
+        writer.writerow(["id", "last_name", "first_name", "parentid"])
+
+        for each in emp_data:
+            try:
+                sup_pms = f"{each.supervisor_pms}".strip()
+            except TblEmployees.DoesNotExist:
+                sup_pms = None
+
+            eachrow = [
+                f"{each.pms}".strip()
+                ,f"{each.last_name}".strip()
+                ,f"{each.first_name}".strip()
+                ,sup_pms
+            ]
+            writer.writerow(eachrow)
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            # "post_data": tree_supervisor_dict,
+            "post_data": dummy_in_mem_file.getvalue(),
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetEmpCsv(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
 
 
 ##TODO Add admin check and (filter or block?)
