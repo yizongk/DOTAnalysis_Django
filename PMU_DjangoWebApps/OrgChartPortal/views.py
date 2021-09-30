@@ -381,7 +381,12 @@ def GetEmpJson(request):
 
         emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
             wu__in=allowed_wu_list,
-        ).order_by('wu').exclude(supervisor_pms__isnull=True).exclude(supervisor_pms__exact='')
+        ).exclude(
+           Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
+           ,~Q(pms__exact=root_pms)
+        ).order_by(
+            'supervisor_pms'
+        )
 
         """
             ## Build a dict of emp pms and a dict of its emp info
@@ -450,6 +455,10 @@ def GetEmpJson(request):
 
         flat_supervisor_dict = {}
         for each in emp_data:
+            ## Can skip if current emp is the root_pms, we don't need any supervisor information of the root
+            if each.pms == root_pms:
+                continue
+
             try:
                 sup_pms = f"{each.supervisor_pms.pms}".strip()
             except TblEmployees.DoesNotExist:
