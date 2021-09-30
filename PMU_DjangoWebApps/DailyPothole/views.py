@@ -182,6 +182,24 @@ class PotholeDataGridPageView(generic.ListView):
                 then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                     repair_date__range=[then, now]
+                ).exclude(
+                    ## Keep only Queens for CW 1
+                    ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BRONX') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BROOKLYN') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='MANHATTAN') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
+
+                    ## Keep only Brooklyn for CW 1
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='BRONX') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='MANHATTAN') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='QUEENS') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
+
+                    ## Keep only Staten Island for CW 1
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BRONX') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BROOKLYN') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='MANHATTAN') )
+                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='QUEENS') )
                 ).order_by('-repair_date', 'operation_id', 'boro_id')
             else:
                 # user_permissions = get_user_operation_and_boro_permission(self.request.user)
