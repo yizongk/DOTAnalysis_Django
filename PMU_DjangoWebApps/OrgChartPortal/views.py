@@ -33,7 +33,7 @@ class ContactPageView(TemplateView):
 
 def get_allowed_list_of_wu(username):
     try:
-        wu_query = TblPermissions.objects.using('OrgChartWrite').filter(
+        wu_query = TblPermissions.objects.using('OrgChartRead').filter(
             windows_username=username,
         ).order_by('wu')
 
@@ -76,7 +76,7 @@ class EmpGridPageView(generic.ListView):
     #     ## Get the core data
     #     try:
     #         if self.client_is_admin:
-    #             pms_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+    #             pms_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
     #         else:
     #             allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
     #             if allowed_wu_list_obj['success'] == False:
@@ -84,7 +84,7 @@ class EmpGridPageView(generic.ListView):
     #             else:
     #                 allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-    #             pms_entries = TblEmployees.objects.using('OrgChartWrite').filter(
+    #             pms_entries = TblEmployees.objects.using('OrgChartRead').filter(
     #                 wu__in=allowed_wu_list,
     #             ).order_by('wu')
     #     except Exception as e:
@@ -107,7 +107,7 @@ class EmpGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+                emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -115,7 +115,7 @@ class EmpGridPageView(generic.ListView):
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-                emp_entries = TblEmployees.objects.using('OrgChartWrite').filter(
+                emp_entries = TblEmployees.objects.using('OrgChartRead').filter(
                     pms__wu__in=allowed_wu_list,
                 ).order_by('pms__wu')
         except Exception as e:
@@ -163,7 +163,7 @@ def GetClientWUPermissions(request):
 
     ## Get the data
     try:
-        wu_permissions_query = TblPermissions.objects.using('OrgChartWrite').filter(
+        wu_permissions_query = TblPermissions.objects.using('OrgChartRead').filter(
                 windows_username=remote_user
             ).order_by('wu__wu')
 
@@ -197,13 +197,13 @@ def GetClientTeammates(request):
 
     ## Get the data
     try:
-        wu_permissions_query = TblPermissions.objects.using('OrgChartWrite').filter(
+        wu_permissions_query = TblPermissions.objects.using('OrgChartRead').filter(
                 windows_username=remote_user
             ).order_by('wu__wu')
 
         wu_permissions_list_json = wu_permissions_query.values('wu__wu')
 
-        teammates_query = TblPermissions.objects.using('OrgChartWrite').filter(
+        teammates_query = TblPermissions.objects.using('OrgChartRead').filter(
                 wu__wu__in=wu_permissions_list_json
             ).order_by('pms__pms')
 
@@ -245,7 +245,7 @@ def GetEmpGridStats(request):
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-        client_orgchart_data = TblEmployees.objects.using('OrgChartWrite').filter(
+        client_orgchart_data = TblEmployees.objects.using('OrgChartRead').filter(
             wu__in=allowed_wu_list,
         ).order_by('wu')
 
@@ -299,9 +299,9 @@ class OrgChartPageView(generic.ListView):
 
         ## Get the core data
         try:
-            # # emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+            # # emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
             # if self.client_is_admin:
-            #     emp_entries = TblEmployees.objects.using('OrgChartWrite').all().order_by('wu')
+            #     emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
             # else:
             #     allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
             #     if allowed_wu_list_obj['success'] == False:
@@ -309,7 +309,7 @@ class OrgChartPageView(generic.ListView):
             #     else:
             #         allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-            #     emp_entries = TblEmployees.objects.using('OrgChartWrite').filter(
+            #     emp_entries = TblEmployees.objects.using('OrgChartRead').filter(
             #         pms__wu__in=allowed_wu_list,
             #     ).order_by('pms__wu')
             emp_entries =  None
@@ -379,7 +379,7 @@ def GetEmpJson(request):
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
+        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
             wu__in=allowed_wu_list,
         ).exclude(
            Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
@@ -451,8 +451,6 @@ def GetEmpJson(request):
         ##      .
         ##      .
         ##  }
-
-
         flat_supervisor_dict = {}
         for each in emp_data:
             ## Can skip if current emp is the root_pms, we don't need any supervisor information of the root
@@ -566,9 +564,6 @@ def GetEmpJson(request):
         ##      and data-parent attribute, which contains the id of the parent node
         ##
         ##  For more: https://github.com/dabeng/OrgChart
-
-
-
         active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         ## Returns a child dict obj for a specific node, will contains all sub-childs as well
         #   Assums cur_node is an active emp in the lv status of ('B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S')
