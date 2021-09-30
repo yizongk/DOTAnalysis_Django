@@ -165,47 +165,58 @@
             })
             */
 
-            var emp_data_json_master
+            var emp_data_csv_master
             var chart
-            sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
-                successCallbackFct=function(json_response) {
-                    //alert(`data saved successfully!`)
 
-                    let root_pms = json_response.post_data
+            function setInitialMasterOrgChart() {
+                $(document).ajaxStart(function () {
+                    $("body").addClass("loading");
+                })
+                .ajaxStop(function () {
+                    $("body").removeClass("loading");
+                });
+
+                sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        //alert(`data saved successfully!`)
+
+                        let root_pms = json_response.post_data
 
 
-                    let json_blob = {
-                        //root_pms: '1718537'
-                        //root_pms: '1426465'
-                        //root_pms: '1053788'
-                        //root_pms: '1827345'
-                        root_pms: root_pms
+                        let json_blob = {
+                            root_pms: root_pms
+                        }
+
+                        sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_csv' %}", http_request_method="POST",
+                                successCallbackFct=function(json_response) {
+                                    //alert(`data saved successfully!`)
+
+                                    emp_data_csv_master = json_response.post_data
+
+                                    let parsed_csv = d3.csvParse(emp_data_csv_master)
+
+                                    // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+                                    chart = new d3.OrgChart().nodeId(
+                                        d=>d.pms
+                                    ).parentNodeId(
+                                        d=>d.sup_pms
+                                    ).container('#chartContainerId').data(parsed_csv).render();
+
+
+                                },
+                                failCallbackFct=function(json_response) {
+                                    alert(JSON.stringify(json_response, null, 2))
+                                }
+                            )
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
                     }
+                )
+            }
 
-                    sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_csv' %}", http_request_method="POST",
-                            successCallbackFct=function(json_response) {
-                                //alert(`data saved successfully!`)
-
-                                emp_data_json_master = json_response.post_data
-                                console.log(emp_data_json_master)
-
-                                //chart = new d3.OrgChart().container('#chartContainerId').data(emp_data_json_master).render();
-
-
-                            },
-                            failCallbackFct=function(json_response) {
-                                alert(JSON.stringify(json_response, null, 2))
-                            }
-                        )
-
-
-                },
-                failCallbackFct=function(json_response) {
-                    alert(JSON.stringify(json_response, null, 2))
-                }
-            )
-
-
+            setInitialMasterOrgChart()
 
 
 

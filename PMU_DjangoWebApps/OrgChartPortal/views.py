@@ -417,7 +417,7 @@ def GetEmpJson(request):
                 except TblEmployees.DoesNotExist:
                     each_emp_dict[f"supervisor_pms"] = None
 
-                flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+                flat_emp_dict[ f"{each.pms}".strip() ] = each_emp_dict
         """
 
 
@@ -567,7 +567,6 @@ def GetEmpJson(request):
         ##      and data-parent attribute, which contains the id of the parent node
         ##
         ##  For more: https://github.com/dabeng/OrgChart
-        active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         ## Returns a child dict obj for a specific node, will contains all sub-childs as well
         #   Assums cur_node is an active emp in the lv status of ('B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S')
         def ChildTreeTraverser(cur_node, cur_node_sibling_count, cur_itr_count, max_itr_count):
@@ -703,6 +702,7 @@ def GetEmpCsv(request):
 
     ## Get the data
     try:
+        active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
         allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
@@ -711,14 +711,71 @@ def GetEmpCsv(request):
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
+        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
             Q(wu__in=allowed_wu_list)
-        ).order_by(
-            'wu'
         ).exclude(
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
             ,~Q(pms__exact=root_pms)
+        ).filter(
+            lv__in=active_lv_list
+        ).order_by(
+            'supervisor_pms'
         )
+
+
+        ## Build a dict of emp pms and a dict of its emp info
+        ##  {
+        ##      "1234566":
+        ##          {
+        ##              "pms":              "1234567"
+        ##              "last_name":        "john"
+        ##              "first_name":       "doe"
+        ##              "supervisor_pms":   "7654321"
+        ##          }
+        ##      ,"7654321": {...}
+        ##      .
+        ##      .
+        ##      .
+        ##  }
+        flat_emp_dict = {}
+        for each in emp_data:
+            each_emp_dict = {}
+            each_emp_dict[f"pms"] = f"{each.pms}".strip()
+            each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
+            each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
+            try:
+                each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
+            except TblEmployees.DoesNotExist:
+                each_emp_dict[f"supervisor_pms"] = None
+
+            flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+
+
+        def CanReachRoot(pms):
+            print(f'checking {pms}')
+            ## pms is root_pms, so lineage is reachable to root_pms, return true
+            if pms == root_pms:
+                return True
+
+            ## pms is a root that's not root_pms, so lineage is not reachable to root_pms, return false
+            if pms == '' or pms is None:
+                return False
+
+            ## pms is not a root, check its parent
+            try:
+                parent_pms = flat_emp_dict[pms]['supervisor_pms']
+            except KeyError:
+                parent_pms = None
+            return CanReachRoot( parent_pms )
+
+
+        ## Filter for only the root_pms and its childs
+        flat_emp_under_root_dict = {}
+        for emp_pms in flat_emp_dict:
+            emp = flat_emp_dict[emp_pms]
+            if CanReachRoot( emp['pms'] ):
+                flat_emp_under_root_dict[ emp['pms'] ] = emp
+
 
 
         import csv
@@ -727,19 +784,23 @@ def GetEmpCsv(request):
 
         ## Create the csv
         writer = csv.writer(dummy_in_mem_file)
-        # writer.writerow(["pms", "last_name", "first_name", "sup_pms"])
-        writer.writerow(["id", "last_name", "first_name", "parentid"])
+        writer.writerow(["last_name", "first_name", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+        # writer.writerow(["last_name", "first_name", "id", "parentId"])
 
-        for each in emp_data:
+        for each in flat_emp_under_root_dict:
             try:
-                sup_pms = f"{each.supervisor_pms}".strip()
+                ## In the case that root_pms is not the actual top root of the entire org tree, but it's a middle node somewhere, we need to set that emp's sup_pms to empty string
+                if flat_emp_under_root_dict[each]['pms'] == root_pms:
+                    sup_pms = ""
+                else:
+                    sup_pms = flat_emp_under_root_dict[each]['supervisor_pms']
             except TblEmployees.DoesNotExist:
-                sup_pms = None
+                sup_pms = ""
 
             eachrow = [
-                f"{each.pms}".strip()
-                ,f"{each.last_name}".strip()
-                ,f"{each.first_name}".strip()
+                flat_emp_under_root_dict[each]['last_name']
+                ,flat_emp_under_root_dict[each]['first_name']
+                ,flat_emp_under_root_dict[each]['pms']
                 ,sup_pms
             ]
             writer.writerow(eachrow)
@@ -748,7 +809,6 @@ def GetEmpCsv(request):
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
-            # "post_data": tree_supervisor_dict,
             "post_data": dummy_in_mem_file.getvalue(),
         })
     except Exception as e:
@@ -788,9 +848,11 @@ def GetCommissionerPMS(request):
 
     ## Get the data
     try:
-        emp_data = TblEmployees.objects.using('OrgChartWrite').filter(
-            first_name__exact='Henry',
-            last_name__exact='Gutman',
+        from PMU_DjangoWebApps.secret_settings import OrgChartRootFirstName, OrgChartRootLastName
+
+        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
+            first_name__exact=f'{OrgChartRootFirstName}',
+            last_name__exact=f'{OrgChartRootLastName}',
         ).first()
 
         pms = emp_data.pms
