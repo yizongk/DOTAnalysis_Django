@@ -371,6 +371,7 @@ def GetEmpJson(request):
 
     ## Get the data
     try:
+        active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
         allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
@@ -384,6 +385,8 @@ def GetEmpJson(request):
         ).exclude(
            Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
            ,~Q(pms__exact=root_pms)
+        ).filter(
+            lv__in=active_lv_list
         ).order_by(
             'supervisor_pms'
         )
