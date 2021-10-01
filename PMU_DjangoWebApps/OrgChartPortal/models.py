@@ -135,6 +135,19 @@ class TblPermissions(models.Model):
     def __str__(self):
         return self.wu
 
+class TblAdmins(models.Model):
+    tbl_admins_id = models.AutoField(db_column='', primary_key=True)
+    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
+    windows_username = models.CharField(db_column='WindowsUsername', max_length=255)
+    active = models.BooleanField(db_column='Active', blank=False, null=False)
+
+    class Meta:
+        managed = False
+        db_table = 'tblAdmins'
+
+    def __str__(self):
+        return self.windows_username
+
 # class TblPositions(models.Model):
 #     position_id = models.AutoField(db_column='PositionID', primary_key=True)
 #     reports_to_position_id = models.ForeignKey(to='TblPositions', to_field='position_id', db_column='ReportsToPositionID', max_length=7, on_delete=models.DO_NOTHING)
