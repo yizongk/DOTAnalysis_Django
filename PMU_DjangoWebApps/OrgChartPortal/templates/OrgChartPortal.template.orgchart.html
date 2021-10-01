@@ -24,16 +24,17 @@
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
+    {% if client_is_admin %}
+        <div id='chartContainerId'>
+        </div>
 
-    <div id='chartContainerId'>
-    </div>
-
-    <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
-    <br>
-    <select id="PMSSelect">
-        <option value="abc">abc</option>
-    </select>
-    <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+        <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
+        <br>
+        <select id="PMSSelect">
+            <option value="abc">abc</option>
+        </select>
+        <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+    {% endif %}
 
 
 {% endblock content %}

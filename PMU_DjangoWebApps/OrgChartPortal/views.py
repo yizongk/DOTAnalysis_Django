@@ -7,6 +7,30 @@ from django.db.models import Min, Q
 import json
 
 
+## Check if remote user is admin and is active
+def user_is_active_admin(username):
+    try:
+        admin_query = TblAdmins.objects.using('OrgChartWrite').filter(
+            windows_username=username,
+            active=True, ## Filters for active Admins
+        )
+        if admin_query.count() > 0:
+            return {
+                "isAdmin": True,
+                "err": "",
+            }
+        return {
+            "isAdmin": False,
+            "err": '{} is not an active Admin'.format(username),
+        }
+    except Exception as e:
+        print("Exception: user_is_active_admin(): {}".format(e))
+        return {
+            "isAdmin": None,
+            "err": 'Exception: user_is_active_admin(): {}'.format(e),
+        }
+
+
 # Create your views here.
 class HomePageView(TemplateView):
     template_name = 'OrgChartPortal.template.home.html'
@@ -16,6 +40,7 @@ class HomePageView(TemplateView):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
+            self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
@@ -122,7 +147,7 @@ class EmpGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblEmployees.objects.none()
+            return None
 
         self.req_success = True
         return emp_entries
@@ -278,7 +303,6 @@ def GetEmpGridStats(request):
         })
 
 
-##TODO Add admin check or block?
 class OrgChartPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.orgchart.html'
     context_object_name = 'emp_entries'
@@ -289,16 +313,17 @@ class OrgChartPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        ## TODO Implement Admin in database
         ## Check for Active Admins
-        # is_active_admin = user_is_active_admin(self.request.user)
-        # if is_active_admin["success"] == True:
-        #     self.client_is_admin = True
-        # else:
-        #     self.client_is_admin = False
+        is_active_admin = user_is_active_admin(self.request.user)
+        if is_active_admin["isAdmin"] == True:
+            self.client_is_admin = True
+        else:
+            self.client_is_admin = False
 
         ## Get the core data
         try:
+            if self.client_is_admin == False:
+                return None
             # # emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
             # if self.client_is_admin:
             #     emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
@@ -317,7 +342,7 @@ class OrgChartPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblEmployees.objects.none()
+            return None
 
         self.req_success = True
         return emp_entries
@@ -344,7 +369,6 @@ class OrgChartPageView(generic.ListView):
             return context
 
 
-##TODO Add admin check and (filter or block?)
 def GetEmpJson(request):
     ## Authenticate User
     remote_user = None
@@ -357,8 +381,6 @@ def GetEmpJson(request):
             "post_msg": "OrgChartPortal: GetEmpJson():\n\nUNAUTHENTICATE USER!",
         })
 
-    ## TODO Implement Admin in database
-    ## Check for Active Admins
 
     ## Read the json request body
     try:
@@ -371,6 +393,12 @@ def GetEmpJson(request):
 
     ## Get the data
     try:
+        ## Check for Active Admins
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin. Only admins can access the GetEmpJson() api".format(remote_user))
+
+
         active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
@@ -688,9 +716,6 @@ def GetEmpCsv(request):
             "post_msg": "OrgChartPortal: GetEmpCsv():\n\nUNAUTHENTICATE USER!",
         })
 
-    ## TODO Implement Admin in database
-    ## Check for Active Admins
-
     ## Read the json request body
     try:
         json_blob = json.loads(request.body)
@@ -702,6 +727,12 @@ def GetEmpCsv(request):
 
     ## Get the data
     try:
+        ## Check for Active Admins
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin. Only admins can access the GetEmpCsv() api".format(remote_user))
+
+
         active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
@@ -820,8 +851,6 @@ def GetEmpCsv(request):
         })
 
 
-
-##TODO Add admin check and (filter or block?)
 def GetCommissionerPMS(request):
     ## Authenticate User
     remote_user = None
@@ -834,8 +863,6 @@ def GetCommissionerPMS(request):
             "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
         })
 
-    ## TODO Implement Admin in database
-    ## Check for Active Admins
 
     ## Read the json request body
     try:
@@ -848,6 +875,12 @@ def GetCommissionerPMS(request):
 
     ## Get the data
     try:
+        ## Check for Active Admins
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin. Only admins can access the GetCommissionerPMS() api".format(remote_user))
+
+
         from PMU_DjangoWebApps.secret_settings import OrgChartRootFirstName, OrgChartRootLastName
 
         emp_data = TblEmployees.objects.using('OrgChartRead').filter(
