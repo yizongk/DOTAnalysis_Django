@@ -360,12 +360,15 @@
                             ,wu_desc:       emp.wu_desc
                         }
                     )
+                    .setExpanded(emp.pms)
+                    .setCentered(emp.sup_pms)
+                    .render()
             }
 
             $("#addNode").click(function() {
                 let emp = {
                     pms:            'Test_child_pms'
-                    ,sup_pms:       'legit_sup_pms'
+                    ,sup_pms:       'test_sup_pms'
                     ,first_name:    'Test_First_Name'
                     ,last_name:     'Test_Last_Name'
                     ,office_title:  'OL Lady'
