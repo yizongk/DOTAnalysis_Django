@@ -4,16 +4,18 @@
 
 {% block custom_css %}
     <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.css' %}" />
-    {% comment %} <style>
-        #chartContainerId {
-            position: relative;
-            height: 420px;
-            border: 1px solid #aaa;
-            margin: 0.5rem;
-            overflow: auto;
-            text-align: center;
-        }
-    </style> {% endcomment %}
+    {% comment %} For the jquery orgchart
+        <style>
+            #chartContainerId {
+                position: relative;
+                height: 420px;
+                border: 1px solid #aaa;
+                margin: 0.5rem;
+                overflow: auto;
+                text-align: center;
+            }
+        </style>
+    {% endcomment %}
 {% endblock %}
 
 {% block content %}
@@ -28,12 +30,46 @@
         <div id='chartContainerId'>
         </div>
 
-        <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
-        <br>
-        <select id="PMSSelect">
-            <option value="abc">abc</option>
-        </select>
-        <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+        {% comment %} For the jquery orgchart
+            <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
+            <br>
+            <select id="PMSSelect">
+                <option value="some_pms">some_pms</option>
+            </select>
+            <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+        {% endcomment %}
+
+
+
+        <div class="action-buttons">
+            {% comment %}  For d3 orgchart
+                <button id="markNodeBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-highlighter"></i>
+                        mark
+                    </button>
+                <br>
+
+                <button id="markRootBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-route"></i>
+                        mark root
+                    </button>
+                <br>
+
+                <button id="clearAllSelectionBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-eraser"></i>
+                        clear mark
+                    </button>
+                <br>
+            {% endcomment %}
+
+            <button id="addNode" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-folder-plus"></i>
+                    Add Node
+                </button>
+            <br />
+
+            <button id="exportSvg" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-file-download"></i>
+                    export svg
+                </button>
+            <br>
+        </div>
+
     {% endif %}
 
 
@@ -44,129 +80,130 @@
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3/d3.v7.min.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-org-chart/d3-org-chart@2.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
-    {% comment %} <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/es6-promise/4.1.1/es6-promise.auto.min.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/html2canvas/1.3.2/html2canvas.min.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/jspdf/2.4.0/jspdf.umd.min.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.js' %}"></script> {% endcomment %}
+    {% comment %} For the jquery orgchart
+        <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/es6-promise/4.1.1/es6-promise.auto.min.js' %}"></script>
+        <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/html2canvas/1.3.2/html2canvas.min.js' %}"></script>
+        <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/jspdf/2.4.0/jspdf.umd.min.js' %}"></script>
+        <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.js' %}"></script>
+    {% endcomment %}
     <script>
         $(document).ready( function () {
-            /*
-            var emp_data_json_master
-            var oc
-            var oc_options = {
-                'nodeTitle': 'title'
-                ,'nodeContent': 'content'
-                ,'draggable': true
-                ,'pan': true
-                ,'zoom': true
-                ,'visibleLevel': 3
-                ,'exportButton': true
-                ,'exportFileextension': 'pdf'
-                ,'exportFilename': 'MyOrgChart'
-                ,'initCompleted': function($chart) {
-                    $('#chartContainerId').scrollLeft( ($('#chartContainerId')[0].scrollWidth - $('#chartContainerId').width())/2 );
+            /* For the jquery orgchart
+                var emp_data_json_master
+                var oc
+                var oc_options = {
+                    'nodeTitle': 'title'
+                    ,'nodeContent': 'content'
+                    ,'draggable': true
+                    ,'pan': true
+                    ,'zoom': true
+                    ,'visibleLevel': 3
+                    ,'exportButton': true
+                    ,'exportFileextension': 'pdf'
+                    ,'exportFilename': 'MyOrgChart'
+                    ,'initCompleted': function($chart) {
+                        $('#chartContainerId').scrollLeft( ($('#chartContainerId')[0].scrollWidth - $('#chartContainerId').width())/2 );
+                    }
                 }
-            }
 
-            function setInitialMasterOrgChart() {
-                $(document).ajaxStart(function () {
-                    $("body").addClass("loading");
-                })
-                .ajaxStop(function () {
-                    $("body").removeClass("loading");
-                });
+                function setInitialMasterOrgChart() {
+                    $(document).ajaxStart(function () {
+                        $("body").addClass("loading");
+                    })
+                    .ajaxStop(function () {
+                        $("body").removeClass("loading");
+                    });
 
-                sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
-                    successCallbackFct=function(json_response) {
-                        //alert(`data saved successfully!`)
+                    sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+                            //alert(`data saved successfully!`)
 
-                        let root_pms = json_response.post_data
+                            let root_pms = json_response.post_data
 
 
-                        let json_blob = {
-                            root_pms: root_pms
-                        }
-
-                        sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_json' %}", http_request_method="POST",
-                            successCallbackFct=function(json_response) {
-                                //alert(`data saved successfully!`)
-
-                                emp_data_json_master = json_response.post_data
-
-                                let options = {
-                                    'data': emp_data_json_master
-                                }
-
-                                for (let i in oc_options) {
-                                    options[i] = oc_options[i]
-                                }
-
-                                oc = $('#chartContainerId').orgchart(options);
-                            },
-                            failCallbackFct=function(json_response) {
-                                alert(JSON.stringify(json_response, null, 2))
+                            let json_blob = {
+                                root_pms: root_pms
                             }
-                        )
+
+                            sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_json' %}", http_request_method="POST",
+                                successCallbackFct=function(json_response) {
+                                    //alert(`data saved successfully!`)
+
+                                    emp_data_json_master = json_response.post_data
+
+                                    let options = {
+                                        'data': emp_data_json_master
+                                    }
+
+                                    for (let i in oc_options) {
+                                        options[i] = oc_options[i]
+                                    }
+
+                                    oc = $('#chartContainerId').orgchart(options);
+                                },
+                                failCallbackFct=function(json_response) {
+                                    alert(JSON.stringify(json_response, null, 2))
+                                }
+                            )
 
 
 
-                    },
-                    failCallbackFct=function(json_response) {
-                        alert(JSON.stringify(json_response, null, 2))
+                        },
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                    )
+                }
+
+                // find the object in the @tree_root that is equal to @lookup. Returns object if found, and null if not found
+                function traverseAndFindRootByPMS(tree_root, lookup) {
+                    if (tree_root['pms'] !== null) {
+                        if (tree_root['pms'] == lookup)
+                            return tree_root
                     }
-                )
-            }
 
-            // find the object in the @tree_root that is equal to @lookup. Returns object if found, and null if not found
-            function traverseAndFindRootByPMS(tree_root, lookup) {
-                if (tree_root['pms'] !== null) {
-                    if (tree_root['pms'] == lookup)
-                        return tree_root
-                }
-
-                for (let i in tree_root['children']) {
-                    if (tree_root['children'][i] !== null && typeof(tree_root['children'][i]) == "object") { // Not null and it's a json object
-                        //going one step down in the object tree_root!!
-                        let child = traverseAndFindRootByPMS(tree_root['children'][i], lookup)
-                        if (child !== null)
-                            return child
+                    for (let i in tree_root['children']) {
+                        if (tree_root['children'][i] !== null && typeof(tree_root['children'][i]) == "object") { // Not null and it's a json object
+                            //going one step down in the object tree_root!!
+                            let child = traverseAndFindRootByPMS(tree_root['children'][i], lookup)
+                            if (child !== null)
+                                return child
+                        }
                     }
+
+                    return null
                 }
 
-                return null
-            }
+                function refreshOrgChart(data) {
+                    let options = {
+                        'data': data
+                    }
 
-            function refreshOrgChart(data) {
-                let options = {
-                    'data': data
+                    for (let i in oc_options) {
+                        options[i] = oc_options[i]
+                    }
+
+                    oc.init(options)
                 }
 
-                for (let i in oc_options) {
-                    options[i] = oc_options[i]
-                }
+                setInitialMasterOrgChart()
 
-                oc.init(options)
-            }
+                $('#resetInitialMasterOrgChartClick').click(function() {
+                    oc.init(emp_data_json_master)
+                })
 
-            setInitialMasterOrgChart()
+                $("#resetOrgChartWithSelectedPMSClick").click(function() {
+                    let pms = $("#PMSSelect").val()
+                    let root = traverseAndFindRootByPMS(emp_data_json_master, pms)
 
-            $('#resetInitialMasterOrgChartClick').click(function() {
-                oc.init(emp_data_json_master)
-            })
-
-            $("#resetOrgChartWithSelectedPMSClick").click(function() {
-                let pms = $("#PMSSelect").val()
-                let root = traverseAndFindRootByPMS(emp_data_json_master, pms)
-
-                if (root == null) {
-                    alert(`${pms} not found`)
-                } else {
-                    refreshOrgChart(root)
-                }
-            })
+                    if (root == null) {
+                        alert(`${pms} not found`)
+                    } else {
+                        refreshOrgChart(root)
+                    }
+                })
             */
 
-            var emp_data_csv_master
             var chart
 
             function setInitialMasterOrgChart() {
@@ -192,16 +229,73 @@
                                 successCallbackFct=function(json_response) {
                                     //alert(`data saved successfully!`)
 
-                                    emp_data_csv_master = json_response.post_data
-
+                                    let emp_data_csv_master = json_response.post_data
                                     let parsed_csv = d3.csvParse(emp_data_csv_master)
 
                                     // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
-                                    chart = new d3.OrgChart().nodeId(
-                                        d=>d.pms
-                                    ).parentNodeId(
-                                        d=>d.sup_pms
-                                    ).container('#chartContainerId').data(parsed_csv).render();
+                                    chart = new d3.OrgChart().nodeId(d => d.pms)
+                                        .parentNodeId(d => d.sup_pms)
+                                        .container('#chartContainerId')
+                                        .data(parsed_csv)
+                                        .nodeHeight(d => 85)
+                                        .nodeWidth(d => 220)
+                                        .childrenMargin(d => 50)
+                                        .compactMarginBetween(d => 50)
+                                        .compactMarginPair(d => 50)
+                                        .neightbourMargin((a,b) => 25)
+                                        .siblingsMargin(d => 25)
+                                        .buttonContent(({node, state}) => {
+                                            return `<div style="px;color:#716E7B;border-radius:5px;padding:4px;font-size:10px;margin:auto auto;background-color:white;border: 1px solid #E4E2E9"> <span style="font-size:9px">${
+                                                    node.children
+                                                        ? `<i class="fas fa-angle-up"></i>`
+                                                        : `<i class="fas fa-angle-down"></i>`
+                                                }</span> ${node.data._directSubordinates} / ${node.data._totalSubordinates} </div>`
+                                        })
+                                        // linkUpdate sets the color of the lines between nodes when selected
+                                        .linkUpdate(function(d, i, arr) {
+                                            //console.log(d.data)
+                                            d3.select(this)
+                                                .attr('stroke', d =>
+                                                    d.data._upToTheRootHighlighted ? '#152785' : '#E4E2E9'
+                                                )
+                                                .attr('stroke-width', d =>
+                                                    d.data._upToTheRootHighlighted ? 5 : 1
+                                                )
+
+                                            if (d.data._upToTheRootHighlighted) {
+                                                d3.select(this).raise()
+                                            }
+                                        })
+                                        // nodeUpdate sets the color of the nodes when selected
+                                        .nodeUpdate(function(d, i, arr) {
+                                            d3.select(this)
+                                                .select('.node-rect')
+                                                .attr("stroke", d => d.data._highlighted || d.data._upToTheRootHighlighted ? '#00FF2A' : 'none')
+                                                .attr("stroke-width", d.data._highlighted || d.data._upToTheRootHighlighted ? 40 : 1)
+                                        })
+                                        .nodeContent(function(d, i, arr, state) {
+                                            const color = '#FFFFFF'
+                                            return `
+                                            <div style="font-family: 'Inter', sans-serif;background-color:${color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
+                                                <div style="background-color:${color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
+                                                <img src="{% static 'PMU_DjangoWebApps/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
+
+                                                <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
+
+                                                <div style="font-size:15px;color:#08011E;margin-left:20px;margin-top:32px"> ${
+                                                    d.data.last_name + ', ' + d.data.first_name//@TODO
+                                                } </div>
+                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                    d.data.office_title//@TODO
+                                                } </div>
+
+
+                                            </div>
+                                            `
+                                        })
+                                        .render();
+                                        //console.log(parsed_csv)
+                                        console.log(chart)
 
 
                                 },
@@ -218,6 +312,66 @@
             }
 
             setInitialMasterOrgChart()
+
+
+
+
+            /* For d3 orgchart
+                function selectNode(pms) {
+                    chart.setHighlighted("some_pms").render()
+                }
+
+                function clearAllSelection() {
+                    chart.clearHighlighting()
+                }
+
+                function setUpToTheRootHighlight() {
+                    chart.setUpToTheRootHighlighted(root_pms).render().fit()
+                }
+
+                $("#markNodeBtn").click(function() {
+                    selectNode('some_pms')
+                })
+
+                $("#markRootBtn").click(function() {
+                    setUpToTheRootHighlight()
+                })
+
+                $("#clearAllSelectionBtn").click(function() {
+                    clearAllSelection()
+                })
+            */
+
+            function addNode(emp) {
+                chart.addNode(
+                        {
+                            sup_pms: emp.sup_pms
+                            ,pms: emp.pms
+                            ,first_name: emp.first_name
+                            ,last_name: emp.last_name
+                            ,office_title: emp.office_title
+                        }
+                    )
+            }
+
+            $("#addNode").click(function() {
+                let emp = {
+                    pms: 'Test_child_pms'
+                    ,sup_pms: 'legit_sup_pms'
+                    ,first_name: 'Test_First_Name'
+                    ,last_name: 'Test_Last_Name'
+                    ,office_title: 'OL Lady'
+                }
+                addNode(emp)
+            })
+
+            function exportSvg() {
+                chart.exportSvg()
+            }
+
+            $("#exportSvg").click(function() {
+                exportSvg()
+            })
 
 
 
