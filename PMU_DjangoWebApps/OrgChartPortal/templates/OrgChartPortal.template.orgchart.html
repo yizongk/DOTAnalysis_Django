@@ -72,19 +72,19 @@
                 <br>
             {% endcomment %}
 
-            <button id="addNode" class="green huge ui button">
+            <button id="addNodeBtn" class="green huge ui button">
                     <i class="edit outline icon"></i>
                     Add Node
                 </button>
             <br />
 
-            <button id="removeNode" class="red huge ui button">
+            <button id="removeNodeAndChildrenBtn" class="red huge ui button">
                     <i class="eraser icon"></i>
                     Remove Node
                 </button>
             <br />
 
-            <button id="exportSvg" class="blue huge ui button">
+            <button id="exportSvgBtn" class="blue huge ui button">
                     <i class="save outline icon"></i>
                     Export SVG
                 </button>
@@ -324,10 +324,10 @@
                                             // Highlight the current selected node, and unhighlight the rest.
                                             chart.clearHighlighting()
                                             chart.setHighlighted(d).render()
-                                            // Remove all event listener of the #addNode button
-                                            $("#addNode").unbind()
+                                            // Remove all event listener of the #addNodeBtn button
+                                            $("#addNodeBtn").unbind()
 
-                                            $("#addNode").click(function() {
+                                            $("#addNodeBtn").click(function() {
                                                 //console.log(`event click: ${d}`)
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 //console.log(`random generated: ${random_7_digit}`)
@@ -344,10 +344,10 @@
                                             })
 
 
-                                            $("#removeNode").unbind()
+                                            $("#removeNodeAndChildrenBtn").unbind()
 
-                                            $("#removeNode").click(function() {
-                                                removeNode(d)
+                                            $("#removeNodeAndChildrenBtn").click(function() {
+                                                removeNodeAndChildren(d)
                                             })
                                         })
                                         .render();
@@ -415,8 +415,8 @@
             }
 
 
-            function removeNode(emp_pms) {
-                chart.removeNode(emp_pms)
+            function removeNodeAndChildren(emp_pms) {
+                chart.removeNodeAndChildren(emp_pms)
             }
 
 
@@ -424,7 +424,7 @@
                 chart.exportSvg()
             }
 
-            $("#exportSvg").click(function() {
+            $("#exportSvgBtn").click(function() {
                 exportSvg()
             })
 
