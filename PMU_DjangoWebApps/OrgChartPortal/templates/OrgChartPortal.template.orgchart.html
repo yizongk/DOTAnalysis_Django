@@ -274,10 +274,10 @@
                                                 .attr("stroke-width", d.data._highlighted || d.data._upToTheRootHighlighted ? 40 : 1)
                                         })
                                         .nodeContent(function(d, i, arr, state) {
-                                            const color = '#FFFFFF'
+                                            const default_color = '#FFFFFF'
                                             return `
-                                            <div style="font-family: 'Inter', sans-serif;background-color:${color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
-                                                <div style="background-color:${color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
+                                            <div style="font-family: 'Inter', sans-serif;background-color:${default_color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
+                                                <div style="background-color:${default_color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
                                                 <img src="{% static 'PMU_DjangoWebApps/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
 
                                                 <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
@@ -299,6 +299,29 @@
                                             </div>
                                             `
                                         })
+                                        .onNodeClick(function(d) { // d is the pms number of the clicked node
+                                            // Highlight the current selected node, and unhighlight the rest.
+                                            chart.clearHighlighting()
+                                            chart.setHighlighted(d).render()
+                                            // Remove all event listener of the #addNode button
+                                            $("#addNode").unbind()
+
+                                            $("#addNode").click(function() {
+                                                //console.log(`event click: ${d}`)
+                                                let random_7_digit = Math.floor(Math.random() * 10000000)
+                                                //console.log(`random generated: ${random_7_digit}`)
+                                                let emp = {
+                                                    pms             :`null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
+                                                    ,sup_pms        :d
+                                                    ,first_name     :'Test_First_Name'
+                                                    ,last_name      :'Test_Last_Name'
+                                                    ,office_title   :'OL Lady'
+                                                    ,civil_title    :'test_civil_title'
+                                                    ,wu_desc        :'test_wu_desc'
+                                                }
+                                                addNode(emp)
+                                            })
+                                        })
                                         .render();
                                         //console.log(parsed_csv)
                                         //console.log(chart)
@@ -318,8 +341,6 @@
             }
 
             setInitialMasterOrgChart()
-
-
 
 
             /* For d3 orgchart
@@ -365,18 +386,6 @@
                     .render()
             }
 
-            $("#addNode").click(function() {
-                let emp = {
-                    pms:            'Test_child_pms'
-                    ,sup_pms:       'test_sup_pms'
-                    ,first_name:    'Test_First_Name'
-                    ,last_name:     'Test_Last_Name'
-                    ,office_title:  'OL Lady'
-                    ,civil_title:   'test_civil_title'
-                    ,wu_desc:       'test_wu_desc'
-                }
-                addNode(emp)
-            })
 
             function exportSvg() {
                 chart.exportSvg()
