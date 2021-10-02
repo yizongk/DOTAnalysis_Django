@@ -237,7 +237,7 @@
                                         .parentNodeId(d => d.sup_pms)
                                         .container('#chartContainerId')
                                         .data(parsed_csv)
-                                        .nodeHeight(d => 85)
+                                        .nodeHeight(d => 120)
                                         .nodeWidth(d => 220)
                                         .childrenMargin(d => 50)
                                         .compactMarginBetween(d => 50)
@@ -283,10 +283,16 @@
                                                 <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
 
                                                 <div style="font-size:15px;color:#08011E;margin-left:20px;margin-top:32px"> ${
-                                                    d.data.last_name + ', ' + d.data.first_name//@TODO
+                                                    d.data.last_name + ', ' + d.data.first_name
                                                 } </div>
                                                 <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
-                                                    d.data.office_title//@TODO
+                                                    d.data.office_title
+                                                } </div>
+                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                    d.data.civil_title
+                                                } </div>
+                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                    d.data.wu_desc
                                                 } </div>
 
 
@@ -295,7 +301,7 @@
                                         })
                                         .render();
                                         //console.log(parsed_csv)
-                                        console.log(chart)
+                                        //console.log(chart)
 
 
                                 },
@@ -345,22 +351,26 @@
             function addNode(emp) {
                 chart.addNode(
                         {
-                            sup_pms: emp.sup_pms
-                            ,pms: emp.pms
-                            ,first_name: emp.first_name
-                            ,last_name: emp.last_name
-                            ,office_title: emp.office_title
+                            sup_pms:        emp.sup_pms
+                            ,pms:           emp.pms
+                            ,first_name:    emp.first_name
+                            ,last_name:     emp.last_name
+                            ,office_title:  emp.office_title
+                            ,civil_title:   emp.civil_title
+                            ,wu_desc:       emp.wu_desc
                         }
                     )
             }
 
             $("#addNode").click(function() {
                 let emp = {
-                    pms: 'Test_child_pms'
-                    ,sup_pms: 'legit_sup_pms'
-                    ,first_name: 'Test_First_Name'
-                    ,last_name: 'Test_Last_Name'
-                    ,office_title: 'OL Lady'
+                    pms:            'Test_child_pms'
+                    ,sup_pms:       'legit_sup_pms'
+                    ,first_name:    'Test_First_Name'
+                    ,last_name:     'Test_Last_Name'
+                    ,office_title:  'OL Lady'
+                    ,civil_title:   'test_civil_title'
+                    ,wu_desc:       'test_wu_desc'
                 }
                 addNode(emp)
             })

@@ -76,7 +76,7 @@ class TblEmployees(models.Model):
     first_name = models.CharField(db_column='F-Name', max_length=255)
     pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
 
-    title = models.CharField(db_column='Title', max_length=255)
+    civil_title = models.CharField(db_column='Title', max_length=255)
     supervisor_pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='SupervisorPMS', max_length=7, on_delete=models.DO_NOTHING)
     office_title = models.CharField(db_column='OfficeTitle', max_length=255)  ## Should a foreign key to tblOfficeTitles, but this logic is not in the over arching umbrella yet.
 

@@ -771,10 +771,12 @@ def GetEmpCsv(request):
         flat_emp_dict = {}
         for each in emp_data:
             each_emp_dict = {}
-            each_emp_dict[f"pms"] = f"{each.pms}".strip()
-            each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
-            each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
-            each_emp_dict[f"office_title"] = f"{each.office_title}".strip()
+            each_emp_dict[f"pms"]           = f"{each.pms}".strip()
+            each_emp_dict[f"last_name"]     = f"{each.last_name}".strip()
+            each_emp_dict[f"first_name"]    = f"{each.first_name}".strip()
+            each_emp_dict[f"office_title"]  = f"{each.office_title}".strip()
+            each_emp_dict[f"civil_title"]   = f"{each.civil_title}".strip()
+            each_emp_dict[f"wu_desc"]       = f"{each.wu.wu_desc}".strip()
             try:
                 each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
             except TblEmployees.DoesNotExist:
@@ -816,7 +818,7 @@ def GetEmpCsv(request):
 
         ## Create the csv
         writer = csv.writer(dummy_in_mem_file)
-        writer.writerow(["last_name", "first_name", "office_title", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+        writer.writerow(["last_name", "first_name", "office_title", "civil_title", "wu_desc", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
         # writer.writerow(["last_name", "first_name", "id", "parentId"])
 
         for each in flat_emp_under_root_dict:
@@ -833,6 +835,8 @@ def GetEmpCsv(request):
                 flat_emp_under_root_dict[each]['last_name']
                 ,flat_emp_under_root_dict[each]['first_name']
                 ,flat_emp_under_root_dict[each]['office_title']
+                ,flat_emp_under_root_dict[each]['civil_title']
+                ,flat_emp_under_root_dict[each]['wu_desc']
                 ,flat_emp_under_root_dict[each]['pms']
                 ,sup_pms
             ]
