@@ -3,8 +3,13 @@
 {% load static %}
 
 {% block custom_css %}
-    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.css' %}" />
+    <!-- You MUST include jQuery before Fomantic -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
+
     {% comment %} For the jquery orgchart
+        <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/OrgChart/3.1.1/jquery.orgchart.min.css' %}" />
         <style>
             #chartContainerId {
                 position: relative;
@@ -16,6 +21,14 @@
             }
         </style>
     {% endcomment %}
+    <style>
+        /* Move the button to the lower right part of the screen, in absolute position, meaning it won't move from there even if you scroll the screen */
+        .buttons {
+        position: absolute;
+        bottom: 10px;
+        right: 35px;
+        }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -41,7 +54,7 @@
 
 
 
-        <div class="action-buttons">
+        <div class="ui vertical labeled icon buttons">
             {% comment %}  For d3 orgchart
                 <button id="markNodeBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-highlighter"></i>
                         mark
@@ -59,18 +72,21 @@
                 <br>
             {% endcomment %}
 
-            <button id="addNode" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-folder-plus"></i>
+            <button id="addNode" class="green huge ui button">
+                    <i class="edit outline icon"></i>
                     Add Node
                 </button>
             <br />
 
-            <button id="removeNode" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-folder-plus"></i>
+            <button id="removeNode" class="red huge ui button">
+                    <i class="eraser icon"></i>
                     Remove Node
                 </button>
             <br />
 
-            <button id="exportSvg" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-file-download"></i>
-                    export svg
+            <button id="exportSvg" class="blue huge ui button">
+                    <i class="save outline icon"></i>
+                    Export SVG
                 </button>
             <br>
         </div>
