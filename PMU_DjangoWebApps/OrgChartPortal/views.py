@@ -774,6 +774,7 @@ def GetEmpCsv(request):
             each_emp_dict[f"pms"] = f"{each.pms}".strip()
             each_emp_dict[f"last_name"] = f"{each.last_name}".strip()
             each_emp_dict[f"first_name"] = f"{each.first_name}".strip()
+            each_emp_dict[f"office_title"] = f"{each.office_title}".strip()
             try:
                 each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
             except TblEmployees.DoesNotExist:
@@ -815,7 +816,7 @@ def GetEmpCsv(request):
 
         ## Create the csv
         writer = csv.writer(dummy_in_mem_file)
-        writer.writerow(["last_name", "first_name", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+        writer.writerow(["last_name", "first_name", "office_title", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
         # writer.writerow(["last_name", "first_name", "id", "parentId"])
 
         for each in flat_emp_under_root_dict:
@@ -831,6 +832,7 @@ def GetEmpCsv(request):
             eachrow = [
                 flat_emp_under_root_dict[each]['last_name']
                 ,flat_emp_under_root_dict[each]['first_name']
+                ,flat_emp_under_root_dict[each]['office_title']
                 ,flat_emp_under_root_dict[each]['pms']
                 ,sup_pms
             ]
