@@ -64,6 +64,11 @@
                 </button>
             <br />
 
+            <button id="removeNode" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-folder-plus"></i>
+                    Remove Node
+                </button>
+            <br />
+
             <button id="exportSvg" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-file-download"></i>
                     export svg
                 </button>
@@ -321,6 +326,13 @@
                                                 }
                                                 addNode(emp)
                                             })
+
+
+                                            $("#removeNode").unbind()
+
+                                            $("#removeNode").click(function() {
+                                                removeNode(d)
+                                            })
                                         })
                                         .render();
                                         //console.log(parsed_csv)
@@ -384,6 +396,11 @@
                     .setExpanded(emp.pms)
                     .setCentered(emp.sup_pms)
                     .render()
+            }
+
+
+            function removeNode(emp_pms) {
+                chart.removeNode(emp_pms)
             }
 
 
