@@ -251,13 +251,13 @@
                                     //alert(`data saved successfully!`)
 
                                     let emp_data_csv_master = json_response.post_data
-                                    let parsed_csv = d3.csvParse(emp_data_csv_master)
+                                    let d3_parsed_csv = d3.csvParse(emp_data_csv_master)
 
                                     // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
                                     chart = new d3.OrgChart().nodeId(d => d.pms)
                                         .parentNodeId(d => d.sup_pms)
                                         .container('#chartContainerId')
-                                        .data(parsed_csv)
+                                        .data(d3_parsed_csv)
                                         .nodeHeight(d => 120)
                                         .nodeWidth(d => 220)
                                         .childrenMargin(d => 50)
@@ -351,7 +351,7 @@
                                             })
                                         })
                                         .render();
-                                        //console.log(parsed_csv)
+                                        //console.log(d3_parsed_csv)
                                         //console.log(chart)
 
 
@@ -416,7 +416,7 @@
 
 
             function removeNodeAndChildren(emp_pms) {
-                chart.removeNodeAndChildren(emp_pms)
+                chart.removeNode(emp_pms)
             }
 
 
