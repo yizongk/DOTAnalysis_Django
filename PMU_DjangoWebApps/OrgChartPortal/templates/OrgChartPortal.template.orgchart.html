@@ -24,9 +24,20 @@
     <style>
         /* Move the button to the lower right part of the screen, in absolute position, meaning it won't move from there even if you scroll the screen */
         .buttons {
-        position: absolute;
-        bottom: 10px;
-        right: 35px;
+            position: absolute;
+            bottom: 10px;
+            right: 35px;
+        }
+
+        /* Fix Formantic UI's modal that sticks to the left side of the screen */
+        .ui.modal,
+        .ui.active.modal {
+            margin: 0 auto!important;
+            top: auto !important;
+            left: auto !important;
+            transform-origin: center !important;
+            transition: all ease .5s;
+            height: auto !important;
         }
   </style>
 {% endblock %}
@@ -53,6 +64,52 @@
             <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
         {% endcomment %}
 
+
+        <div class="ui mini modal" id="modalEditNodeForm">
+
+            <div class="header">Edit node</div>
+
+            <div class="content">
+                <form class="ui form">
+                    <div class="field">
+                        <label>LastName</label>
+                        <div id="modalEditNodeFormLastNameInputBorder" class="ui input">
+                            <input id="modalEditNodeFormLastNameInput">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>FirstName</label>
+                        <div id="modalEditNodeFormFirstNameInputBorder" class="ui input">
+                            <input id="modalEditNodeFormFirstNameInput">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>OfficeTitle</label>
+                        <div id="modalEditNodeFormSelectOfficeTitleInputBorder" class="ui input">
+                            <input id="modalEditNodeFormOfficeTitleInput">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>CivilTitle</label>
+                        <div id="modalEditNodeFormSelectCivilTitleInputBorder" class="ui input">
+                            <input id="modalEditNodeFormCivilTitleInput">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>SubDivision</label>
+                        <div id="modalEditNodeFormSelectSubDivisionInputBorder" class="ui input">
+                            <input id="modalEditNodeFormSubDivisionInput">
+                        </div>
+                    </div>
+                </form>
+                <div class="ui divider"></div>
+                <button id="modalEditNodeFormSubmitButton" class="ui positive button">Edit Node Submit</button>
+            </div>
+        </div>
 
 
         <div class="ui vertical labeled icon buttons">
@@ -82,6 +139,12 @@
             <button id="addNodeAboveBtn" class="green huge ui button">
                     <i class="edit outline icon"></i>
                     Add Node Above
+                </button>
+            <br>
+
+            <button id="editNodeBtn" class="orange huge ui button">
+                    <i class="edit outline icon"></i>
+                    Edit Node
                 </button>
             <br>
 
@@ -240,12 +303,6 @@
 
             var chart
 
-            function removeAllEditButtonEventListeners() {
-                $("#addNodeBelowBtn").unbind()
-                $("#addNodeAboveBtn").unbind()
-                $("#removeNodeAndChildrenBtn").unbind()
-                $("#removeNodeBtn").unbind()
-            }
 
             function setInitialMasterOrgChart() {
                 $(document).ajaxStart(function () {
@@ -403,6 +460,40 @@
                                             })
 
 
+                                            $("#editNodeBtn").click(function() {
+                                                $("#modalEditNodeFormSubmitButton").unbind()
+                                                $("#modalEditNodeFormLastNameInput")    .val("")
+                                                $("#modalEditNodeFormFirstNameInput")   .val("")
+                                                $("#modalEditNodeFormOfficeTitleInput") .val("")
+                                                $("#modalEditNodeFormCivilTitleInput")  .val("")
+                                                $("#modalEditNodeFormSubDivisionInput") .val("")
+
+                                                // Can only edit name, office title, civil title, and division info
+                                                $("#modalEditNodeForm")
+                                                .modal("show")
+
+                                                $("#modalEditNodeFormLastNameInput")    .val(selected_node.last_name)
+                                                $("#modalEditNodeFormFirstNameInput")   .val(selected_node.first_name)
+                                                $("#modalEditNodeFormOfficeTitleInput") .val(selected_node.office_title)
+                                                $("#modalEditNodeFormCivilTitleInput")  .val(selected_node.civil_title)
+                                                $("#modalEditNodeFormSubDivisionInput") .val(selected_node.wu_desc)
+
+                                                $("#modalEditNodeFormSubmitButton").click(function() {
+                                                    selected_node.last_name     = $("#modalEditNodeFormLastNameInput")   .val()
+                                                    selected_node.first_name    = $("#modalEditNodeFormFirstNameInput")  .val()
+                                                    selected_node.office_title  = $("#modalEditNodeFormOfficeTitleInput").val()
+                                                    selected_node.civil_title   = $("#modalEditNodeFormCivilTitleInput") .val()
+                                                    selected_node.wu_desc       = $("#modalEditNodeFormSubDivisionInput").val()
+
+                                                    chart.render()
+                                                    $("#modalEditNodeForm")
+                                                    .modal("hide")
+                                                })
+
+
+                                            })
+
+
                                             $("#removeNodeAndChildrenBtn").click(function() {
                                                 if (d == root_pms) {
                                                     alert('Cannot delete the root')
@@ -485,6 +576,16 @@
                     clearAllSelection()
                 })
             */
+
+            function removeAllEditButtonEventListeners() {
+                $("#addNodeBelowBtn").unbind()
+                $("#addNodeAboveBtn").unbind()
+                $("#editNodeBtn").unbind()
+                $("#removeNodeAndChildrenBtn").unbind()
+                $("#removeNodeBtn").unbind()
+
+                $("#modalEditNodeFormSubmitButton").unbind()
+            }
 
             function addNode(emp) {
                 chart.addNode(
