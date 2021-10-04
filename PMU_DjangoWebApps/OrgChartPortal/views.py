@@ -818,7 +818,7 @@ def GetEmpCsv(request):
 
         ## Create the csv
         writer = csv.writer(dummy_in_mem_file)
-        writer.writerow(["last_name", "first_name", "office_title", "civil_title", "wu_desc", "pms", "sup_pms"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+        writer.writerow(["pms", "sup_pms", "last_name", "first_name", "office_title", "civil_title", "wu_desc"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
         # writer.writerow(["last_name", "first_name", "id", "parentId"])
 
         for each in flat_emp_under_root_dict:
@@ -832,13 +832,13 @@ def GetEmpCsv(request):
                 sup_pms = ""
 
             eachrow = [
-                flat_emp_under_root_dict[each]['last_name']
+                flat_emp_under_root_dict[each]['pms']
+                ,sup_pms
+                ,flat_emp_under_root_dict[each]['last_name']
                 ,flat_emp_under_root_dict[each]['first_name']
                 ,flat_emp_under_root_dict[each]['office_title']
                 ,flat_emp_under_root_dict[each]['civil_title']
                 ,flat_emp_under_root_dict[each]['wu_desc']
-                ,flat_emp_under_root_dict[each]['pms']
-                ,sup_pms
             ]
             writer.writerow(eachrow)
 
