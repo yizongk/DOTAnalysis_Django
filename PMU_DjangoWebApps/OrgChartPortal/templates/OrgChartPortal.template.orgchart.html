@@ -235,6 +235,12 @@
 
             var chart
 
+            function removeAllEditButtonEventListeners() {
+                $("#addNodeBtn").unbind()
+                $("#insertNodeBtn").unbind()
+                $("#removeNodeAndChildrenBtn").unbind()
+            }
+
             function setInitialMasterOrgChart() {
                 $(document).ajaxStart(function () {
                     $("body").addClass("loading");
@@ -329,14 +335,22 @@
                                             `
                                         })
                                         .onNodeClick(function(d) { // d is the pms number of the clicked node
+                                            // Remove all event listener of the buttons
+                                            removeAllEditButtonEventListeners()
+
+                                            let selected_node = chart.data().filter(node=>node.pms==d)[0];
+                                            // The node was already highlighted, unselect it and not add any event listener to the edit buttons
+                                            if (selected_node._highlighted == true) {
+                                                chart.clearHighlighting()
+                                                return
+                                            }
+
                                             // Highlight the current selected node, and unhighlight the rest.
                                             chart.clearHighlighting()
                                             chart.setHighlighted(d).render()
 
 
-                                            // Remove all event listener of the #addNodeBtn button
-                                            $("#addNodeBtn").unbind()
-
+                                            // Reset all the event listener of the buttons
                                             $("#addNodeBtn").click(function() {
                                                 //console.log(`event click: ${d}`)
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
@@ -357,14 +371,11 @@
                                             })
 
 
-                                            $("#insertNodeBtn").unbind()
-
                                             $("#insertNodeBtn").click(function() {
                                                 if (d == root_pms) {
                                                     alert('Cannot insert before the root')
                                                     return
                                                 }
-                                                let selected_node = chart.data().filter(node=>node.pms==d)[0];
 
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
@@ -385,10 +396,6 @@
                                                 //console.log(chart.data())
                                             })
 
-                                            // @TODO for delete a node, we would need a way to access its child, or manually search the tree with sup_pms == d, and edit each one, before rendering the chart
-
-
-                                            $("#removeNodeAndChildrenBtn").unbind()
 
                                             $("#removeNodeAndChildrenBtn").click(function() {
                                                 if (d == root_pms) {
@@ -396,6 +403,8 @@
                                                     return
                                                 }
                                                 removeNodeAndChildren(d)
+                                                // Remove all event listener of the buttons
+                                                removeAllEditButtonEventListeners()
                                                 //console.log(`Removed ${d}`)
                                                 //console.log(chart.data())
                                             })
