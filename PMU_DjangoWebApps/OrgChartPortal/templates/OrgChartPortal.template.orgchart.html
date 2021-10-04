@@ -72,21 +72,21 @@
                 <br>
             {% endcomment %}
 
-            <button id="addNodeBtn" class="green huge ui button">
+            <button id="addNodeBelowBtn" class="green huge ui button">
                     <i class="edit outline icon"></i>
-                    Add Node
+                    Add Node Below
                 </button>
             <br>
 
-            <button id="insertNodeBtn" class="green huge ui button">
+            <button id="addNodeAboveBtn" class="green huge ui button">
                     <i class="edit outline icon"></i>
-                    Insert Node
+                    Add Node Above
                 </button>
             <br>
 
             <button id="removeNodeAndChildrenBtn" class="red huge ui button">
                     <i class="eraser icon"></i>
-                    Snip Node
+                    Remove Node and below
                 </button>
             <br>
 
@@ -240,8 +240,8 @@
             var chart
 
             function removeAllEditButtonEventListeners() {
-                $("#addNodeBtn").unbind()
-                $("#insertNodeBtn").unbind()
+                $("#addNodeBelowBtn").unbind()
+                $("#addNodeAboveBtn").unbind()
                 $("#removeNodeAndChildrenBtn").unbind()
                 $("#removeNodeBtn").unbind()
             }
@@ -356,7 +356,7 @@
 
 
                                             // Reset all the event listener of the buttons
-                                            $("#addNodeBtn").click(function() {
+                                            $("#addNodeBelowBtn").click(function() {
                                                 //console.log(`event click: ${d}`)
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 //console.log(`random generated: ${random_7_digit}`)
@@ -376,7 +376,7 @@
                                             })
 
 
-                                            $("#insertNodeBtn").click(function() {
+                                            $("#addNodeAboveBtn").click(function() {
                                                 if (d == root_pms) {
                                                     alert('Cannot insert before the root')
                                                     return
@@ -415,7 +415,6 @@
                                             })
 
 
-                                            // @TODO for delete a node, we would need a way to access its child, or manually search the tree with sup_pms == d, and edit each one, before rendering the chart
                                             $("#removeNodeBtn").click(function() {
                                                 if (d == root_pms) {
                                                     alert('Cannot remove the root')
@@ -441,7 +440,7 @@
                                             })
                                         })
                                         .render();
-                                        console.log(chart)
+                                        //console.log(chart)
 
 
                                 },
