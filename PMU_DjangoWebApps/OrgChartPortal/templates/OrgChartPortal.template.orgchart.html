@@ -76,13 +76,21 @@
                     <i class="edit outline icon"></i>
                     Add Node
                 </button>
-            <br />
+            <br>
+
+            <button id="insertNodeBtn" class="green huge ui button">
+                    <i class="edit outline icon"></i>
+                    Insert Node
+                </button>
+            <br>
 
             <button id="removeNodeAndChildrenBtn" class="red huge ui button">
                     <i class="eraser icon"></i>
-                    Remove Node
+                    Snip Node
                 </button>
-            <br />
+            <br>
+
+
 
             <button id="exportSvgBtn" class="blue huge ui button">
                     <i class="save outline icon"></i>
@@ -324,6 +332,8 @@
                                             // Highlight the current selected node, and unhighlight the rest.
                                             chart.clearHighlighting()
                                             chart.setHighlighted(d).render()
+
+
                                             // Remove all event listener of the #addNodeBtn button
                                             $("#addNodeBtn").unbind()
 
@@ -331,28 +341,67 @@
                                                 //console.log(`event click: ${d}`)
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 //console.log(`random generated: ${random_7_digit}`)
-                                                let emp = {
-                                                    pms             :`null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
-                                                    ,sup_pms        :d
-                                                    ,first_name     :'Test_First_Name'
-                                                    ,last_name      :'Test_Last_Name'
-                                                    ,office_title   :'OL Lady'
-                                                    ,civil_title    :'test_civil_title'
-                                                    ,wu_desc        :'test_wu_desc'
+                                                let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
+                                                let new_node = {
+                                                    pms             : new_node_pms
+                                                    ,sup_pms        : d
+                                                    ,first_name     : 'Test_First_Name'
+                                                    ,last_name      : 'Test_Last_Name'
+                                                    ,office_title   : 'OL Lady'
+                                                    ,civil_title    : 'test_civil_title'
+                                                    ,wu_desc        : 'test_wu_desc'
                                                 }
-                                                addNode(emp)
+                                                addNode(new_node)
+                                                //console.log(`Inserting this -> ${new_node_pms}`)
+                                                //console.log(chart.data())
                                             })
+
+
+                                            $("#insertNodeBtn").unbind()
+
+                                            $("#insertNodeBtn").click(function() {
+                                                if (d == root_pms) {
+                                                    alert('Cannot insert before the root')
+                                                    return
+                                                }
+                                                let selected_node = chart.data().filter(node=>node.pms==d)[0];
+
+                                                let random_7_digit = Math.floor(Math.random() * 10000000)
+                                                let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
+                                                let new_node = {
+                                                    pms             : new_node_pms
+                                                    ,sup_pms        : `${selected_node.sup_pms}`
+                                                    ,first_name     : 'Test_First_Name'
+                                                    ,last_name      : 'Test_Last_Name'
+                                                    ,office_title   : 'OL Lady'
+                                                    ,civil_title    : 'test_civil_title'
+                                                    ,wu_desc        : 'test_wu_desc'
+                                                }
+                                                addNode(new_node)
+                                                selected_node.sup_pms = new_node_pms
+
+                                                chart.render()
+                                                //console.log(`Inserting this -> ${new_node_pms}`)
+                                                //console.log(chart.data())
+                                            })
+
+                                            // @TODO for delete a node, we would need a way to access its child, or manually search the tree with sup_pms == d, and edit each one, before rendering the chart
 
 
                                             $("#removeNodeAndChildrenBtn").unbind()
 
                                             $("#removeNodeAndChildrenBtn").click(function() {
+                                                if (d == root_pms) {
+                                                    alert('Cannot delete the root')
+                                                    return
+                                                }
                                                 removeNodeAndChildren(d)
+                                                //console.log(`Removed ${d}`)
+                                                //console.log(chart.data())
                                             })
                                         })
                                         .render();
-                                        //console.log(d3_parsed_csv)
-                                        //console.log(chart)
+                                        console.log(chart)
 
 
                                 },
@@ -400,8 +449,8 @@
             function addNode(emp) {
                 chart.addNode(
                         {
-                            sup_pms:        emp.sup_pms
-                            ,pms:           emp.pms
+                            pms:            emp.pms
+                            ,sup_pms:       emp.sup_pms
                             ,first_name:    emp.first_name
                             ,last_name:     emp.last_name
                             ,office_title:  emp.office_title
