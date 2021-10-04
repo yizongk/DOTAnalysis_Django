@@ -100,9 +100,9 @@
                     </div>
 
                     <div class="field">
-                        <label>SubDivision</label>
-                        <div id="modalEditNodeFormSelectSubDivisionInputBorder" class="ui input">
-                            <input id="modalEditNodeFormSubDivisionInput">
+                        <label>WUDesc</label>
+                        <div id="modalEditNodeFormSelectWUDescInputBorder" class="ui input">
+                            <input id="modalEditNodeFormWUDescInput">
                         </div>
                     </div>
                 </form>
@@ -419,15 +419,7 @@
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 //console.log(`random generated: ${random_7_digit}`)
                                                 let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
-                                                let new_node = {
-                                                    pms             : new_node_pms
-                                                    ,sup_pms        : d
-                                                    ,first_name     : 'Test_First_Name'
-                                                    ,last_name      : 'Test_Last_Name'
-                                                    ,office_title   : 'OL Lady'
-                                                    ,civil_title    : 'test_civil_title'
-                                                    ,wu_desc        : 'test_wu_desc'
-                                                }
+                                                let new_node = makeDefaultNewNode(new_node_pms, d)
                                                 addNode(new_node)
                                                 //console.log(`Inserting this -> ${new_node_pms}`)
                                                 //console.log(chart.data())
@@ -442,15 +434,7 @@
 
                                                 let random_7_digit = Math.floor(Math.random() * 10000000)
                                                 let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
-                                                let new_node = {
-                                                    pms             : new_node_pms
-                                                    ,sup_pms        : `${selected_node.sup_pms}`
-                                                    ,first_name     : 'Test_First_Name'
-                                                    ,last_name      : 'Test_Last_Name'
-                                                    ,office_title   : 'OL Lady'
-                                                    ,civil_title    : 'test_civil_title'
-                                                    ,wu_desc        : 'test_wu_desc'
-                                                }
+                                                let new_node = makeDefaultNewNode(new_node_pms, selected_node.sup_pms)
                                                 addNode(new_node)
                                                 selected_node.sup_pms = new_node_pms
 
@@ -461,12 +445,12 @@
 
 
                                             $("#editNodeBtn").click(function() {
-                                                $("#modalEditNodeFormSubmitButton").unbind()
+                                                $("#modalEditNodeFormSubmitButton")     .unbind()
                                                 $("#modalEditNodeFormLastNameInput")    .val("")
                                                 $("#modalEditNodeFormFirstNameInput")   .val("")
                                                 $("#modalEditNodeFormOfficeTitleInput") .val("")
                                                 $("#modalEditNodeFormCivilTitleInput")  .val("")
-                                                $("#modalEditNodeFormSubDivisionInput") .val("")
+                                                $("#modalEditNodeFormWUDescInput")      .val("")
 
                                                 // Can only edit name, office title, civil title, and division info
                                                 $("#modalEditNodeForm")
@@ -476,14 +460,14 @@
                                                 $("#modalEditNodeFormFirstNameInput")   .val(selected_node.first_name)
                                                 $("#modalEditNodeFormOfficeTitleInput") .val(selected_node.office_title)
                                                 $("#modalEditNodeFormCivilTitleInput")  .val(selected_node.civil_title)
-                                                $("#modalEditNodeFormSubDivisionInput") .val(selected_node.wu_desc)
+                                                $("#modalEditNodeFormWUDescInput")      .val(selected_node.wu_desc)
 
                                                 $("#modalEditNodeFormSubmitButton").click(function() {
-                                                    selected_node.last_name     = $("#modalEditNodeFormLastNameInput")   .val()
-                                                    selected_node.first_name    = $("#modalEditNodeFormFirstNameInput")  .val()
-                                                    selected_node.office_title  = $("#modalEditNodeFormOfficeTitleInput").val()
-                                                    selected_node.civil_title   = $("#modalEditNodeFormCivilTitleInput") .val()
-                                                    selected_node.wu_desc       = $("#modalEditNodeFormSubDivisionInput").val()
+                                                    selected_node.last_name     = $("#modalEditNodeFormLastNameInput")      .val()
+                                                    selected_node.first_name    = $("#modalEditNodeFormFirstNameInput")     .val()
+                                                    selected_node.office_title  = $("#modalEditNodeFormOfficeTitleInput")   .val()
+                                                    selected_node.civil_title   = $("#modalEditNodeFormCivilTitleInput")    .val()
+                                                    selected_node.wu_desc       = $("#modalEditNodeFormWUDescInput")        .val()
 
                                                     chart.render()
                                                     $("#modalEditNodeForm")
@@ -578,13 +562,25 @@
             */
 
             function removeAllEditButtonEventListeners() {
-                $("#addNodeBelowBtn").unbind()
-                $("#addNodeAboveBtn").unbind()
-                $("#editNodeBtn").unbind()
-                $("#removeNodeAndChildrenBtn").unbind()
-                $("#removeNodeBtn").unbind()
+                $("#addNodeBelowBtn")               .unbind()
+                $("#addNodeAboveBtn")               .unbind()
+                $("#editNodeBtn")                   .unbind()
+                $("#removeNodeAndChildrenBtn")      .unbind()
+                $("#removeNodeBtn")                 .unbind()
 
-                $("#modalEditNodeFormSubmitButton").unbind()
+                $("#modalEditNodeFormSubmitButton") .unbind()
+            }
+
+            function makeDefaultNewNode(pms, sup_pms) {
+                return {
+                    pms             : pms
+                    ,sup_pms        : sup_pms
+                    ,first_name     : 'F_name_holder'
+                    ,last_name      : 'L_name_holder'
+                    ,office_title   : 'Office_title_holder'
+                    ,civil_title    : 'Civil_title_holder'
+                    ,wu_desc        : 'WU_desc_holder'
+                }
             }
 
             function addNode(emp) {
