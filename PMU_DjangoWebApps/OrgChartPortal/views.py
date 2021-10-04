@@ -105,7 +105,7 @@ class EmpGridPageView(generic.ListView):
     #         else:
     #             allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
     #             if allowed_wu_list_obj['success'] == False:
-    #                 raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+    #                 raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
     #             else:
     #                 allowed_wu_list = allowed_wu_list_obj['wu_list']
 
@@ -136,7 +136,7 @@ class EmpGridPageView(generic.ListView):
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
-                    raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+                    raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
@@ -266,7 +266,7 @@ def GetEmpGridStats(request):
 
         allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
         if allowed_wu_list_obj['success'] == False:
-            raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+            raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
@@ -396,7 +396,7 @@ def GetEmpJson(request):
         ## Check for Active Admins
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the GetEmpJson() api".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetEmpJson() api")
 
 
         active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
@@ -404,7 +404,7 @@ def GetEmpJson(request):
 
         allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
         if allowed_wu_list_obj['success'] == False:
-            raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
+            raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
