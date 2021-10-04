@@ -90,7 +90,11 @@
                 </button>
             <br>
 
-
+            <button id="removeNodeBtn" class="red huge ui button">
+                    <i class="eraser icon"></i>
+                    Remove Node
+                </button>
+            <br>
 
             <button id="exportSvgBtn" class="blue huge ui button">
                     <i class="save outline icon"></i>
@@ -239,6 +243,7 @@
                 $("#addNodeBtn").unbind()
                 $("#insertNodeBtn").unbind()
                 $("#removeNodeAndChildrenBtn").unbind()
+                $("#removeNodeBtn").unbind()
             }
 
             function setInitialMasterOrgChart() {
@@ -338,7 +343,7 @@
                                             // Remove all event listener of the buttons
                                             removeAllEditButtonEventListeners()
 
-                                            let selected_node = chart.data().filter(node=>node.pms==d)[0];
+                                            let selected_node = chart.data().filter(node=>node.pms==d)[0]
                                             // The node was already highlighted, unselect it and not add any event listener to the edit buttons
                                             if (selected_node._highlighted == true) {
                                                 chart.clearHighlighting()
@@ -407,6 +412,32 @@
                                                 removeAllEditButtonEventListeners()
                                                 //console.log(`Removed ${d}`)
                                                 //console.log(chart.data())
+                                            })
+
+
+                                            // @TODO for delete a node, we would need a way to access its child, or manually search the tree with sup_pms == d, and edit each one, before rendering the chart
+                                            $("#removeNodeBtn").click(function() {
+                                                if (d == root_pms) {
+                                                    alert('Cannot remove the root')
+                                                    return
+                                                }
+
+                                                // Edit the child to have parent's parent
+                                                let childs_of_selected = chart.data().filter(node=>node.sup_pms==d)
+                                                childs_of_selected.forEach((item, index) => {
+                                                    item.sup_pms = selected_node.sup_pms
+                                                })
+
+                                                // Must render it here, to save the childs_of_selected into the chart
+                                                chart.render()
+
+                                                // Remove it, at this point, the node will have no child
+                                                removeNodeAndChildren(d)
+                                                // Remove all event listener of the buttons
+                                                removeAllEditButtonEventListeners()
+
+                                                //console.log(selected_node)
+                                                //console.log(childs_of_selected)
                                             })
                                         })
                                         .render();
