@@ -742,11 +742,13 @@ def GetEmpCsv(request):
         else:
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
+        emp_data = TblEmployees.objects.using(
+            'OrgChartRead'
+        ).filter(
             Q(wu__in=allowed_wu_list)
         ).exclude(
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
-            ,~Q(pms__exact=root_pms)
+            ,~Q(pms__exact=root_pms) # our very top root_pms will have a null supervisor_pms, so this condition is to include the top root_pms despite the first exclude condition
         ).filter(
             lv__in=active_lv_list
         ).order_by(
@@ -768,25 +770,32 @@ def GetEmpCsv(request):
         ##      .
         ##      .
         ##  }
-        flat_emp_dict = {}
-        for each in emp_data:
-            each_emp_dict = {}
-            each_emp_dict[f"pms"]           = f"{each.pms}".strip()
-            each_emp_dict[f"last_name"]     = f"{each.last_name}".strip()
-            each_emp_dict[f"first_name"]    = f"{each.first_name}".strip()
-            each_emp_dict[f"office_title"]  = f"{each.office_title}".strip()
-            each_emp_dict[f"civil_title"]   = f"{each.civil_title}".strip()
-            each_emp_dict[f"wu_desc"]       = f"{each.wu.wu_desc}".strip()
-            try:
-                each_emp_dict[f"supervisor_pms"] = f"{each.supervisor_pms}".strip()
-            except TblEmployees.DoesNotExist:
-                each_emp_dict[f"supervisor_pms"] = None
+        flat_query_dict = emp_data.values( # Returns a query set that returns dicts. MUCH faster than going though emp_data in a for loop (53 secs down to 350ms).
+            "pms"
+            ,"last_name"
+            ,"first_name"
+            ,"office_title"
+            ,"civil_title"
+            ,"wu__wu_desc"
+            ,"supervisor_pms"
+        )
 
-            flat_emp_dict[f"{each.pms}".strip()] = each_emp_dict
+        flat_emp_dict = {}
+        for each in flat_query_dict:
+            each_emp_dict = {}
+
+            each_emp_dict[f"pms"]               = f"{each['pms']}".strip()
+            each_emp_dict[f"last_name"]         = f"{each['last_name']}".strip()
+            each_emp_dict[f"first_name"]        = f"{each['first_name']}".strip()
+            each_emp_dict[f"office_title"]      = f"{each['office_title']}".strip()
+            each_emp_dict[f"civil_title"]       = f"{each['civil_title']}".strip()
+            each_emp_dict[f"wu_desc"]           = f"{each['wu__wu_desc']}".strip()
+            each_emp_dict[f"supervisor_pms"]    = f"{each['supervisor_pms']}".strip()
+
+            flat_emp_dict[f"{each['pms']}".strip()] = each_emp_dict
 
 
         def CanReachRoot(pms):
-            print(f'checking {pms}')
             ## pms is root_pms, so lineage is reachable to root_pms, return true
             if pms == root_pms:
                 return True
