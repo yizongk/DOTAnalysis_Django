@@ -324,20 +324,6 @@ class OrgChartPageView(generic.ListView):
         try:
             if self.client_is_admin == False:
                 return None
-            # # emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
-            # if self.client_is_admin:
-            #     emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
-            # else:
-            #     allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
-            #     if allowed_wu_list_obj['success'] == False:
-            #         raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
-            #     else:
-            #         allowed_wu_list = allowed_wu_list_obj['wu_list']
-
-            #     emp_entries = TblEmployees.objects.using('OrgChartRead').filter(
-            #         pms__wu__in=allowed_wu_list,
-            #     ).order_by('pms__wu')
-            emp_entries =  None
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
@@ -345,7 +331,7 @@ class OrgChartPageView(generic.ListView):
             return None
 
         self.req_success = True
-        return emp_entries
+        return None
 
     def get_context_data(self, **kwargs):
         try:
@@ -434,7 +420,7 @@ def GetEmpJson(request):
             ##      .
             ##      .
             ##  }
-            flat_emp_dict = {}
+            flat_all_processed_dict = {}
             for each in emp_data:
                 each_emp_dict = {}
                 each_emp_dict[f"pms"] = f"{each.pms}".strip()
@@ -445,7 +431,7 @@ def GetEmpJson(request):
                 except TblEmployees.DoesNotExist:
                     each_emp_dict[f"supervisor_pms"] = None
 
-                flat_emp_dict[ f"{each.pms}".strip() ] = each_emp_dict
+                flat_all_processed_dict[ f"{each.pms}".strip() ] = each_emp_dict
         """
 
 
@@ -727,32 +713,54 @@ def GetEmpCsv(request):
 
     ## Get the data
     try:
-        ## Check for Active Admins
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the GetEmpCsv() api".format(remote_user))
-
-
         active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
-        allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
-        if allowed_wu_list_obj['success'] == False:
-            raise ValueError('get_allowed_list_of_wu() failed: {}'.format(allowed_wu_list_obj['err']))
-        else:
-            allowed_wu_list = allowed_wu_list_obj['wu_list']
+        ## Check for Active Admins
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
 
-        emp_data = TblEmployees.objects.using(
-            'OrgChartRead'
-        ).filter(
-            Q(wu__in=allowed_wu_list)
-        ).exclude(
+        emp_data = TblEmployees.objects.using('OrgChartRead').exclude(
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
             ,~Q(pms__exact=root_pms) # our very top root_pms will have a null supervisor_pms, so this condition is to include the top root_pms despite the first exclude condition
         ).filter(
             lv__in=active_lv_list
         ).order_by(
             'supervisor_pms'
+        )
+
+        flat_all_row_dict = emp_data.values( # Returns a query set that returns dicts. MUCH faster than going though emp_data in a for loop (53 secs down to 350ms).
+            "pms"
+            ,"last_name"
+            ,"first_name"
+            ,"office_title"
+            ,"civil_title"
+            ,"wu__wu_desc"
+            ,"supervisor_pms"
+        )
+
+
+        # Add allowed WU filter to queryset since client is not admin
+        if not is_admin:
+            #raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetEmpCsv() api")
+            allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
+            if allowed_wu_list_obj['success'] == False:
+                raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
+            else:
+                allowed_wu_list = allowed_wu_list_obj['wu_list']
+
+            emp_data = emp_data.filter(
+                Q(wu__in=allowed_wu_list)
+            )
+
+        # If admin, flat_allowed_row_dict will be the same as flat_all_row_dict, else len(flat_allowed_row_dict) < len(flat_all_row_dict)
+        flat_allowed_row_dict = emp_data.values(
+            "pms"
+            ,"last_name"
+            ,"first_name"
+            ,"office_title"
+            ,"civil_title"
+            ,"wu__wu_desc"
+            ,"supervisor_pms"
         )
 
 
@@ -770,32 +778,38 @@ def GetEmpCsv(request):
         ##      .
         ##      .
         ##  }
-        flat_query_dict = emp_data.values( # Returns a query set that returns dicts. MUCH faster than going though emp_data in a for loop (53 secs down to 350ms).
-            "pms"
-            ,"last_name"
-            ,"first_name"
-            ,"office_title"
-            ,"civil_title"
-            ,"wu__wu_desc"
-            ,"supervisor_pms"
-        )
-
-        flat_emp_dict = {}
-        for each in flat_query_dict:
+        flat_all_processed_dict = {}
+        for each in flat_all_row_dict:
             each_emp_dict = {}
 
-            each_emp_dict[f"pms"]               = f"{each['pms']}".strip()
-            each_emp_dict[f"last_name"]         = f"{each['last_name']}".strip()
-            each_emp_dict[f"first_name"]        = f"{each['first_name']}".strip()
-            each_emp_dict[f"office_title"]      = f"{each['office_title']}".strip()
-            each_emp_dict[f"civil_title"]       = f"{each['civil_title']}".strip()
-            each_emp_dict[f"wu_desc"]           = f"{each['wu__wu_desc']}".strip()
-            each_emp_dict[f"supervisor_pms"]    = f"{each['supervisor_pms']}".strip()
+            each_emp_dict[f"pms"]                   = f"{each['pms']}"              .strip() if each['pms']             is not None else None
+            each_emp_dict[f"last_name"]             = f"{each['last_name']}"        .strip() if each['last_name']       is not None else None
+            each_emp_dict[f"first_name"]            = f"{each['first_name']}"       .strip() if each['first_name']      is not None else None
+            each_emp_dict[f"office_title"]          = f"{each['office_title']}"     .strip() if each['office_title']    is not None else None
+            each_emp_dict[f"civil_title"]           = f"{each['civil_title']}"      .strip() if each['civil_title']     is not None else None
+            each_emp_dict[f"wu_desc"]               = f"{each['wu__wu_desc']}"      .strip() if each['wu__wu_desc']     is not None else None
+            each_emp_dict[f"supervisor_pms"]        = f"{each['supervisor_pms']}"   .strip() if each['supervisor_pms']  is not None else None
+            each_emp_dict["is_needed_to_hit_root"]  = False
 
-            flat_emp_dict[f"{each['pms']}".strip()] = each_emp_dict
+            flat_all_processed_dict[f"{each['pms']}".strip()] = each_emp_dict
+
+        flat_allowed_processed_dict = {}
+        for each in flat_allowed_row_dict:
+            each_emp_dict = {}
+
+            each_emp_dict[f"pms"]                   = f"{each['pms']}"              .strip() if each['pms']             is not None else None
+            each_emp_dict[f"last_name"]             = f"{each['last_name']}"        .strip() if each['last_name']       is not None else None
+            each_emp_dict[f"first_name"]            = f"{each['first_name']}"       .strip() if each['first_name']      is not None else None
+            each_emp_dict[f"office_title"]          = f"{each['office_title']}"     .strip() if each['office_title']    is not None else None
+            each_emp_dict[f"civil_title"]           = f"{each['civil_title']}"      .strip() if each['civil_title']     is not None else None
+            each_emp_dict[f"wu_desc"]               = f"{each['wu__wu_desc']}"      .strip() if each['wu__wu_desc']     is not None else None
+            each_emp_dict[f"supervisor_pms"]        = f"{each['supervisor_pms']}"   .strip() if each['supervisor_pms']  is not None else None
+
+            flat_allowed_processed_dict[f"{each['pms']}".strip()] = each_emp_dict
 
 
-        def CanReachRoot(pms):
+        ## Only marks and add the nodes between leaf and root, including root. This does not mark and add the leaf nodes themself!
+        def TraverseToRootAndMark(pms, nodes_away_from_leaf):
             ## pms is root_pms, so lineage is reachable to root_pms, return true
             if pms == root_pms:
                 return True
@@ -806,19 +820,38 @@ def GetEmpCsv(request):
 
             ## pms is not a root, check its parent
             try:
-                parent_pms = flat_emp_dict[pms]['supervisor_pms']
+                parent_pms = flat_all_processed_dict[pms]['supervisor_pms']
             except KeyError:
                 parent_pms = None
-            return CanReachRoot( parent_pms )
+
+            ## If can reach root, mark the given parent pms as needed
+            can_reach_root = TraverseToRootAndMark( pms=parent_pms, nodes_away_from_leaf=nodes_away_from_leaf+1 )
+            if can_reach_root:
+                flat_all_processed_dict[parent_pms]["is_needed_to_hit_root"] = True
+                ## nodes_away_from_leaf == 0 means that the caller is a leaf node, and should mark the calling pms as needed.
+                ## This is needed because the above line of code only mark a parent as needed, not the caller, so that means the caller will be miseed in the marking process
+                if nodes_away_from_leaf == 0:
+                    flat_all_processed_dict[pms]["is_needed_to_hit_root"] = True
+            return can_reach_root
 
 
-        ## Filter for only the root_pms and its childs
-        flat_emp_under_root_dict = {}
-        for emp_pms in flat_emp_dict:
-            emp = flat_emp_dict[emp_pms]
-            if CanReachRoot( emp['pms'] ):
-                flat_emp_under_root_dict[ emp['pms'] ] = emp
+        ## For each node in the allowed dataset, mark its path of nodes needed to reach to the root as "Needed".
+        for emp_pms in flat_allowed_processed_dict:
+            emp = flat_allowed_processed_dict[emp_pms]
+            TraverseToRootAndMark( pms=emp['pms'], nodes_away_from_leaf=0 )
 
+
+        allowed_and_needed_nodes_dict = {}
+        for key, value in flat_all_processed_dict.items():
+            if value["is_needed_to_hit_root"] == True:
+                allowed_and_needed_nodes_dict[key] = value
+
+
+        if len(allowed_and_needed_nodes_dict) == 0:
+            if not is_admin:
+                raise ValueError(f"Found no orgchart data with the following client permission(s): {allowed_wu_list}")
+            else:
+                raise ValueError(f"Found no orgchart data despite client being an admin")
 
 
         import csv
@@ -830,24 +863,24 @@ def GetEmpCsv(request):
         writer.writerow(["pms", "sup_pms", "last_name", "first_name", "office_title", "civil_title", "wu_desc"]) # For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
         # writer.writerow(["last_name", "first_name", "id", "parentId"])
 
-        for each in flat_emp_under_root_dict:
+        for each in allowed_and_needed_nodes_dict:
             try:
                 ## In the case that root_pms is not the actual top root of the entire org tree, but it's a middle node somewhere, we need to set that emp's sup_pms to empty string
-                if flat_emp_under_root_dict[each]['pms'] == root_pms:
+                if allowed_and_needed_nodes_dict[each]['pms'] == root_pms:
                     sup_pms = ""
                 else:
-                    sup_pms = flat_emp_under_root_dict[each]['supervisor_pms']
-            except TblEmployees.DoesNotExist:
-                sup_pms = ""
+                    sup_pms = allowed_and_needed_nodes_dict[each]['supervisor_pms']
+            except Exception as e:
+                raise e
 
             eachrow = [
-                flat_emp_under_root_dict[each]['pms']
+                allowed_and_needed_nodes_dict[each]['pms']
                 ,sup_pms
-                ,flat_emp_under_root_dict[each]['last_name']
-                ,flat_emp_under_root_dict[each]['first_name']
-                ,flat_emp_under_root_dict[each]['office_title']
-                ,flat_emp_under_root_dict[each]['civil_title']
-                ,flat_emp_under_root_dict[each]['wu_desc']
+                ,allowed_and_needed_nodes_dict[each]['last_name']
+                ,allowed_and_needed_nodes_dict[each]['first_name']
+                ,allowed_and_needed_nodes_dict[each]['office_title']
+                ,allowed_and_needed_nodes_dict[each]['civil_title']
+                ,allowed_and_needed_nodes_dict[each]['wu_desc']
             ]
             writer.writerow(eachrow)
 
@@ -890,10 +923,10 @@ def GetCommissionerPMS(request):
 
     ## Get the data
     try:
-        ## Check for Active Admins
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the GetCommissionerPMS() api".format(remote_user))
+        # ## Check for Active Admins
+        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        # if not is_admin:
+        #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
 
 
         from PMU_DjangoWebApps.secret_settings import OrgChartRootPMS
