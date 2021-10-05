@@ -51,123 +51,121 @@
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
-    {% if client_is_admin %}
-        <div id='chartContainerId'>
-        </div>
+    <div id='chartContainerId'>
+    </div>
 
-        {% comment %} For the jquery orgchart
-            <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
+    {% comment %} For the jquery orgchart
+        <button id="resetInitialMasterOrgChartClick">Reset Org Chart</button>
+        <br>
+        <select id="PMSSelect">
+            <option value="some_pms">some_pms</option>
+        </select>
+        <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+    {% endcomment %}
+
+
+    <div class="ui mini modal" id="modalEditNodeForm">
+
+        <div class="header">Edit node</div>
+
+        <div class="content">
+            <form class="ui form">
+                <div class="field">
+                    <label>LastName</label>
+                    <div id="modalEditNodeFormLastNameInputBorder" class="ui input">
+                        <input id="modalEditNodeFormLastNameInput">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>FirstName</label>
+                    <div id="modalEditNodeFormFirstNameInputBorder" class="ui input">
+                        <input id="modalEditNodeFormFirstNameInput">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>OfficeTitle</label>
+                    <div id="modalEditNodeFormSelectOfficeTitleInputBorder" class="ui input">
+                        <input id="modalEditNodeFormOfficeTitleInput">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>CivilTitle</label>
+                    <div id="modalEditNodeFormSelectCivilTitleInputBorder" class="ui input">
+                        <input id="modalEditNodeFormCivilTitleInput">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>WUDesc</label>
+                    <div id="modalEditNodeFormSelectWUDescInputBorder" class="ui input">
+                        <input id="modalEditNodeFormWUDescInput">
+                    </div>
+                </div>
+            </form>
+            <div class="ui divider"></div>
+            <button id="modalEditNodeFormSubmitButton" class="ui positive button">Edit Node Submit</button>
+        </div>
+    </div>
+
+
+    <div class="ui vertical labeled icon buttons">
+        {% comment %}  For d3 orgchart
+            <button id="markNodeBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-highlighter"></i>
+                    mark
+                </button>
             <br>
-            <select id="PMSSelect">
-                <option value="some_pms">some_pms</option>
-            </select>
-            <button id="resetOrgChartWithSelectedPMSClick">Find employee</button>
+
+            <button id="markRootBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-route"></i>
+                    mark root
+                </button>
+            <br>
+
+            <button id="clearAllSelectionBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-eraser"></i>
+                    clear mark
+                </button>
+            <br>
         {% endcomment %}
 
+        <button id="addNodeBelowBtn" class="green huge ui button">
+                <i class="edit outline icon"></i>
+                Add Node Below
+            </button>
+        <br>
 
-        <div class="ui mini modal" id="modalEditNodeForm">
+        <button id="addNodeAboveBtn" class="green huge ui button">
+                <i class="edit outline icon"></i>
+                Add Node Above
+            </button>
+        <br>
 
-            <div class="header">Edit node</div>
+        <button id="editNodeBtn" class="orange huge ui button">
+                <i class="edit outline icon"></i>
+                Edit Node
+            </button>
+        <br>
 
-            <div class="content">
-                <form class="ui form">
-                    <div class="field">
-                        <label>LastName</label>
-                        <div id="modalEditNodeFormLastNameInputBorder" class="ui input">
-                            <input id="modalEditNodeFormLastNameInput">
-                        </div>
-                    </div>
+        <button id="removeNodeAndChildrenBtn" class="red huge ui button">
+                <i class="eraser icon"></i>
+                Remove Node and below
+            </button>
+        <br>
 
-                    <div class="field">
-                        <label>FirstName</label>
-                        <div id="modalEditNodeFormFirstNameInputBorder" class="ui input">
-                            <input id="modalEditNodeFormFirstNameInput">
-                        </div>
-                    </div>
+        <button id="removeNodeBtn" class="red huge ui button">
+                <i class="eraser icon"></i>
+                Remove Node
+            </button>
+        <br>
 
-                    <div class="field">
-                        <label>OfficeTitle</label>
-                        <div id="modalEditNodeFormSelectOfficeTitleInputBorder" class="ui input">
-                            <input id="modalEditNodeFormOfficeTitleInput">
-                        </div>
-                    </div>
+        <button id="exportSvgBtn" class="blue huge ui button">
+                <i class="save outline icon"></i>
+                Export SVG
+            </button>
+        <br>
+    </div>
 
-                    <div class="field">
-                        <label>CivilTitle</label>
-                        <div id="modalEditNodeFormSelectCivilTitleInputBorder" class="ui input">
-                            <input id="modalEditNodeFormCivilTitleInput">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label>WUDesc</label>
-                        <div id="modalEditNodeFormSelectWUDescInputBorder" class="ui input">
-                            <input id="modalEditNodeFormWUDescInput">
-                        </div>
-                    </div>
-                </form>
-                <div class="ui divider"></div>
-                <button id="modalEditNodeFormSubmitButton" class="ui positive button">Edit Node Submit</button>
-            </div>
-        </div>
-
-
-        <div class="ui vertical labeled icon buttons">
-            {% comment %}  For d3 orgchart
-                <button id="markNodeBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-highlighter"></i>
-                        mark
-                    </button>
-                <br>
-
-                <button id="markRootBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-route"></i>
-                        mark root
-                    </button>
-                <br>
-
-                <button id="clearAllSelectionBtn" class="btn btn-action-button waves-effect waves-light"><i class="fas fa-eraser"></i>
-                        clear mark
-                    </button>
-                <br>
-            {% endcomment %}
-
-            <button id="addNodeBelowBtn" class="green huge ui button">
-                    <i class="edit outline icon"></i>
-                    Add Node Below
-                </button>
-            <br>
-
-            <button id="addNodeAboveBtn" class="green huge ui button">
-                    <i class="edit outline icon"></i>
-                    Add Node Above
-                </button>
-            <br>
-
-            <button id="editNodeBtn" class="orange huge ui button">
-                    <i class="edit outline icon"></i>
-                    Edit Node
-                </button>
-            <br>
-
-            <button id="removeNodeAndChildrenBtn" class="red huge ui button">
-                    <i class="eraser icon"></i>
-                    Remove Node and below
-                </button>
-            <br>
-
-            <button id="removeNodeBtn" class="red huge ui button">
-                    <i class="eraser icon"></i>
-                    Remove Node
-                </button>
-            <br>
-
-            <button id="exportSvgBtn" class="blue huge ui button">
-                    <i class="save outline icon"></i>
-                    Export SVG
-                </button>
-            <br>
-        </div>
-
-    {% endif %}
 
 
 {% endblock content %}
