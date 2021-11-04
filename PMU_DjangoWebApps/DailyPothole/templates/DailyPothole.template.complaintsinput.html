@@ -241,7 +241,7 @@
                 } else {
                     // Call lookup api to populate fields
                     json_blob = {
-                    "complaint_date": $(this).val(),
+                        "complaint_date": $(this).val(),
                     }
 
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",

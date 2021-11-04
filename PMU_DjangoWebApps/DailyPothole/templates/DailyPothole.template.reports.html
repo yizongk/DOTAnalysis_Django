@@ -92,6 +92,24 @@
             });
 
 
+            // Returns a date string after day delta is applied, in the format of YYYY-MM-DD. Expects UTC time as argument and return UTC time
+            function getDaysDeltaForDateString({
+                    date_str    // Expects this format YYYY-MM-DD, will not work otherwise
+                    ,days=0     // Make this a negative number if you want previous days
+                }={}) {
+
+                let date_obj = new Date( Date.UTC( date_str.slice(0,4), Number(date_str.slice(5,7))-1, date_str.slice(8) ) ) // UTC takes in year, moht, and date. The month is zero indexed, so zero is january
+                date_obj.setDate(date_obj.getDate()+days) // We want to show complaints data for the previous day of report_date
+
+                let complaints_date = [
+                    ( '0' + date_obj.getUTCFullYear() ).slice(-4)
+                    ,( '0' + (date_obj.getUTCMonth()+1) ).slice(-2)      // Get the last two char, which will always be two digits, or one digits with zero padded. Note: date.getMonth() is zero indexed, so 0 is the first month.
+                    ,( '0' + date_obj.getUTCDate() ).slice(-2)
+                ].join('-')
+
+                return complaints_date
+            }
+
 
 
             $('#reportingFormSubmit').on("click", function() {
@@ -139,8 +157,11 @@
                     return
                 } else {
                     // Call lookup api to populate fields
+                    let report_date = $(this).val()
+
+                    let complaints_date = getDaysDeltaForDateString({date_str: report_date, days: -1}) // We want to show complaints data for the previous day of report_date
                     json_blob = {
-                        "complaint_date": $(this).val(),
+                        "complaint_date": complaints_date,
                     }
 
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",

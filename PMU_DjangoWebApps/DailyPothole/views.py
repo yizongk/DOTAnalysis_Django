@@ -773,13 +773,16 @@ def GetPDFReport(request):
 
         from django.db.models import Sum, Count
         from datetime import datetime, timedelta
-        daydelta = 6
-        report_date_obj = datetime.strptime(report_date, '%Y-%m-%d')
+        daydelta            = 6
+        report_date_obj     = datetime.strptime(report_date, '%Y-%m-%d')
 
-        start = report_date_obj - timedelta(days=report_date_obj.weekday()+2) # Get last week's weekends and current week's weekdays
-        end = start + timedelta(days=daydelta)
-        start_str = start.strftime("%Y-%m-%d")
-        end_str = end.strftime("%Y-%m-%d")
+        start               = report_date_obj - timedelta(days=report_date_obj.weekday()+2) # Get last week's weekends and current week's weekdays
+        end                 = start + timedelta(days=daydelta)
+        complaint_date_obj  = report_date_obj + timedelta(days=-1) # We want previous day's complaint data
+
+        start_str           = start.strftime("%Y-%m-%d")
+        end_str             = end.strftime("%Y-%m-%d")
+        complaint_date      = complaint_date_obj.strftime("%Y-%m-%d")
 
 
         potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
@@ -787,7 +790,7 @@ def GetPDFReport(request):
         ).order_by('operation_id', 'boro_id', 'repair_date')
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
-            complaint_date__exact=report_date,
+            complaint_date__exact=complaint_date, # Get previous day's data
         )
 
         today_crew_count = TblPotholeMaster.objects.using('DailyPothole').filter(
@@ -1015,11 +1018,13 @@ def GetPDFReport(request):
             ):
             fits_total = 'No Data'
         else:
-            fits_total = complaint_data.fits_bronx if complaint_data.fits_bronx is not None else 0\
-                + complaint_data.fits_brooklyn if complaint_data.fits_brooklyn is not None else 0\
-                + complaint_data.fits_manhattan if complaint_data.fits_manhattan is not None else 0\
-                + complaint_data.fits_queens if complaint_data.fits_queens is not None else 0\
-                + complaint_data.fits_staten_island if complaint_data.fits_staten_island is not None else 0
+            fits_bronx = complaint_data.fits_bronx if complaint_data.fits_bronx is not None else 0
+            fits_brooklyn = complaint_data.fits_brooklyn if complaint_data.fits_brooklyn is not None else 0
+            fits_manhattan = complaint_data.fits_manhattan if complaint_data.fits_manhattan is not None else 0
+            fits_queens = complaint_data.fits_queens if complaint_data.fits_queens is not None else 0
+            fits_staten_island = complaint_data.fits_staten_island if complaint_data.fits_staten_island is not None else 0
+
+            fits_total = fits_bronx + fits_brooklyn + fits_manhattan + fits_queens + fits_staten_island
 
         complaints_tuple = (
             fits_total
