@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # It is imported by the line 'from PMU_DjangoWebApps.secret_settings import *'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = DEBUG_ENV
 
 # ALLOWED_HOSTS takes in a list of strings the host ip addresses
 ALLOWED_HOSTS = HostList
