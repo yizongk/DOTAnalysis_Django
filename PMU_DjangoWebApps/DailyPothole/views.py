@@ -9,6 +9,7 @@ import json
 from django.core.exceptions import ObjectDoesNotExist
 
 
+## Special case due to bad data design. Need to take care of CW_RESURFACING 1, 2 and 3 operation in special filter
 def filter_out_excluded_operation_boro(query_set):
     query_set = query_set.exclude(
         ## Keep only Queens for CW 1
