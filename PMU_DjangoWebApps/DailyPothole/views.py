@@ -883,11 +883,17 @@ def GetPDFReport(request):
                 out_row.append("{}\n{}".format(each.boro_id.boro_long, each.operation_id.operation))
                 out_row.append(None)
 
-            crews_total += each.repair_crew_count if each.repair_crew_count is not None else 0
-            holes_total += each.holes_repaired if each.holes_repaired is not None else 0
+            crew_count_cal      = float(each.repair_crew_count)    if each.repair_crew_count is not None   else None
+            holes_repaired_cal  = int(each.holes_repaired )      if each.holes_repaired is not None      else None
 
-            out_row.append(each.repair_crew_count if each.repair_crew_count is not None else None)
-            out_row.append(each.holes_repaired if each.holes_repaired is not None else None)
+            if crew_count_cal is not None and crew_count_cal.is_integer(): ## If crew count is a whole number, cast it as int
+                crew_count_cal = int(crew_count_cal)
+
+            crews_total += crew_count_cal if crew_count_cal is not None else 0
+            holes_total += holes_repaired_cal if holes_repaired_cal is not None else 0
+
+            out_row.append(crew_count_cal if crew_count_cal is not None else None)
+            out_row.append(holes_repaired_cal if holes_repaired_cal is not None else None)
 
             # One week (7 days) worth of data has been processed, save it, and reset variables
             if day_i == daydelta:
@@ -921,22 +927,22 @@ def GetPDFReport(request):
         week_total_crews = 0
         week_total_holes = 0
         for each in data:
-            sat_total_crews += each[2] if isinstance(each[2], int) else 0
-            sat_total_holes += each[3] if isinstance(each[3], int) else 0
-            sun_total_crews += each[4] if isinstance(each[4], int) else 0
-            sun_total_holes += each[5] if isinstance(each[5], int) else 0
-            mon_total_crews += each[6] if isinstance(each[6], int) else 0
-            mon_total_holes += each[7] if isinstance(each[7], int) else 0
-            tue_total_crews += each[8] if isinstance(each[8], int) else 0
-            tue_total_holes += each[9] if isinstance(each[9], int) else 0
-            wed_total_crews += each[10] if isinstance(each[10], int) else 0
-            wed_total_holes += each[11] if isinstance(each[11], int) else 0
-            thu_total_crews += each[12] if isinstance(each[12], int) else 0
-            thu_total_holes += each[13] if isinstance(each[13], int) else 0
-            fri_total_crews += each[14] if isinstance(each[14], int) else 0
-            fri_total_holes += each[15] if isinstance(each[15], int) else 0
-            week_total_crews += each[16] if isinstance(each[16], int) else 0
-            week_total_holes += each[17] if isinstance(each[17], int) else 0
+            sat_total_crews += each[2]   if isinstance(each[2], int)  or isinstance(each[2], float)  else 0
+            sat_total_holes += each[3]   if isinstance(each[3], int)  or isinstance(each[3], float)  else 0
+            sun_total_crews += each[4]   if isinstance(each[4], int)  or isinstance(each[4], float)  else 0
+            sun_total_holes += each[5]   if isinstance(each[5], int)  or isinstance(each[5], float)  else 0
+            mon_total_crews += each[6]   if isinstance(each[6], int)  or isinstance(each[6], float)  else 0
+            mon_total_holes += each[7]   if isinstance(each[7], int)  or isinstance(each[7], float)  else 0
+            tue_total_crews += each[8]   if isinstance(each[8], int)  or isinstance(each[8], float)  else 0
+            tue_total_holes += each[9]   if isinstance(each[9], int)  or isinstance(each[9], float)  else 0
+            wed_total_crews += each[10]  if isinstance(each[10], int) or isinstance(each[10], float) else 0
+            wed_total_holes += each[11]  if isinstance(each[11], int) or isinstance(each[11], float) else 0
+            thu_total_crews += each[12]  if isinstance(each[12], int) or isinstance(each[12], float) else 0
+            thu_total_holes += each[13]  if isinstance(each[13], int) or isinstance(each[13], float) else 0
+            fri_total_crews += each[14]  if isinstance(each[14], int) or isinstance(each[14], float) else 0
+            fri_total_holes += each[15]  if isinstance(each[15], int) or isinstance(each[15], float) else 0
+            week_total_crews += each[16] if isinstance(each[16], int) or isinstance(each[16], float) else 0
+            week_total_holes += each[17] if isinstance(each[17], int) or isinstance(each[17], float) else 0
 
         totals_tuple_row = (
             'Total'
@@ -1064,17 +1070,19 @@ def GetPDFReport(request):
         ]
         total_crew_count = 0
         for each in today_crew_count:
+            dly_crew_ct = each.daily_crew_count if each.daily_crew_count is not None else None
+            dly_crew_ct = float(dly_crew_ct) if dly_crew_ct is not None else None
+            if dly_crew_ct is not None and dly_crew_ct.is_integer(): ## If crew count is a whole number, cast it as int
+                dly_crew_ct = int(dly_crew_ct)
             row_tuple = (
                 "{}".format(each.boro_id.boro_long)
                 ,"{}".format(each.operation_id.operation)
-                ,each.daily_crew_count if each.daily_crew_count is not None else None
+                ,dly_crew_ct
             )
             ## Only add row to the table if the daily_crew_count is not null
-            if each.daily_crew_count is None:
-                pass
-            else:
+            if dly_crew_ct is not None:
                 data.append(row_tuple)
-            total_crew_count += each.daily_crew_count if each.daily_crew_count is not None else 0
+            total_crew_count += dly_crew_ct if dly_crew_ct is not None else 0
 
         data.append(('Total', '', total_crew_count))
 
