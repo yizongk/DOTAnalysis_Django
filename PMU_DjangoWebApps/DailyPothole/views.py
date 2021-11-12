@@ -9,6 +9,30 @@ import json
 from django.core.exceptions import ObjectDoesNotExist
 
 
+def filter_out_excluded_operation_boro(query_set):
+    query_set = query_set.exclude(
+        ## Keep only Queens for CW 1
+        ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BRONX') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BROOKLYN') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='MANHATTAN') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
+
+        ## Keep only Brooklyn for CW 2
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='BRONX') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='MANHATTAN') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='QUEENS') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
+
+        ## Keep only Staten Island for CW 3
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BRONX') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BROOKLYN') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='MANHATTAN') )
+        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='QUEENS') )
+    )
+
+    return query_set
+
+
 ## Return a list of Operations that the client has access to. Returns not limited to 1 Operation, can be multiple.
 def get_user_operation_and_boro_permission(username):
     try:
@@ -125,10 +149,10 @@ class PotholeDataEntryPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: DateCollectionPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblPotholeMaster.objects.none()
+            return None
 
         self.req_success = True
-        return TblPotholeMaster.objects.none()
+        return None
 
     def get_context_data(self, **kwargs):
         try:
@@ -175,49 +199,23 @@ class PotholeDataGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                # pothole_data = TblPotholeMaster.objects.using('DailyPothole').all().order_by('repair_date', 'boro_id', 'operation_id')
                 import datetime
                 from dateutil.relativedelta import relativedelta
                 now = datetime.datetime.now().strftime("%Y-%m-%d")
                 then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                     repair_date__range=[then, now]
-                ).exclude(
-                    ## Keep only Queens for CW 1
-                    ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BRONX') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BROOKLYN') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='MANHATTAN') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
-
-                    ## Keep only Brooklyn for CW 1
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='BRONX') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='MANHATTAN') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='QUEENS') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
-
-                    ## Keep only Staten Island for CW 1
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BRONX') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BROOKLYN') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='MANHATTAN') )
-                    | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='QUEENS') )
-                ).order_by('-repair_date', 'operation_id', 'boro_id')
+                )
+                pothole_data = filter_out_excluded_operation_boro(pothole_data)
+                pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
             else:
-                # user_permissions = get_user_operation_and_boro_permission(self.request.user)
-                # if user_permissions['success'] == False:
-                #     raise ValueError('get_user_operation_and_boro_permission() failed: {}'.format(user_permissions['err']))
-                # else:
-                #     allowed_operation_list = user_permissions['operation_permission_list']
-
-                # pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
-                #     operation_id__in=allowed_operation_list,
-                # ).order_by('repair_date', 'boro_id', 'operation_id')
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblPotholeMaster.objects.none()
+            return None
 
         self.req_success = True
         return pothole_data
@@ -453,7 +451,9 @@ def UpdatePotholesData(request):
                 raise ValueError("'{}' does not have the permission to edit records related to '{}' and '{}'".format(remote_user, operation_input, borough_input))
 
 
-        pothole_data = TblPotholeMaster.objects.using('DailyPothole').get(
+        pothole_data = TblPotholeMaster.objects.using('DailyPothole')
+        pothole_data = filter_out_excluded_operation_boro(pothole_data)
+        pothole_data = pothole_data.get(
             operation_id__operation__exact=operation_input,
             boro_id__boro_long__exact=borough_input,
             repair_date__exact=date_input,
@@ -788,6 +788,7 @@ def GetPDFReport(request):
         potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[start_str, end_str],
         ).order_by('operation_id', 'boro_id', 'repair_date')
+        potholes_data = filter_out_excluded_operation_boro(potholes_data)
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
             complaint_date__exact=complaint_date, # Get previous day's data
@@ -795,28 +796,37 @@ def GetPDFReport(request):
 
         today_crew_count = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__exact=report_date,
-        )
+        ).order_by('boro_id__boro_long', 'operation_id__operation')
+        today_crew_count = filter_out_excluded_operation_boro(today_crew_count)
 
         # Assuming a new FY starts at July 1st
         fytd_start_str = "{}-07-01".format(report_date_obj.year - 1 if report_date_obj.month < 7 else report_date_obj.year)
         fytd_total_pothole_repair = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[fytd_start_str, report_date],
-        ).aggregate(total_repaired=Sum('holes_repaired'))
+        )
+        fytd_total_pothole_repair = filter_out_excluded_operation_boro(fytd_total_pothole_repair)
+        fytd_total_pothole_repair = fytd_total_pothole_repair.aggregate(total_repaired=Sum('holes_repaired'))
 
         weekly_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[start_str, end_str],
-        ).values(
+        )
+        weekly_by_boro = filter_out_excluded_operation_boro(weekly_by_boro)
+        weekly_by_boro = weekly_by_boro.values(
             'operation_id__operation'
             ,'boro_id__boro_long'
         ).annotate( ## When combining .values() and .annotate(), it is effectively an aggregation (From .annotate()) with a group by of the columns specified in .values()
             total_repaired=Sum('holes_repaired')
         ).order_by('operation_id__operation', 'boro_id__boro_long')
 
-        unique_boro = TblPotholeMaster.objects.using('DailyPothole').values('boro_id__boro_long').order_by('boro_id__boro_long').distinct()
+        unique_boro = TblPotholeMaster.objects.using('DailyPothole')
+        unique_boro = filter_out_excluded_operation_boro(unique_boro)
+        unique_boro = unique_boro.values('boro_id__boro_long').order_by('boro_id__boro_long').distinct()
 
         fiscal_year_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[fytd_start_str, report_date],
-        ).values(
+        )
+        fiscal_year_by_boro = filter_out_excluded_operation_boro(fiscal_year_by_boro)
+        fiscal_year_by_boro = fiscal_year_by_boro.values(
             'operation_id__operation'
             ,'boro_id__boro_long'
         ).annotate(
@@ -1387,7 +1397,7 @@ def LookupPotholesAndCrewData(request):
             if permission_obj.count() == 0:
                 raise ValueError("'{}' doesn't not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
 
-        pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get(
+        pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get( ## Do not apply special filtering rule for CW_RESURFACING, due to unwanted error message in the front end
             repair_date__exact=look_up_date,
             operation_id__operation__exact=operation,
             boro_id__boro_long__exact=borough,
@@ -1493,7 +1503,7 @@ class UsersPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblPotholeMaster.objects.none()
+            return None
 
         self.req_success = True
         return users_data
@@ -1785,7 +1795,7 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return TblPotholeMaster.objects.none()
+            return None
 
         self.req_success = True
         return user_permissions_data
@@ -2182,7 +2192,9 @@ def GetCsvExport(request):
         from datetime import datetime
 
         if type_of_query == 'date_range_summary':
-            potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
+            potholes_data = TblPotholeMaster.objects.using('DailyPothole')
+            potholes_data = filter_out_excluded_operation_boro(potholes_data)
+            potholes_data = potholes_data.filter(
                 repair_date__range=[start_date, end_date],
             ).values(
                 'boro_id__boro_code'
@@ -2240,6 +2252,7 @@ def GetCsvExport(request):
                 | Q(repair_date__range=[year_4_start, year_4_end])
                 | Q(repair_date__range=[year_5_start, year_5_end])
             )
+            potholes_data = filter_out_excluded_operation_boro(potholes_data)
 
 
             by_year_sum = potholes_data.values(
