@@ -809,9 +809,7 @@ def GetPDFReport(request):
 
         weekly_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[start_str, end_str],
-        )
-        weekly_by_boro = filter_out_excluded_operation_boro(weekly_by_boro)
-        weekly_by_boro = weekly_by_boro.values(
+        ).values(
             'operation_id__operation'
             ,'boro_id__boro_long'
         ).annotate( ## When combining .values() and .annotate(), it is effectively an aggregation (From .annotate()) with a group by of the columns specified in .values()
@@ -824,9 +822,7 @@ def GetPDFReport(request):
 
         fiscal_year_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[fytd_start_str, report_date],
-        )
-        fiscal_year_by_boro = filter_out_excluded_operation_boro(fiscal_year_by_boro)
-        fiscal_year_by_boro = fiscal_year_by_boro.values(
+        ).values(
             'operation_id__operation'
             ,'boro_id__boro_long'
         ).annotate(
