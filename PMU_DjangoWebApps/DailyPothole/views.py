@@ -416,9 +416,9 @@ def UpdatePotholesData(request):
 
         try:
             if pothole_crew_count_input is not None:
-                pothole_crew_count_input        = int(pothole_crew_count_input)
+                pothole_crew_count_input        = float(pothole_crew_count_input)
         except ValueError as e:
-            raise ValueError("pothole_crew_count_input '{}' cannot be converted into an Int".format(pothole_crew_count_input))
+            raise ValueError("pothole_crew_count_input '{}' cannot be converted into an Decimal".format(pothole_crew_count_input))
         except Exception as e:
             raise
 
@@ -432,9 +432,9 @@ def UpdatePotholesData(request):
 
         try:
             if today_pothole_crew_count_input is not None:
-                today_pothole_crew_count_input        = int(today_pothole_crew_count_input)
+                today_pothole_crew_count_input        = float(today_pothole_crew_count_input)
         except ValueError as e:
-            raise ValueError("today_pothole_crew_count_input '{}' cannot be converted into an Int".format(today_pothole_crew_count_input))
+            raise ValueError("today_pothole_crew_count_input '{}' cannot be converted into an Decimal".format(today_pothole_crew_count_input))
         except Exception as e:
             raise
 
