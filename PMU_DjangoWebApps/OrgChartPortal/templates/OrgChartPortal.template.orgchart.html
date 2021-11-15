@@ -148,6 +148,8 @@
                 .ajaxStop(function () {
                     $("body").removeClass("loading");
                 });
+                //@TODO: Implement reset chart button. Probably just a recall of the api and re-initalize the chart
+                //@TODO: Try to implement drag and drop.
 
                 sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
