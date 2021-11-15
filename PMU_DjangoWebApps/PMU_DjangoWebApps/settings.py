@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # It is imported by the line 'from PMU_DjangoWebApps.secret_settings import *'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = DEBUG_ENV
 
 # ALLOWED_HOSTS takes in a list of strings the host ip addresses
 ALLOWED_HOSTS = HostList
@@ -92,6 +92,11 @@ TEMPLATES = [
 SETTINGS_EXPORT = [
     ## SERVER_TYPE is only recognized by "Dev", "QA", or "Prod"
     'SERVER_TYPE',
+    'PER_IND_VERSION',
+    'DAILY_POTHOLE_VERSION',
+    'ORG_CHART_PORTAL_VERSION',
+    'FLEET_DATA_COLLECTION_VERSION',
+    'MAPS_APP_VERSION',
 ]
 
 WSGI_APPLICATION = 'PMU_DjangoWebApps.wsgi.application'

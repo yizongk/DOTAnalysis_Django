@@ -165,7 +165,8 @@
                 orderCellsTop: true,
                 fixedHeader: true,
                 pageLength: 10,
-                lengthMenu: [ 10, 25, 50, 75, 100 ]
+                lengthMenu: [ 10, 25, 50, 75, 100 ],
+                order: [[0, 'desc']]
             });
 
 
@@ -241,7 +242,7 @@
                 } else {
                     // Call lookup api to populate fields
                     json_blob = {
-                    "complaint_date": $(this).val(),
+                        "complaint_date": $(this).val(),
                     }
 
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
