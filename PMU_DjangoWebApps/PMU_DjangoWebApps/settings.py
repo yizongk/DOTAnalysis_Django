@@ -92,6 +92,11 @@ TEMPLATES = [
 SETTINGS_EXPORT = [
     ## SERVER_TYPE is only recognized by "Dev", "QA", or "Prod"
     'SERVER_TYPE',
+    'PER_IND_VERSION',
+    'DAILY_POTHOLE_VERSION',
+    'ORG_CHART_PORTAL_VERSION',
+    'FLEET_DATA_COLLECTION_VERSION',
+    'MAPS_APP_VERSION',
 ]
 
 WSGI_APPLICATION = 'PMU_DjangoWebApps.wsgi.application'
