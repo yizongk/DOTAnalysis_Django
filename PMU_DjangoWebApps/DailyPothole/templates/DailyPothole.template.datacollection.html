@@ -22,6 +22,7 @@
     </div>
 
 
+    {% if req_success %}
     <div>
         <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -121,6 +122,7 @@
             <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Input Pothole Data</a>
         </div>
     </div>
+    {% endif %}
 
 {% endblock content %}
 
@@ -131,6 +133,7 @@
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
+        {% if req_success %}
         $(document).ready( function () {
             // Initializing the existing select divs into a dropdown menu for Formantic UI
             $('#modalNewRowFormSelectOperationInputForPotholeData').dropdown();
@@ -280,7 +283,7 @@
 
                 },
                 failCallbackFct=function(json_response) {
-                    alert(JSON.stringify(json_response, null, 2))
+                    //alert(JSON.stringify(json_response, null, 2))
                 }
             )
 
@@ -298,7 +301,7 @@
 
                 },
                 failCallbackFct=function(json_response) {
-                    alert(JSON.stringify(json_response, null, 2))
+                    //alert(JSON.stringify(json_response, null, 2))
                 }
             )
             // Now on date change, refresh those data
@@ -331,7 +334,7 @@
 
                         },
                         failCallbackFct=function(json_response) {
-                            alert(JSON.stringify(json_response, null, 2))
+                            //alert(JSON.stringify(json_response, null, 2))
                         }
                     )
 
@@ -365,7 +368,7 @@
 
                         },
                         failCallbackFct=function(json_response) {
-                            alert(JSON.stringify(json_response, null, 2))
+                            //alert(JSON.stringify(json_response, null, 2))
                         }
                     )
 
@@ -374,5 +377,6 @@
             })
 
         });
+        {% endif %}
     </script>
 {% endblock custom_js %}

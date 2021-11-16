@@ -140,7 +140,7 @@ class PotholeDataEntryPageView(generic.ListView):
                 ).order_by('operation_id')
 
                 if permission_obj.count() == 0:
-                    raise ValueError("'{}' doesn't not have any permission to view this page".format(self.request.user))
+                    raise ValueError("'{}' does not have any permission to view this page".format(self.request.user))
 
 
                 self.operation_list = list(set([each.operation_id.operation for each in permission_obj]))
@@ -1400,7 +1400,7 @@ def LookupPotholesAndCrewData(request):
             )
 
             if permission_obj.count() == 0:
-                raise ValueError("'{}' doesn't not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
+                raise ValueError("'{}' does not have any permission for '{}' and '{}'".format(remote_user, operation, borough))
 
         pothole_and_crew_data = TblPotholeMaster.objects.using('DailyPothole').get( ## Do not apply special filtering rule for CW_RESURFACING, due to unwanted error message in the front end
             repair_date__exact=look_up_date,
