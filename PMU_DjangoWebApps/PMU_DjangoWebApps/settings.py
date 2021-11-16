@@ -320,3 +320,10 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 #     # os.path.join(BASE_DIR, "static"),
 #     BASE_DIR.replace("\\", '/'),
 # ]
+
+
+PER_IND_VERSION = '1.0.0'
+MAPS_APP_VERSION = '1.0.0'
+DAILY_POTHOLE_VERSION = '1.0.0'
+ORG_CHART_PORTAL_VERSION = '1.0.0'
+FLEET_DATA_COLLECTION_VERSION = '1.0.0'
