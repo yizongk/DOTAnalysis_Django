@@ -4,9 +4,9 @@
 
 {% block custom_css %}
     <!-- You MUST include jQuery before Fomantic -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
+    <script src="{% static 'PMU_DjangoWebApps/js/jquery/3.3.1/jquery.min.js' %}"></script>
+    <script src="{% static 'PMU_DjangoWebApps/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/fomantic-ui/2.8.7/semantic.min.css' %}">
 
     <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
 {% endblock %}
