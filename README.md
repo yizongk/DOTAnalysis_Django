@@ -470,4 +470,5 @@ pro.fontawesome.com/releases/v5.10.0/css/all.css:1 Failed to load resource: net:
 ```
 
 It's probably their proxy/network issue that isn't able to access the external web server to pull the neccessary js/css files.
-To fix it, you can download those affected files to your local server hosting your website. And then in all the affected HTMLs, change the reference of those external web server for the js/css files to refernce the local files on your local server hosting your website.
+To fix it, you can try the following to see if it fixes it:
+Download those affected files to your local server hosting your website. And then in all the affected HTMLs, change the reference of those external web server for the js/css files to refernce the local files on your local server hosting your website.
