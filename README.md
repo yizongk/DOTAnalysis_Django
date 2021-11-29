@@ -460,3 +460,14 @@ There will be no error message, and the model will not be correctly configured i
 
 To fix this error/issue, reset the migration to zero, delete the migration files with the exception of \_\_init\_\_.py, remake the migration, and then apply the migration. This should fix the issue.
 (Instruction to reset the migration comes from this link: https://simpleisbetterthancomplex.com/tutorial/2016/07/26/how-to-reset-migrations.html, although you don't need to do a fake migration when you regenerate the correct migration files, because we already set managed=False, so django will assume the tables is already in the database and will not issue a CREATE query.)
+
+## Note on possible future bug: 'Failed to load resource: net::ERR_CONNECTION_CLOSED'
+If you are seeing these error messages on client's web browser console:
+```
+Failed to load resource: net::ERR_CONNECTION_CLOSED
+js-cookie@rc:1 Failed to load resource: net::ERR_CONNECTION_CLOSED
+pro.fontawesome.com/releases/v5.10.0/css/all.css:1 Failed to load resource: net::ERR_CONNECTION_CLOSED
+```
+
+It's probably their proxy/network issue that isn't able to access the external web server to pull the neccessary js/css files.
+To fix it, you can download those affected files to your local server hosting your website. And then in all the affected HTMLs, change the reference of those external web server for the js/css files to refernce the local files on your local server hosting your website.
