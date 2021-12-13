@@ -3,7 +3,7 @@
 
 {% load static %}
 {% block custom_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/dot_color_scheme.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
@@ -28,7 +28,7 @@
             </div>
 
             <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
+                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
                 <a href="{% url 'fleetdatacollection_driver_and_type_confirmation_view' %}">
                     <div class="mask rgba-white-light"></div>
                 </a>
@@ -49,7 +49,7 @@
 
                 <div class="view overlay">
                     <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
                     <a href="{% url 'fleetdatacollection_adminpanel_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>

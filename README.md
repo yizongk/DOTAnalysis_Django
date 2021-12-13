@@ -13,7 +13,7 @@ By extension, when installing mod_wsgi, you will need Microsoft Visual C++ 14.0 
 
 Then run the following command
 ```
-python -m pip install -r PMU_DjangoWebApps/python_dependencies.txt
+python -m pip install -r DOTAnalytics/python_dependencies.txt
 ```
 
 
@@ -122,9 +122,9 @@ STATIC_URL = '/static/'
 In django templates, when you do
 ```
 {% load static %}  // This loads the relate url (root + STATIC_URL), so result is like www.website.com/static/
-<img src="{% static 'PMU_DjangoWebApps/dot_logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
+<img src="{% static 'WebAppsMain/dot_logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
 ```
-Then that /<img/> tag will ask Apache for www.website.com/static/PMU_DjangoWebApps/dot_logo.jpg
+Then that /<img/> tag will ask Apache for www.website.com/static/WebAppsMain/dot_logo.jpg
 Add the following config with your other Django config in your apache/conf/httpd.conf
 ```
 Alias /static/ "path_to_your_static_dir"
@@ -217,7 +217,7 @@ Doesn't work on the following:
 * Internet Explorer 11.973.17763.0CO
 
 # Secret setting file
-There needs to be a secret_settings.py file in PMU_DjangoWebApps\PMU_DjangoWebApps\PMU_DjangoWebApps\secret_settings.py
+There needs to be a secret_settings.py file in DOTAnalytics_Django\WebApps\WebAppsMain\secret_settings.py
 
 And it must have the following format:
 ```
@@ -277,12 +277,12 @@ LoadModule authnz_sspi_module modules/mod_authnz_sspi.so
 LoadModule wsgi_module modules/mod_wsgi.so
 <IfModule wsgi_module>
     # Filling WSGIPythonPath is important, cuz you might run into this error if not set, https://github.com/GrahamDumpleton/mod_wsgi/issues/353
-    WSGIPythonPath "C:/xampp/htdocs/PMU_DjangoWebApps"
+    WSGIPythonPath "C:/xampp/htdocs/DOTAnalytics"
     WSGIPythonHome "C:/Users/ykuang/Documents/python38"
 
     <VirtualHost *:8080>
-        WSGIScriptAlias / "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/PMU_DjangoWebApps/wsgi.py"
-        <Directory "C:/xampp/htdocs/PMU_DjangoWebApps">
+        WSGIScriptAlias / "C:/xampp/htdocs/DOTAnalytics/WebApps/WebAppsMain/wsgi.py"
+        <Directory "C:/xampp/htdocs/DOTAnalytics">
             <Files wsgi.py>
                 Order deny,allow
                 Allow from all
@@ -298,8 +298,8 @@ LoadModule wsgi_module modules/mod_wsgi.so
             </Files>
         </Directory>
     </VirtualHost>
-    Alias /static/ "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/"
-    <Directory "C:/xampp/htdocs/PMU_DjangoWebApps/PMU_DjangoWebApps/static/">
+    Alias /static/ "C:/xampp/htdocs/DOTAnalytics/WebApps/static/"
+    <Directory "C:/xampp/htdocs/DOTAnalytics/WebApps/static/">
         Require all granted
     </Directory>
 </IfModule>
@@ -360,8 +360,8 @@ Then in your Apache httpd.conf add the following lines to your VirtualHost confi
 ```
 <VirtualHost ...>
     SSLEngine on
-    SSLCertificateFile "C:/xampp/apache/certs/PMU_DjangoWebApps.crt"
-    SSLCertificateKeyFile "C:/xampp/apache/certs/PMU_DjangoWebApps.key"
+    SSLCertificateFile "C:/xampp/apache/certs/DOTAnalytics_Django.crt"
+    SSLCertificateKeyFile "C:/xampp/apache/certs/DOTAnalytics_Django.key"
     ...
     <Directory ...>
     ...
@@ -441,7 +441,7 @@ I had to apply the following SQL to make sure dbo.Users.Login has the Unique Con
 ALTER TABLE [Users]
 ADD CONSTRAINT [AK_Users_Login] UNIQUE (Login);
 ```
-There's more, take a look at PMU_DjangoWebApps/PerInd/models.py for their comments for SQLs to run, after database creation.
+There's more, take a look at WebAppsMain/PerInd/models.py for their comments for SQLs to run, after database creation.
 
 ## Error: '('42S02', "[42S02] [Microsoft][SQL Server Native Client 11.0][SQL Server]Invalid object name 'OrgChartPortal_tblpermissions'. (208) (SQLExecDirectW); [42S02] [Microsoft][SQL Server Native Client 11.0][SQL Server]Statement(s) could not be prepared. (8180)")'
 The cause of this issue is that the migration files were not done correctly, some of the model has managed = True. Check the models.py, and make sure

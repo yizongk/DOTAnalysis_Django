@@ -5,11 +5,11 @@
 
 {% block custom_css %}
     <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'PMU_DjangoWebApps/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'PMU_DjangoWebApps/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/fomantic-ui/2.8.7/semantic.min.css' %}">
+    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
+    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
 
-    <link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/DataTables/datatables.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -55,9 +55,9 @@
 {% endblock content %}
 
 {% block custom_js %}
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/DataTables/datatables.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/CellEditSave.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>

@@ -3,7 +3,7 @@
 
 {% load static %}
 {% block custom_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/dot_color_scheme.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
@@ -27,7 +27,7 @@
             </div>
 
             <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
+                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
                 <a href="{% url 'dailypothole_pothole_data_entry_view' %}">
                     <div class="mask rgba-white-light"></div>
                 </a>
@@ -47,7 +47,7 @@
                 </div>
 
                 <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Data Grid Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Data Grid Logo">
                     <a href="{% url 'dailypothole_pothole_data_grid_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
@@ -66,7 +66,7 @@
                 </div>
 
                 <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
                     <a href="{% url 'dailypothole_complaints_input_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
@@ -85,7 +85,7 @@
                 </div>
 
                 <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Reporting Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Reporting Logo">
                     <a href="{% url 'dailypothole_reports_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
@@ -105,7 +105,7 @@
 
                 <div class="view overlay">
                     <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
                     <a href="{% url 'dailypothole_admin_panel_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>
@@ -124,7 +124,7 @@
                 </div>
 
                 <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/report_logo.png' %}" alt="Reporting Logo">
+                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Reporting Logo">
                     <a href="{% url 'dailypothole_csv_export_view' %}">
                         <div class="mask rgba-white-light"></div>
                     </a>

@@ -1,5 +1,5 @@
 """
-WSGI config for PMU_DjangoWebApps project.
+WSGI config for WebAppsMain project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -16,6 +16,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'PMU_DjangoWebApps.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WebAppsMain.settings')
 
 application = get_wsgi_application()

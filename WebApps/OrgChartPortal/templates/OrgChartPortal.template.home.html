@@ -3,7 +3,7 @@
 
 {% load static %}
 {% block custom_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'PMU_DjangoWebApps/css/dot_color_scheme.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
@@ -27,7 +27,7 @@
             </div>
 
             <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'PMU_DjangoWebApps/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
+                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
                 <a href="{% url 'orgchartportal_empgrid_view' %}">
                     <div class="mask rgba-white-light"></div>
                 </a>

@@ -141,9 +141,9 @@ https://github.com/TQsoft-GmbH/mod_authn_ntlm
 ```
     LoadModule wsgi_module modules/mod_wsgi.so
     <IfModule wsgi_module>
-        WSGIScriptAlias / "..../PMU_DjangoWebApps/PMU_DjangoWebApps/wsgi.py"
+        WSGIScriptAlias / "..../WebApps/WebAppsMain/wsgi.py"
         WSGIPythonHome "{Your WSGIPythonHome variable value}"
-        <Directory "{Path to one level before your django project}/PMU_DjangoWebApps">
+        <Directory "{Path to one level before your django project}/WebAppsMain">
             <Files wsgi.py>
                 Allow from all
                 Require all granted
