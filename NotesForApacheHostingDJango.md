@@ -164,7 +164,7 @@ https://github.com/TQsoft-GmbH/mod_authn_ntlm
 9. Add NTLM athentication to Apache
     * Download mod_authnz_sspi
     ```
-        cp the Apache24/bin/sspipkgs to C:/xampp/apache/bin
+        cp the Apache24/bin/sspipkgs to C:/xampp/apache/bin ## This might not be needed. My dev and Prod seems to work without this sspipkgs.exe.
         cp the Apache24/modules/mod_authnz_sspi.so to C:/xampp/apache/modules
     ```
     * Configure httpd.conf
