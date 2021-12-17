@@ -472,3 +472,37 @@ pro.fontawesome.com/releases/v5.10.0/css/all.css:1 Failed to load resource: net:
 It's probably their proxy/network issue that isn't able to access the external web server to pull the neccessary js/css files.
 To fix it, you can try the following to see if it fixes it:
 Download those affected files to your local server hosting your website. And then in all the affected HTMLs, change the reference of those external web server for the js/css files to refernce the local files on your local server hosting your website.
+
+## To install Microsoft Visual C++ 14.0 offline, without internet
+Reference link (General):  https://www.aaronjgrossman.com/2018/11/14/python-build-tools/
+Reference link (Detailed): https://docs.microsoft.com/en-us/visualstudio/install/create-an-offline-installation-of-visual-studio?view=vs-2017
+The actual commands I used, are slightly different:
+1. Download "Visual Studio 2017 Build Tools version 15.9" Edision -> vs_buildtools.exe Bootstrapper from: https://docs.microsoft.com/en-us/visualstudio/install/create-a-network-installation-of-visual-studio?view=vs-2017 to ```C:\Downloads\vs_buildtools.exe``` (Could be anyhwere, but this is the path I chose)
+2. Create a folder to house the offline contents: ```C:\Downloads\vs2017offline``` (Could be anywhere, but this is the path I chose)
+3. Run the following in powershell and wait for the download to finish (Will take a while, ~20GB to download):
+```powershell
+## Run powershell as admin
+cd C:\Downloads\
+.\vs_buildtools.exe --layout C:\Downloads\vs2017offline
+```
+4. Copy the folder over to the machine it's to be installed on. I'm not sure if it matters, but I kept the layout folder path the same between the two devices just in case. The said machine will now have this path and its content: ```C:\Downloads\vs2017offline```
+5. Install the certificates manually. Open up the folder ```C:\Downloads\vs2017offline\certificates```. And then right click on each of the certs and run it as admin (To install for the entire machine rather than for an individual user).
+6. Run the following command to start the installer with no web:
+```powershell
+## Run powershell as admin
+cd C:\Downloads\vs2017offline
+.\vs_BuildTools.exe --noweb
+```
+7. The installer will get started up and all you have to do now is:
+    * Select "Visual C++ build tools" in the Workloads tab, and click install. This is the only tool you will need to install to get Microsoft Visual C++ 14.0.
+
+
+## To modify/uninstall/install new content offline with Visual Studio (Microsoft Visual C++ 14.0 offline)
+Say if you want to modify/uninstall/install Microsoft Visual C++ 14.0 offline:
+Copy over the ```C:\Downloads\vs2017offline\vs_BuildTools.exe``` to the machine you want to change, and run the following command:
+```powershell
+## Run powershell as admin
+cd C:\Downloads\vs2017offline
+.\vs_BuildTools.exe --noweb
+```
+And it will start up Visual Studio offline and now you can make changes.
