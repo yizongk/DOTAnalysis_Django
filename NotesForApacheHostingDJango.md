@@ -240,3 +240,12 @@ https://github.com/TQsoft-GmbH/mod_authn_ntlm
     python manage.py migrate
 ```
 12. You should now be good to go, go start up apache in the xampp control panel, and got to 127.0.0.1 on your browser and test it out!
+
+
+## Note about WAMP and Python:
+You don't have to install Python system wide, you can just install python only for the service account. But make sure you add the python installation path(User-only installation or system-wide installation) to the System Path Environment Variable. That way, WAMP's apache service can find the python.exe use it to read in the mod_wsgi.so or the mod_wsgi.cp38-win_amd64.pyd. (WAMP's apache service runs under a different account than the service account, it uses the "Local System account" by default, which isn't the service account)
+
+If you don't install python and add the path of it onto the System Path Environment Variable, you will encounter strange error messages. For example, when you try to start apache using the wamp manager-windows, in Event Viewer->Windows Logs->Application, you will see that apache isn't able to find mod_wsgi.so or mod_wsgi.cp38-win_amd64.pyd, even though the files are there (It's a MASSIVELY confusing error, because the true error is that the apache service ran by whatever account isn't able to find the python.exe to load in the mod_wsgi.so or mod_wsgi.cp38-win_amd64.pyd).
+
+## Note about the django config: DEBUG = False on the production
+Set it to True if you want more debug info when you are stuck on empty error messages and have no more leads to go on. Very helpful when setting up the production server with WAMP and hosting django.
