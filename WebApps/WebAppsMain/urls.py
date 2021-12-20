@@ -16,7 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from .views import redirect_to_pdam_gate
+
 urlpatterns = [
+    path('', redirect_to_pdam_gate),
     path('PerInd/', include('PerInd.urls')),
     path('MapsApp/', include('MapsApp.urls')),
     path('FleetDataCollection/', include('FleetDataCollection.urls')),
