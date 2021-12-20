@@ -243,9 +243,18 @@ https://github.com/TQsoft-GmbH/mod_authn_ntlm
 
 
 ## Note about WAMP and Python:
-You don't have to install Python system wide, you can just install python only for the service account. But make sure you add the python installation path(User-only installation or system-wide installation) to the System Path Environment Variable. That way, WAMP's apache service can find the python.exe use it to read in the mod_wsgi.so or the mod_wsgi.cp38-win_amd64.pyd. (WAMP's apache service runs under a different account than the service account, it uses the "Local System account" by default, which isn't the service account)
+You don't have to install Python system wide, you can just install python only for the service account. But make sure you add the python installation path(User-only installation or system-wide installation) to the System Path Environment Variable. That way, WAMP's apache service can find the python.exe use it to read in the mod_wsgi.so or the mod_wsgi.cp38-win_amd64.pyd. (WAMP's apache service runs under a different account than the service account, it uses the "Local System account"(It uses the machine name as the account) by default, which isn't the service account)
 
 If you don't install python and add the path of it onto the System Path Environment Variable, you will encounter strange error messages. For example, when you try to start apache using the wamp manager-windows, in Event Viewer->Windows Logs->Application, you will see that apache isn't able to find mod_wsgi.so or mod_wsgi.cp38-win_amd64.pyd, even though the files are there (It's a MASSIVELY confusing error, because the true error is that the apache service ran by whatever account isn't able to find the python.exe to load in the mod_wsgi.so or mod_wsgi.cp38-win_amd64.pyd).
 
 ## Note about the django config: DEBUG = False on the production
 Set it to True if you want more debug info when you are stuck on empty error messages and have no more leads to go on. Very helpful when setting up the production server with WAMP and hosting django.
+
+## Note about the setting the Apache Service from WAMP to use our specific service account.
+WAMP by default set up a service in Windows Services that started up apache. The default account that is used for that service is not the service account, it uses the "Local System account"(It uses the machine name as the account), which isn't the service account. And Django uses the credential of the apache service's account for window authentications. This means that Django will use the Machine name as the window authentication to try and access SQL Server. This will won't work, we need to change the account that the apache service is running on to our service account. This way, Django will use the service account as the windows authentication.
+
+
+## Instruction for installing WAMP:
+* Install WAMP using installer from Bitnami web download
+* Make sure the "wampstackApache" service in Windows Services is using the correct service account.
+    * Double click on the service, and go to the "Log On" tab, then select "This account". Input the username and password, and you should be good now.
