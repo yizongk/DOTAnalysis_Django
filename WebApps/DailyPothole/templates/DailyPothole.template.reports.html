@@ -98,7 +98,7 @@
                     ,days=0     // Make this a negative number if you want previous days
                 }={}) {
 
-                let date_obj = new Date( Date.UTC( date_str.slice(0,4), Number(date_str.slice(5,7))-1, date_str.slice(8) ) ) // UTC takes in year, moht, and date. The month is zero indexed, so zero is january
+                let date_obj = new Date( Date.UTC( date_str.slice(0,4), Number(date_str.slice(5,7))-1, date_str.slice(8) ) ) // UTC takes in year, month, and date. The month is zero indexed, so zero is january
                 date_obj.setDate(date_obj.getDate()+days) // We want to show complaints data for the previous day of report_date
 
                 let complaints_date = [

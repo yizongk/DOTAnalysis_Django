@@ -2194,7 +2194,8 @@ def GetCsvExport(request):
             raise ValueError("'{}' is not admin and does not have the permission to the GetCsvExport() api".format(remote_user))
 
         from django.db.models import Sum, Max
-        from datetime import datetime
+        from datetime import datetime, timedelta
+        from dateutil import relativedelta
 
         if type_of_query == 'date_range_summary':
             ## Initial filtering
@@ -2232,24 +2233,23 @@ def GetCsvExport(request):
             writer.writerow(['Total', crew_count_sum, pothole_repaired_sum])
 
         elif type_of_query == 'ytd_range_last_five_years_summary':
-            from datetime import datetime
             today = datetime.today()
             end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
 
             if today.year != end_date_obj.year:
-                raise ValueError("EndDate ({}) is not in current Calendar Year. Please give a date in {}".format(end_date, today.year))
+                raise ValueError(f"EndDate ({ end_date }) is not in current Calendar Year. Please give a date in { today.year }")
 
-            year_1_start = '{}-01-01'.format(today.year)
-            year_2_start = '{}-01-01'.format(today.year-1)
-            year_3_start = '{}-01-01'.format(today.year-2)
-            year_4_start = '{}-01-01'.format(today.year-3)
-            year_5_start = '{}-01-01'.format(today.year-4)
+            year_1_start = f'{ today.year }-01-01'
+            year_2_start = f'{ today.year-1 }-01-01'
+            year_3_start = f'{ today.year-2 }-01-01'
+            year_4_start = f'{ today.year-3 }-01-01'
+            year_5_start = f'{ today.year-4 }-01-01'
 
-            year_1_end = '{}-{}-{}'.format(today.year, end_date_obj.month, end_date_obj.day )
-            year_2_end = '{}-{}-{}'.format(today.year-1, end_date_obj.month, end_date_obj.day )
-            year_3_end = '{}-{}-{}'.format(today.year-2, end_date_obj.month, end_date_obj.day )
-            year_4_end = '{}-{}-{}'.format(today.year-3, end_date_obj.month, end_date_obj.day )
-            year_5_end = '{}-{}-{}'.format(today.year-4, end_date_obj.month, end_date_obj.day )
+            year_1_end = f'{ today.year   }-{ end_date_obj.month }-{ end_date_obj.day }'
+            year_2_end = f'{ today.year-1 }-{ end_date_obj.month }-{ end_date_obj.day }'
+            year_3_end = f'{ today.year-2 }-{ end_date_obj.month }-{ end_date_obj.day }'
+            year_4_end = f'{ today.year-3 }-{ end_date_obj.month }-{ end_date_obj.day }'
+            year_5_end = f'{ today.year-4 }-{ end_date_obj.month }-{ end_date_obj.day }'
 
 
             potholes_data = TblPotholeMaster.objects.using('DailyPothole').filter(
