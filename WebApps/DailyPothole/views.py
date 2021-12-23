@@ -2197,6 +2197,7 @@ def GetCsvExport(request):
         from datetime import datetime
 
         if type_of_query == 'date_range_summary':
+            ## Initial filtering
             potholes_data = TblPotholeMaster.objects.using('DailyPothole')
             potholes_data = filter_out_excluded_operation_boro(potholes_data)
             potholes_data = potholes_data.filter(
@@ -2206,15 +2207,16 @@ def GetCsvExport(request):
             ).annotate(
                 total_crew_count=Sum('repair_crew_count')
                 ,total_repaired=Sum('holes_repaired')
-            ).order_by('boro_id__boro_code')
+            ).order_by('boro_id__boro_order')
 
-            ## Create the csv
+            ## Post calculation
             crew_count_sum = 0
             pothole_repaired_sum = 0
             for each in potholes_data:
                 crew_count_sum += each['total_crew_count']
                 pothole_repaired_sum += each['total_repaired']
 
+            ## Create the csv
             writer = csv.writer(dummy_in_mem_file)
             writer.writerow(['Date Range: {} to {}'.format(start_date, end_date)])
             writer.writerow(['BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
