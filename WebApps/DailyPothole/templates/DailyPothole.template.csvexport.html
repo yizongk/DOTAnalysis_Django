@@ -114,6 +114,22 @@
                 let start_date = $("#dateRangeSummaryInputReportDateStart").val()
                 let end_date = $("#dateRangeSummaryInputReportDateEnd").val()
 
+                let yyyy = Number(start_date.slice(0, 4))
+                let mm   = Number(start_date.slice(5, 7))-1
+                let dd   = Number(start_date.slice(8, 10))
+                start_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                yyyy = Number(end_date.slice(0, 4))
+                mm   = Number(end_date.slice(5, 7))-1
+                dd   = Number(end_date.slice(8, 10))
+                end_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                if ( start_date_obj > end_date_obj) {
+                    $('#dateRangeSummaryInputBorderReportDateStart').addClass("error")
+                    alert(`Your start date ${getDateStringFromDate(start_date_obj)} is greater than your end date ${getDateStringFromDate(end_date_obj)}`)
+                    return
+                }
+
                 $('#dateRangeSummaryInputBorderReportDateStart').removeClass("error")
                 $('#dateRangeSummaryInputBorderReportDateEnd').removeClass("error")
 

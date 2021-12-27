@@ -2212,6 +2212,9 @@ def GetCsvExport(request):
         from operator import attrgetter
 
         if type_of_query == 'date_range_summary':
+            if datetime.strptime(start_date, '%Y-%m-%d') > datetime.strptime(end_date, '%Y-%m-%d'):
+                raise ValueError(f"start date {start_date} is greater than end date {end_date}")
+
             ## Initial filtering
             potholes_data = TblPotholeMaster.objects.using('DailyPothole')
             potholes_data = filter_out_excluded_operation_boro(potholes_data)
