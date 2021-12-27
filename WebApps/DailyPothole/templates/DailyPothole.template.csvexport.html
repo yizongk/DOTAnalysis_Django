@@ -251,6 +251,7 @@
                 end_date = new Date(yyyy, mm, dd) // The mm counts from 0-11
 
                 if ( end_date > today) {
+                    document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.add("error")
                     options = { weekday: 'long', year: 'numeric', }
                     alert(`You selected a date ${getDateStringFromDate(end_date)} that is in the future. Please pick a date before or equal to ${getDateStringFromDate(today)}`)
                     return
