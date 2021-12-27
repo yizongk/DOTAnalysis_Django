@@ -87,9 +87,14 @@
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
-        $(document).ready( function () {
+        // Similar to Jquery's $(document).ready(function() {...})
+        document.addEventListener("DOMContentLoaded", function(event) {
             // Reset the default viewport from css class container to container-fluid
-            $(".container").attr('class', 'container-fluid')
+            // Equivalent to $(".container").attr('class', 'container-fluid')
+            nodes = document.getElementsByClassName('container')
+            for (i=0; i<nodes.length; ++i) {
+                nodes[i].setAttribute('class', 'container-fluid')
+            }
 
 
             $.ajaxSetup({
@@ -110,9 +115,9 @@
             }
 
 
-            $('#dateRangeSummarySubmit').on("click", function() {
-                let start_date = $("#dateRangeSummaryInputReportDateStart").val()
-                let end_date = $("#dateRangeSummaryInputReportDateEnd").val()
+            document.getElementById('dateRangeSummarySubmit').onclick=function() {
+                let start_date = document.getElementById('dateRangeSummaryInputReportDateStart').value
+                let end_date = document.getElementById('dateRangeSummaryInputReportDateEnd').value
 
                 let yyyy = Number(start_date.slice(0, 4))
                 let mm   = Number(start_date.slice(5, 7))-1
@@ -124,21 +129,21 @@
                 dd   = Number(end_date.slice(8, 10))
                 end_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
 
+                document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.remove("error")
+                document.getElementById('dateRangeSummaryInputBorderReportDateEnd').classList.remove("error")
+
                 if ( start_date_obj > end_date_obj) {
-                    $('#dateRangeSummaryInputBorderReportDateStart').addClass("error")
+                    document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.add("error")
                     alert(`Your start date ${getDateStringFromDate(start_date_obj)} is greater than your end date ${getDateStringFromDate(end_date_obj)}`)
                     return
                 }
 
-                $('#dateRangeSummaryInputBorderReportDateStart').removeClass("error")
-                $('#dateRangeSummaryInputBorderReportDateEnd').removeClass("error")
-
                 if (start_date == '') {
-                    $('#dateRangeSummaryInputBorderReportDateStart').addClass("error")
+                    document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.add("error")
                     return
                 }
                 if (end_date == '') {
-                    $('#dateRangeSummaryInputBorderReportDateEnd').addClass("error")
+                    document.getElementById('dateRangeSummaryInputBorderReportDateEnd').classList.add("error")
                     return
                 }
 
@@ -164,21 +169,22 @@
                         alert(JSON.stringify(json_response, null, 2))
                     }
                 )
-            })
+            }
 
 
-            $('#ytdRangeLastFiveYearsSummarySubmit').on("click", function() {
-                let end_date = $("#ytdRangeLastFiveYearsSummaryInputReportDateEnd").val()
+            document.getElementById('ytdRangeLastFiveYearsSummarySubmit').onclick=function() {
+                let end_date = document.getElementById('ytdRangeLastFiveYearsSummaryInputReportDateEnd').value
                 let today = new Date()
 
-                $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').removeClass("error")
+                document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.remove("error")
 
                 if (end_date == '') {
-                    $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').addClass("error")
+                    document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.add("error")
                     return
                 }
 
                 if (parseInt(end_date.substring(0, 4)) != today.getUTCFullYear()) {
+                    document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.add("error")
                     alert(`You selected a date ${end_date} that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
                     return
                 }
@@ -231,7 +237,7 @@
                         alert(JSON.stringify(json_response, null, 2))
                     }
                 )
-            })
+            }
 
 
             document.getElementById('fytdAndLastWeekWOArtMaintSummarySubmit').onclick=function() {
