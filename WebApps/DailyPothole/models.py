@@ -13,7 +13,7 @@ class TblBoro(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'TblBoro'
+        db_table = 'tblBoro'
 
     def __str__(self):
         return self.boro_code

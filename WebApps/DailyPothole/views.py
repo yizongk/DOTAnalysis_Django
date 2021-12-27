@@ -34,6 +34,18 @@ def filter_out_excluded_operation_boro(query_set):
     return query_set
 
 
+## Used by raw sql: Special case due to bad data design. Need to take care of CW_RESURFACING 1, 2 and 3 operation in special filter.
+def get_excluded_operation_boro_as_where_cond():
+    return """
+        (
+            tblOperation.[Operation] NOT IN ( 'CW_RESURFACING 1', 'CW_RESURFACING 2', 'CW_RESURFACING 3' )
+            OR ( tblOperation.[Operation] = 'CW_RESURFACING 1' AND tblBoro.[BoroLong] = 'QUEENS' )
+            OR ( tblOperation.[Operation] = 'CW_RESURFACING 2' AND tblBoro.[BoroLong] = 'BROOKLYN' )
+            OR ( tblOperation.[Operation] = 'CW_RESURFACING 3' AND tblBoro.[BoroLong] = 'STATEN ISLAND' )
+        )
+    """
+
+
 ## Return a list of Operations that the client has access to. Returns not limited to 1 Operation, can be multiple.
 def get_user_operation_and_boro_permission(username):
     try:
@@ -2196,6 +2208,8 @@ def GetCsvExport(request):
         from django.db.models import Sum, Max
         from datetime import datetime, timedelta
         from dateutil import relativedelta
+        from itertools import chain
+        from operator import attrgetter
 
         if type_of_query == 'date_range_summary':
             ## Initial filtering
@@ -2311,6 +2325,174 @@ def GetCsvExport(request):
                 pothole_fixed_year_summary_row.append(each['total_repaired'])
 
             writer.writerow(pothole_fixed_year_summary_row)
+
+        elif type_of_query == 'fytd_n_last_week_wo_art_maint':
+            today = datetime.today()
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+
+            if end_date_obj > today:
+                raise ValueError(f"EndDate { end_date } is in the future. Please give a date before or equal to { today.strftime('%Y-%m-%d') }")
+
+            ## Assuming a new FY starts at July 1st
+            fytd_start_str = "{}-07-01".format(end_date_obj.year - 1 if end_date_obj.month < 7 else end_date_obj.year)
+
+            ## Get the previous week's Sunday from a given date
+            def prior_week_end(d):
+                ## If given date is sunday, return last week's sunday
+                if d.isoweekday() == 7:
+                    return d - timedelta(days=7)
+                else:
+                    ## isoweekday() returns the day of the week as an integer, where Monday is 1 and Sunday is 7
+                    return d - timedelta(days=(d.isoweekday() % 7 ))
+
+            ## Get the previous week's Monday from a given date
+            def prior_week_start(d):
+                ## subtract 6 days from sunday
+                return prior_week_end(d) - timedelta(days=6)
+
+            last_week_monday = (prior_week_end(end_date_obj) - timedelta(days=6))
+            last_week_sunday = (prior_week_end(end_date_obj)                    )
+
+            from django.db import connections
+            with connections['DailyPothole'].cursor() as cursor:
+                cte_base_query = f"""
+                    WITH base AS (
+                        SELECT
+                            tblPotholeMaster.[RepairDate]
+                            ,tblPotholeMaster.[ActualCrewCount]
+                            ,tblPotholeMaster.[ActualPotholesRepaired]
+                            ,tblOperation.[Operation]
+                            ,tblBoro.[BoroCode]
+                            ,tblBoro.[BoroOrder]
+                            ,tblBoro.[BoroLong]
+                        FROM tblPotholeMaster
+                        LEFT JOIN tblOperation
+                        ON tblPotholeMaster.[OperationId] = tblOperation.[OperationId]
+                        LEFT JOIN tblBoro
+                        ON tblPotholeMaster.[BoroId] = tblBoro.[BoroId]
+                        WHERE (
+                            {get_excluded_operation_boro_as_where_cond()}
+                            AND tblOperation.[Operation] <> 'ARTERIAL MAINTENANCE'
+                        )
+                    )
+
+                    ,fytd AS (
+                        SELECT
+                            [RepairDate]
+                            ,[ActualCrewCount]
+                            ,[ActualPotholesRepaired]
+                            ,[Operation]
+                            ,[BoroCode]
+                            ,[BoroOrder]
+                            ,[BoroLong]
+                        FROM base
+                        WHERE
+                            [RepairDate] >= '{fytd_start_str}' AND [RepairDate] <= '{end_date}'
+                    )
+
+                    ,last_week AS (
+                        SELECT
+                            [RepairDate]
+                            ,[ActualCrewCount]
+                            ,[ActualPotholesRepaired]
+                            ,[Operation]
+                            ,[BoroCode]
+                            ,[BoroOrder]
+                            ,[BoroLong]
+                        FROM base
+                        WHERE
+                            [RepairDate] >= '{last_week_monday.strftime('%Y-%m-%d')}' AND [RepairDate] <= '{last_week_sunday.strftime('%Y-%m-%d')}'
+                    )
+
+                    ,summary AS (
+                        SELECT
+                            fytd_grouped.[BoroCode_fytd]                    AS [boro_code_fytd]
+                            ,fytd_grouped.[ActualCrewCount_fytd]            AS [total_crew_count_fytd]
+                            ,fytd_grouped.[ActualPotholesRepaired_fytd]     AS [total_repaired_fytd]
+                            ,lwk_grouped.[ActualCrewCount_lwk]              AS [total_crew_count_lwk]
+                            ,lwk_grouped.[ActualPotholesRepaired_lwk]       AS [total_repaired_lwk]
+                        FROM (
+                            SELECT
+                                [BoroCode]                      AS [BoroCode_fytd]
+                                ,SUM([ActualCrewCount])         AS [ActualCrewCount_fytd]
+                                ,SUM([ActualPotholesRepaired])  AS [ActualPotholesRepaired_fytd]
+                            FROM fytd
+                            GROUP BY [BoroCode]
+                        ) AS fytd_grouped
+                        LEFT JOIN (
+                            SELECT
+                                [BoroCode]                      AS [BoroCode_lwk]
+                                ,SUM([ActualCrewCount])         AS [ActualCrewCount_lwk]
+                                ,SUM([ActualPotholesRepaired])  AS [ActualPotholesRepaired_lwk]
+                            FROM last_week
+                            GROUP BY [BoroCode]
+                        ) AS lwk_grouped
+                        ON fytd_grouped.[BoroCode_fytd] = lwk_grouped.[BoroCode_lwk]
+                    )
+                """
+
+                summary_query = f"""
+                    {cte_base_query}
+
+                    SELECT
+                        summary.[boro_code_fytd]
+                        ,summary.[total_crew_count_fytd]
+                        ,summary.[total_repaired_fytd]
+                        ,summary.[total_crew_count_lwk]
+                        ,summary.[total_repaired_lwk]
+                        ,tblBoro.[BoroOrder]
+                        ,tblBoro.[BoroLong]
+                    FROM summary
+                    LEFT JOIN tblBoro
+                    ON summary.[boro_code_fytd] = tblBoro.[BoroCode]
+                    ORDER BY tblBoro.[BoroOrder]
+                """
+
+                total_query = f"""
+                    {cte_base_query}
+
+                    SELECT
+                        SUM([total_crew_count_fytd])    AS [sum_crew_count_fytd]
+                        ,SUM([total_repaired_fytd])     AS [sum_repaired_fytd]
+                        ,SUM([total_crew_count_lwk])    AS [sum_crew_count_lwk]
+                        ,SUM([total_repaired_lwk])      AS [sum_repaired_lwk]
+                    FROM summary
+                """
+
+                cursor.execute(summary_query)
+
+                ## Return all rows from a cursor as a dict
+                columns = [col[0] for col in cursor.description]
+                no_art_maint_summary =  [
+                    dict(zip(columns, row))
+                    for row in cursor.fetchall()
+                ]
+
+                cursor.execute(total_query)
+
+                ## Return all rows from a cursor as a dict
+                columns = [col[0] for col in cursor.description]
+                no_art_maint_total =  [
+                    dict(zip(columns, row))
+                    for row in cursor.fetchall()
+                ]
+
+            ## Create the csv
+            writer = csv.writer(dummy_in_mem_file)
+            writer.writerow([end_date_obj.strftime("%A, %B %d, %Y") , ''    , ''])
+            writer.writerow(['Potholes Filled'                      , ''    , ''])
+            writer.writerow(['Borough'                              , 'FYTD', f'{last_week_monday.strftime("%m/%d/%y")} - {last_week_sunday.strftime("%m/%d/%y")} Activity'])
+            for each in no_art_maint_summary:
+                eachrow = [
+                    each['BoroLong']
+                    ,each['total_repaired_fytd']
+                    ,each['total_repaired_lwk']
+                ]
+                writer.writerow(eachrow)
+            writer.writerow(['Total',  no_art_maint_total[0]['sum_repaired_fytd']  , no_art_maint_total[0]['sum_repaired_lwk']])
+            writer.writerow([''     , ''                        , ''])
+            writer.writerow(['Crews:', no_art_maint_total[0]['sum_crew_count_fytd'], no_art_maint_total[0]['sum_crew_count_lwk']])
+
 
         else:
             raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))

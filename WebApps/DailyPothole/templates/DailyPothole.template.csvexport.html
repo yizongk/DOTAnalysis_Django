@@ -59,6 +59,23 @@
 
             </div>
         </div>
+
+
+        <div class="ui horizontal divider">FYTD and Last Week Summary (No Arterial Maintenance): Choose a FYTD End Date</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd" class="field">
+                    <input type="date" id="fytdAndLastWeekWOArtMaintSummaryInputReportDateEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="fytdAndLastWeekWOArtMaintSummarySubmit" class="btn btn-default">Get CSV</button>
+                </div>
+
+            </div>
+        </div>
     {% endif %}
 {% endblock content %}
 
@@ -84,41 +101,44 @@
                 }
             });
 
+            function getDateStringFromDate(d) {
+                let yyyy = new Intl.DateTimeFormat('en', { year:  'numeric' }).format(d)
+                let mm   = new Intl.DateTimeFormat('en', { month: 'numeric'   }).format(d)
+                let dd   = new Intl.DateTimeFormat('en', { day:   '2-digit' }).format(d)
 
+                return `${yyyy}-${mm}-${dd}`
+            }
 
 
             $('#dateRangeSummarySubmit').on("click", function() {
-
-                let StartDate = $("#dateRangeSummaryInputReportDateStart").val()
-                let EndDate = $("#dateRangeSummaryInputReportDateEnd").val()
+                let start_date = $("#dateRangeSummaryInputReportDateStart").val()
+                let end_date = $("#dateRangeSummaryInputReportDateEnd").val()
 
                 $('#dateRangeSummaryInputBorderReportDateStart').removeClass("error")
                 $('#dateRangeSummaryInputBorderReportDateEnd').removeClass("error")
 
-                if (StartDate == '') {
+                if (start_date == '') {
                     $('#dateRangeSummaryInputBorderReportDateStart').addClass("error")
                     return
                 }
-                if (EndDate == '') {
+                if (end_date == '') {
                     $('#dateRangeSummaryInputBorderReportDateEnd').addClass("error")
                     return
                 }
 
                 json_blob = {
-                    "start_date": StartDate,
-                    "end_date": EndDate,
+                    "start_date": start_date,
+                    "end_date": end_date,
                     "type_of_query": "date_range_summary",
                 }
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        //alert(`data saved successfully!`)
-
-                        fun_bytes_str = json_response.post_csv_bytes
-                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
-                        let start_date_name = `${ StartDate.substring(5, StartDate.length) + '-' + StartDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                        let start_date_name = `${ start_date.substring(5, start_date.length) + '-' + start_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         start_date_name = start_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
-                        let end_date_name = `${ EndDate.substring(5, EndDate.length) + '-' + EndDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        let end_date_name = `${ end_date.substring(5, end_date.length) + '-' + end_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         end_date_name = end_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
                         var fileName = `DateRangeSummary_${start_date_name}_to_${end_date_name}.csv`;
                         saveAs(blob, fileName);
@@ -132,36 +152,33 @@
 
 
             $('#ytdRangeLastFiveYearsSummarySubmit').on("click", function() {
-
-                let EndDate = $("#ytdRangeLastFiveYearsSummaryInputReportDateEnd").val()
+                let end_date = $("#ytdRangeLastFiveYearsSummaryInputReportDateEnd").val()
                 let today = new Date()
 
                 $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').removeClass("error")
 
-                if (EndDate == '') {
+                if (end_date == '') {
                     $('#ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').addClass("error")
                     return
                 }
 
-                if (parseInt(EndDate.substring(0, 4)) != today.getUTCFullYear()) {
-                    alert(`You selected a date (${EndDate}) that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
+                if (parseInt(end_date.substring(0, 4)) != today.getUTCFullYear()) {
+                    alert(`You selected a date ${end_date} that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
                     return
                 }
 
                 json_blob = {
                     "start_date": null,
-                    "end_date": EndDate,
+                    "end_date": end_date,
                     "type_of_query": "ytd_range_last_five_years_summary",
                 }
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        //alert(`data saved successfully!`)
-
-                        fun_bytes_str = json_response.post_csv_bytes
-                        var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
-                        let yyyy = EndDate.substring(0, 4)
-                        let mm = EndDate.substring(5, 7)
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                        let yyyy = end_date.substring(0, 4)
+                        let mm = end_date.substring(5, 7)
                         let mm_letter
                         (mm == '01')
                             ? mm_letter = 'Jan'
@@ -188,7 +205,7 @@
                                                                     : (mm == '12')
                                                                         ? mm_letter = 'Dec'
                                                                         : mm_letter = 'UnknownMonth'
-                        let dd = EndDate.substring(8, 10)
+                        let dd = end_date.substring(8, 10)
 
                         var fileName = `YTDRangeSummaryForLastFiveYears_Jan.01_to_${mm_letter}.${dd}.csv`;
                         saveAs(blob, fileName);
@@ -199,6 +216,50 @@
                     }
                 )
             })
+
+
+            document.getElementById('fytdAndLastWeekWOArtMaintSummarySubmit').onclick=function() {
+                let end_date = document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputReportDateEnd').value
+                let today = new Date()
+
+                document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.remove("error")
+
+                if (end_date == '') {
+                    document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.add("error")
+                    return
+                }
+
+                let yyyy = Number(end_date.slice(0, 4))
+                let mm   = Number(end_date.slice(5, 7))-1
+                let dd   = Number(end_date.slice(8, 10))
+                end_date = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                if ( end_date > today) {
+                    options = { weekday: 'long', year: 'numeric', }
+                    alert(`You selected a date ${getDateStringFromDate(end_date)} that is in the future. Please pick a date before or equal to ${getDateStringFromDate(today)}`)
+                    return
+                }
+
+                json_blob = {
+                    "start_date": null,
+                    "end_date": getDateStringFromDate(end_date),
+                    "type_of_query": "fytd_n_last_week_wo_art_maint",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+
+                        var fileName = `FYTDAndLastWeekNoArtMaintSummary_${getDateStringFromDate(end_date)}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            }
 
 
         });
