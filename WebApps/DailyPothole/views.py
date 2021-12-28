@@ -2497,7 +2497,7 @@ def GetCsvExport(request):
             ## Create the csv
             writer = csv.writer(dummy_in_mem_file)
             writer.writerow([end_date_obj.strftime("%A, %B %d, %Y") , ''    , ''])
-            writer.writerow(['Potholes Filled'                      , ''    , ''])
+            writer.writerow(['Potholes Repaired'                    , ''    , ''])
             writer.writerow(['Borough'                              , 'FYTD', f'{last_week_monday.strftime("%m/%d/%y")} - {last_week_sunday.strftime("%m/%d/%y")} Activity'])
             for each in no_art_maint_summary:
                 eachrow = [
