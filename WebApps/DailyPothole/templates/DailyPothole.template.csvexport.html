@@ -9,8 +9,6 @@
     <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
     <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -26,6 +24,15 @@
         <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
         <div class="ui one column stackable center aligned page grid">
             <div class="ui form">
+                <div id="dtRgSumm_SelectBorder_Operation" class="field">
+                    <select id="dtRgSumm_Select_Operation" multiple="" class="ui fluid dropdown">
+                        <option value="">All Operations</option>
+                        {% for each in operation_list %}
+                            <option value="{{ each }}">{{ each }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div id="dtRgSumm_InputBorder_DtStart" class="field">
                     <input type="date" id="dtRgSumm_Input_DtStart" value="{{ today }}">
                 </div>
@@ -47,6 +54,15 @@
         <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
         <div class="ui one column stackable center aligned page grid">
             <div class="ui form">
+                <div id="ytdRgL5YrSumm_SelectBorder_Operation" class="field">
+                    <select id="ytdRgL5YrSumm_Select_Operation" multiple="" class="ui fluid dropdown">
+                        <option value="">All Operations</option>
+                        {% for each in operation_list %}
+                            <option value="{{ each }}">{{ each }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div id="ytdRgL5YrSumm_InputBorder_DtEnd" class="field">
                     <input type="date" id="ytdRgL5YrSumm_Input_DtEnd" value="{{ today }}">
                 </div>
@@ -89,6 +105,10 @@
     <script>
         // Similar to Jquery's $(document).ready(function() {...})
         document.addEventListener("DOMContentLoaded", function(event) {
+            // Activate the drop downs from fomantic-ui
+            $('#dtRgSumm_Select_Operation').dropdown()
+            $('#ytdRgL5YrSumm_Select_Operation').dropdown()
+
             // Reset the default viewport from css class container to container-fluid
             // Equivalent to $(".container").attr('class', 'container-fluid')
             nodes = document.getElementsByClassName('container')
@@ -116,6 +136,7 @@
 
 
             document.getElementById('dtRgSumm_Submit').onclick=function() {
+                let operation_list = $('#dtRgSumm_Select_Operation').dropdown('get value')
                 let start_date = document.getElementById('dtRgSumm_Input_DtStart').value
                 let end_date = document.getElementById('dtRgSumm_Input_DtEnd').value
 
@@ -150,6 +171,7 @@
                 json_blob = {
                     "start_date": start_date,
                     "end_date": end_date,
+                    "operation_list": operation_list,
                     "type_of_query": "date_range_summary",
                 }
 
@@ -173,6 +195,7 @@
 
 
             document.getElementById('ytdRgL5YrSumm_Submit').onclick=function() {
+                let operation_list = $('#ytdRgL5YrSumm_Select_Operation').dropdown('get value')
                 let end_date = document.getElementById('ytdRgL5YrSumm_Input_DtEnd').value
                 let today = new Date()
 
@@ -192,6 +215,7 @@
                 json_blob = {
                     "start_date": null,
                     "end_date": end_date,
+                    "operation_list": operation_list,
                     "type_of_query": "ytd_range_last_five_years_summary",
                 }
 

@@ -2119,6 +2119,7 @@ class CsvExportPageView(generic.ListView):
     err_msg = ""
 
     client_is_admin = False
+    operation_list = []
 
     def get_queryset(self):
         # Check for Active Admins
@@ -2130,6 +2131,8 @@ class CsvExportPageView(generic.ListView):
                 complaints_data = TblComplaint.objects.none()
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+            self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
 
         except Exception as e:
             self.req_success = False
@@ -2148,6 +2151,7 @@ class CsvExportPageView(generic.ListView):
             context["err_msg"] = self.err_msg
 
             context["client_is_admin"] = self.client_is_admin
+            context["operation_list"] = self.operation_list
             return context
         except Exception as e:
             self.req_success = False
@@ -2159,6 +2163,7 @@ class CsvExportPageView(generic.ListView):
             context["err_msg"] = self.err_msg
 
             context["client_is_admin"] = False
+            context["operation_list"] = []
             return context
 
 
@@ -2199,6 +2204,7 @@ def GetCsvExport(request):
 
         start_date      = json_blob['start_date']
         end_date        = json_blob['end_date']
+        operation_list  = json_blob['operation_list']
         type_of_query   = json_blob['type_of_query']
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
@@ -2218,6 +2224,10 @@ def GetCsvExport(request):
             ## Initial filtering
             potholes_data = TblPotholeMaster.objects.using('DailyPothole')
             potholes_data = filter_out_excluded_operation_boro(potholes_data)
+            if len(operation_list) != 0:
+                potholes_data = potholes_data.filter(
+                    operation_id__operation__in=operation_list,
+                )
             potholes_data = potholes_data.filter(
                 repair_date__range=[start_date, end_date],
             ).values(
@@ -2277,6 +2287,10 @@ def GetCsvExport(request):
                 | Q(repair_date__range=[year_5_start, year_5_end])
             )
             potholes_data = filter_out_excluded_operation_boro(potholes_data)
+            if len(operation_list) != 0:
+                potholes_data = potholes_data.filter(
+                    operation_id__operation__in=operation_list,
+                )
 
 
             by_year_sum = potholes_data.values(
@@ -2495,7 +2509,6 @@ def GetCsvExport(request):
             writer.writerow(['Total',  no_art_maint_total[0]['sum_repaired_fytd']  , no_art_maint_total[0]['sum_repaired_lwk']])
             writer.writerow([''     , ''                        , ''])
             writer.writerow(['Crews:', no_art_maint_total[0]['sum_crew_count_fytd'], no_art_maint_total[0]['sum_crew_count_lwk']])
-
 
         else:
             raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))
