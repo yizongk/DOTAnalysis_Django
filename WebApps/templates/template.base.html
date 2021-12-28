@@ -38,6 +38,8 @@
             <div>Setting variable "SERVER_TYPE" is not recognized: '{{ settings.SERVER_TYPE }}'</div>
         {% endif %}
 
+        {% block custom_header_msg %}{% endblock %}
+
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Performance Unit WebApps</title>
