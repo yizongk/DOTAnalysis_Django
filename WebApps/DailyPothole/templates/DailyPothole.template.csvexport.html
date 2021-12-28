@@ -26,18 +26,18 @@
         <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
         <div class="ui one column stackable center aligned page grid">
             <div class="ui form">
-                <div id="dateRangeSummaryInputBorderReportDateStart" class="field">
-                    <input type="date" id="dateRangeSummaryInputReportDateStart" value="{{ today }}">
+                <div id="dtRgSumm_InputBorder_DtStart" class="field">
+                    <input type="date" id="dtRgSumm_Input_DtStart" value="{{ today }}">
                 </div>
 
-                <div id="dateRangeSummaryInputBorderReportDateEnd" class="field">
-                    <input type="date" id="dateRangeSummaryInputReportDateEnd" value="{{ today }}">
+                <div id="dtRgSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="dtRgSumm_Input_DtEnd" value="{{ today }}">
                 </div>
 
 
 
                 <div class="d-flex justify-content-center">
-                    <button id="dateRangeSummarySubmit" class="btn btn-default">Get CSV</button>
+                    <button id="dtRgSumm_Submit" class="btn btn-default">Get CSV</button>
                 </div>
 
             </div>
@@ -47,14 +47,14 @@
         <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
         <div class="ui one column stackable center aligned page grid">
             <div class="ui form">
-                <div id="ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd" class="field">
-                    <input type="date" id="ytdRangeLastFiveYearsSummaryInputReportDateEnd" value="{{ today }}">
+                <div id="ytdRgL5YrSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="ytdRgL5YrSumm_Input_DtEnd" value="{{ today }}">
                 </div>
 
 
 
                 <div class="d-flex justify-content-center">
-                    <button id="ytdRangeLastFiveYearsSummarySubmit" class="btn btn-default">Get CSV</button>
+                    <button id="ytdRgL5YrSumm_Submit" class="btn btn-default">Get CSV</button>
                 </div>
 
             </div>
@@ -64,14 +64,14 @@
         <div class="ui horizontal divider">FYTD and Last Week Summary (No Arterial Maintenance): Choose a FYTD End Date</div>
         <div class="ui one column stackable center aligned page grid">
             <div class="ui form">
-                <div id="fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd" class="field">
-                    <input type="date" id="fytdAndLastWeekWOArtMaintSummaryInputReportDateEnd" value="{{ today }}">
+                <div id="fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="fytdAndLWkNoArtMaintSumm_Input_DtEnd" value="{{ today }}">
                 </div>
 
 
 
                 <div class="d-flex justify-content-center">
-                    <button id="fytdAndLastWeekWOArtMaintSummarySubmit" class="btn btn-default">Get CSV</button>
+                    <button id="fytdAndLWkNoArtMaintSumm_Submit" class="btn btn-default">Get CSV</button>
                 </div>
 
             </div>
@@ -115,9 +115,9 @@
             }
 
 
-            document.getElementById('dateRangeSummarySubmit').onclick=function() {
-                let start_date = document.getElementById('dateRangeSummaryInputReportDateStart').value
-                let end_date = document.getElementById('dateRangeSummaryInputReportDateEnd').value
+            document.getElementById('dtRgSumm_Submit').onclick=function() {
+                let start_date = document.getElementById('dtRgSumm_Input_DtStart').value
+                let end_date = document.getElementById('dtRgSumm_Input_DtEnd').value
 
                 let yyyy = Number(start_date.slice(0, 4))
                 let mm   = Number(start_date.slice(5, 7))-1
@@ -129,21 +129,21 @@
                 dd   = Number(end_date.slice(8, 10))
                 end_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
 
-                document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.remove("error")
-                document.getElementById('dateRangeSummaryInputBorderReportDateEnd').classList.remove("error")
+                document.getElementById('dtRgSumm_InputBorder_DtStart').classList.remove("error")
+                document.getElementById('dtRgSumm_InputBorder_DtEnd').classList.remove("error")
 
                 if ( start_date_obj > end_date_obj) {
-                    document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.add("error")
+                    document.getElementById('dtRgSumm_InputBorder_DtStart').classList.add("error")
                     alert(`Your start date ${getDateStringFromDate(start_date_obj)} is greater than your end date ${getDateStringFromDate(end_date_obj)}`)
                     return
                 }
 
                 if (start_date == '') {
-                    document.getElementById('dateRangeSummaryInputBorderReportDateStart').classList.add("error")
+                    document.getElementById('dtRgSumm_InputBorder_DtStart').classList.add("error")
                     return
                 }
                 if (end_date == '') {
-                    document.getElementById('dateRangeSummaryInputBorderReportDateEnd').classList.add("error")
+                    document.getElementById('dtRgSumm_InputBorder_DtEnd').classList.add("error")
                     return
                 }
 
@@ -172,19 +172,19 @@
             }
 
 
-            document.getElementById('ytdRangeLastFiveYearsSummarySubmit').onclick=function() {
-                let end_date = document.getElementById('ytdRangeLastFiveYearsSummaryInputReportDateEnd').value
+            document.getElementById('ytdRgL5YrSumm_Submit').onclick=function() {
+                let end_date = document.getElementById('ytdRgL5YrSumm_Input_DtEnd').value
                 let today = new Date()
 
-                document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.remove("error")
+                document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.remove("error")
 
                 if (end_date == '') {
-                    document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.add("error")
+                    document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.add("error")
                     return
                 }
 
                 if (parseInt(end_date.substring(0, 4)) != today.getUTCFullYear()) {
-                    document.getElementById('ytdRangeLastFiveYearsSummaryInputBorderReportDateEnd').classList.add("error")
+                    document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.add("error")
                     alert(`You selected a date ${end_date} that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
                     return
                 }
@@ -240,14 +240,14 @@
             }
 
 
-            document.getElementById('fytdAndLastWeekWOArtMaintSummarySubmit').onclick=function() {
-                let end_date = document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputReportDateEnd').value
+            document.getElementById('fytdAndLWkNoArtMaintSumm_Submit').onclick=function() {
+                let end_date = document.getElementById('fytdAndLWkNoArtMaintSumm_Input_DtEnd').value
                 let today = new Date()
 
-                document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.remove("error")
+                document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.remove("error")
 
                 if (end_date == '') {
-                    document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.add("error")
+                    document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.add("error")
                     return
                 }
 
@@ -257,7 +257,7 @@
                 end_date = new Date(yyyy, mm, dd) // The mm counts from 0-11
 
                 if ( end_date > today) {
-                    document.getElementById('fytdAndLastWeekWOArtMaintSummaryInputBorderReportDateEnd').classList.add("error")
+                    document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.add("error")
                     options = { weekday: 'long', year: 'numeric', }
                     alert(`You selected a date ${getDateStringFromDate(end_date)} that is in the future. Please pick a date before or equal to ${getDateStringFromDate(today)}`)
                     return
