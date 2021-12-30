@@ -113,4 +113,4 @@ GitHub.sublime-settings
 .history
 
 # Secrets!
-PMU_DjangoWebApps/PMU_DjangoWebApps/secret_settings.py
+secret_settings.py

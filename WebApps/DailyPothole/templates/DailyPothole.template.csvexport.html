@@ -1,0 +1,315 @@
+{% extends 'DailyPothole.template.base.html' %}
+
+{% load static %}
+{% load tz %}
+{% load extra_tags %}
+
+{% block custom_css %}
+    <!-- You MUST include jQuery before Fomantic -->
+    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
+    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="navbar navbar-expand-lg">
+        <h2 class="mt-3">
+            CSV Export
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+
+    {% if client_is_admin %}
+        <div class="ui horizontal divider">Date Range Summary: Choose a date range</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="dtRgSumm_SelectBorder_Operation" class="field">
+                    <select id="dtRgSumm_Select_Operation" multiple="" class="ui fluid dropdown">
+                        <option value="">All Operations</option>
+                        {% for each in operation_list %}
+                            <option value="{{ each }}">{{ each }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="dtRgSumm_InputBorder_DtStart" class="field">
+                    <input type="date" id="dtRgSumm_Input_DtStart" value="{{ today }}">
+                </div>
+
+                <div id="dtRgSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="dtRgSumm_Input_DtEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="dtRgSumm_Submit" class="btn btn-default">Get CSV</button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="ui horizontal divider">YTD Range For Last 5 Years Summary: Choose a yearly end date</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="ytdRgL5YrSumm_SelectBorder_Operation" class="field">
+                    <select id="ytdRgL5YrSumm_Select_Operation" multiple="" class="ui fluid dropdown">
+                        <option value="">All Operations</option>
+                        {% for each in operation_list %}
+                            <option value="{{ each }}">{{ each }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="ytdRgL5YrSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="ytdRgL5YrSumm_Input_DtEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="ytdRgL5YrSumm_Submit" class="btn btn-default">Get CSV</button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="ui horizontal divider">FYTD and Last Week Summary (No Arterial Maintenance): Choose a FYTD End Date</div>
+        <div class="ui one column stackable center aligned page grid">
+            <div class="ui form">
+                <div id="fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd" class="field">
+                    <input type="date" id="fytdAndLWkNoArtMaintSumm_Input_DtEnd" value="{{ today }}">
+                </div>
+
+
+
+                <div class="d-flex justify-content-center">
+                    <button id="fytdAndLWkNoArtMaintSumm_Submit" class="btn btn-default">Get CSV</button>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src={% static 'WebAppsMain/js/FileSaver.min.js' %}></script>
+
+    {% comment %} JS Datatable stuff {% endcomment %}
+    <script>
+        // Similar to Jquery's $(document).ready(function() {...})
+        document.addEventListener("DOMContentLoaded", function(event) {
+            // Activate the drop downs from fomantic-ui
+            $('#dtRgSumm_Select_Operation').dropdown()
+            $('#ytdRgL5YrSumm_Select_Operation').dropdown()
+
+            // Reset the default viewport from css class container to container-fluid
+            // Equivalent to $(".container").attr('class', 'container-fluid')
+            nodes = document.getElementsByClassName('container')
+            for (i=0; i<nodes.length; ++i) {
+                nodes[i].setAttribute('class', 'container-fluid')
+            }
+
+
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+            function getDateStringFromDate(d) {
+                let yyyy = new Intl.DateTimeFormat('en', { year:  'numeric' }).format(d)
+                let mm   = new Intl.DateTimeFormat('en', { month: 'numeric'   }).format(d)
+                let dd   = new Intl.DateTimeFormat('en', { day:   '2-digit' }).format(d)
+
+                return `${yyyy}-${mm}-${dd}`
+            }
+
+
+            document.getElementById('dtRgSumm_Submit').onclick=function() {
+                let operation_list = $('#dtRgSumm_Select_Operation').dropdown('get value')
+                let start_date = document.getElementById('dtRgSumm_Input_DtStart').value
+                let end_date = document.getElementById('dtRgSumm_Input_DtEnd').value
+
+                let yyyy = Number(start_date.slice(0, 4))
+                let mm   = Number(start_date.slice(5, 7))-1
+                let dd   = Number(start_date.slice(8, 10))
+                start_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                yyyy = Number(end_date.slice(0, 4))
+                mm   = Number(end_date.slice(5, 7))-1
+                dd   = Number(end_date.slice(8, 10))
+                end_date_obj = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                document.getElementById('dtRgSumm_InputBorder_DtStart').classList.remove("error")
+                document.getElementById('dtRgSumm_InputBorder_DtEnd').classList.remove("error")
+
+                if ( start_date_obj > end_date_obj) {
+                    document.getElementById('dtRgSumm_InputBorder_DtStart').classList.add("error")
+                    alert(`Your start date ${getDateStringFromDate(start_date_obj)} is greater than your end date ${getDateStringFromDate(end_date_obj)}`)
+                    return
+                }
+
+                if (start_date == '') {
+                    document.getElementById('dtRgSumm_InputBorder_DtStart').classList.add("error")
+                    return
+                }
+                if (end_date == '') {
+                    document.getElementById('dtRgSumm_InputBorder_DtEnd').classList.add("error")
+                    return
+                }
+
+                json_blob = {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "operation_list": operation_list,
+                    "type_of_query": "date_range_summary",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                        let start_date_name = `${ start_date.substring(5, start_date.length) + '-' + start_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        start_date_name = start_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        let end_date_name = `${ end_date.substring(5, end_date.length) + '-' + end_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
+                        end_date_name = end_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
+                        var fileName = `DateRangeSummary_${start_date_name}_to_${end_date_name}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            }
+
+
+            document.getElementById('ytdRgL5YrSumm_Submit').onclick=function() {
+                let operation_list = $('#ytdRgL5YrSumm_Select_Operation').dropdown('get value')
+                let end_date = document.getElementById('ytdRgL5YrSumm_Input_DtEnd').value
+                let today = new Date()
+
+                document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.remove("error")
+
+                if (end_date == '') {
+                    document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.add("error")
+                    return
+                }
+
+                if (parseInt(end_date.substring(0, 4)) != today.getUTCFullYear()) {
+                    document.getElementById('ytdRgL5YrSumm_InputBorder_DtEnd').classList.add("error")
+                    alert(`You selected a date ${end_date} that is not in the current Calendar Year. Please pick a date in ${today.getUTCFullYear()}`)
+                    return
+                }
+
+                json_blob = {
+                    "start_date": null,
+                    "end_date": end_date,
+                    "operation_list": operation_list,
+                    "type_of_query": "ytd_range_last_five_years_summary",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                        let yyyy = end_date.substring(0, 4)
+                        let mm = end_date.substring(5, 7)
+                        let mm_letter
+                        (mm == '01')
+                            ? mm_letter = 'Jan'
+                            : (mm == '02')
+                                ? mm_letter = 'Feb'
+                                : (mm == '03')
+                                    ? mm_letter = 'Mar'
+                                    : (mm == '04')
+                                        ? mm_letter = 'Apr'
+                                        : (mm == '05')
+                                            ? mm_letter = 'May'
+                                            : (mm == '06')
+                                                ? mm_letter = 'Jun'
+                                                : (mm == '07')
+                                                    ? mm_letter = 'Jul'
+                                                    : (mm == '08')
+                                                        ? mm_letter = 'Aug'
+                                                        : (mm == '09')
+                                                            ? mm_letter = 'Sep'
+                                                            : (mm == '10')
+                                                                ? mm_letter = 'Oct'
+                                                                : (mm == '11')
+                                                                    ? mm_letter = 'Nov'
+                                                                    : (mm == '12')
+                                                                        ? mm_letter = 'Dec'
+                                                                        : mm_letter = 'UnknownMonth'
+                        let dd = end_date.substring(8, 10)
+
+                        var fileName = `YTDRangeSummaryForLastFiveYears_Jan.01_to_${mm_letter}.${dd}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            }
+
+
+            document.getElementById('fytdAndLWkNoArtMaintSumm_Submit').onclick=function() {
+                let end_date = document.getElementById('fytdAndLWkNoArtMaintSumm_Input_DtEnd').value
+                let today = new Date()
+
+                document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.remove("error")
+
+                if (end_date == '') {
+                    document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.add("error")
+                    return
+                }
+
+                let yyyy = Number(end_date.slice(0, 4))
+                let mm   = Number(end_date.slice(5, 7))-1
+                let dd   = Number(end_date.slice(8, 10))
+                end_date = new Date(yyyy, mm, dd) // The mm counts from 0-11
+
+                if ( end_date > today) {
+                    document.getElementById('fytdAndLWkNoArtMaintSumm_InputBorder_DtEnd').classList.add("error")
+                    options = { weekday: 'long', year: 'numeric', }
+                    alert(`You selected a date ${getDateStringFromDate(end_date)} that is in the future. Please pick a date before or equal to ${getDateStringFromDate(today)}`)
+                    return
+                }
+
+                json_blob = {
+                    "start_date": null,
+                    "end_date": getDateStringFromDate(end_date),
+                    "operation_list": null,
+                    "type_of_query": "fytd_n_last_week_wo_art_maint",
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        csv_bytes_str = json_response.post_csv_bytes
+                        var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+
+                        var fileName = `FYTDAndLastWeekNoArtMaintSummary_${getDateStringFromDate(end_date)}.csv`;
+                        saveAs(blob, fileName);
+
+                    },
+                    failCallbackFct=function(json_response) {
+                        alert(JSON.stringify(json_response, null, 2))
+                    }
+                )
+            }
+
+
+        });
+    </script>
+{% endblock custom_js %}

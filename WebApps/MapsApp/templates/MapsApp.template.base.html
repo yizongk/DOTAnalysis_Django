@@ -1,0 +1,26 @@
+{% extends 'template.base.html' %}
+
+{% block customize_logo_link %}
+    {% url 'mapsapp_home_view' %}
+{% endblock %}
+
+{% block customize_home_link %}
+    {% url 'mapsapp_home_view' %}
+{% endblock %}
+{% block customize_home_link_name %}
+    Maps App Home
+{% endblock %}
+
+{% block customize_about_link %}
+    {% url 'mapsapp_about_view' %}
+{% endblock %}
+{% block customize_about_link_name %}
+    About
+{% endblock %}
+
+{% block customize_contact_link %}
+    {% url 'mapsapp_contact_view' %}
+{% endblock %}
+
+{% block custom_header_msg %}
+{% endblock %}
