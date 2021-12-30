@@ -594,7 +594,7 @@ def GetCommissionerPMS(request):
         #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
 
 
-        from PMU_DjangoWebApps.secret_settings import OrgChartRootPMS
+        from WebAppsMain.secret_settings import OrgChartRootPMS
 
         emp_data = TblEmployees.objects.using('OrgChartRead').filter(
             pms__exact=f'{OrgChartRootPMS}',

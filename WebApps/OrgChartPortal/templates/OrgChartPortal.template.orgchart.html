@@ -133,10 +133,10 @@
 {% endblock content %}
 
 {% block custom_js %}
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/js/ApiCallWrappers.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3/d3.v7.min.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-org-chart/d3-org-chart@2.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'PMU_DjangoWebApps/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/d3js/d3/d3.v7.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/d3js/d3-org-chart/d3-org-chart@2.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
     <script>
         $(document).ready( function () {
             var chart
@@ -215,7 +215,7 @@
                                             return `
                                             <div style="font-family: 'Inter', sans-serif;background-color:${default_color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
                                                 <div style="background-color:${default_color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
-                                                <img src="{% static 'PMU_DjangoWebApps/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
+                                                <img src="{% static 'WebAppsMain/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
 
                                                 <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
 
