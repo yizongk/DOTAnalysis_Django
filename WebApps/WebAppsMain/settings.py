@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'FleetDataCollection.apps.FleetdatacollectionConfig', # Added by Yi Zong Kuang
     'OrgChartPortal.apps.OrgchartportalConfig', # Added by Yi Zong Kuang
     'DailyPothole.apps.DailypotholeConfig', # Added by Yi Zong Kuang
+    'LookupTableManager.apps.LookuptablemanagerConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
@@ -95,6 +96,7 @@ SETTINGS_EXPORT = [
     'PER_IND_VERSION',
     'DAILY_POTHOLE_VERSION',
     'ORG_CHART_PORTAL_VERSION',
+    'LOOKUP_TABLE_MANAGER_VERSION',
     'FLEET_DATA_COLLECTION_VERSION',
     'MAPS_APP_VERSION',
 ]
@@ -323,7 +325,8 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 
 
 PER_IND_VERSION = '1.0.0'
-MAPS_APP_VERSION = '1.0.0'
 DAILY_POTHOLE_VERSION = '1.1.0'
 ORG_CHART_PORTAL_VERSION = '1.0.1'
+LOOKUP_TABLE_MANAGER_VERSION = '1.0.0'
 FLEET_DATA_COLLECTION_VERSION = '1.0.0'
+MAPS_APP_VERSION = '1.0.0'
