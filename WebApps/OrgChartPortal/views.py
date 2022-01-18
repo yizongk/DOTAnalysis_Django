@@ -10,9 +10,10 @@ import json
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
-        admin_query = TblAdmins.objects.using('OrgChartWrite').filter(
-            windows_username=username,
-            active=True, ## Filters for active Admins
+        admin_query = TblUsers.objects.using('OrgChartWrite').filter(
+            windows_username=username
+            ,active=True
+            ,is_admin=True
         )
         if admin_query.count() > 0:
             return {
@@ -58,9 +59,10 @@ class ContactPageView(TemplateView):
 
 def get_allowed_list_of_wu(username):
     try:
-        wu_query = TblPermissions.objects.using('OrgChartRead').filter(
-            windows_username=username,
-        ).order_by('wu')
+        wu_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+            user_id__windows_username=username
+            ,user_id__active=True
+        ).order_by('wu__wu')
 
         if wu_query.count() > 0:
             return {
@@ -141,8 +143,8 @@ class EmpGridPageView(generic.ListView):
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
                 emp_entries = TblEmployees.objects.using('OrgChartRead').filter(
-                    pms__wu__in=allowed_wu_list,
-                ).order_by('pms__wu')
+                    wu__wu__in=allowed_wu_list,
+                ).order_by('wu__wu')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
@@ -188,8 +190,9 @@ def GetClientWUPermissions(request):
 
     ## Get the data
     try:
-        wu_permissions_query = TblPermissions.objects.using('OrgChartRead').filter(
-                windows_username=remote_user
+        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                user_id__windows_username=remote_user
+                ,user_id__active=True
             ).order_by('wu__wu')
 
         wu_permissions_list_json = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
@@ -222,14 +225,16 @@ def GetClientTeammates(request):
 
     ## Get the data
     try:
-        wu_permissions_query = TblPermissions.objects.using('OrgChartRead').filter(
-                windows_username=remote_user
+        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                user_id__windows_username=remote_user
+                ,user_id__active=True
             ).order_by('wu__wu')
 
         wu_permissions_list_json = wu_permissions_query.values('wu__wu')
 
-        teammates_query = TblPermissions.objects.using('OrgChartRead').filter(
+        teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
                 wu__wu__in=wu_permissions_list_json
+                ,user_id__active=True
             ).order_by('pms__pms')
 
         teammates_list_json = list(teammates_query.values('pms__pms').annotate(pms__first_name=Min('pms__first_name'), pms__last_name=Min('pms__last_name')))
@@ -326,7 +331,7 @@ class OrgChartPageView(generic.ListView):
                 return None
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: OrgChartPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
             return None
 

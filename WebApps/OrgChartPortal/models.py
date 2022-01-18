@@ -71,7 +71,7 @@ class TblDOTSiteFloorSiteTypes(models.Model):
         return self.floor_id
 
 class TblEmployees(models.Model):
-    wu = models.ForeignKey(db_column='WU', to='TblWorkUnitDivisionJoeSubs', to_field='wu', on_delete=models.DO_NOTHING)
+    wu = models.ForeignKey(db_column='WU', to='TblWorkUnits', to_field='wu', on_delete=models.DO_NOTHING)
     last_name = models.CharField(db_column='L-Name', max_length=255)
     first_name = models.CharField(db_column='F-Name', max_length=255)
     pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
@@ -107,7 +107,7 @@ class TblOfficeTitles(models.Model):
     def __str__(self):
         return self.office_title
 
-class TblWorkUnitDivisionJoeSubs(models.Model):
+class TblWorkUnits(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True)
     wu = models.CharField(db_column='WU', max_length=4, unique=True)
     div = models.CharField(db_column='DIV', max_length=255)
@@ -117,36 +117,36 @@ class TblWorkUnitDivisionJoeSubs(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'tblWorkUnitDivisionJoeSubs'
-
-    def __str__(self):
-        return self.subdiv
-
-class TblPermissions(models.Model):
-    id = models.AutoField(db_column='ID', primary_key=True)
-    wu = models.ForeignKey(db_column='WU', to='TblWorkUnitDivisionJoeSubs', to_field='wu', on_delete=models.DO_NOTHING)
-    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
-    windows_username = models.CharField(db_column='WindowsUserName', max_length=255)
-
-    class Meta:
-        managed = False
-        db_table = 'tblPermissions'
+        db_table = 'tblWorkUnits'
 
     def __str__(self):
         return self.wu
 
-class TblAdmins(models.Model):
-    tbl_admins_id = models.AutoField(db_column='', primary_key=True)
-    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING)
-    windows_username = models.CharField(db_column='WindowsUsername', max_length=255)
-    active = models.BooleanField(db_column='Active', blank=False, null=False)
+class TblUsers(models.Model):
+    user_id = models.AutoField(db_column='UserId', primary_key=True)
+    pms = models.ForeignKey(db_column='PMS', to='TblEmployees', to_field='pms', on_delete=models.DO_NOTHING, blank=False, null=False, max_length=7, unique=True)
+    windows_username = models.CharField(db_column='WindowsUsername', max_length=255, blank=False, null=False, unique=True)
+    is_admin = models.BooleanField(db_column='IsAdmin', blank=False, null=False, default=False)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
-        db_table = 'tblAdmins'
+        db_table = 'tblUsers'
 
     def __str__(self):
         return self.windows_username
+
+class TblPermissionsWorkUnit(models.Model):
+    permission_id = models.AutoField(db_column='PermissionId', primary_key=True)
+    user_id = models.ForeignKey(db_column='UserId', to='TblUsers', to_field='user_id', blank=False, null=False, on_delete=models.DO_NOTHING)
+    wu = models.ForeignKey(db_column='WU', to='TblWorkUnits', to_field='wu', blank=False, null=False, on_delete=models.DO_NOTHING, max_length=4)
+
+    class Meta:
+        managed = False
+        db_table = 'tblPermissionsWorkUnit'
+
+    def __str__(self):
+        return self.wu
 
 # class TblPositions(models.Model):
 #     position_id = models.AutoField(db_column='PositionID', primary_key=True)

@@ -223,13 +223,13 @@
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          '');
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      '');
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( '');
+                            $('[data-id="' + td_node.data('id') + '"][data-table="TblWorkUnits"][data-column="SubDivision"]').text( '');
                         }
                         else if ( td_node.data('column') == 'PMS' ) {
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          pms_info[td_node.html()]['wu'] );
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      pms_info[td_node.html()]['last_name'] );
                             $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      pms_info[td_node.html()]['first_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( pms_info[td_node.html()]['subdiv'] );
+                            $('[data-id="' + td_node.data('id') + '"][data-table="TblWorkUnits"][data-column="SubDivision"]').text( pms_info[td_node.html()]['subdiv'] );
                         }
                     }).catch(promise => {
                         console.log(promise);
