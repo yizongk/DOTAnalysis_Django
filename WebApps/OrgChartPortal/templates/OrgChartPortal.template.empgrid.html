@@ -42,63 +42,41 @@
     <table class="table table-striped table-hover" id="JSDataTable">
         <thead>
             <tr>
-                <th>Position ID</th>
-                <th>Reports to Position ID</th>
-                <th>Budgeted BC</th>
-                <th>Position Filled</th>
-                <th>PMS</th>
-                <th>Lv Status</th>
-                <th>Last Name</th>
-                <th>First Name</th>
-                <th>PMS BC</th>
-                <th>T-Code</th>
-                {% comment %}
-                <th>Salary</th>
-                <th>Title</th>
                 <th>WU</th>
-                <th>L-Name</th>
-                <th>F-Name</th>
+                <th>LName</th>
+                <th>FName</th>
                 <th>PMS</th>
                 <th>Title</th>
-                <th>Supervisor Name</th>
-                <th>Office Title</th>
-                <th>Work Location</th>
-                <th>Location Floor</th>
-                <th>Site Type</th>
-                <th>ABC Group</th>
-                {% endcomment %}
+                <th>Supervisor</th>
+                <th>OfficeTitle</th>
+                <th>WorkLocation</th>
+                <th>LocationFloor</th>
+                <th>SiteType</th>
+                <th>ABCGroup</th>
             </tr>
         </thead>
 
         <body id="JSDataTableBody">
             {% for entry in emp_entries %}
-            <tr>
-                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="PositionID">{{ entry.position_id }}</td>
-                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="ReportsToPositionID">{{ entry.reports_to_position_id }}</td>
-            </tr>
+                <tr>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="PMS#">{{ entry.pms }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.title }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="SupervisorPMS">
+                        {% if entry.supervisor_pms.last_name and entry.supervisor_pms.first_name %}
+                            {{ entry.supervisor_pms.last_name }}, {{ entry.supervisor_pms.first_name }}
+                        {% else %}
+                        {% endif %}
+                    </td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="OfficeTitle">{{ entry.office_title }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteId">{{ entry.actual_site_id.site }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualFloorId">{{ entry.actual_floor_id.floor }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteTypeId">{{ entry.actual_site_type_id.site_type }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ABCGroup">{{ entry.abc_group }}</td>
+                </tr>
             {% endfor %}
-
-            {% comment %} {% for entry in emp_entries %}
-            <tr>
-
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="PMS#">{{ entry.pms }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.title }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="SupervisorPMS">
-                    {% if entry.supervisor_pms.last_name and entry.supervisor_pms.first_name %}
-                        {{ entry.supervisor_pms.last_name }}, {{ entry.supervisor_pms.first_name }}
-                    {% else %}
-                    {% endif %}
-                </td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="OfficeTitle">{{ entry.office_title }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteId">{{ entry.actual_site_id.site }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualFloorId">{{ entry.actual_floor_id.floor }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteTypeId">{{ entry.actual_site_type_id.site_type }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ABCGroup">{{ entry.abc_group }}</td>
-            </tr>
-            {% endfor %} {% endcomment %}
         </body>
     </table>
 

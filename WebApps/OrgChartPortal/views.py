@@ -7,6 +7,9 @@ from django.db.models import Min, Q
 import json
 
 
+# Create your views here.
+
+
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
@@ -32,7 +35,6 @@ def user_is_active_admin(username):
         }
 
 
-# Create your views here.
 class HomePageView(TemplateView):
     template_name = 'OrgChartPortal.template.home.html'
     client_is_admin = False
@@ -91,50 +93,14 @@ class EmpGridPageView(generic.ListView):
 
     client_is_admin = False
 
-    ## TODO Implement Admin in database
-    # def get_queryset(self):
-    #     ## Check for Active Admins
-    #     # is_active_admin = user_is_active_admin(self.request.user)
-    #     # if is_active_admin["success"] == True:
-    #     #     self.client_is_admin = True
-    #     # else:
-    #     #     self.req_success = False
-
-    #     ## Get the core data
-    #     try:
-    #         if self.client_is_admin:
-    #             pms_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
-    #         else:
-    #             allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
-    #             if allowed_wu_list_obj['success'] == False:
-    #                 raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
-    #             else:
-    #                 allowed_wu_list = allowed_wu_list_obj['wu_list']
-
-    #             pms_entries = TblEmployees.objects.using('OrgChartRead').filter(
-    #                 wu__in=allowed_wu_list,
-    #             ).order_by('wu')
-    #     except Exception as e:
-    #         self.req_success = False
-    #         self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
-    #         print(self.err_msg)
-    #         return TblEmployees.objects.none()
-
-    #     self.req_success = True
-    #     return pms_entries
-
     def get_queryset(self):
         ## Check for Active Admins
-        # is_active_admin = user_is_active_admin(self.request.user)
-        # if is_active_admin["success"] == True:
-        #     self.client_is_admin = True
-        # else:
-        #     self.client_is_admin = False
+        self.client_is_admin = user_is_active_admin(self.request.user)['isAdmin']
 
         ## Get the core data
         try:
             if self.client_is_admin:
-                emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu')
+                emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu__wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -276,8 +242,8 @@ def GetEmpGridStats(request):
             allowed_wu_list = allowed_wu_list_obj['wu_list']
 
         client_orgchart_data = TblEmployees.objects.using('OrgChartRead').filter(
-            wu__in=allowed_wu_list,
-        ).order_by('wu')
+            wu__wu__in=allowed_wu_list,
+        ).order_by('wu__wu')
 
         emp_grid_stats_list_json = list(client_orgchart_data.values('pms').annotate(pms__first_name=Min('first_name'), pms__last_name=Min('last_name')))
 
@@ -569,6 +535,7 @@ def GetEmpCsv(request):
         })
 
 
+## @TODO: Dont have a hard coded commisioner pms, serach for DOT commisioner office title, and active for that person
 def GetCommissionerPMS(request):
     ## Authenticate User
     remote_user = None
