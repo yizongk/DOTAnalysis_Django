@@ -11,7 +11,14 @@
     <!-- <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" /> -->
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
-    {% endblock %}
+
+    <style>
+        /* This is needed to allow AG Grid's css percentage height to work. Reason being that its parent div must also have a percentage height to contain it correctly, otherwise AG Grid will collapse to nothing */
+        .container-fluid {
+            height: 80%;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
     <div class="navbar navbar-expand-lg">
@@ -41,7 +48,7 @@
     </div> {% endcomment %}
 
     {% comment %} AG Grid {% endcomment %}
-    <div id="AGGrid" class="ag-theme-alpine" style="height: 800px; width:1500px;"></div>
+    <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
 
     {% comment %} Footer {% endcomment %}
     {% comment %} <div>
@@ -89,7 +96,8 @@
                 // Objects like myRowData and myColDefs would be created in your application
                 columnDefs: emp_col_def,
                 rowData: emp_data,
-                pagination: true,
+                //pagination: true,
+                domLayout: 'normal',
             }
 
             const gridDiv = document.getElementById('AGGrid');
