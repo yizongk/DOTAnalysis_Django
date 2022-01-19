@@ -84,7 +84,24 @@ def get_allowed_list_of_wu(username):
         }
 
 
-def get_active_emp_qryset():
+def get_active_emp_qryset(
+        col_list = [  ## specifiy the list of columns that you want
+            'pms'
+            ,'lv'
+            ,'wu__wu'
+            ,'last_name'
+            ,'first_name'
+            ,'civil_title'
+            ,'supervisor_pms__last_name'
+            ,'supervisor_pms__first_name'
+            ,'office_title'
+            ,'actual_site_id__site'
+            ,'actual_floor_id__floor'
+            ,'actual_site_type_id__site_type'
+            ,'abc_group'
+        ]
+    ):
+
     return TblEmployees.objects.using('OrgChartRead').filter(
         lv__in=[
             'B'
@@ -96,23 +113,20 @@ def get_active_emp_qryset():
             ,'R'
             ,'S'
         ]
-    ).select_related( ## To speed up the query, need to preload the required columns
-        'wu'
-        ,'supervisor_pms'
-        ,'actual_site_id'
-        ,'actual_floor_id'
-        ,'actual_site_type_id'
-    )
+    ).values(*col_list) ## To speed up the query, need to specify only the columns that is needed
 
 
 class EmpGridPageView(generic.ListView):
-    template_name = 'OrgChartPortal.template.empgrid.html'
-    context_object_name = 'emp_entries'
+    template_name           = 'OrgChartPortal.template.empgrid.html'
+    context_object_name     = 'emp_entries'
 
-    req_success = False
-    err_msg = ""
+    req_success             = False
+    err_msg                 = ""
 
-    client_is_admin = False
+    client_is_admin         = False
+
+    emp_entry_columns_json  = None
+    emp_entries_json        = None
 
     def get_queryset(self):
         ## Check for Active Admins
@@ -120,8 +134,26 @@ class EmpGridPageView(generic.ListView):
 
         ## Get the core data
         try:
+            ag_grid_col_def = [ ## Need to format this way for AG Grid
+                {'headerName': 'PMS'              , 'field': 'pms'}
+                ,{'headerName': 'Lv'              , 'field': 'lv'}
+                ,{'headerName': 'WU'              , 'field': 'wu__wu'}
+                ,{'headerName': 'LastName'        , 'field': 'last_name'}
+                ,{'headerName': 'FirstName'       , 'field': 'first_name'}
+                ,{'headerName': 'Title'           , 'field': 'civil_title'}
+                ,{'headerName': 'SupLastName'     , 'field': 'supervisor_pms__last_name'}
+                ,{'headerName': 'SupFirstName'    , 'field': 'supervisor_pms__first_name'}
+                ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
+                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
+                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
+                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type'}
+                ,{'headerName': 'ABCGroup'        , 'field': 'abc_group'}
+            ]
+
+            col_list = [each['field'] for each in ag_grid_col_def]
+
             if self.client_is_admin:
-                emp_entries = get_active_emp_qryset().order_by('wu__wu')
+                emp_entries = get_active_emp_qryset(col_list=col_list).order_by('wu__wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -129,9 +161,16 @@ class EmpGridPageView(generic.ListView):
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-                emp_entries = get_active_emp_qryset().filter(
+                emp_entries = get_active_emp_qryset(col_list=col_list).filter(
                     wu__wu__in=allowed_wu_list,
                 ).order_by('wu__wu')
+
+            import json
+            from django.core.serializers.json import DjangoJSONEncoder
+
+            self.emp_entry_columns_json     = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
+            self.emp_entries_json           = json.dumps(list(emp_entries), cls=DjangoJSONEncoder)
+
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
@@ -139,27 +178,33 @@ class EmpGridPageView(generic.ListView):
             return None
 
         self.req_success = True
-        return emp_entries
+        return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["req_success"]              = self.req_success
+            context["err_msg"]                  = self.err_msg
 
-            context["client_is_admin"] = self.client_is_admin
+            context["client_is_admin"]          = self.client_is_admin
+
+            context["emp_entry_columns_json"]   = self.emp_entry_columns_json
+            context["emp_entries_json"]         = self.emp_entries_json
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.req_success                    = False
+            self.err_msg                        = "Exception: get_context_data(): {}".format(e)
             print(self.err_msg)
 
-            context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context                             = super().get_context_data(**kwargs)
+            context["req_success"]              = self.req_success
+            context["err_msg"]                  = self.err_msg
 
-            context["client_is_admin"] = False
+            context["client_is_admin"]          = False
+
+            context["emp_entry_columns_json"]   = None
+            context["emp_entries_json"]         = None
             return context
 
 

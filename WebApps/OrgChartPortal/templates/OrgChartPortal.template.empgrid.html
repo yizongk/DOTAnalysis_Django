@@ -8,8 +8,10 @@
     <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
 
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
-{% endblock %}
+    <!-- <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" /> -->
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
+    {% endblock %}
 
 {% block content %}
     <div class="navbar navbar-expand-lg">
@@ -38,50 +40,11 @@
         </div>
     </div> {% endcomment %}
 
-    {% comment %} JS Datatable {% endcomment %}
-    <table class="table table-striped table-hover" id="AGGrid">
-        <thead>
-            <tr>
-                <th>WU</th>
-                <th>LName</th>
-                <th>FName</th>
-                <th>PMS</th>
-                <th>Title</th>
-                <th>Supervisor</th>
-                <th>OfficeTitle</th>
-                <th>WorkLocation</th>
-                <th>LocationFloor</th>
-                <th>SiteType</th>
-                <th>ABCGroup</th>
-            </tr>
-        </thead>
-
-        <body id="AGGridBody">
-            {% for entry in emp_entries %}
-                <tr>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="PMS#">{{ entry.pms }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.civil_title }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="SupervisorPMS">
-                        {% if entry.supervisor_pms.last_name and entry.supervisor_pms.first_name %}
-                            {{ entry.supervisor_pms.last_name }}, {{ entry.supervisor_pms.first_name }}
-                        {% else %}
-                        {% endif %}
-                    </td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="OfficeTitle">{{ entry.office_title }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteId">{{ entry.actual_site_id.site }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualFloorId">{{ entry.actual_floor_id.floor }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteTypeId">{{ entry.actual_site_type_id.site_type }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ABCGroup">{{ entry.abc_group }}</td>
-                </tr>
-            {% endfor %}
-        </body>
-    </table>
+    {% comment %} AG Grid {% endcomment %}
+    <div id="AGGrid" class="ag-theme-alpine" style="height: 800px; width:1500px;"></div>
 
     {% comment %} Footer {% endcomment %}
-    <div>
+    {% comment %} <div>
         <div>Supervisor Field Complete</div>
         <div>OfficeTitle Field Complete</div>
         <div>Refresh button??? or just ask user to refresh page?</div>
@@ -90,7 +53,7 @@
         <div>Inactive Supervisor Stuff</div>
         <div>Empty or Invalid Floor Combination with WorkLocation: Floor needs updating</div>
         <div>Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating</div>
-    </div>
+    </div> {% endcomment %}
 
 {% endblock content %}
 
@@ -98,12 +61,16 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
 
     {% comment %} AG Grid stuff {% endcomment %}
     <script>
-        $(document).ready( function () {
+        document.addEventListener("DOMContentLoaded", function(event) {
             // Reset the default viewport from css class container to container-fluid
-            $(".container").attr('class', 'container-fluid')
+            nodes = document.getElementsByClassName('container')
+            for (i=0; i<nodes.length; ++i) {
+                nodes[i].setAttribute('class', 'container-fluid')
+            }
 
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
@@ -114,43 +81,20 @@
                 }
             });
 
+            var emp_col_def = {{ emp_entry_columns_json|safe }};
+            var emp_data = {{ emp_entries_json|safe }};
 
+            var gridOptions = {
+                // PROPERTIES
+                // Objects like myRowData and myColDefs would be created in your application
+                columnDefs: emp_col_def,
+                rowData: emp_data,
+                pagination: true,
+            }
 
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
 
-
-
-
-            /*
-            // Add extra row to the HTML table's header for individual column filtering
-            $('#AGGrid thead tr').clone(true).appendTo( '#AGGrid thead' );
-            $('#AGGrid thead tr:eq(1) th').each( function (i) {
-                var title = $(this).text();
-                $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
-
-                $( 'input', this ).on( 'keyup change', function() {
-                    if ( table.column(i).search() !== this.value ) {
-                        table
-                            .column(i)
-                            .search( this.value )
-                            .draw();
-                    }
-                });
-            } );
-
-            var table = $('#AGGrid').DataTable({
-                dom: 'Blfrtip',  // Look at the documention on the possible options: https://datatables.net/reference/option/dom
-                buttons: [
-                    {
-                        extend: 'csv',
-                        text: 'Download as CSV',
-                    }
-                ],
-                orderCellsTop: true,
-                fixedHeader: true,
-                pageLength: 10,
-                lengthMenu: [ 10, 25, 50, 75, 100 ]
-            });
-            */
 
             /*
             // For cell select mode
