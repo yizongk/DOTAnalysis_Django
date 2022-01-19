@@ -84,6 +84,27 @@ def get_allowed_list_of_wu(username):
         }
 
 
+def get_active_emp_qryset():
+    return TblEmployees.objects.using('OrgChartRead').filter(
+        lv__in=[
+            'B'
+            ,'C'
+            ,'K'
+            ,'M'
+            ,'N'
+            ,'Q'
+            ,'R'
+            ,'S'
+        ]
+    ).select_related( ## To speed up the query, need to preload the required columns
+        'wu'
+        ,'supervisor_pms'
+        ,'actual_site_id'
+        ,'actual_floor_id'
+        ,'actual_site_type_id'
+    )
+
+
 class EmpGridPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.empgrid.html'
     context_object_name = 'emp_entries'
@@ -100,7 +121,7 @@ class EmpGridPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                emp_entries = TblEmployees.objects.using('OrgChartRead').all().order_by('wu__wu')
+                emp_entries = get_active_emp_qryset().order_by('wu__wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -108,7 +129,7 @@ class EmpGridPageView(generic.ListView):
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-                emp_entries = TblEmployees.objects.using('OrgChartRead').filter(
+                emp_entries = get_active_emp_qryset().filter(
                     wu__wu__in=allowed_wu_list,
                 ).order_by('wu__wu')
         except Exception as e:

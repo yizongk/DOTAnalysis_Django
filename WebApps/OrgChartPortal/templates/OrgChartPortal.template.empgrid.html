@@ -39,7 +39,7 @@
     </div> {% endcomment %}
 
     {% comment %} JS Datatable {% endcomment %}
-    <table class="table table-striped table-hover" id="JSDataTable">
+    <table class="table table-striped table-hover" id="AGGrid">
         <thead>
             <tr>
                 <th>WU</th>
@@ -56,14 +56,14 @@
             </tr>
         </thead>
 
-        <body id="JSDataTableBody">
+        <body id="AGGridBody">
             {% for entry in emp_entries %}
                 <tr>
                     <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
                     <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
                     <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
                     <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="PMS#">{{ entry.pms }}</td>
-                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.title }}</td>
+                    <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.civil_title }}</td>
                     <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="SupervisorPMS">
                         {% if entry.supervisor_pms.last_name and entry.supervisor_pms.first_name %}
                             {{ entry.supervisor_pms.last_name }}, {{ entry.supervisor_pms.first_name }}
@@ -99,7 +99,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
 
-    {% comment %} JS Datatable stuff {% endcomment %}
+    {% comment %} AG Grid stuff {% endcomment %}
     <script>
         $(document).ready( function () {
             // Reset the default viewport from css class container to container-fluid
@@ -114,9 +114,16 @@
                 }
             });
 
+
+
+
+
+
+
+            /*
             // Add extra row to the HTML table's header for individual column filtering
-            $('#JSDataTable thead tr').clone(true).appendTo( '#JSDataTable thead' );
-            $('#JSDataTable thead tr:eq(1) th').each( function (i) {
+            $('#AGGrid thead tr').clone(true).appendTo( '#AGGrid thead' );
+            $('#AGGrid thead tr:eq(1) th').each( function (i) {
                 var title = $(this).text();
                 $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
 
@@ -130,7 +137,7 @@
                 });
             } );
 
-            var table = $('#JSDataTable').DataTable({
+            var table = $('#AGGrid').DataTable({
                 dom: 'Blfrtip',  // Look at the documention on the possible options: https://datatables.net/reference/option/dom
                 buttons: [
                     {
@@ -143,8 +150,9 @@
                 pageLength: 10,
                 lengthMenu: [ 10, 25, 50, 75, 100 ]
             });
+            */
 
-            {% comment %}
+            /*
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
                 if ( $(this).data('column') == 'PMS' ) {
@@ -176,18 +184,14 @@
                     return 0
                 }
             });
-            {% endcomment %}
 
-            {% comment %}
             $(document).on("keyup", ".input-data-select", function (e) {
                 var key = e.which;
                 if (key === 27) { // 27 is the ESC key
                     cancelSelectMode(this);
                 }
             });
-            {% endcomment %}
 
-            {% comment %}
             $(document).on("change", ".input-data-select", function () {
                 if ( ($(this).parent().data('column') == 'PMS') || ($(this).parent().data('column') == 'Class2') ) {
                     sendCellToServer(node=this, api_url="update_m5_driver_vehicle_data_confirmations", http_request_method="POST", cell_html_type="select")
@@ -219,7 +223,7 @@
                     return 0
                 }
             });
-            {% endcomment %}
+            */
 
         });
     </script>
