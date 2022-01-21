@@ -94,6 +94,7 @@
             var gridOptions = {
                 // PROPERTIES
                 // Objects like myRowData and myColDefs would be created in your application
+                getRowNodeId: (data) => data.pms,
                 columnDefs: emp_col_def,
                 rowData: emp_data,
                 //pagination: true,
