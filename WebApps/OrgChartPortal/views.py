@@ -3,7 +3,8 @@ from django.views.generic import TemplateView
 from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.db.models import Min, Q
+from django.db.models import Min, Q, F, Value
+from django.db.models.functions import Concat
 import json
 
 
@@ -85,7 +86,7 @@ def get_allowed_list_of_wu(username):
 
 
 def get_active_emp_qryset(
-        col_list = [  ## specifiy the list of columns that you want
+        fields_list = [  ## specifiy the list of columns that you want
             'pms'
             ,'lv'
             ,'wu__wu'
@@ -100,9 +101,34 @@ def get_active_emp_qryset(
             ,'actual_site_type_id__site_type'
             ,'abc_group'
         ]
+        ,custom_annotate_fct = None
     ):
+    '''
+    @fields_list
+        A list of fields that is returned in the final qryset. Must also include any new field names that is created in the function given in @custom_annotate_fct
 
-    return TblEmployees.objects.using('OrgChartRead').filter(
+    @custom_annotate_fct:
+        The function that will be called to annotate the qryset for additional fields of data.
+        The new annotated field names must also be in @fields_list, otherwise those new fields won't be part of the final qryset that is returned.
+
+        Expects only one argument called 'qryset' which is must be a Django Queryset.
+        Example:
+            def annotate_fct(qryset):
+                qryset = qryset.annotate(supervisor_pms__full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') ))
+                qryset = qryset.annotate(emp_full_name_and_pms=...)
+                qryset = qryset.annotate(...)
+                return qryset
+                ...
+
+            final_qryset = get_active_emp_qryset(
+                ...
+                fields_list = ['supervisor_pms__full_name', 'emp_full_name_and_pms', ...]
+                custom_annotate_fct = annotate_fct
+                ...
+            )
+    '''
+
+    qryset = TblEmployees.objects.using('OrgChartRead').filter(
         lv__in=[
             'B'
             ,'C'
@@ -113,7 +139,13 @@ def get_active_emp_qryset(
             ,'R'
             ,'S'
         ]
-    ).values(*col_list) ## To speed up the query, need to specify only the columns that is needed
+    )
+
+    if custom_annotate_fct is not None:
+        qryset = custom_annotate_fct(qryset)
+
+    ## To speed up the query, need to specify only the columns that is needed, so that django do a one-time query of the entire related dataset.
+    return qryset.values(*fields_list)
 
 
 class EmpGridPageView(generic.ListView):
@@ -134,6 +166,11 @@ class EmpGridPageView(generic.ListView):
 
         ## Get the core data
         try:
+            def annotate_sup_full_name(qryset):
+                return qryset.annotate(
+                    supervisor_pms__full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+                )
+
             ag_grid_col_def = [ ## Need to format this way for AG Grid
                 {'headerName': 'PMS'              , 'field': 'pms'}
                 ,{'headerName': 'Lv'              , 'field': 'lv'}
@@ -141,8 +178,7 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'LastName'        , 'field': 'last_name'}
                 ,{'headerName': 'FirstName'       , 'field': 'first_name'}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'}
-                ,{'headerName': 'SupLastName'     , 'field': 'supervisor_pms__last_name'}
-                ,{'headerName': 'SupFirstName'    , 'field': 'supervisor_pms__first_name'}
+                ,{'headerName': 'SupFullName'     , 'field': 'supervisor_pms__full_name'}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
                 ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
@@ -150,10 +186,13 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'ABCGroup'        , 'field': 'abc_group'}
             ]
 
-            col_list = [each['field'] for each in ag_grid_col_def]
+            fields_list = [each['field'] for each in ag_grid_col_def]
 
             if self.client_is_admin:
-                emp_entries = get_active_emp_qryset(col_list=col_list).order_by('wu__wu')
+                emp_entries = get_active_emp_qryset(
+                    fields_list=fields_list
+                    ,custom_annotate_fct=annotate_sup_full_name
+                ).order_by('wu__wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -161,7 +200,10 @@ class EmpGridPageView(generic.ListView):
                 else:
                     allowed_wu_list = allowed_wu_list_obj['wu_list']
 
-                emp_entries = get_active_emp_qryset(col_list=col_list).filter(
+                emp_entries = get_active_emp_qryset(
+                    fields_list=fields_list
+                    ,custom_annotate_fct=annotate_sup_full_name
+                ).filter(
                     wu__wu__in=allowed_wu_list,
                 ).order_by('wu__wu')
 
