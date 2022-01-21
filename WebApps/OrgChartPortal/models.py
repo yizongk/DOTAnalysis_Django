@@ -71,18 +71,22 @@ class TblDOTSiteFloorSiteTypes(models.Model):
         return self.floor_id
 
 class TblEmployees(models.Model):
-    wu = models.ForeignKey(db_column='WU', to='TblWorkUnits', to_field='wu', on_delete=models.DO_NOTHING)
+    '''
+    Some of the ForeignKey has null=True, to allow for Django Queryset to use LEFT JOIN/LEFT OUTER JOIN (They are the same MS Sql Server) instead of INNER JOIN.
+    This way, the LEFT JOIN will keeps rows with NULL fks.
+    '''
+    wu = models.ForeignKey(db_column='WU', to='TblWorkUnits', to_field='wu', on_delete=models.DO_NOTHING, null=True)
     last_name = models.CharField(db_column='L-Name', max_length=255)
     first_name = models.CharField(db_column='F-Name', max_length=255)
     pms = models.CharField(db_column='PMS#', primary_key=True, max_length=7)
 
     civil_title = models.CharField(db_column='Title', max_length=255)
-    supervisor_pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='SupervisorPMS', max_length=7, on_delete=models.DO_NOTHING)
+    supervisor_pms = models.ForeignKey(to='TblEmployees', to_field='pms', db_column='SupervisorPMS', max_length=7, on_delete=models.DO_NOTHING, null=True)
     office_title = models.CharField(db_column='OfficeTitle', max_length=255)  ## Should a foreign key to tblOfficeTitles, but this logic is not in the over arching umbrella yet.
 
-    actual_site_id = models.ForeignKey(TblDOTSites, to_field='site_id', db_column='ActualSiteId', max_length=255, on_delete=models.DO_NOTHING)
-    actual_floor_id = models.ForeignKey(TblDOTSiteFloors, to_field='floor_id', db_column='ActualFloorId', max_length=255, on_delete=models.DO_NOTHING)
-    actual_site_type_id = models.ForeignKey(TblDOTSiteTypes, to_field='site_type_id', db_column='ActualSiteTypeId', on_delete=models.DO_NOTHING)
+    actual_site_id = models.ForeignKey(TblDOTSites, to_field='site_id', db_column='ActualSiteId', max_length=255, on_delete=models.DO_NOTHING, null=True)
+    actual_floor_id = models.ForeignKey(TblDOTSiteFloors, to_field='floor_id', db_column='ActualFloorId', max_length=255, on_delete=models.DO_NOTHING, null=True)
+    actual_site_type_id = models.ForeignKey(TblDOTSiteTypes, to_field='site_type_id', db_column='ActualSiteTypeId', on_delete=models.DO_NOTHING, null=True)
 
     abc_group = models.CharField(db_column='ABCGroup', max_length=1)
 
