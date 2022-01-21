@@ -168,7 +168,7 @@ class EmpGridPageView(generic.ListView):
         try:
             def annotate_sup_full_name(qryset):
                 return qryset.annotate(
-                    supervisor_pms__full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+                    annotated__supervisor_full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
@@ -178,7 +178,7 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'LastName'        , 'field': 'last_name'}
                 ,{'headerName': 'FirstName'       , 'field': 'first_name'}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'}
-                ,{'headerName': 'SupFullName'     , 'field': 'supervisor_pms__full_name'}
+                ,{'headerName': 'SupFullName'     , 'field': 'annotated__supervisor_full_name'}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
                 ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
