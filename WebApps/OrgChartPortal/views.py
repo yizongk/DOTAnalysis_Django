@@ -183,7 +183,6 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
                 ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
                 ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type'}
-                ,{'headerName': 'ABCGroup'        , 'field': 'abc_group'}
             ]
 
             fields_list = [each['field'] for each in ag_grid_col_def]
