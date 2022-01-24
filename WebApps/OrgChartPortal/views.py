@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.db.models import Min, Q, F, Value
+from django.db.models import Min, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
 
@@ -168,7 +168,13 @@ class EmpGridPageView(generic.ListView):
         try:
             def annotate_sup_full_name(qryset):
                 return qryset.annotate(
-                    annotated__supervisor_full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+                    annotated__supervisor_full_name=Case(
+                        When(
+                            supervisor_pms__pms__isnull=False
+                            ,then=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+                        )
+                        ,default=None
+                    )
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
