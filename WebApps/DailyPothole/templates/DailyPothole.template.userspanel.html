@@ -125,7 +125,7 @@
                 select_array.sort(function(x, y) {
                     return x == current_value ? -1 : y == current_value ? 1 : 0;
                 });
-                enterCellEditSelectMode($(this), select_array)
+                enterCellEditSelectMode(td_node=$(this), selections=select_array)
             });
 
             $(document).on("keyup", ".input-data-select", function (e) {
