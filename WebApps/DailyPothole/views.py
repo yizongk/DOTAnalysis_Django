@@ -368,7 +368,7 @@ def UpdatePotholesData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -525,7 +525,7 @@ def UpdateComplaintsData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -676,7 +676,7 @@ def LookupComplaintsData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -750,7 +750,7 @@ def LookupComplaintsData(request):
 def GetPDFReport(request):
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1367,7 +1367,7 @@ def LookupPotholesAndCrewData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1551,7 +1551,7 @@ def AddUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1631,7 +1631,7 @@ def UpdateUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1717,7 +1717,7 @@ def DeleteUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1851,7 +1851,7 @@ def AddUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -1948,7 +1948,7 @@ def UpdateUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -2047,7 +2047,7 @@ def DeleteUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
@@ -2170,7 +2170,7 @@ class CsvExportPageView(generic.ListView):
 def GetCsvExport(request):
     if request.method != "POST":
         return JsonResponse({
-            "post_success": True,
+            "post_success": False,
             "post_msg": "{} HTTP request not supported".format(request.method),
         })
 
