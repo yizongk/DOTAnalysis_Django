@@ -167,16 +167,16 @@ class EmpGridPageView(generic.ListView):
 
         ## Get the core data
         try:
-            def annotate_sup_full_name(qryset):
-                return qryset.annotate(
-                    annotated__supervisor_full_name=Case(
-                        When(
-                            supervisor_pms__pms__isnull=False
-                            ,then=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
-                        )
-                        ,default=None
-                    )
-                )
+            # def annotate_sup_full_name(qryset):
+            #     return qryset.annotate(
+            #         annotated__supervisor_full_name=Case(
+            #             When(
+            #                 supervisor_pms__pms__isnull=False
+            #                 ,then=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+            #             )
+            #             ,default=None
+            #         )
+            #     )
 
             def annotate_emp_full_name(qryset):
                 return qryset.annotate(
@@ -190,7 +190,7 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'LastName'        , 'field': 'last_name'}
                 ,{'headerName': 'FirstName'       , 'field': 'first_name'}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'}
-                ,{'headerName': 'SupFullName'     , 'field': 'annotated__supervisor_full_name'}
+                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
                 ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
@@ -202,7 +202,7 @@ class EmpGridPageView(generic.ListView):
             if self.client_is_admin:
                 emp_entries = get_active_emp_qryset(
                     fields_list=fields_list
-                    ,custom_annotate_fct=annotate_sup_full_name
+                    # ,custom_annotate_fct=annotate_sup_full_name
                 ).order_by('wu__wu')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
@@ -213,7 +213,7 @@ class EmpGridPageView(generic.ListView):
 
                 emp_entries = get_active_emp_qryset(
                     fields_list=fields_list
-                    ,custom_annotate_fct=annotate_sup_full_name
+                    # ,custom_annotate_fct=annotate_sup_full_name
                 ).filter(
                     wu__wu__in=allowed_wu_list,
                 ).order_by('wu__wu')
@@ -272,6 +272,7 @@ class EmpGridPageView(generic.ListView):
             return context
 
 
+## @TODO For front org chart view, the following. Move this chunk of code up before EmpGridPageView()
 def GetClientWUPermissions(request):
     ## Authenticate User
     remote_user = None

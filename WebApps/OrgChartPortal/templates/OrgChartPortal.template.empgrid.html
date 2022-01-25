@@ -74,9 +74,25 @@
     <script>
         var emp_col_def     = {{ emp_entry_columns_json|safe }};
         var emp_data        = {{ emp_entries_json|safe }};
-        var sup_dropdown    = {{ supervisor_dropdown_list_json|safe }};
+        var sup_dropdown    = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
         // Add a dummy object for empty superivor full name in the sort of the select list
         sup_dropdown.push({'pms': null, 'annotated__full_name': null})
+
+        var sup_name_from_pms = {};
+        for (const i in sup_dropdown) { sup_name_from_pms[sup_dropdown[i].pms] = sup_dropdown[i].annotated__full_name }
+
+        class SupervisorRenderer {
+            init(params) {
+                let sup_pms         = params.value
+                let sup_fullname    = sup_name_from_pms[sup_pms]
+                this.eGui = document.createElement('div');
+                this.eGui.innerHTML = sup_fullname;
+            }
+
+            getGui() {
+                return this.eGui;
+            }
+        }
 
         class SupervisorEditor {
             init(params) {
@@ -85,24 +101,25 @@
 
                 // Reset select list's sort to sort by alphabet
                 select_array.sort(function(x, y) {
-                    if (x.annotated__full_name == null && y.annotated__full_name == null)   { return 0; }
-                    if (x.annotated__full_name == null)                                     { return -1; }
-                    if (y.annotated__full_name == null)                                     { return 1; }
+                    if (x.pms == null && y.pms == null)   { return 0; }
+                    if (x.pms == null)                    { return -1; }
+                    if (y.pms == null)                    { return 1; }
 
-                    let x1 = x.annotated__full_name.toUpperCase();
-                    let y1 = y.annotated__full_name.toUpperCase();
+                    let x_fullname = sup_name_from_pms[x.pms].toUpperCase();
+                    let y_fullname = sup_name_from_pms[y.pms].toUpperCase();
 
-                    return x1 < y1 ? -1 : x1 > y1 ? 1 : 0;
+                    return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
                 });
+
                 // Bring current selection to top of the select list
                 select_array.sort(function(x, y) {
-                    return x.annotated__full_name == params.value ? -1 : y.annotated__full_name == params.value ? 1 : 0;
+                    return x.pms == params.value ? -1 : y.pms == params.value ? 1 : 0;
                 });
 
                 this.select = document.createElement('select');
                 select_array.forEach( (each) => {
                     var option = document.createElement('option');
-                    option.value = (each.annotated__full_name == null) ? '' : each.annotated__full_name;
+                    option.value = (each.pms == null) ? '' : each.pms;
                     option.text = `${each.annotated__full_name} | ${each.pms}`;
                     this.select.appendChild(option);
                 });
@@ -152,7 +169,7 @@
 
             // Specify the columns that is editable here
             var editable_column_names = {
-                'SupFullName'       : 'Select',
+                'Supervisor'        : 'Select',
                 'OfficeTitle'       : 'Input',
                 'ActualSite'        : 'Input',
                 'ActualFloor'       : 'Input',
@@ -166,8 +183,10 @@
                 if ( Object.keys(editable_column_names).includes(ag_column.headerName) ) {
                     ag_column['editable'] = true;
 
+                    // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
                     if (editable_column_names[ag_column.headerName] === 'Select') {
                         ag_column['cellEditor']     = 'supervisorCellEditor';
+                        ag_column['cellRenderer']   = 'supervisorCellRenderer';
                     }
                 }
             }
@@ -187,7 +206,8 @@
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {
-                    supervisorCellEditor        : SupervisorEditor,
+                    supervisorCellEditor    : SupervisorEditor,
+                    supervisorCellRenderer  : SupervisorRenderer,
                 },
             }
 
