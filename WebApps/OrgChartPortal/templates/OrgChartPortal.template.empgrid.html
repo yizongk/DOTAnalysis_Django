@@ -72,6 +72,67 @@
 
     {% comment %} AG Grid stuff {% endcomment %}
     <script>
+        var emp_col_def     = {{ emp_entry_columns_json|safe }};
+        var emp_data        = {{ emp_entries_json|safe }};
+        var sup_dropdown    = {{ supervisor_dropdown_list_json|safe }};
+        // Add a dummy object for empty superivor full name in the sort of the select list
+        sup_dropdown.push({'pms': null, 'annotated__full_name': null})
+
+        class SupervisorEditor {
+            init(params) {
+                this.value = params.value;
+                var select_array = sup_dropdown;
+
+                // Reset select list's sort to sort by alphabet
+                select_array.sort(function(x, y) {
+                    if (x.annotated__full_name == null && y.annotated__full_name == null)   { return 0; }
+                    if (x.annotated__full_name == null)                                     { return -1; }
+                    if (y.annotated__full_name == null)                                     { return 1; }
+
+                    let x1 = x.annotated__full_name.toUpperCase();
+                    let y1 = y.annotated__full_name.toUpperCase();
+
+                    return x1 < y1 ? -1 : x1 > y1 ? 1 : 0;
+                });
+                // Bring current selection to top of the select list
+                select_array.sort(function(x, y) {
+                    return x.annotated__full_name == params.value ? -1 : y.annotated__full_name == params.value ? 1 : 0;
+                });
+
+                this.select = document.createElement('select');
+                select_array.forEach( (each) => {
+                    var option = document.createElement('option');
+                    option.value = (each.annotated__full_name == null) ? '' : each.annotated__full_name;
+                    option.text = `${each.annotated__full_name} | ${each.pms}`;
+                    this.select.appendChild(option);
+                });
+                this.select.id = 'sup_select';
+
+                this.select.addEventListener('input', (event) => {
+                    // Javascript null = html empty string '', and since event.target.value is an HTML value, '' will be considered as null
+                    this.value = (event.target.value == '') ? '' : event.target.value;
+                    params.stopEditing();
+                });
+            }
+
+            /* Component Editor Lifecycle methods */
+            // gets called once when grid ready to insert the element
+            getGui() { return this.select; }
+
+            // the final value to sent to the grid, on completion of editing
+            getValue() { return this.value; }
+
+            // gets called once before editing starts, to give editor a chance to cancel the editing before it even starts
+            isCancelBeforeStart() { return false; }
+
+            // gets called once when editing is finished (eg if Enter is pressed)
+            // if you return true, then the result of the edit will be ignored
+            isCancelAfterEnd() { return false; }
+
+            // after this component has been created and inserted into the grid
+            afterGuiAttached() { this.select.focus(); }
+        }
+
         document.addEventListener("DOMContentLoaded", function(event) {
             // Reset the default viewport from css class container to container-fluid
             nodes = document.getElementsByClassName('container')
@@ -88,8 +149,28 @@
                 }
             });
 
-            var emp_col_def = {{ emp_entry_columns_json|safe }};
-            var emp_data = {{ emp_entries_json|safe }};
+
+            // Specify the columns that is editable here
+            var editable_column_names = {
+                'SupFullName'       : 'Select',
+                'OfficeTitle'       : 'Input',
+                'ActualSite'        : 'Input',
+                'ActualFloor'       : 'Input',
+                'ActualSiteType'    : 'Input',
+            }
+
+            // Add a generic cell edit function to all editable cells
+            for (col_i in emp_col_def) {
+                ag_column = emp_col_def[col_i]
+
+                if ( Object.keys(editable_column_names).includes(ag_column.headerName) ) {
+                    ag_column['editable'] = true;
+
+                    if (editable_column_names[ag_column.headerName] === 'Select') {
+                        ag_column['cellEditor']     = 'supervisorCellEditor';
+                    }
+                }
+            }
 
             var gridOptions = {
                 // PROPERTIES
@@ -97,13 +178,17 @@
                 getRowNodeId: (data) => data.pms,
                 columnDefs: emp_col_def,
                 rowData: emp_data,
-                //pagination: true,
                 domLayout: 'normal',
 
                 defaultColDef: {
                     sortable: true,
                     filter: true
-                }
+                },
+
+                stopEditingWhenCellsLoseFocus: true,
+                components: {
+                    supervisorCellEditor        : SupervisorEditor,
+                },
             }
 
             const gridDiv = document.getElementById('AGGrid');

@@ -149,16 +149,17 @@ def get_active_emp_qryset(
 
 
 class EmpGridPageView(generic.ListView):
-    template_name           = 'OrgChartPortal.template.empgrid.html'
-    context_object_name     = 'emp_entries'
+    template_name                   = 'OrgChartPortal.template.empgrid.html'
+    context_object_name             = 'emp_entries'
 
-    req_success             = False
-    err_msg                 = ""
+    req_success                     = False
+    err_msg                         = ""
 
-    client_is_admin         = False
+    client_is_admin                 = False
 
-    emp_entry_columns_json  = None
-    emp_entries_json        = None
+    emp_entry_columns_json          = None
+    emp_entries_json                = None
+    supervisor_dropdown_list_json   = None
 
     def get_queryset(self):
         ## Check for Active Admins
@@ -175,6 +176,11 @@ class EmpGridPageView(generic.ListView):
                         )
                         ,default=None
                     )
+                )
+
+            def annotate_emp_full_name(qryset):
+                return qryset.annotate(
+                    annotated__full_name=Concat( F('last_name'), Value(', '), F('first_name') )
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
@@ -212,11 +218,20 @@ class EmpGridPageView(generic.ListView):
                     wu__wu__in=allowed_wu_list,
                 ).order_by('wu__wu')
 
+            supervisor_dropdown_list = get_active_emp_qryset(
+                fields_list=[
+                    'pms'
+                    ,'annotated__full_name'
+                ]
+                ,custom_annotate_fct=annotate_emp_full_name
+            ).order_by('last_name')
+
             import json
             from django.core.serializers.json import DjangoJSONEncoder
 
-            self.emp_entry_columns_json     = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
-            self.emp_entries_json           = json.dumps(list(emp_entries), cls=DjangoJSONEncoder)
+            self.emp_entry_columns_json         = json.dumps(list(ag_grid_col_def)          , cls=DjangoJSONEncoder)
+            self.emp_entries_json               = json.dumps(list(emp_entries)              , cls=DjangoJSONEncoder)
+            self.supervisor_dropdown_list_json  = json.dumps(list(supervisor_dropdown_list) , cls=DjangoJSONEncoder)
 
         except Exception as e:
             self.req_success = False
@@ -231,27 +246,29 @@ class EmpGridPageView(generic.ListView):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"]              = self.req_success
-            context["err_msg"]                  = self.err_msg
+            context["req_success"]                      = self.req_success
+            context["err_msg"]                          = self.err_msg
 
-            context["client_is_admin"]          = self.client_is_admin
+            context["client_is_admin"]                  = self.client_is_admin
 
-            context["emp_entry_columns_json"]   = self.emp_entry_columns_json
-            context["emp_entries_json"]         = self.emp_entries_json
+            context["emp_entry_columns_json"]           = self.emp_entry_columns_json
+            context["emp_entries_json"]                 = self.emp_entries_json
+            context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
             return context
         except Exception as e:
-            self.req_success                    = False
-            self.err_msg                        = "Exception: get_context_data(): {}".format(e)
+            self.req_success                            = False
+            self.err_msg                                = "Exception: get_context_data(): {}".format(e)
             print(self.err_msg)
 
-            context                             = super().get_context_data(**kwargs)
-            context["req_success"]              = self.req_success
-            context["err_msg"]                  = self.err_msg
+            context                                     = super().get_context_data(**kwargs)
+            context["req_success"]                      = self.req_success
+            context["err_msg"]                          = self.err_msg
 
-            context["client_is_admin"]          = False
+            context["client_is_admin"]                  = False
 
-            context["emp_entry_columns_json"]   = None
-            context["emp_entries_json"]         = None
+            context["emp_entry_columns_json"]           = None
+            context["emp_entries_json"]                 = None
+            context["supervisor_dropdown_list_json"]    = None
             return context
 
 
