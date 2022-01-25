@@ -4,14 +4,14 @@ function csrfSafeMethod(method) {
 };
 
 
-function setDatabaseStatus(good, msg) {
+function setErrorStatus(set_error=true, error_msg='') {
     // Set status light and error message to red and response error msg
-    if (good == true) {
+    if (set_error == true) {
+        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
+        $('.status_info.err_msg').html("Error: " + error_msg);
+    } else {
         $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
         $('.status_info.err_msg').html("");
-    } else {
-        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-        $('.status_info.err_msg').html("Error: " + msg);
     }
 };
 
@@ -49,10 +49,10 @@ async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST"
 
             failCallbackFct(json_response, props)
             // Set status light and error message to red and response error msg
-            setDatabaseStatus(good=false, msg=json_response["post_msg"]);
+            setErrorStatus(set_error=true, error_msg=json_response["post_msg"]);
         } else { // Api call successful
             successCallbackFct(json_response, props);
-            setDatabaseStatus(good=true, msg="");
+            setErrorStatus(set_error=false, error_msg="");
         }
 
         return json_response['post_data'];
@@ -60,7 +60,7 @@ async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST"
     .fail(function (jqXHR) {
         var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
         ajaxFailCallbackFct(jqXHR, props)
-        setDatabaseStatus(good=false, msg=errorMessage);
+        setErrorStatus(set_error=true, error_msg=errorMessage);
 
         console.log(`Ajax Post: Error Occured: ${errorMessage}`);
         alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
