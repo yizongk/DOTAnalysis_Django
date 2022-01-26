@@ -215,7 +215,8 @@ class PotholeDataGridPageView(generic.ListView):
                 import datetime
                 from dateutil.relativedelta import relativedelta
                 now = datetime.datetime.now().strftime("%Y-%m-%d")
-                then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
+                # then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
+                then = '2017-07-01'
                 pothole_data = TblPotholeMaster.objects.using('DailyPothole').filter(
                     repair_date__range=[then, now]
                 )
