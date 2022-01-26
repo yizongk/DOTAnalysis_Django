@@ -5,11 +5,11 @@ from django.db import models
 # All field names made lowercase.
 class TblChanges(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True)
-    updated_on = models.DateTimeField(db_column='UpdatedOn')
-    updated_by_pms = models.CharField(db_column='UpdatedByPMS', max_length=255)
-    updated_to_pms = models.CharField(db_column='UpdatedToPMS', max_length=255)
-    new_value = models.CharField(db_column='NewValue', max_length=255)
-    column_name = models.CharField(db_column='ColumnName', max_length=255)
+    updated_on = models.DateTimeField(db_column='UpdatedOn', blank=False, null=False, )
+    updated_by_pms = models.CharField(db_column='UpdatedByPMS', blank=False, null=False, max_length=7)
+    updated_to_pms = models.CharField(db_column='UpdatedToPMS', blank=False, null=False, max_length=7)
+    new_value = models.CharField(db_column='NewValue', blank=False, null=False, max_length=255)
+    column_name = models.CharField(db_column='ColumnName', blank=False, null=False, max_length=255)
 
     class Meta:
         managed = False

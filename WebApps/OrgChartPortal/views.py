@@ -7,6 +7,9 @@ from django.db.models import Min, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 
 
 # Create your views here.
@@ -153,6 +156,57 @@ def get_active_emp_qryset(
     return qryset.values(*fields_list)
 
 
+'''
+Generates the timestamp for updated_on when you call commit() with all the other arguments
+'''
+class TrackDataChange:
+    def __init__(
+        self
+        ,updated_by_pms = None
+        ,updated_to_pms = None
+        ,new_value      = None
+        ,column_name    = None
+    ):
+        self.updated_by_pms = updated_by_pms
+        self.updated_to_pms = updated_to_pms
+        self.new_value      = new_value
+        self.column_name    = column_name
+
+
+    def save(self):
+        if self.updated_by_pms is None: raise ValueError("Class TrackDataChange: save(): self.updated_by_pms cannot be None.")
+        if self.updated_to_pms is None: raise ValueError("Class TrackDataChange: save(): self.updated_to_pms cannot be None.")
+        if self.new_value is None:      raise ValueError("Class TrackDataChange: save(): self.new_value cannot be None.")
+        if self.column_name is None:    raise ValueError("Class TrackDataChange: save(): self.column_name cannot be None.")
+
+        ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. I need to trick it into storing EST time in sql server, so a manually -5 hour difference is applied here.
+        updated_on = timezone.now() - timezone.timedelta(hours=5)
+
+        valid_column_names = [
+            'SupervisorPMS'
+            ,'OfficeTitle'
+            ,'ActualSiteId'
+            ,'ActualFloorId'
+            ,'ActualSiteTypeId'
+        ]
+
+        if self.column_name not in valid_column_names:
+            raise ValueError(f"Class TrackDataChange: save(): {self.column_name} is not a valid column name.")
+
+        try:
+            change_record_obj = TblChanges(
+                updated_on      = updated_on
+                ,updated_by_pms = self.updated_by_pms
+                ,updated_to_pms = self.updated_to_pms
+                ,new_value      = self.new_value
+                ,column_name    = self.column_name
+            )
+
+            change_record_obj.save(using='OrgChartWrite')
+        except Exception as e:
+            raise
+
+
 def UpdateEmployeeData(request):
 
     if request.method != "POST":
@@ -194,15 +248,16 @@ def UpdateEmployeeData(request):
         column_name = json_blob['column_name']
         new_value   = json_blob['new_value']
 
-        valid_editable_columns = [
-            'Supervisor'
-            ,'OfficeTitle'
-            ,'ActualSite'
-            ,'ActualFloor'
-            ,'ActualSiteType'
-        ]
+        # Front end column names mapping to backend field names
+        valid_editable_columns_mapping = {
+            'Supervisor'        : 'SupervisorPMS'
+            ,'OfficeTitle'      : 'OfficeTitle'
+            ,'ActualSite'       : 'ActualSiteId'
+            ,'ActualFloor'      : 'ActualFloorId'
+            ,'ActualSiteType'   : 'ActualSiteTypeId'
+        }
 
-        if column_name not in valid_editable_columns:
+        if column_name not in list(valid_editable_columns_mapping.keys()):
             raise ValueError(f"{column_name} is not an editable column")
 
         if new_value == '':
@@ -226,7 +281,6 @@ def UpdateEmployeeData(request):
                 raise ValueError(f"user doesn't not have permission to edit {employee_obj.pms}'s record (Need permission to their WU)")
 
 
-        from datetime import datetime, timezone
         try:
             remote_user_obj = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=remote_user)
         except ObjectDoesNotExist as e:
@@ -239,21 +293,22 @@ def UpdateEmployeeData(request):
             except ObjectDoesNotExist as e:
                 raise ValueError(f"UpdateEmployeeData():The Supervisor PMS '{new_value}' is either inactive or doesn't exists")
 
-            employee_obj.supervisor_pms = supervisor_obj
+            if employee_obj.supervisor_pms.pms != supervisor_obj.pms:
+                employee_obj.supervisor_pms = supervisor_obj
+            else:
+                raise ValueError(f"No change in data, no update needed.")
 
-            change_record_obj = TblChanges(
-                updated_on      = datetime.now(timezone.utc) ##@TODO Fix the timezone here
-                ,updated_by_pms = remote_user_obj.pms.pms
+        # Save the data, and record the change, in a single transaction
+        with transaction.atomic():
+            employee_obj.save()
+
+            TrackDataChange(
+                updated_by_pms  = remote_user_obj.pms.pms
                 ,updated_to_pms = to_pms
                 ,new_value      = new_value
-                ,column_name    = 'SupervisorPMS'
-            )
+                ,column_name    = valid_editable_columns_mapping[column_name]
+            ).save()
 
-
-        ## At this point, for each of the column update process, it's assumed you have made the single change to employee_obj,
-        ## and created a new change_record_obj to track that change, and that they are both ready to be saved.
-        change_record_obj.save(using='OrgChartWrite')
-        employee_obj.save()
 
     except Exception as e:
         return JsonResponse({
