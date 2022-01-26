@@ -6,6 +6,7 @@ from .models import *
 from django.db.models import Min, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # Create your views here.
@@ -85,6 +86,21 @@ def get_allowed_list_of_wu(username):
         }
 
 
+def get_active_tblemployee_qryset():
+    return TblEmployees.objects.using('OrgChartWrite').filter(
+        lv__in=[
+            'B'
+            ,'C'
+            ,'K'
+            ,'M'
+            ,'N'
+            ,'Q'
+            ,'R'
+            ,'S'
+        ]
+    )
+
+
 def get_active_emp_qryset(
         fields_list = [  ## specifiy the list of columns that you want
             'pms'
@@ -128,24 +144,128 @@ def get_active_emp_qryset(
             )
     '''
 
-    qryset = TblEmployees.objects.using('OrgChartRead').filter(
-        lv__in=[
-            'B'
-            ,'C'
-            ,'K'
-            ,'M'
-            ,'N'
-            ,'Q'
-            ,'R'
-            ,'S'
-        ]
-    )
+    qryset = get_active_tblemployee_qryset()
 
     if custom_annotate_fct is not None:
         qryset = custom_annotate_fct(qryset)
 
     ## To speed up the query, need to specify only the columns that is needed, so that django do a one-time query of the entire related dataset.
     return qryset.values(*fields_list)
+
+
+def UpdateEmployeeData(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateEmployeeData(): {} HTTP request not supported".format(request.method),
+        })
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdateEmployeeData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateEmployeeData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateEmployeeData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        if (
+            'to_pms' not in json_blob
+            or 'column_name' not in json_blob
+            or 'new_value' not in json_blob
+        ):
+            raise ValueError("missing one or more of the required parameters (to_pms, column_name and new_value)")
+
+        to_pms      = json_blob['to_pms']
+        column_name = json_blob['column_name']
+        new_value   = json_blob['new_value']
+
+        valid_editable_columns = [
+            'Supervisor'
+            ,'OfficeTitle'
+            ,'ActualSite'
+            ,'ActualFloor'
+            ,'ActualSiteType'
+        ]
+
+        if column_name not in valid_editable_columns:
+            raise ValueError(f"{column_name} is not an editable column")
+
+        if new_value == '':
+            raise ValueError(f"new_value for {column_name} cannot be None or empty text")
+
+        try:
+            employee_obj = get_active_tblemployee_qryset()
+            employee_obj = employee_obj.get(pms__exact=to_pms)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"UpdateEmployeeData():\n\nThe PMS '{to_pms}' is either inactive or doesn't exists")
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            wu_permissions = get_allowed_list_of_wu(remote_user)
+            if wu_permissions['success']:
+                allowed_wu_list = wu_permissions['wu_list']
+            else:
+                raise ValueError(f"get_allowed_list_of_wu() failed: {wu_permissions['err']}")
+
+            if employee_obj.wu.wu not in allowed_wu_list:
+                raise ValueError(f"user doesn't not have permission to edit {employee_obj.pms}'s record (Need permission to their WU)")
+
+
+        from datetime import datetime, timezone
+        try:
+            remote_user_obj = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=remote_user)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"UpdateEmployeeData():\n\nThe client '{remote_user}' is not a user of the system")
+
+        if column_name == 'Supervisor':
+            try:
+                supervisor_obj = get_active_tblemployee_qryset()
+                supervisor_obj = supervisor_obj.get(pms__exact=new_value)
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"UpdateEmployeeData():The Supervisor PMS '{new_value}' is either inactive or doesn't exists")
+
+            employee_obj.supervisor_pms = supervisor_obj
+
+            change_record_obj = TblChanges(
+                updated_on      = datetime.now(timezone.utc) ##@TODO Fix the timezone here
+                ,updated_by_pms = remote_user_obj.pms.pms
+                ,updated_to_pms = to_pms
+                ,new_value      = new_value
+                ,column_name    = 'SupervisorPMS'
+            )
+
+
+        ## At this point, for each of the column update process, it's assumed you have made the single change to employee_obj,
+        ## and created a new change_record_obj to track that change, and that they are both ready to be saved.
+        change_record_obj.save(using='OrgChartWrite')
+        employee_obj.save()
+
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateEmployeeData():\n\nError: {}".format(e),
+            # "post_msg": "UpdateEmployeeData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+    return JsonResponse({
+        "post_success": True,
+        "post_msg": None,
+    })
 
 
 class EmpGridPageView(generic.ListView):
@@ -203,7 +323,7 @@ class EmpGridPageView(generic.ListView):
                 emp_entries = get_active_emp_qryset(
                     fields_list=fields_list
                     # ,custom_annotate_fct=annotate_sup_full_name
-                ).order_by('wu__wu')
+                ).order_by('wu__wu', 'last_name')
             else:
                 allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
                 if allowed_wu_list_obj['success'] == False:
@@ -216,7 +336,7 @@ class EmpGridPageView(generic.ListView):
                     # ,custom_annotate_fct=annotate_sup_full_name
                 ).filter(
                     wu__wu__in=allowed_wu_list,
-                ).order_by('wu__wu')
+                ).order_by('wu__wu', 'last_name')
 
             supervisor_dropdown_list = get_active_emp_qryset(
                 fields_list=[

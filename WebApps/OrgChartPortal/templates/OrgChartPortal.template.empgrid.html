@@ -166,6 +166,38 @@
                 }
             });
 
+            function cellValueSetter(params) {
+
+                api_json_blob = {
+                    'to_pms'        : params.data.pms,
+                    'column_name'   : params.colDef.headerName,
+                    'new_value'     : params.newValue,
+                }
+
+                props = {
+                    'cellParams': params,
+                }
+
+                response = sentJsonBlobToApi( json_blob=api_json_blob, api_url="update_employee_data", http_request_method="POST",
+                    successCallbackFct=function(json_response, props) {
+                        params = props.cellParams
+                        params.data[params.colDef.field] = params.newValue;
+                        params.api.refreshCells({
+                            rowNodes: [params.node],
+                            columns: [params.column],
+                        });
+
+                    }, failCallbackFct=function(json_response, props) {
+                        console.log('API update_employee_data(): bad api call')
+                    }, ajaxFailCallbackFct=function(jqXHR, props) {
+                        console.log('API update_employee_data(): fail ajax call')
+                    },
+                    props=props
+                )
+
+                // Always return false, so AG Grid don't immediately update the cell. Let the sentJsonBlobToApi() successCallbackFct handle the update of the cell.
+                return false;
+            }
 
             // Specify the columns that is editable here
             var editable_column_names = {
@@ -181,7 +213,8 @@
                 ag_column = emp_col_def[col_i]
 
                 if ( Object.keys(editable_column_names).includes(ag_column.headerName) ) {
-                    ag_column['editable'] = true;
+                    ag_column['editable']       = true;
+                    ag_column['valueSetter']    = cellValueSetter;
 
                     // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
                     if (editable_column_names[ag_column.headerName] === 'Select') {
