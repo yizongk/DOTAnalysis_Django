@@ -221,7 +221,18 @@ class PotholeDataGridPageView(generic.ListView):
                     repair_date__range=[then, now]
                 )
                 pothole_data = filter_out_excluded_operation_boro(pothole_data)
-                pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
+                pothole_data = pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
+                fields_list = [
+                    'repair_date'
+                    ,'operation_id__operation'
+                    ,'boro_id__boro_long'
+                    ,'repair_crew_count'
+                    ,'holes_repaired'
+                    ,'daily_crew_count'
+                    ,'last_modified_stamp'
+                    ,'last_modified_by_user_id__username'
+                ]
+                pothole_data = pothole_data.values(*fields_list) ## Run the query once, since the dataset is large, this will speed things up on the front end.
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
