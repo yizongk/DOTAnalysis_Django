@@ -157,9 +157,24 @@ def get_active_emp_qryset(
 
 
 '''
-Generates the timestamp for updated_on when you call commit() with all the other arguments
+Create an instance of this class whenever you need to update data on an exiting employee in tblEmployees
+It will update the employee and then keep a history of the change.
+Pass in the correct params, and call save().
+
+@updated_by_pms = The PMS of the client attempting to make an update to an employee row, calling function should have a windows username to lookup the PMS with.
+@updated_to_pms = The PMS of the employee row that is being updated.
+@new_value      = The new value that is updating to the employee row.
+@column_name    = The column name that the new value belongs to on the employee row.
+
+When you call save():
+    * An atomic database transaction is garanteed.
+    * A current timestamp is also generated.
+    * Then with all the data, it will be inserted into  tblChanges.
+    * If the new value is the same as the old value, this will return False.
+    * Returns true if all is successful.
+    * Raise the error if any exception is present.
 '''
-class TrackDataChange:
+class EmppUpdateAndTrack:
     def __init__(
         self
         ,updated_by_pms = None
@@ -172,17 +187,7 @@ class TrackDataChange:
         self.new_value      = new_value
         self.column_name    = column_name
 
-
-    def save(self):
-        if self.updated_by_pms is None: raise ValueError("Class TrackDataChange: save(): updated_by_pms cannot be None.")
-        if self.updated_to_pms is None: raise ValueError("Class TrackDataChange: save(): updated_to_pms cannot be None.")
-        if self.new_value is None:      raise ValueError("Class TrackDataChange: save(): new_value cannot be None.")
-        if self.column_name is None:    raise ValueError("Class TrackDataChange: save(): column_name cannot be None.")
-
-        ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. I need to trick it into storing EST time in sql server, so a manually -5 hour difference is applied here.
-        updated_on = timezone.now() - timezone.timedelta(hours=5)
-
-        valid_column_names = [
+        self.valid_column_names = [
             'SupervisorPMS'
             ,'OfficeTitle'
             ,'ActualSiteId'
@@ -190,21 +195,80 @@ class TrackDataChange:
             ,'ActualSiteTypeId'
         ]
 
-        if self.column_name not in valid_column_names:
-            raise ValueError(f"Class TrackDataChange: save(): {self.column_name} is not a valid column name.")
 
+    def save(self):
         try:
-            change_record_obj = TblChanges(
-                updated_on      = updated_on
-                ,updated_by_pms = self.updated_by_pms
-                ,updated_to_pms = self.updated_to_pms
-                ,new_value      = self.new_value
-                ,column_name    = self.column_name
-            )
+            if self.updated_by_pms is None: raise ValueError("updated_by_pms cannot be None.")
+            if self.updated_to_pms is None: raise ValueError("updated_to_pms cannot be None.")
+            if self.new_value is None:      raise ValueError("new_value cannot be None.")
+            if self.column_name is None:    raise ValueError("column_name cannot be None.")
 
-            change_record_obj.save(using='OrgChartWrite')
+            ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. I need to trick it into storing EST time in sql server, so a manually -5 hour difference is applied here.
+            updated_on = timezone.now() - timezone.timedelta(hours=5)
+            if updated_on is None:
+                raise ValueError("updated_on cannot be None.")
+
+            if self.column_name not in self.valid_column_names:
+                raise ValueError(f"{self.column_name} is not a valid column name.")
+
+
+            ## Find the target employee row
+            try:
+                employee_row = get_active_tblemployee_qryset().get(pms__exact=self.updated_to_pms)
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"The PMS '{self.updated_to_pms}' is either inactive or doesn't exists")
+
+
+            ## Implementation of specific column updates
+            if self.column_name == 'SupervisorPMS':
+                try:
+                    new_supervisor_obj = get_active_tblemployee_qryset()
+                    new_supervisor_obj = new_supervisor_obj.get(pms__exact=self.new_value)
+                except ObjectDoesNotExist as e:
+                    raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exists")
+
+                if employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
+                    ## Return False because new value is same as old value
+                    return False
+                else:
+                    employee_row.supervisor_pms = new_supervisor_obj
+
+            elif self.column_name == 'OfficeTitle':
+                ...
+
+            elif self.column_name == 'ActualSiteId':
+                ...
+
+            elif self.column_name == 'ActualFloorId':
+                ...
+
+            elif self.column_name == 'ActualSiteTypeId':
+                ...
+
+            else:
+                raise ValueError(f"{self.column_name} is not an editable column")
+
+
+            # Save the data, and track the change history, in a single atomic transaction
+            try:
+                with transaction.atomic(using='OrgChartWrite'):
+                    employee_row.save(using='OrgChartWrite')
+
+                    change_record_row = TblChanges(
+                        updated_on      = updated_on
+                        ,updated_by_pms = self.updated_by_pms
+                        ,updated_to_pms = self.updated_to_pms
+                        ,new_value      = self.new_value
+                        ,column_name    = self.column_name
+                    )
+
+                    change_record_row.save(using='OrgChartWrite')
+            except Exception as e:
+                raise
+
+            return True
         except Exception as e:
-            raise
+            raise ValueError(f"Class EmppUpdateAndTrack: save(): {e}")
 
 
 def UpdateEmployeeData(request):
@@ -249,7 +313,7 @@ def UpdateEmployeeData(request):
         new_value   = json_blob['new_value']
 
         # Front end column names mapping to backend field names
-        valid_editable_columns_mapping = {
+        valid_editable_column_names_mapping = {
             'Supervisor'        : 'SupervisorPMS'
             ,'OfficeTitle'      : 'OfficeTitle'
             ,'ActualSite'       : 'ActualSiteId'
@@ -257,18 +321,13 @@ def UpdateEmployeeData(request):
             ,'ActualSiteType'   : 'ActualSiteTypeId'
         }
 
-        if column_name not in list(valid_editable_columns_mapping.keys()):
+        if column_name not in list(valid_editable_column_names_mapping.keys()):
             raise ValueError(f"{column_name} is not an editable column")
 
         if new_value == '':
             raise ValueError(f"new_value for {column_name} cannot be None or empty text")
 
-        try:
-            employee_obj = get_active_tblemployee_qryset()
-            employee_obj = employee_obj.get(pms__exact=to_pms)
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"UpdateEmployeeData():\n\nThe PMS '{to_pms}' is either inactive or doesn't exists")
-
+        # Check for permission to edit the target employee row
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
             wu_permissions = get_allowed_list_of_wu(remote_user)
@@ -277,40 +336,29 @@ def UpdateEmployeeData(request):
             else:
                 raise ValueError(f"get_allowed_list_of_wu() failed: {wu_permissions['err']}")
 
-            if employee_obj.wu.wu not in allowed_wu_list:
-                raise ValueError(f"user doesn't not have permission to edit {employee_obj.pms}'s record (Need permission to their WU)")
+            try:
+                employee_row = get_active_tblemployee_qryset().get(pms__exact=to_pms)
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"The PMS '{to_pms}' is either inactive or doesn't exists")
+            if employee_row.wu.wu not in allowed_wu_list:
+                raise ValueError(f"user doesn't not have permission to edit {employee_row.pms}'s record (Need permission to their WU)")
 
 
+        ## Get the client's user obj from database
         try:
             remote_user_obj = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=remote_user)
         except ObjectDoesNotExist as e:
-            raise ValueError(f"UpdateEmployeeData():\n\nThe client '{remote_user}' is not a user of the system")
+            raise ValueError(f"The client '{remote_user}' is not a user of the system")
 
-        if column_name == 'Supervisor':
-            try:
-                supervisor_obj = get_active_tblemployee_qryset()
-                supervisor_obj = supervisor_obj.get(pms__exact=new_value)
-            except ObjectDoesNotExist as e:
-                raise ValueError(f"UpdateEmployeeData():The Supervisor PMS '{new_value}' is either inactive or doesn't exists")
 
-            if employee_obj.supervisor_pms.pms != supervisor_obj.pms:
-                employee_obj.supervisor_pms = supervisor_obj
-            else:
-                raise ValueError(f"No change in data, no update needed.")
-
-        # Save the data, and record the change, in a single transaction
-        try:
-            with transaction.atomic(using='OrgChartWrite'):
-                employee_obj.save()
-
-                TrackDataChange(
-                    updated_by_pms  = remote_user_obj.pms.pms
-                    ,updated_to_pms = to_pms
-                    ,new_value      = new_value
-                    ,column_name    = valid_editable_columns_mapping[column_name]
-                ).save()
-        except Exception as e:
-            raise
+        atomic_update = EmppUpdateAndTrack(
+            updated_by_pms  = remote_user_obj.pms.pms
+            ,updated_to_pms = to_pms
+            ,new_value      = new_value
+            ,column_name    = valid_editable_column_names_mapping[column_name]
+        )
+        if not atomic_update.save():
+            raise ValueError(f"No change in data, no update needed.")
 
 
     except Exception as e:
