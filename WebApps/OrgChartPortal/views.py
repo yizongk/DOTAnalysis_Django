@@ -174,10 +174,10 @@ class TrackDataChange:
 
 
     def save(self):
-        if self.updated_by_pms is None: raise ValueError("Class TrackDataChange: save(): self.updated_by_pms cannot be None.")
-        if self.updated_to_pms is None: raise ValueError("Class TrackDataChange: save(): self.updated_to_pms cannot be None.")
-        if self.new_value is None:      raise ValueError("Class TrackDataChange: save(): self.new_value cannot be None.")
-        if self.column_name is None:    raise ValueError("Class TrackDataChange: save(): self.column_name cannot be None.")
+        if self.updated_by_pms is None: raise ValueError("Class TrackDataChange: save(): updated_by_pms cannot be None.")
+        if self.updated_to_pms is None: raise ValueError("Class TrackDataChange: save(): updated_to_pms cannot be None.")
+        if self.new_value is None:      raise ValueError("Class TrackDataChange: save(): new_value cannot be None.")
+        if self.column_name is None:    raise ValueError("Class TrackDataChange: save(): column_name cannot be None.")
 
         ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. I need to trick it into storing EST time in sql server, so a manually -5 hour difference is applied here.
         updated_on = timezone.now() - timezone.timedelta(hours=5)
@@ -299,15 +299,18 @@ def UpdateEmployeeData(request):
                 raise ValueError(f"No change in data, no update needed.")
 
         # Save the data, and record the change, in a single transaction
-        with transaction.atomic():
-            employee_obj.save()
+        try:
+            with transaction.atomic(using='OrgChartWrite'):
+                employee_obj.save()
 
-            TrackDataChange(
-                updated_by_pms  = remote_user_obj.pms.pms
-                ,updated_to_pms = to_pms
-                ,new_value      = new_value
-                ,column_name    = valid_editable_columns_mapping[column_name]
-            ).save()
+                TrackDataChange(
+                    updated_by_pms  = remote_user_obj.pms.pms
+                    ,updated_to_pms = to_pms
+                    ,new_value      = new_value
+                    ,column_name    = valid_editable_columns_mapping[column_name]
+                ).save()
+        except Exception as e:
+            raise
 
 
     except Exception as e:
