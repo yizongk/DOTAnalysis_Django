@@ -230,6 +230,8 @@ class EmppUpdateAndTrack:
                 if employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
                     ## Return False because new value is same as old value
                     return False
+                elif employee_row.pms == new_supervisor_obj.pms:
+                    raise ValueError(f"A person cannot be their own supervisor")
                 else:
                     employee_row.supervisor_pms = new_supervisor_obj
 
