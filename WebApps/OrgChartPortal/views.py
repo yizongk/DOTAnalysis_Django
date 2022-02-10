@@ -236,7 +236,10 @@ class EmppUpdateAndTrack:
                     employee_row.supervisor_pms = new_supervisor_obj
 
             elif self.column_name == 'OfficeTitle':
-                ...
+                if employee_row.office_title == self.new_value:
+                    return False
+                else:
+                    employee_row.office_title = self.new_value
 
             elif self.column_name == 'ActualSiteId':
                 ...
