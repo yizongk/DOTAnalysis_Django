@@ -217,7 +217,7 @@
                     ag_column['valueSetter']    = cellValueSetter;
 
                     // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
-                    if (editable_column_names[ag_column.headerName] === 'Select') {
+                    if (editable_column_names[ag_column.headerName] === 'Select' && ag_column.headerName == 'Supervisor') {
                         ag_column['cellEditor']     = 'supervisorCellEditor';
                         ag_column['cellRenderer']   = 'supervisorCellRenderer';
                     }
