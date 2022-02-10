@@ -69,6 +69,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerator.js' %}"></script>
 
     {% comment %} AG Grid stuff {% endcomment %}
     <script>
@@ -116,14 +117,12 @@
                     return x.pms == params.value ? -1 : y.pms == params.value ? 1 : 0;
                 });
 
-                this.select = document.createElement('select');
-                select_array.forEach( (each) => {
-                    var option = document.createElement('option');
-                    option.value = (each.pms == null) ? '' : each.pms;
-                    option.text = `${each.annotated__full_name} | ${each.pms}`;
-                    this.select.appendChild(option);
-                });
-                this.select.id = 'sup_select';
+                this.select = createSelectDropdown({ // From HTMLElementGenerator.js
+                    id          : 'sup_select',
+                    arr         : select_array,
+                    set_val_fct : (each) => { return (each.pms == null) ? '' : each.pms; },
+                    set_txt_fct : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
+                })
 
                 this.select.addEventListener('input', (event) => {
                     // Javascript null = html empty string '', and since event.target.value is an HTML value, '' will be considered as null
@@ -200,24 +199,24 @@
             }
 
             // Specify the columns that is editable here
-            var editable_column_names = {
-                'Supervisor'        : 'Select',
-                'OfficeTitle'       : 'Input',
-                'ActualSite'        : 'Input',
-                'ActualFloor'       : 'Input',
-                'ActualSiteType'    : 'Input',
-            }
+            var editable_column_names = [
+                'Supervisor',       // Select
+                'OfficeTitle',      // Input
+                'ActualSite',       // Select
+                'ActualFloor',      // Select
+                'ActualSiteType',   // Select
+            ]
 
             // Add a generic cell edit function to all editable cells
             for (col_i in emp_col_def) {
                 ag_column = emp_col_def[col_i]
 
-                if ( Object.keys(editable_column_names).includes(ag_column.headerName) ) {
+                if ( editable_column_names.includes(ag_column.headerName) ) {
                     ag_column['editable']       = true;
                     ag_column['valueSetter']    = cellValueSetter;
 
                     // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
-                    if (editable_column_names[ag_column.headerName] === 'Select' && ag_column.headerName == 'Supervisor') {
+                    if (ag_column.headerName == 'Supervisor') {
                         ag_column['cellEditor']     = 'supervisorCellEditor';
                         ag_column['cellRenderer']   = 'supervisorCellRenderer';
                     }
@@ -246,80 +245,6 @@
 
             const gridDiv = document.getElementById('AGGrid');
             new agGrid.Grid(gridDiv, gridOptions);
-
-
-            /*
-            // For cell select mode
-            $(document).on("dblclick", ".editable-select", function () {
-                if ( $(this).data('column') == 'PMS' ) {
-                    select_list_values = ['None']
-                    select_list_values = select_list_values.concat(select_permitted_pms_list)
-                } else if ( $(this).data('column') == 'Class2' ) {
-                    //select_list_values = ['None', 'Commuter', 'Non-Commuter']
-                    select_list_values = ['Commuter', 'Non-Commuter']
-                } else {
-                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    return 0
-                }
-
-                // Move current select element to the top of the array
-                var current_value = $(this).text()
-                select_list_values.sort(function(x, y) {
-                    return x == current_value ? -1 : y == current_value ? 1 : 0;
-                });
-
-
-                if ( $(this).data('column') == 'PMS' ) {
-                    enterCellEditSelectMode($(this), select_list_values, true, select_permitted_pms_list_additional_info_json, "display additional first")
-                } else if ( $(this).data('column') == 'Class2' ) {
-                    enterCellEditSelectMode($(this), select_list_values)
-                } else {
-                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    return 0
-                }
-            });
-
-            $(document).on("keyup", ".input-data-select", function (e) {
-                var key = e.which;
-                if (key === 27) { // 27 is the ESC key
-                    cancelSelectMode(this);
-                }
-            });
-
-            $(document).on("change", ".input-data-select", function () {
-                if ( ($(this).parent().data('column') == 'PMS') || ($(this).parent().data('column') == 'Class2') ) {
-                    sendCellToServer(node=this, api_url="update_m5_driver_vehicle_data_confirmations", http_request_method="POST", cell_html_type="select")
-                    .then(function(promised_data) {
-                        td_node = promised_data.td_node
-                        api_json_response = promised_data.api_json_response
-
-
-                        // On api success, update the emp info cells of the modified row in the JS DataTable
-                        if ( td_node.data('column') == 'PMS' && td_node.text() == 'None' ) {  // To prevent accessing pms_info['None'], which will cause an error because there's no key 'None' in pms_info object
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="TblWorkUnits"][data-column="SubDivision"]').text( '');
-                        }
-                        else if ( td_node.data('column') == 'PMS' ) {
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          pms_info[td_node.html()]['wu'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      pms_info[td_node.html()]['last_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      pms_info[td_node.html()]['first_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="TblWorkUnits"][data-column="SubDivision"]').text( pms_info[td_node.html()]['subdiv'] );
-                        }
-                    }).catch(promise => {
-                        console.log(promise);
-                        alert(`Something went wrong when calling sendCellToServer(): ${promise.message}`);
-                    });
-                } else {
-                    console.log(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
-                    alert(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
-                    return 0
-                }
-            });
-            */
 
         });
     </script>
