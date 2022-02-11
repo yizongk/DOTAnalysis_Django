@@ -69,7 +69,8 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerator.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}"></script>
 
     {% comment %} AG Grid stuff {% endcomment %}
     <script>
@@ -82,71 +83,39 @@
         var sup_name_from_pms = {};
         for (const i in sup_dropdown) { sup_name_from_pms[sup_dropdown[i].pms] = sup_dropdown[i].annotated__full_name }
 
-        class SupervisorRenderer {
-            init(params) {
-                let sup_pms         = params.value
+        class SupervisorCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let sup_pms         = ag_cell.value
                 let sup_fullname    = sup_name_from_pms[sup_pms]
-                this.eGui = document.createElement('div');
-                this.eGui.innerHTML = sup_fullname;
-            }
-
-            getGui() {
-                return this.eGui;
+                let super_params = {
+                    rendered_text : sup_fullname
+                }
+                this.initBase(super_params);
             }
         }
 
-        class SupervisorEditor {
-            init(params) {
-                this.value = params.value;
-                var select_array = sup_dropdown;
+        class SupervisorCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : sup_dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        if (x.pms == null && y.pms == null)   { return 0; }
+                                                        if (x.pms == null)                    { return -1; }
+                                                        if (y.pms == null)                    { return 1; }
 
-                // Reset select list's sort to sort by alphabet
-                select_array.sort(function(x, y) {
-                    if (x.pms == null && y.pms == null)   { return 0; }
-                    if (x.pms == null)                    { return -1; }
-                    if (y.pms == null)                    { return 1; }
+                                                        let x_fullname = sup_name_from_pms[x.pms].toUpperCase();
+                                                        let y_fullname = sup_name_from_pms[y.pms].toUpperCase();
 
-                    let x_fullname = sup_name_from_pms[x.pms].toUpperCase();
-                    let y_fullname = sup_name_from_pms[y.pms].toUpperCase();
-
-                    return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
-                });
-
-                // Bring current selection to top of the select list
-                select_array.sort(function(x, y) {
-                    return x.pms == params.value ? -1 : y.pms == params.value ? 1 : 0;
-                });
-
-                this.select = createSelectDropdown({ // From HTMLElementGenerator.js
-                    id          : 'sup_select',
-                    arr         : select_array,
-                    set_val_fct : (each) => { return (each.pms == null) ? '' : each.pms; },
-                    set_txt_fct : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
-                })
-
-                this.select.addEventListener('input', (event) => {
-                    // Javascript null = html empty string '', and since event.target.value is an HTML value, '' will be considered as null
-                    this.value = (event.target.value == '') ? '' : event.target.value;
-                    params.stopEditing();
-                });
+                                                        return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
+                                                    },
+                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.pms == ag_cell.value ? -1 : y.pms == ag_cell.value ? 1 : 0; },
+                    select_element_id               : 'sup_select',
+                    option_element_set_val_fct      : (each) => { return (each.pms == null) ? '' : each.pms; },
+                    option_element_set_txt_fct      : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
+                }
+                this.initBase(super_params)
             }
-
-            /* Component Editor Lifecycle methods */
-            // gets called once when grid ready to insert the element
-            getGui() { return this.select; }
-
-            // the final value to sent to the grid, on completion of editing
-            getValue() { return this.value; }
-
-            // gets called once before editing starts, to give editor a chance to cancel the editing before it even starts
-            isCancelBeforeStart() { return false; }
-
-            // gets called once when editing is finished (eg if Enter is pressed)
-            // if you return true, then the result of the edit will be ignored
-            isCancelAfterEnd() { return false; }
-
-            // after this component has been created and inserted into the grid
-            afterGuiAttached() { this.select.focus(); }
         }
 
         document.addEventListener("DOMContentLoaded", function(event) {
@@ -242,8 +211,8 @@
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {
-                    supervisorCellEditor    : SupervisorEditor,
-                    supervisorCellRenderer  : SupervisorRenderer,
+                    supervisorCellEditor    : SupervisorCellEditor,
+                    supervisorCellRenderer  : SupervisorCellRenderer,
                 },
             }
 
