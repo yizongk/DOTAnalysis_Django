@@ -391,6 +391,7 @@ class EmpGridPageView(generic.ListView):
     emp_entry_columns_json          = None
     emp_entries_json                = None
     supervisor_dropdown_list_json   = None
+    site_dropdown_list_json         = None
 
     def get_queryset(self):
         ## Check for Active Admins
@@ -416,16 +417,16 @@ class EmpGridPageView(generic.ListView):
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
                 {'headerName': 'PMS'              , 'field': 'pms'}
-                ,{'headerName': 'Lv'              , 'field': 'lv'}
-                ,{'headerName': 'WU'              , 'field': 'wu__wu'}
                 ,{'headerName': 'LastName'        , 'field': 'last_name'}
                 ,{'headerName': 'FirstName'       , 'field': 'first_name'}
+                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'}
+                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
+                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type'}
+                ,{'headerName': 'Lv'              , 'field': 'lv'}
+                ,{'headerName': 'WU'              , 'field': 'wu__wu'}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'}
                 ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
-                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site'}
-                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor'}
-                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type'}
             ]
 
             fields_list = [each['field'] for each in ag_grid_col_def]
@@ -457,12 +458,18 @@ class EmpGridPageView(generic.ListView):
                 ,custom_annotate_fct=annotate_emp_full_name
             ).order_by('last_name')
 
+            site_dropdown_list = TblDOTSites.objects.using('OrgChartRead').values(
+                'site_id'
+                ,'site'
+            ).order_by('site')
+
             import json
             from django.core.serializers.json import DjangoJSONEncoder
 
             self.emp_entry_columns_json         = json.dumps(list(ag_grid_col_def)          , cls=DjangoJSONEncoder)
             self.emp_entries_json               = json.dumps(list(emp_entries)              , cls=DjangoJSONEncoder)
             self.supervisor_dropdown_list_json  = json.dumps(list(supervisor_dropdown_list) , cls=DjangoJSONEncoder)
+            self.site_dropdown_list_json        = json.dumps(list(site_dropdown_list)       , cls=DjangoJSONEncoder)
 
         except Exception as e:
             self.req_success = False
@@ -485,6 +492,7 @@ class EmpGridPageView(generic.ListView):
             context["emp_entry_columns_json"]           = self.emp_entry_columns_json
             context["emp_entries_json"]                 = self.emp_entries_json
             context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
+            context["site_dropdown_list_json"]          = self.site_dropdown_list_json
             return context
         except Exception as e:
             self.req_success                            = False
@@ -500,6 +508,7 @@ class EmpGridPageView(generic.ListView):
             context["emp_entry_columns_json"]           = None
             context["emp_entries_json"]                 = None
             context["supervisor_dropdown_list_json"]    = None
+            context["site_dropdown_list_json"]          = None
             return context
 
 

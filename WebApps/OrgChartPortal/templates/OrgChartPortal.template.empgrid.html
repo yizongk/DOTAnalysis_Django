@@ -77,6 +77,7 @@
         var emp_col_def     = {{ emp_entry_columns_json|safe }};
         var emp_data        = {{ emp_entries_json|safe }};
         var sup_dropdown    = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
+        var site_dropdown    = {{ site_dropdown_list_json|safe }};
         // Add a dummy object for empty superivor full name in the sort of the select list
         sup_dropdown.push({'pms': null, 'annotated__full_name': null})
 
@@ -85,11 +86,11 @@
 
         class SupervisorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
-                let sup_pms         = ag_cell.value
-                let sup_fullname    = sup_name_from_pms[sup_pms]
+                let sup_pms         = ag_cell.value;
+                let sup_fullname    = sup_name_from_pms[sup_pms];
                 let super_params = {
                     rendered_text : sup_fullname
-                }
+                };
                 this.initBase(super_params);
             }
         }
@@ -113,8 +114,36 @@
                     select_element_id               : 'sup_select',
                     option_element_set_val_fct      : (each) => { return (each.pms == null) ? '' : each.pms; },
                     option_element_set_txt_fct      : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
-                }
-                this.initBase(super_params)
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let cur_site_id     = ag_cell.value;
+                let site_name       = site_dropdown.filter(site_obj => site_obj.site_id == cur_site_id)[0].site;
+                let super_params    = {
+                    rendered_text : site_name
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : site_dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        return x.site < y.site ? -1 : x.site > y.site ? 1 : 0;
+                                                    },
+                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_id == ag_cell.value ? -1 : y.site_id == ag_cell.value ? 1 : 0; },
+                    select_element_id               : 'site_select',
+                    option_element_set_val_fct      : (each) => { return (each.site_id == null) ? '' : each.site_id; },
+                    option_element_set_txt_fct      : (each) => { return each.site; },
+                };
+                this.initBase(super_params);
             }
         }
 
@@ -167,12 +196,17 @@
 
                     // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
                     if (ag_column.headerName == 'Supervisor') {
-                        ag_column['cellEditor']     = 'supervisorCellEditor';
                         ag_column['cellRenderer']   = 'supervisorCellRenderer';
+                        ag_column['cellEditor']     = 'supervisorCellEditor';
                     }
 
                     if (ag_column.headerName == 'OfficeTitle') {
                         // Default setting will do.
+                    }
+
+                    if (ag_column.headerName == 'ActualSite') {
+                        ag_column['cellRenderer']   = 'siteCellRenderer';
+                        ag_column['cellEditor']     = 'siteCellEditor';
                     }
                 }
             }
@@ -192,8 +226,10 @@
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {
-                    supervisorCellEditor    : SupervisorCellEditor,
                     supervisorCellRenderer  : SupervisorCellRenderer,
+                    supervisorCellEditor    : SupervisorCellEditor,
+                    siteCellRenderer        : SiteCellRenderer,
+                    siteCellEditor          : SiteCellEditor,
                 },
             }
 
