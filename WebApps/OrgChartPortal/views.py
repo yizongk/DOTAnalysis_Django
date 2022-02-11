@@ -225,7 +225,7 @@ class EmppUpdateAndTrack:
                     new_supervisor_obj = get_active_tblemployee_qryset()
                     new_supervisor_obj = new_supervisor_obj.get(pms__exact=self.new_value)
                 except ObjectDoesNotExist as e:
-                    raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exists")
+                    raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exist")
 
                 if employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
                     ## Return False because new value is same as old value
@@ -242,7 +242,16 @@ class EmppUpdateAndTrack:
                     employee_row.office_title = self.new_value
 
             elif self.column_name == 'ActualSiteId':
-                ...
+                try:
+                    new_site_obj = TblDOTSites.objects.using('OrgChartWrite').get(site_id__exact=self.new_value)
+                except ObjectDoesNotExist as e:
+                    raise ValueError(f"The Site Id '{self.new_value}' doesn't exist")
+
+                if employee_row.actual_site_id.site_id == new_site_obj.site_id:
+                    ## Return False because new value is same as old value
+                    return False
+                else:
+                    employee_row.actual_site_id = new_site_obj
 
             elif self.column_name == 'ActualFloorId':
                 ...
