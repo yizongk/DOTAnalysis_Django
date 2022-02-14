@@ -79,9 +79,13 @@
         var sup_dropdown            = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
         var site_dropdown           = {{ site_dropdown_list_json|safe }};
         var site_floor_dropdown     = {{ site_floor_dropdown_list_json|safe }};
+        var site_type_dropdown      = {{ site_type_dropdown_list_json|safe }};
 
         // Add a dummy object for empty superivor full name in the sort of the select list
-        // sup_dropdown.push({'pms': null, 'annotated__full_name': null})
+        sup_dropdown.push({         'pms': null,                        'annotated__full_name': null})
+        site_dropdown.push({        'site_id': null,                    'site': null})
+        site_floor_dropdown.push({  'floor_id': null,                   'site_id': null,                    'floor': null})
+        site_type_dropdown.push({   'site_type_id__site_type_id': null, 'site_type_id__site_type': null,    'floor_id__floor_id': null})
 
         var sup_name_from_pms = {};
         for (const i in sup_dropdown) { sup_name_from_pms[sup_dropdown[i].pms] = sup_dropdown[i].annotated__full_name }
@@ -125,7 +129,8 @@
         class SiteCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
                 let cur_site_id     = ag_cell.value;
-                let site_name       = site_dropdown.filter(site_obj => site_obj.site_id == cur_site_id)[0].site;
+                let found           = site_dropdown.filter(site_obj => site_obj.site_id == cur_site_id);
+                let site_name       = found.length == 0 ? null : found[0].site;
 
                 let super_params    = {
                     rendered_text : site_name
@@ -151,8 +156,9 @@
 
         class SiteFloorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
-                let cur_floor_id = ag_cell.value;
-                let site_floor = site_floor_dropdown.filter(x => x.floor_id == cur_floor_id)[0].floor;
+                let cur_floor_id    = ag_cell.value;
+                let found           = site_floor_dropdown.filter(x => x.floor_id == cur_floor_id);
+                let site_floor      = found.length == 0 ? null : found[0].floor;
 
                 let super_params = {
                     rendered_text : site_floor
@@ -163,27 +169,59 @@
 
         class SiteFloorCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
-                let row_site_id = ag_cell.data.actual_site_id__site_id;
-                let sub_floor_array = site_floor_dropdown.filter(x => x.site_id == row_site_id);
+                let row_site_id     = ag_cell.data.actual_site_id__site_id;
+                let sub_floor_array = site_floor_dropdown.filter(x => x.site_id == row_site_id || x.site_id == null);
 
                 let super_params = {
                     ag_cell                         : ag_cell,
                     select_array                    : sub_floor_array,
                     select_array_sort_fct           : function(x,y) {
-                                                        /*  If floor can be float, convert it to float
+                                                        /*  If floor is null, set it to null
+                                                            If floor can be float, convert it to float
                                                             If floor is not float, and has 'SL', replace it with '-' and then convert to float, resulting in a negative float
-                                                            If floor is not float, and has no 'SL', set it to 0
+                                                            If floor is not float, and has no 'SL', set it to -999 to be on the bottom of the list
 
                                                             Sort desc by floor number
                                                         */
-                                                        let x_float = isNaN( parseFloat(x.floor) ) ? (x.floor.includes('SL') ? parseFloat(x.floor.replace('SL', '-')) : 0) : parseFloat(x.floor) ;
-                                                        let y_float = isNaN( parseFloat(y.floor) ) ? (y.floor.includes('SL') ? parseFloat(y.floor.replace('SL', '-')) : 0) : parseFloat(y.floor) ;
+                                                        let x_float = ( (x.floor == null) ? -999 : !isNaN( parseFloat(x.floor) ) ? parseFloat(x.floor) : (x.floor.includes('SL') ? parseFloat(x.floor.replace('SL', '-')) : 0) );
+                                                        let y_float = ( (y.floor == null) ? -999 : !isNaN( parseFloat(y.floor) ) ? parseFloat(y.floor) : (y.floor.includes('SL') ? parseFloat(y.floor.replace('SL', '-')) : 0) );
                                                         return x_float < y_float ? 1 : x_float > y_float ? -1 : 0;
                                                     },
                     ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.floor_id == ag_cell.value ? -1 : y.floor_id == ag_cell.value ? 1 : 0; },
                     select_element_id               : 'floor_select',
                     option_element_set_val_fct      : (each) => { return (each.floor_id == null) ? '' : each.floor_id; },
                     option_element_set_txt_fct      : (each) => { return each.floor; },
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteTypeCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let cur_site_type_id    = ag_cell.value;
+                let found               = site_type_dropdown.filter(x => x.site_type_id__site_type_id == cur_site_type_id);
+                let site_type           = found.length == 0 ? null : found[0].site_type_id__site_type;
+
+                let super_params = {
+                    rendered_text : site_type
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteTypeCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let row_floor_id        = ag_cell.data.actual_floor_id__floor_id;
+                let sub_site_type_array = site_type_dropdown.filter(x => x.floor_id__floor_id == row_floor_id || x.floor_id__floor_id == null);
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : sub_site_type_array,
+                    select_array_sort_fct           : function(x, y) { return x.site_type_id__site_type < y.site_type_id__site_typeite ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0; },
+                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_type_id__site_type_id == ag_cell.value ? -1 : y.site_type_id__site_type_id == ag_cell.value ? 1 : 0; },
+                    select_element_id               : 'site_type_select',
+                    option_element_set_val_fct      : (each) => { return (each.site_type_id__site_type_id == null) ? '' : each.site_type_id__site_type_id; },
+                    option_element_set_txt_fct      : (each) => { return each.site_type_id__site_type; },
                 };
                 this.initBase(super_params);
             }
@@ -205,14 +243,14 @@
                 }
             });
 
-            function cellValueSetter(ag_row) {
+            function cellValueSetter(ag_node) {
                 post_params = {
                     api_json_blob   : {
-                        'to_pms'        : ag_row.data.pms,
-                        'column_name'   : ag_row.colDef.headerName,
-                        'new_value'     : ag_row.newValue,
+                        'to_pms'        : ag_node.data.pms,
+                        'column_name'   : ag_node.colDef.headerName,
+                        'new_value'     : ag_node.newValue,
                     },
-                    ag_row          : ag_row,
+                    ag_node         : ag_node,
                     post_url        : "update_employee_data",
                 }
 
@@ -255,6 +293,11 @@
                         ag_column['cellRenderer']   = 'siteFloorCellRenderer';
                         ag_column['cellEditor']     = 'siteFloorCellEditor';
                     }
+
+                    if (ag_column.headerName == 'ActualSiteType') {
+                        ag_column['cellRenderer']   = 'siteTypeCellRenderer';
+                        ag_column['cellEditor']     = 'siteTypeCellEditor';
+                    }
                 }
             }
 
@@ -279,6 +322,8 @@
                     siteCellEditor          : SiteCellEditor,
                     siteFloorCellRenderer   : SiteFloorCellRenderer,
                     siteFloorCellEditor     : SiteFloorCellEditor,
+                    siteTypeCellRenderer    : SiteTypeCellRenderer,
+                    siteTypeCellEditor      : SiteTypeCellEditor,
                 },
             }
 

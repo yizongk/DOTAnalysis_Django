@@ -68,7 +68,7 @@ class TblDOTSiteFloorSiteTypes(models.Model):
         db_table = 'tblDOTSiteFloorSiteTypes'
 
     def __str__(self):
-        return self.floor_id
+        return f"{self.site_type_id}"
 
 class TblEmployees(models.Model):
     '''

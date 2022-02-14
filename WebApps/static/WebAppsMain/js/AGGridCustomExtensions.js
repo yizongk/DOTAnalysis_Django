@@ -7,14 +7,14 @@ class BaseAGGridCellValueSetter {
      * Etc.
      *
      * Usages:
-     * function cellValueSetter(ag_row) {
+     * function cellValueSetter(ag_node) {
      *     post_params = {
      *         api_json_blob   : {
-     *             'to_pms'        : ag_row.data.pms,
-     *             'column_name'   : ag_row.colDef.headerName,
-     *             'new_value'     : ag_row.newValue,
+     *             'to_pms'        : ag_node.data.pms,
+     *             'column_name'   : ag_node.colDef.headerName,
+     *             'new_value'     : ag_node.newValue,
      *         },
-     *         ag_row          : ag_row,
+     *         ag_node          : ag_node,
      *         post_url        : "update_employee_data",
      *     }
      *
@@ -28,12 +28,12 @@ class BaseAGGridCellValueSetter {
         /**
          * Expects params to have properties:
          *      - api_json_blob : This will be the object that is POST to the API.
-         *      - ag_row        : A reference to the AG row (Really the cell calls it) that called thsi function.
+         *      - ag_node       : A reference to the AG node (Really the cell calls it) that called thsi function.
          *      - post_url      : The API URL that the request will POST to.
          */
 
         let props = {
-            'ag_row': params.ag_row,
+            'ag_node': params.ag_node,
         }
 
         let response = sentJsonBlobToApi({
@@ -41,11 +41,11 @@ class BaseAGGridCellValueSetter {
             api_url             : params.post_url,
             http_request_method : "POST",
             successCallbackFct  : function(json_response, props) {
-                let ag_row = props.ag_row
-                ag_row.data[ag_row.colDef.field] = ag_row.newValue;
-                ag_row.api.refreshCells({
-                    rowNodes: [ag_row.node],
-                    columns: [ag_row.column],
+                let ag_node = props.ag_node
+                ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+                ag_node.api.refreshCells({
+                    rowNodes: [ag_node.node],
+                    columns: [ag_node.column],
                 });
             },
             failCallbackFct     : function(json_response, props) {

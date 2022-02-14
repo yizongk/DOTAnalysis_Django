@@ -228,7 +228,7 @@ class EmppUpdateAndTrack:
                     raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exist")
 
                 ## Data validation
-                if employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
+                if employee_row.supervisor_pms is not None and employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
                     ## Return False because new value is same as old value
                     return False
                 elif employee_row.pms == new_supervisor_obj.pms:
@@ -238,7 +238,7 @@ class EmppUpdateAndTrack:
 
             elif self.column_name == 'OfficeTitle':
                 ## Data validation
-                if employee_row.office_title == self.new_value:
+                if employee_row.office_title is not None and employee_row.office_title == self.new_value:
                     return False
                 else:
                     employee_row.office_title = self.new_value
@@ -250,7 +250,7 @@ class EmppUpdateAndTrack:
                     raise ValueError(f"The Site Id '{self.new_value}' doesn't exist")
 
                 ## Data validation
-                if employee_row.actual_site_id.site_id == new_site_obj.site_id:
+                if employee_row.actual_site_id is not None and employee_row.actual_site_id.site_id == new_site_obj.site_id:
                     ## Return False because new value is same as old value
                     return False
                 else:
@@ -263,17 +263,34 @@ class EmppUpdateAndTrack:
                     raise ValueError(f"The Floor Id '{self.new_value}' doesn't exist")
 
                 ## Data validation
-                if employee_row.actual_floor_id.floor_id == new_floor_obj.floor_id:
+                if employee_row.actual_floor_id is not None and employee_row.actual_floor_id.floor_id == new_floor_obj.floor_id:
                     ## Return False because new value is same as old value
                     return False
                 elif employee_row.actual_site_id.site_id != new_floor_obj.site_id.site_id:
-                    ## Floor_id must be associated with current employee's Site_id
+                    ## Floor_Id must be associated with current employee's Site_Id
                     raise ValueError(f"Floor '{new_floor_obj.floor}' ({self.new_value}) is not a valid floor for '{employee_row.actual_site_id.site}' ({employee_row.actual_site_id.site_id})")
                 else:
                     employee_row.actual_floor_id = new_floor_obj
 
             elif self.column_name == 'ActualSiteTypeId':
-                ...
+                try:
+                    new_site_type_obj = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact=self.new_value)
+                    data_validate_obj = TblDOTSiteFloorSiteTypes.objects.using('OrgChartWrite').filter(
+                        site_type_id__exact=self.new_value
+                        ,floor_id__exact=employee_row.actual_floor_id.floor_id
+                    )
+                except ObjectDoesNotExist as e:
+                    raise ValueError(f"The Site Type Id '{self.new_value}' doesn't exist")
+
+                ## Data validation
+                if employee_row.actual_site_type_id is not None and employee_row.actual_site_type_id.site_type_id == new_site_type_obj.site_type_id:
+                    ## Return False because new value is same as old value
+                    return False
+                elif data_validate_obj.count() == 0:
+                    ## Site_Type_Id must be associated with current employee's Floor_Id
+                    raise ValueError(f"Site Type '{new_site_type_obj.site_type}' ({self.new_value}) is not a valid site type for '{employee_row.actual_floor_id.floor_id}' ({employee_row.actual_floor_id.floor})")
+                else:
+                    employee_row.actual_site_type_id = new_site_type_obj
 
             else:
                 raise ValueError(f"{self.column_name} is not an editable column")
@@ -418,6 +435,7 @@ class EmpGridPageView(generic.ListView):
     supervisor_dropdown_list_json   = None
     site_dropdown_list_json         = None
     site_floor_dropdown_list_json   = None
+    site_type_dropdown_list_json    = None
 
     def get_queryset(self):
         ## Check for Active Admins
@@ -445,14 +463,14 @@ class EmpGridPageView(generic.ListView):
                 {'headerName': 'PMS'              , 'field': 'pms'}
                 ,{'headerName': 'LastName'        , 'field': 'last_name'}
                 ,{'headerName': 'FirstName'       , 'field': 'first_name'}
-                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'}
-                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type'}
+                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type_id'}
                 ,{'headerName': 'Lv'              , 'field': 'lv'}
                 ,{'headerName': 'WU'              , 'field': 'wu__wu'}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'}
                 ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'}
+                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'}
             ]
 
             fields_list = [each['field'] for each in ag_grid_col_def]
@@ -495,6 +513,12 @@ class EmpGridPageView(generic.ListView):
                 ,'floor'
             ).order_by('floor')
 
+            site_type_dropdown_list = TblDOTSiteFloorSiteTypes.objects.using('OrgChartRead').values(
+                'site_type_id__site_type_id'
+                ,'site_type_id__site_type'
+                ,'floor_id__floor_id'
+            ).order_by('site_type_id__site_type')
+
             import json
             from django.core.serializers.json import DjangoJSONEncoder
 
@@ -503,6 +527,7 @@ class EmpGridPageView(generic.ListView):
             self.supervisor_dropdown_list_json  = json.dumps(list(supervisor_dropdown_list) , cls=DjangoJSONEncoder)
             self.site_dropdown_list_json        = json.dumps(list(site_dropdown_list)       , cls=DjangoJSONEncoder)
             self.site_floor_dropdown_list_json  = json.dumps(list(site_floor_dropdown_list) , cls=DjangoJSONEncoder)
+            self.site_type_dropdown_list_json   = json.dumps(list(site_type_dropdown_list)  , cls=DjangoJSONEncoder)
 
         except Exception as e:
             self.req_success = False
@@ -527,6 +552,7 @@ class EmpGridPageView(generic.ListView):
             context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
             context["site_dropdown_list_json"]          = self.site_dropdown_list_json
             context["site_floor_dropdown_list_json"]    = self.site_floor_dropdown_list_json
+            context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
             return context
         except Exception as e:
             self.req_success                            = False
@@ -544,6 +570,7 @@ class EmpGridPageView(generic.ListView):
             context["supervisor_dropdown_list_json"]    = None
             context["site_dropdown_list_json"]          = None
             context["site_floor_dropdown_list_json"]    = None
+            context["site_type_dropdown_list_json"]     = None
             return context
 
 
