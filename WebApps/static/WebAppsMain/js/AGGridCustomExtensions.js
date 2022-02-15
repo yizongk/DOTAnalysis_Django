@@ -151,7 +151,16 @@ class BaseAGGridCellSelectEditor {
         // Bring current selection to top of the select list
         if (this.ag_cell_val_bubble_up_sort_fct == null) {
             this.select_array.sort(
-                function(x, y) { return x == this.ag_cell.value ? -1 : y == this.ag_cell.value ? 1 : 0; }
+                function(x, y) {
+                    if ( this.select_array.filter(x => x == this.ag_cell.value) > 0 ) {
+                        // ag_cell.value exists in the select_array, bubble the option up to the top of the select list.
+                        return x == this.ag_cell.value ? -1 : y == this.ag_cell.value ? 1 : 0;
+                    } else {
+                        // If ag_cell.value is not in the select_array, bubble up the null option to the top of the select list.
+                        // This is needed so the select list won't bug out, and not trigger the change function of AG Grid.
+                        return x == null ? -1 : y == null ? 1 : 0;
+                    }
+                }
             )
         } else {
             this.select_array.sort(this.ag_cell_val_bubble_up_sort_fct)

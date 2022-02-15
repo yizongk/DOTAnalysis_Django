@@ -267,28 +267,41 @@ class EmppUpdateAndTrack:
                     ## Return False because new value is same as old value
                     return False
                 elif employee_row.actual_site_id.site_id != new_floor_obj.site_id.site_id:
-                    ## Floor_Id must be associated with current employee's Site_Id
-                    raise ValueError(f"Floor '{new_floor_obj.floor}' ({self.new_value}) is not a valid floor for '{employee_row.actual_site_id.site}' ({employee_row.actual_site_id.site_id})")
+                    ## Floor_Id must be associated with employee's current Site_Id
+                    raise ValueError(f"Floor ({new_floor_obj.floor}-{self.new_value}) is not a valid floor for ({employee_row.actual_site_id.site}-{employee_row.actual_site_id.site_id})")
                 else:
                     employee_row.actual_floor_id = new_floor_obj
 
             elif self.column_name == 'ActualSiteTypeId':
                 try:
                     new_site_type_obj = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact=self.new_value)
-                    data_validate_obj = TblDOTSiteFloorSiteTypes.objects.using('OrgChartWrite').filter(
-                        site_type_id__exact=self.new_value
-                        ,floor_id__exact=employee_row.actual_floor_id.floor_id
-                    )
                 except ObjectDoesNotExist as e:
                     raise ValueError(f"The Site Type Id '{self.new_value}' doesn't exist")
 
                 ## Data validation
+                try:
+                    site_and_floor_validation_obj = site_type_validation_obj = TblDOTSiteFloorSiteTypes.objects.using('OrgChartWrite').filter(
+                        floor_id__site_id__site_id__exact   = employee_row.actual_site_id.site_id
+                        ,floor_id__floor_id__exact          = employee_row.actual_floor_id.floor_id
+                    )
+
+                    site_type_validation_obj = TblDOTSiteFloorSiteTypes.objects.using('OrgChartWrite').filter(
+                        floor_id__site_id__site_id__exact   = employee_row.actual_site_id.site_id
+                        ,floor_id__floor_id__exact          = employee_row.actual_floor_id.floor_id
+                        ,site_type_id__site_type_id__exact  = self.new_value
+                    )
+                except Exception as e:
+                    raise ValueError(f"Failed to obtain data validation objects: {e}")
+
                 if employee_row.actual_site_type_id is not None and employee_row.actual_site_type_id.site_type_id == new_site_type_obj.site_type_id:
                     ## Return False because new value is same as old value
                     return False
-                elif data_validate_obj.count() == 0:
-                    ## Site_Type_Id must be associated with current employee's Floor_Id
-                    raise ValueError(f"Site Type '{new_site_type_obj.site_type}' ({self.new_value}) is not a valid site type for '{employee_row.actual_floor_id.floor_id}' ({employee_row.actual_floor_id.floor})")
+                elif site_and_floor_validation_obj.count() == 0:
+                    ## Employee's current Site_Id and Floor_Id must be associated with each other.
+                    raise ValueError(f"Invalid Site ({employee_row.actual_site_id.site}-{employee_row.actual_site_id.site_id}) and Floor ({employee_row.actual_floor_id.floor}-{employee_row.actual_floor_id.floor_id}) combination, please fix those first before entering Site Type.")
+                elif site_type_validation_obj.count() == 0:
+                    ## Site_Type_Id must be associated with employee's current Site_Id and Floor_Id
+                    raise ValueError(f"Site Type ({new_site_type_obj.site_type}-{self.new_value}) is not a valid site type for ({employee_row.actual_site_id.site_id}-{employee_row.actual_site_id.site}) and ({employee_row.actual_floor_id.floor_id}-{employee_row.actual_floor_id.floor})")
                 else:
                     employee_row.actual_site_type_id = new_site_type_obj
 
@@ -517,6 +530,7 @@ class EmpGridPageView(generic.ListView):
                 'site_type_id__site_type_id'
                 ,'site_type_id__site_type'
                 ,'floor_id__floor_id'
+                ,'floor_id__site_id'
             ).order_by('site_type_id__site_type')
 
             import json
