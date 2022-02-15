@@ -8,7 +8,7 @@ class TblChanges(models.Model):
     updated_on = models.DateTimeField(db_column='UpdatedOn', blank=False, null=False, )
     updated_by_pms = models.CharField(db_column='UpdatedByPMS', blank=False, null=False, max_length=7)
     updated_to_pms = models.CharField(db_column='UpdatedToPMS', blank=False, null=False, max_length=7)
-    new_value = models.CharField(db_column='NewValue', blank=False, null=False, max_length=255)
+    new_value = models.CharField(db_column='NewValue', blank=True, null=True, max_length=255)
     column_name = models.CharField(db_column='ColumnName', blank=False, null=False, max_length=255)
 
     class Meta:
