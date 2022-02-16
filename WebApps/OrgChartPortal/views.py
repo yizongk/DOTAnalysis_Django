@@ -473,12 +473,12 @@ class EmpGridPageView(generic.ListView):
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
-                {'headerName': 'PMS'              , 'field': 'pms'                                  , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 80}
-                ,{'headerName': 'LastName'        , 'field': 'last_name'                            , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 100}
-                ,{'headerName': 'FirstName'       , 'field': 'first_name'                           , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 100}
-                ,{'headerName': 'Lv'              , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 65}
-                ,{'headerName': 'WU'              , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 75}
-                ,{'headerName': 'Title'           , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left' , 'width': 230}
+                {'headerName': 'PMS'              , 'field': 'pms'                                  , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 80}
+                ,{'headerName': 'LastName'        , 'field': 'last_name'                            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
+                ,{'headerName': 'FirstName'       , 'field': 'first_name'                           , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
+                ,{'headerName': 'Lv'              , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 65}
+                ,{'headerName': 'WU'              , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 75}
+                ,{'headerName': 'Title'           , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 230}
                 ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'                         , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'              , 'suppressMovable': True , 'lockPinned': True}
