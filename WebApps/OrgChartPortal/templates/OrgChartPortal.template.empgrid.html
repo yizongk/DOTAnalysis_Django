@@ -225,6 +225,11 @@
                 let cur_row_floor_id    = ag_cell.data.actual_floor_id__floor_id;
                 let cur_row_site_id     = ag_cell.data.actual_site_id__site_id;
                 let sub_site_type_array = site_type_dropdown.filter( x => (x.floor_id__floor_id == cur_row_floor_id && x.floor_id__site_id == cur_row_site_id) || (x.floor_id__floor_id == null) );
+                if (sub_site_type_array.length == 1 && sub_site_type_array[0].floor_id__floor_id == null) {
+                    // Site and Site Floor are invalid combination, and so there isn't a valid list of Site Type to choose from
+                    alert("Site and Site Floor are invalid combination, please fix that first")
+                    // No need to return. Alert() seems to cause the cell to lose focus anyway, so the dropdown list never shows when the alert() is called.
+                }
 
                 let super_params = {
                     ag_cell                         : ag_cell,
