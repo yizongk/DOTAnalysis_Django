@@ -473,17 +473,17 @@ class EmpGridPageView(generic.ListView):
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
-                {'headerName': 'PMS'              , 'field': 'pms'}
-                ,{'headerName': 'LastName'        , 'field': 'last_name'}
-                ,{'headerName': 'FirstName'       , 'field': 'first_name'}
-                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type_id'}
-                ,{'headerName': 'Lv'              , 'field': 'lv'}
-                ,{'headerName': 'WU'              , 'field': 'wu__wu'}
-                ,{'headerName': 'Title'           , 'field': 'civil_title'}
-                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'}
-                ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'}
-                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'}
-                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'}
+                {'headerName': 'PMS'              , 'field': 'pms'                                  , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'LastName'        , 'field': 'last_name'                            , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'FirstName'       , 'field': 'first_name'                           , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'Lv'              , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'WU'              , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'Title'           , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'pinned': 'left'}
+                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'                         , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'              , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'            , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type_id'    , 'suppressMovable': True , 'lockPinned': True}
             ]
 
             fields_list = [each['field'] for each in ag_grid_col_def]
