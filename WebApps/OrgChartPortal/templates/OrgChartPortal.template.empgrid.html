@@ -280,6 +280,11 @@
                 return BaseAGGridCellValueSetter.setAndPOST(post_params);
             }
 
+            function onFirstDataRendered(params) {
+                console.log('Hi THere', params)
+                params.api.sizeColumnsToFit();
+            }
+
             // Specify the columns that is editable here
             var editable_column_names = [
                 'Supervisor',       // Select
@@ -334,8 +339,11 @@
 
                 defaultColDef: {
                     sortable: true,
-                    filter: true
+                    filter: true,
+                    resizable: true,
                 },
+
+                onFirstDataRendered: onFirstDataRendered,
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {
