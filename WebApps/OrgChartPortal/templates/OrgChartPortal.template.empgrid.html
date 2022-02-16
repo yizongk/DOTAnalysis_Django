@@ -277,21 +277,50 @@
             });
 
             function cellValueSetter(ag_node) {
-                post_params = {
-                    api_json_blob   : {
-                        'to_pms'        : ag_node.data.pms,
-                        'column_name'   : ag_node.colDef.headerName,
-                        'new_value'     : ag_node.newValue,
-                    },
-                    ag_node         : ag_node,
-                    post_url        : "update_employee_data",
+                let post_params = null;
+                if (ag_node.colDef.headerName == 'ActualSite') {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_response, props) {
+                            let ag_node = props.ag_node;
+
+                            ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+                            // Null the Actual Site Floor and Actual Site Type on Actual Site changes. The API has already made this change on a successfuly API call.
+                            ag_node.data['actual_floor_id__floor_id']           = null;
+                            ag_node.data['actual_site_type_id__site_type_id']   = null;
+
+                            ag_node.api.refreshCells({
+                                rowNodes: [ag_node.node],
+                                columns: [
+                                    ag_node.column,
+                                    'actual_floor_id__floor_id',
+                                    'actual_site_type_id__site_type_id'
+                                ],
+                            });
+                        },
+                    }
+                } else {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node         : ag_node,
+                        post_url        : "update_employee_data",
+                    }
                 }
 
                 return BaseAGGridCellValueSetter.setAndPOST(post_params);
             }
 
             function onFirstDataRendered(params) {
-                console.log('Hi THere', params)
                 params.api.sizeColumnsToFit();
             }
 
@@ -354,6 +383,7 @@
                 },
 
                 onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {

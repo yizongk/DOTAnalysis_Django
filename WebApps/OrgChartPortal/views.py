@@ -220,6 +220,7 @@ class EmppUpdateAndTrack:
 
 
             ## Implementation of specific column updates
+            additional_operation = None
             if self.column_name == 'SupervisorPMS':
                 try:
                     new_supervisor_obj = get_active_tblemployee_qryset()
@@ -254,7 +255,32 @@ class EmppUpdateAndTrack:
                     ## Return False because new value is same as old value
                     return False
                 else:
-                    employee_row.actual_site_id = new_site_obj
+                    employee_row.actual_site_id         = new_site_obj
+                    employee_row.actual_floor_id        = None
+                    employee_row.actual_site_type_id    = None
+
+                    ## Additional operation to be perform in the transaction. Record the changes to Site Floor Id and Site Type Id.
+                    def additional_operation_tbl_changes():
+                        change_record_site_floor_row = TblChanges(
+                            updated_on      = updated_on
+                            ,updated_by_pms = self.updated_by_pms
+                            ,updated_to_pms = self.updated_to_pms
+                            ,new_value      = None
+                            ,column_name    = 'ActualFloorId'
+                        )
+
+                        change_record_site_type_row = TblChanges(
+                            updated_on      = updated_on
+                            ,updated_by_pms = self.updated_by_pms
+                            ,updated_to_pms = self.updated_to_pms
+                            ,new_value      = None
+                            ,column_name    = 'ActualSiteTypeId'
+                        )
+
+                        change_record_site_floor_row.save(using='OrgChartWrite')
+                        change_record_site_type_row.save(using='OrgChartWrite')
+
+                    additional_operation = additional_operation_tbl_changes
 
             elif self.column_name == 'ActualFloorId':
                 try:
@@ -313,6 +339,9 @@ class EmppUpdateAndTrack:
             try:
                 with transaction.atomic(using='OrgChartWrite'):
                     employee_row.save(using='OrgChartWrite')
+
+                    if additional_operation is not None:
+                        additional_operation()
 
                     change_record_row = TblChanges(
                         updated_on      = updated_on
@@ -479,8 +508,8 @@ class EmpGridPageView(generic.ListView):
                 ,{'headerName': 'Lv'              , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 65}
                 ,{'headerName': 'WU'              , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 75}
                 ,{'headerName': 'Title'           , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 230}
-                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'                         , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'              , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'            , 'suppressMovable': True , 'lockPinned': True}
                 ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type_id'    , 'suppressMovable': True , 'lockPinned': True}
