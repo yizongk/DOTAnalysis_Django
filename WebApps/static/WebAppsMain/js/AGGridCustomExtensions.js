@@ -14,8 +14,10 @@ class BaseAGGridCellValueSetter {
      *             'column_name'   : ag_node.colDef.headerName,
      *             'new_value'     : ag_node.newValue,
      *         },
-     *         ag_node          : ag_node,
-     *         post_url        : "update_employee_data",
+     *         ag_node              : ag_node,
+     *         post_url             : "update_employee_data",
+     *         on_success_callback  : function(json_response, props) {...}, // Optional
+     *         on_fail_callback     : function(json_response, props) {...}, // Optional
      *     }
      *
      *     return BaseAGGridCellValueSetter.setAndPOST(post_params);
@@ -27,30 +29,48 @@ class BaseAGGridCellValueSetter {
     static setAndPOST(params) { // Static so it can be called without instantiating the class
         /**
          * Expects params to have properties:
-         *      - api_json_blob : This will be the object that is POST to the API.
-         *      - ag_node       : A reference to the AG node (Really the cell calls it) that called thsi function.
-         *      - post_url      : The API URL that the request will POST to.
+         *      - api_json_blob         : This will be the object that is POST to the API.
+         *      - ag_node               : A reference to the AG node (Really the cell calls it) that called thsi function.
+         *      - post_url              : The API URL that the request will POST to.
+         *      - on_success_callback   : (Optional) Expects two arguments json_response and props. Functions to be called on successful POST request
+         *      - on_fail_callback      : (Optional) Expects two arguments json_response and props. Functions to be called on failed POST request
          */
 
         let props = {
             'ag_node': params.ag_node,
         }
 
+        let success_callback = null;
+        if (params.on_success_callback == null) {
+            // default callbacks
+            success_callback = function(json_response, props) {
+                let ag_node = props.ag_node;
+                ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+                ag_node.api.refreshCells({
+                    rowNodes: [ag_node.node],   // List of row nodes to restrict operation to
+                    columns: [ag_node.column],  // List of columns to restrict operation to
+                });
+            }
+        } else {
+            success_callback = params.on_success_callback;
+        }
+
+        let fail_callback = null;
+        if (params.on_success_callback == null) {
+            // default callbacks
+            fail_callback = function(json_response, props) {
+                console.log(`API ${params.post_url}(): bad api call`)
+            };
+        } else {
+            fail_callback = params.on_fail_callback;
+        }
+
         let response = sentJsonBlobToApi({
             json_blob           : params.api_json_blob,
             api_url             : params.post_url,
             http_request_method : "POST",
-            successCallbackFct  : function(json_response, props) {
-                let ag_node = props.ag_node
-                ag_node.data[ag_node.colDef.field] = ag_node.newValue;
-                ag_node.api.refreshCells({
-                    rowNodes: [ag_node.node],
-                    columns: [ag_node.column],
-                });
-            },
-            failCallbackFct     : function(json_response, props) {
-                console.log(`API ${params.post_url}(): bad api call`)
-            },
+            successCallbackFct  : success_callback,
+            failCallbackFct     : fail_callback,
             ajaxFailCallbackFct : function(jqXHR, props) {
                 console.log(`API ${params.post_url}(): fail ajax call`)
             },
