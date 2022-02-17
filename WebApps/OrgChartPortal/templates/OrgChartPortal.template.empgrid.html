@@ -48,7 +48,10 @@
             <p class='active item'>My Data Entry Team</p>
         </div>
 
-        <p class="active item">*To add someone to your data entry team, please email: <br>** Max Siegel<br>(msiegel@dot.nyc.gov) or <br>** Yi Zong Kuang<br>(ykuang@dot.nyc.gov)</p>
+        <p class="active item">To add someone to your data entry team, please email:
+            <p class="item">Max Siegel <br> (msiegel@dot.nyc.gov)</P>
+            <p class="item">Yi Zong Kuang <br> (ykuang@dot.nyc.gov)</P>
+        </p>
     </div>
 
     {% comment %} AG Grid {% endcomment %}
@@ -429,65 +432,64 @@
             .sidebar('attach events', '#left-sidebar-toggle');
 
             // Get permitted WU permissions info
-            let wu_perm_api_url = '/OrgChartPortal/get_client_wu_permissions_list';
-            let response = sentJsonBlobToApi({
-                //json_blob           : params.api_json_blob,
-                api_url             : wu_perm_api_url,
+            let wu_perms_api_url = '/OrgChartPortal/get_client_wu_permissions_list';
+            let wu_perms_response = sentJsonBlobToApi({
+                api_url             : wu_perms_api_url,
                 http_request_method : "POST",
-                successCallbackFct  : function(json_response) {
-                    console.log(json_response)
-                    if (json_response["post_success"] == true && json_response["post_msg"] != null) {
+                successCallbackFct  : function(json_wu_perms_response) {
+                    if (json_wu_perms_response["post_success"] == true && json_wu_perms_response["post_msg"] != null) {
                         // User is admin
-                        $('#client_wu_permissions_info').append(`<p class='item'>User is Admin</p>`);
+                        $('#client_wu_permissions_info').append(`<p class='item'>${json_wu_perms_response["post_msg"]}</p>`);
                         return
                     }
 
-                    list_of_json_client_wu_permissions_response = json_response["post_data"];
+                    list_of_json_client_wu_permissions_wu_perms_response = json_wu_perms_response["post_data"];
 
                     // Populate side bar
-                    list_of_json_client_wu_permissions_response.map(function(each) {
+                    list_of_json_client_wu_permissions_wu_perms_response.map(function(each) {
                         $('#client_wu_permissions_info').append(`<p class='item'>WU - ${each.wu__wu}<br>${each.wu__wu_desc}<br>${each.wu__subdiv}</p>`);
                     })
                 },
-                failCallbackFct     : function(json_response) {
+                failCallbackFct     : function(json_wu_perms_response) {
                     $('#client_wu_permissions_info').append(`<p class='item'>Error getting data</p>`)
                 },
                 ajaxFailCallbackFct : function(jqXHR) {
-                    console.log(`API ${wu_perm_api_url}(): fail ajax call`)
+                    console.log(`API ${wu_perms_api_url}(): fail ajax call`)
+                },
+            })
+
+
+            // Get teammates info
+            let teammates_api_url = '/OrgChartPortal/get_client_teammates_list';
+            teammates_response = sentJsonBlobToApi({
+                api_url             : teammates_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_teammates_response) {
+                    if (json_teammates_response["post_success"] == true && json_teammates_response["post_msg"] != null) {
+                        // User is admin
+                        $('#client_data_entry_team_info').append(`<p class='item'>${json_teammates_response["post_msg"]}</p>`);
+                        return
+                    }
+
+                    list_of_json_client_teammates_teammates_response = json_teammates_response["post_data"];
+
+                    // Populate side bar
+                    list_of_json_client_teammates_teammates_response.map(function(each) {
+                        let first_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.user_id__pms__first_name));
+                        let last_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.user_id__pms__last_name));
+                        $('#client_data_entry_team_info').append(`<p class='item'>${first_name}, ${last_name}</p>`);
+                    })
+                },
+                failCallbackFct     : function(json_teammates_response) {
+                    $('#client_data_entry_team_info').append(`<p class='item'>Error getting data</p>`)
+                },
+                ajaxFailCallbackFct : function(jqXHR) {
+                    console.log(`API ${teammates_api_url}(): fail ajax call`)
                 },
             })
 
 
             {% comment %}
-            // Get teammates info
-            $.ajax({
-                url: "/OrgChartPortal/get_client_teammates_list",
-                type: "POST",
-            })
-            .done(function(json_response) {
-                if (json_response["post_success"] == false) {
-                    console.log(`Error: Ajax calling GetClientTeammates: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong while trying to get list teammates for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_client_teammates_list: Server Response: ${json_response["post_msg"]}`);
-                } else { // Api call successful
-                    list_of_json_client_teammates_response = json_response["post_data"]
-
-                    // Populate side bar
-                    list_of_json_client_teammates_response.map(function(each) {
-                        let first_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.pms__first_name))
-                        let last_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.pms__last_name))
-                        $('#client_data_entry_team_info').append(`<p class='item'>${first_name}, ${last_name}</p>`)
-                    })
-
-                }
-                return true;
-            })
-            .fail(function(json_response) {
-                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                return false;
-            });
-
             // Get emp grid stats
             $.ajax({
                 url: "/OrgChartPortal/get_emp_grid_stats",

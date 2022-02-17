@@ -505,7 +505,55 @@ def GetClientWUPermissions(request):
 
     except Exception as e:
         err_msg = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
-        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+
+def GetClientTeammates(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetClientTeammates(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetClientTeammates():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if is_admin:
+            return JsonResponse({
+                "post_success": True,
+                "post_msg": 'User is Admin',
+                "post_data": None,
+            })
+        else:
+            wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                    user_id__windows_username=remote_user
+                    ,user_id__active=True
+                ).order_by('wu__wu')
+
+            wu_permissions_list = wu_permissions_query.values('wu__wu')
+
+            teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                wu__wu__in=wu_permissions_list
+                ,user_id__active=True
+            ).order_by('user_id__pms')
+
+            teammates_list_json = list(teammates_query.values('user_id__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))
+
+            return JsonResponse({
+                "post_success": True,
+                "post_msg": None,
+                "post_data": teammates_list_json,
+            })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -667,48 +715,6 @@ class EmpGridPageView(generic.ListView):
 
 
 ## @TODO For front org chart view, the following. Move this chunk of code up before EmpGridPageView()
-def GetClientTeammates(request):
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: OrgChartPortal: GetClientTeammates(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetClientTeammates():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Get the data
-    try:
-        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
-                user_id__windows_username=remote_user
-                ,user_id__active=True
-            ).order_by('wu__wu')
-
-        wu_permissions_list_json = wu_permissions_query.values('wu__wu')
-
-        teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
-                wu__wu__in=wu_permissions_list_json
-                ,user_id__active=True
-            ).order_by('pms__pms')
-
-        teammates_list_json = list(teammates_query.values('pms__pms').annotate(pms__first_name=Min('pms__first_name'), pms__last_name=Min('pms__last_name')))
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": teammates_list_json,
-        })
-    except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
-        print(err_msg)
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": err_msg
-        })
-
-
 def GetEmpGridStats(request):
     ## Authenticate User
     remote_user = None
