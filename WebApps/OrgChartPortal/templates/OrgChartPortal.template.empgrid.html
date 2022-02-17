@@ -34,26 +34,27 @@
     </div>
 
     {% comment %} Side Bar {% endcomment %}
-    {% comment %} <div>
-        <div class="ui secondary labeled icon toggle button" id="left-sidebar-toggle">
-            <i class="left arrow icon"></i>
-            Show my profile (Hide/Show)
-        </div>
-        <div class="ui inverted left vertical sidebar menu">
-            <div id='client_wu_permissions_info'>
-                <p class='active item'>My WU Permissions</p>
-            </div>
+    <div class="ui secondary labeled icon toggle button" id="left-sidebar-toggle">
+        <i class="left arrow icon"></i>
+        Show my profile (Hide/Show)
+    </div>
 
-            <div id='client_data_entry_team_info'>
-                <p class='active item'>My Data Entry Team</p>
-            </div>
-
-            <p class="active item">*To add someone to your data entry team, please email: <br>** Max Siegel<br>(msiegel@dot.nyc.gov) or <br>** Yi Zong Kuang<br>(ykuang@dot.nyc.gov)</p>
+    <div class="ui inverted left vertical sidebar menu">
+        <div id='client_wu_permissions_info'>
+            <p class='active item'>My WU Permissions</p>
         </div>
-    </div> {% endcomment %}
+
+        <div id='client_data_entry_team_info'>
+            <p class='active item'>My Data Entry Team</p>
+        </div>
+
+        <p class="active item">*To add someone to your data entry team, please email: <br>** Max Siegel<br>(msiegel@dot.nyc.gov) or <br>** Yi Zong Kuang<br>(ykuang@dot.nyc.gov)</p>
+    </div>
 
     {% comment %} AG Grid {% endcomment %}
-    <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+    <div style="height: 40vw; width: auto;">
+        <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+    </div>
 
     {% comment %} Footer {% endcomment %}
     {% comment %} <div>
@@ -405,7 +406,7 @@
     </script>
 
     {% comment %} Side Bar Stuff {% endcomment %}
-    {% comment %} <script>
+    <script>
         function upperCaseFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
@@ -417,7 +418,7 @@
         }
 
         $(document).ready( function () {
-             $('.ui.left.sidebar').sidebar({
+            $('.ui.left.sidebar').sidebar({
                 dimPage: false,
                 transition: 'push',
                 exclusive: false,
@@ -427,6 +428,7 @@
             $('.ui.left.sidebar')
             .sidebar('attach events', '#left-sidebar-toggle');
 
+            {% comment %}
             // Get permitted WU permissions info
             $.ajax({
                 url: "/OrgChartPortal/get_client_wu_permissions_list",
@@ -506,8 +508,9 @@
                 alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
                 return false;
             });
+            {% endcomment %}
         });
-    </script> {% endcomment %}
+    </script>
 
     {% comment %} Footer Stuff {% endcomment %}
 
