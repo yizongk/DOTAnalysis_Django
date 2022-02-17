@@ -463,6 +463,55 @@ def UpdateEmployeeData(request):
     })
 
 
+def GetClientWUPermissions(request):
+    """
+        Return a list of WU permission related to the requesting client.
+        If client is admin, will return a none null post_msg and a true post_success.
+    """
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetClientWUPermissions(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetClientWUPermissions():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if is_admin:
+            return JsonResponse({
+                "post_success": True,
+                "post_msg": 'User is Admin',
+                "post_data": None,
+            })
+        else:
+            wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                    user_id__windows_username=remote_user
+                    ,user_id__active=True
+                ).order_by('wu__wu')
+
+            wu_permissions_list_json = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
+
+            return JsonResponse({
+                "post_success": True,
+                "post_msg": None,
+                "post_data": wu_permissions_list_json,
+            })
+
+
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+
 class EmpGridPageView(generic.ListView):
     template_name                   = 'OrgChartPortal.template.empgrid.html'
     context_object_name             = 'emp_entries'
@@ -618,41 +667,6 @@ class EmpGridPageView(generic.ListView):
 
 
 ## @TODO For front org chart view, the following. Move this chunk of code up before EmpGridPageView()
-def GetClientWUPermissions(request):
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: OrgChartPortal: GetClientWUPermissions(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetClientWUPermissions():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Get the data
-    try:
-        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
-                user_id__windows_username=remote_user
-                ,user_id__active=True
-            ).order_by('wu__wu')
-
-        wu_permissions_list_json = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": wu_permissions_list_json,
-        })
-    except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
-        print(err_msg)
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": err_msg
-        })
-
-
 def GetClientTeammates(request):
     ## Authenticate User
     remote_user = None
