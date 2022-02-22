@@ -89,32 +89,18 @@ def get_allowed_list_of_wu(username=None):
         }
 
 
+def get_active_lv_list():
+    return ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
+
+
 def get_active_tblemployee_qryset(read_only=True):
     if read_only:
             return TblEmployees.objects.using('OrgChartRead').filter(
-            lv__in=[
-                'B'
-                ,'C'
-                ,'K'
-                ,'M'
-                ,'N'
-                ,'Q'
-                ,'R'
-                ,'S'
-            ]
+            lv__in=get_active_lv_list()
         )
     else:
         return TblEmployees.objects.using('OrgChartWrite').filter(
-            lv__in=[
-                'B'
-                ,'C'
-                ,'K'
-                ,'M'
-                ,'N'
-                ,'Q'
-                ,'R'
-                ,'S'
-            ]
+            lv__in=get_active_lv_list()
         )
 
 
@@ -881,7 +867,6 @@ def GetEmpCsv(request):
 
     ## Get the data
     try:
-        active_lv_list = ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
         root_pms = json_blob['root_pms']
 
         ## Check for Active Admins
@@ -891,7 +876,7 @@ def GetEmpCsv(request):
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
             ,~Q(pms__exact=root_pms) # our very top root_pms will have a null supervisor_pms, so this condition is to include the top root_pms despite the first exclude condition
         ).filter(
-            lv__in=active_lv_list
+            lv__in=get_active_lv_list()
         ).order_by(
             'supervisor_pms'
         )
