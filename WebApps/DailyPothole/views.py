@@ -2253,8 +2253,8 @@ def GetCsvExport(request):
             crew_count_sum = 0
             pothole_repaired_sum = 0
             for each in potholes_data:
-                crew_count_sum += each['total_crew_count']
-                pothole_repaired_sum += each['total_repaired']
+                crew_count_sum          += each['total_crew_count'] if each['total_crew_count'] is not None else 0
+                pothole_repaired_sum    += each['total_repaired']   if each['total_repaired']   is not None else 0
 
             ## Create the csv
             writer = csv.writer(dummy_in_mem_file)
