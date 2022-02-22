@@ -626,6 +626,7 @@ def GetEmpGridStats(request):
             ,'annotated__supervisor_full_name'
             ,'office_title'
             ,'actual_site_id__site_id'
+            ,'actual_floor_id__floor_id'
             ,'actual_floor_id__site_id'
             ,'actual_site_type_id__site_type_id'
         ]
@@ -707,20 +708,101 @@ def GetEmpGridStats(request):
             )
 
             return [
-                {'Employee': each['annotated__full_name'], 'WU': each['wu__wu'], 'Inactive_Supervisor': each['annotated__supervisor_full_name']}
+                {
+                    'Employee'              : each['annotated__full_name']
+                    ,'WU'                   : each['wu__wu']
+                    ,'Inactive_Supervisor'  : each['annotated__supervisor_full_name']
+                }
                 for each
                 in inactive_sup
             ]
 
+        def get_empty_or_invalid_floor_combo_list():
+            invalid_site_and_floor = active_permitted_emp.filter(
+                Q(actual_floor_id__floor_id__isnull=True)
+                | ~Q(actual_floor_id__site_id=F('actual_site_id__site_id'))
+            )
+
+            return [
+                {
+                    'Employee'  : each['annotated__full_name']
+                    ,'WU'       : each['wu__wu']
+                }
+                for each
+                in invalid_site_and_floor
+            ]
+
+        def get_empty_or_invalid_site_type_combo_list():
+            valid_combo = TblDOTSiteFloorSiteTypes.objects.using('OrgChartRead').values(
+                'site_type_id'
+                ,'floor_id__floor_id'
+                ,'floor_id__site_id'
+            )
+            valid_combo = list(valid_combo)
+
+            invalid_site_and_floor_and_site_type = [
+                {
+                    'Employee'                              : each['annotated__full_name']
+                    ,'WU'                                   : each['wu__wu']
+                    ,'actual_site_id__site_id'              : each['actual_site_id__site_id']
+                    ,'actual_floor_id__floor_id'            : each['actual_floor_id__floor_id']
+                    ,'actual_site_type_id__site_type_id'    : each['actual_site_type_id__site_type_id']
+                }
+                for each
+                in active_permitted_emp
+            ]
+
+            def is_valid_combo(valid_combo=None, row=None):
+                actual_site_type_id = row['actual_site_type_id__site_type_id']
+                actual_floor_id     = row['actual_floor_id__floor_id']
+                actual_site_id      = row['actual_site_id__site_id']
+
+                found = [
+                    each
+                    for each
+                    in valid_combo
+                    if (
+                        each['site_type_id']            == actual_site_type_id
+                        and each['floor_id__floor_id']  == actual_floor_id
+                        and each['floor_id__site_id']   == actual_site_id
+                    )
+                ]
+
+                if len(found) > 1:
+                    raise ValueError(f"Found more than one valid combo for Site Type. Should only find one match, not {len(found)} matches: {found}")
+                elif len(found) == 1:
+                    return True
+                else:
+                    return False
+
+
+            for each in invalid_site_and_floor_and_site_type:
+                if is_valid_combo(valid_combo=valid_combo, row=each):
+                    each['valid_site_type_combo'] = True
+                else:
+                    each['valid_site_type_combo'] = False
+
+            invalid_site_and_floor_and_site_type = [
+                {
+                    'Employee'  : each['Employee']
+                    ,'WU'       : each['WU']
+                }
+                for each
+                in invalid_site_and_floor_and_site_type
+                if each['valid_site_type_combo'] == False
+            ]
+
+            return list(invalid_site_and_floor_and_site_type)
+
         emp_grid_stats_json = {
-            'supervisor_completed'      : get_supervisor_completed()
-            ,'office_title_completed'   : get_office_title_completed()
-            ,'list_last_updated_on'     : get_list_last_updated_on()
-            ,'list_last_updated_by'     : get_list_last_updated_by()
-            ,'inactive_supervisor_list' : get_inactive_supervisors()
+            'supervisor_completed'                      : get_supervisor_completed()
+            ,'office_title_completed'                   : get_office_title_completed()
+            ,'list_last_updated_on'                     : get_list_last_updated_on()
+            ,'list_last_updated_by'                     : get_list_last_updated_by()
+            ,'inactive_supervisor_list'                 : get_inactive_supervisors()
+            ,'empty_or_invalid_floor_combo_list'        : get_empty_or_invalid_floor_combo_list()
+            ,'empty_or_invalid_site_type_combo_list'    : get_empty_or_invalid_site_type_combo_list()
         }
-
-
 
 
         return JsonResponse({
