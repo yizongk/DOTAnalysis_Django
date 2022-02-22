@@ -614,13 +614,16 @@ def GetEmpGridStats(request):
         def annotate_emp_full_name(qryset):
             return qryset.annotate(
                 annotated__full_name=Concat( F('last_name'), Value(', '), F('first_name') )
+                ,annotated__supervisor_full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
             )
 
         fields_list = [
             'pms'
+            ,'wu__wu'
             ,'annotated__full_name'
             ,'supervisor_pms__pms'
             ,'supervisor_pms__lv'
+            ,'annotated__supervisor_full_name'
             ,'office_title'
             ,'actual_site_id__site_id'
             ,'actual_floor_id__site_id'
@@ -697,12 +700,24 @@ def GetEmpGridStats(request):
             last_updated_by_pms = get_latest_change()['updated_by_pms']
             return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
 
+        def get_inactive_supervisors():
+            inactive_sup = active_permitted_emp.filter(
+                Q(supervisor_pms__pms__isnull=False)
+                & ~Q(supervisor_pms__lv__in=get_active_lv_list())
+            )
+
+            return [
+                {'Employee': each['annotated__full_name'], 'WU': each['wu__wu'], 'Inactive_Supervisor': each['annotated__supervisor_full_name']}
+                for each
+                in inactive_sup
+            ]
 
         emp_grid_stats_json = {
             'supervisor_completed'      : get_supervisor_completed()
             ,'office_title_completed'   : get_office_title_completed()
             ,'list_last_updated_on'     : get_list_last_updated_on()
             ,'list_last_updated_by'     : get_list_last_updated_by()
+            ,'inactive_supervisor_list' : get_inactive_supervisors()
         }
 
 
