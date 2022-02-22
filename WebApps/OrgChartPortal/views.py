@@ -643,15 +643,29 @@ def GetEmpGridStats(request):
             total_count = active_emp.count()
 
             sup_completed_count = active_emp.filter(
-                supervisor_pms__pms__isnull=False
+                Q(supervisor_pms__pms__isnull=False)    # not null
+                & ~Q(supervisor_pms__pms__exact="")     # not empty
             ).count()
 
             sup_completed_percentage = float(sup_completed_count)/float(total_count) * 100
 
             return sup_completed_percentage
 
+        def get_office_title_completed():
+            total_count = active_emp.count()
+
+            office_title_completed_count = active_emp.filter(
+                Q(office_title__isnull=False)   # not null
+                & ~Q(office_title__exact="")    # not empty
+            ).count()
+
+            office_title_completed_percentage = float(office_title_completed_count)/float(total_count) * 100
+
+            return office_title_completed_percentage
+
         emp_grid_stats_json = {
             'supervisor_completed': get_supervisor_completed()
+            ,'office_title_completed': get_office_title_completed()
         }
 
 
