@@ -597,6 +597,80 @@ def GetClientTeammates(request):
         })
 
 
+def GetEmpGridStats(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetEmpGridStats(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: GetEmpGridStats():\n\nUNAUTHENTICATE USER!",
+        })
+
+    ## Get the data
+    try:
+        fields_list = [
+            'pms'
+            # ,'annotated__full_name'
+            ,'supervisor_pms__pms'
+            ,'supervisor_pms__lv'
+            ,'office_title'
+            ,'actual_site_id__site_id'
+            ,'actual_floor_id__site_id'
+            ,'actual_site_type_id__site_type_id'
+        ]
+        active_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=None)
+        active_emp = active_emp.order_by('wu__wu')
+
+        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        # if not is_admin:
+
+
+        # def get_possible_site_type(site_id=None, floor_id=None):
+        #     possible_site_types = TblDOTSiteFloorSiteTypes.objects.using("OrgChartRead").filter(
+        #         floor_id__site_id__site_id__exact=site_id
+        #         ,floor_id__floor_id__exact=floor_id
+        #     )
+        #     return list(possible_site_types.values('floor_id__site_id__site_id', 'floor_id__floor_id', 'site_type_id'))
+
+        # import json
+        # from django.core.serializers.json import DjangoJSONEncoder
+
+        # Q(supervisor_pms__pms__exact=None) | Q(~supervisor_pms__lv__in=get_active_lv_list())
+        def get_supervisor_completed():
+            total_count = active_emp.count()
+
+            sup_completed_count = active_emp.filter(
+                supervisor_pms__pms__isnull=False
+            ).count()
+
+            sup_completed_percentage = float(sup_completed_count)/float(total_count) * 100
+
+            return sup_completed_percentage
+
+        emp_grid_stats_json = {
+            'supervisor_completed': get_supervisor_completed()
+        }
+
+
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_data": emp_grid_stats_json,
+        })
+    except Exception as e:
+        err_msg = "Exception: OrgChartPortal: GetEmpGridStats(): {}".format(e)
+        print(err_msg)
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": err_msg
+        })
+
+
 class EmpGridPageView(generic.ListView):
     template_name                   = 'OrgChartPortal.template.empgrid.html'
     context_object_name             = 'emp_entries'
@@ -734,62 +808,6 @@ class EmpGridPageView(generic.ListView):
             context["site_floor_dropdown_list_json"]    = None
             context["site_type_dropdown_list_json"]     = None
             return context
-
-
-## @TODO For front org chart view, the following. Move this chunk of code up before EmpGridPageView()
-def GetEmpGridStats(request):
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: OrgChartPortal: GetEmpGridStats(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetEmpGridStats():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Get the data
-    try:
-        # teammates_list_json = list(teammates_query.values('pms__pms').annotate(pms__first_name=Min('pms__first_name'), pms__last_name=Min('pms__last_name')))
-
-        allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
-        if allowed_wu_list_obj['success'] == False:
-            raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
-        else:
-            allowed_wu_list = allowed_wu_list_obj['wu_list']
-
-        client_orgchart_data = TblEmployees.objects.using('OrgChartRead').filter(
-            wu__wu__in=allowed_wu_list,
-        ).order_by('wu__wu')
-
-        emp_grid_stats_list_json = list(client_orgchart_data.values('pms').annotate(pms__first_name=Min('first_name'), pms__last_name=Min('last_name')))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": emp_grid_stats_list_json,
-        })
-    except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetEmpGridStats(): {}".format(e)
-        print(err_msg)
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": err_msg
-        })
 
 
 class OrgChartPageView(generic.ListView):
