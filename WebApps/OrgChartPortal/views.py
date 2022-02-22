@@ -16,7 +16,7 @@ from datetime import timedelta
 
 
 ## Check if remote user is admin and is active
-def user_is_active_admin(username):
+def user_is_active_admin(username=None):
     try:
         admin_query = TblUsers.objects.using('OrgChartWrite').filter(
             windows_username=username
@@ -64,7 +64,7 @@ class ContactPageView(TemplateView):
     template_name = 'OrgChartPortal.template.contact.html'
 
 
-def get_allowed_list_of_wu(username):
+def get_allowed_list_of_wu(username=None):
     try:
         wu_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
             user_id__windows_username=username
@@ -82,26 +82,40 @@ def get_allowed_list_of_wu(username):
             "err": "Cannot find any WU permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: OrgChartPortal: get_allowed_list_of_wu(): {}".format(e))
+        print("get_allowed_list_of_wu(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: OrgChartPortal: get_allowed_list_of_wu(): {}'.format(e),
         }
 
 
-def get_active_tblemployee_qryset():
-    return TblEmployees.objects.using('OrgChartWrite').filter(
-        lv__in=[
-            'B'
-            ,'C'
-            ,'K'
-            ,'M'
-            ,'N'
-            ,'Q'
-            ,'R'
-            ,'S'
-        ]
-    )
+def get_active_tblemployee_qryset(read_only=True):
+    if read_only:
+            return TblEmployees.objects.using('OrgChartRead').filter(
+            lv__in=[
+                'B'
+                ,'C'
+                ,'K'
+                ,'M'
+                ,'N'
+                ,'Q'
+                ,'R'
+                ,'S'
+            ]
+        )
+    else:
+        return TblEmployees.objects.using('OrgChartWrite').filter(
+            lv__in=[
+                'B'
+                ,'C'
+                ,'K'
+                ,'M'
+                ,'N'
+                ,'Q'
+                ,'R'
+                ,'S'
+            ]
+        )
 
 
 def get_active_emp_qryset(
@@ -121,6 +135,7 @@ def get_active_emp_qryset(
             ,'abc_group'
         ]
         ,custom_annotate_fct = None
+        ,read_only = True
     ):
     '''
     @fields_list
@@ -142,18 +157,54 @@ def get_active_emp_qryset(
             final_qryset = get_active_emp_qryset(
                 ...
                 fields_list = ['supervisor_pms__full_name', 'emp_full_name_and_pms', ...]
-                custom_annotate_fct = annotate_fct
+                ,custom_annotate_fct = annotate_fct
+                ,read_only = True
                 ...
             )
     '''
 
-    qryset = get_active_tblemployee_qryset()
+    qryset = get_active_tblemployee_qryset(read_only=False)
 
     if custom_annotate_fct is not None:
         qryset = custom_annotate_fct(qryset)
 
     ## To speed up the query, need to specify only the columns that is needed, so that django do a one-time query of the entire related dataset.
     return qryset.values(*fields_list)
+
+'''
+Checks if client is admin, and then return a queryset that filters for employees that the client has permissions to.
+@username is required, rest of the argument is optional
+'''
+def get_active_permitted_emp_qryset(username=None, fields_list=None, read_only=True, custom_annotate_fct=None):
+    try:
+        if username is None:
+            raise ValueError(f"@username cannot be None, must provide the client's username")
+
+        client_is_admin = user_is_active_admin(username)['isAdmin']
+        emp_data = get_active_emp_qryset(
+            fields_list=fields_list
+            ,custom_annotate_fct=custom_annotate_fct
+            ,read_only=read_only
+        )
+
+        if client_is_admin:
+            return emp_data
+        else:
+            allowed_wu_list_obj = get_allowed_list_of_wu(username)
+            if allowed_wu_list_obj['success'] == False:
+                raise ValueError(f"{allowed_wu_list_obj['err']}")
+            else:
+                allowed_wu_list = allowed_wu_list_obj['wu_list']
+
+            emp_data = emp_data.filter(
+                wu__wu__in=allowed_wu_list,
+            )
+
+            return emp_data
+
+        return None
+    except Exception as e:
+        raise ValueError(f"get_active_permitted_emp_qryset(): {e}")
 
 
 '''
@@ -214,7 +265,7 @@ class EmppUpdateAndTrack:
 
             ## Find the target employee row
             try:
-                employee_row = get_active_tblemployee_qryset().get(pms__exact=self.updated_to_pms)
+                employee_row = get_active_tblemployee_qryset(read_only=False).get(pms__exact=self.updated_to_pms)
             except ObjectDoesNotExist as e:
                 raise ValueError(f"The PMS '{self.updated_to_pms}' is either inactive or doesn't exists")
 
@@ -223,7 +274,7 @@ class EmppUpdateAndTrack:
             additional_operation = None
             if self.column_name == 'SupervisorPMS':
                 try:
-                    new_supervisor_obj = get_active_tblemployee_qryset()
+                    new_supervisor_obj = get_active_tblemployee_qryset(read_only=False)
                     new_supervisor_obj = new_supervisor_obj.get(pms__exact=self.new_value)
                 except ObjectDoesNotExist as e:
                     raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exist")
@@ -426,7 +477,7 @@ def UpdateEmployeeData(request):
                 raise ValueError(f"get_allowed_list_of_wu() failed: {wu_permissions['err']}")
 
             try:
-                employee_row = get_active_tblemployee_qryset().get(pms__exact=to_pms)
+                employee_row = get_active_tblemployee_qryset(read_only=False).get(pms__exact=to_pms)
             except ObjectDoesNotExist as e:
                 raise ValueError(f"The PMS '{to_pms}' is either inactive or doesn't exists")
             if employee_row.wu.wu not in allowed_wu_list:
@@ -614,24 +665,8 @@ class EmpGridPageView(generic.ListView):
 
             fields_list = [each['field'] for each in ag_grid_col_def]
 
-            if self.client_is_admin:
-                emp_entries = get_active_emp_qryset(
-                    fields_list=fields_list
-                    # ,custom_annotate_fct=annotate_sup_full_name
-                ).order_by('wu__wu', 'last_name')
-            else:
-                allowed_wu_list_obj = get_allowed_list_of_wu(self.request.user)
-                if allowed_wu_list_obj['success'] == False:
-                    raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
-                else:
-                    allowed_wu_list = allowed_wu_list_obj['wu_list']
-
-                emp_entries = get_active_emp_qryset(
-                    fields_list=fields_list
-                    # ,custom_annotate_fct=annotate_sup_full_name
-                ).filter(
-                    wu__wu__in=allowed_wu_list,
-                ).order_by('wu__wu', 'last_name')
+            emp_entries = get_active_permitted_emp_qryset(username=self.request.user, fields_list=fields_list, read_only=True, custom_annotate_fct=None)
+            emp_entries = emp_entries.order_by('wu__wu', 'last_name')
 
             supervisor_dropdown_list = get_active_emp_qryset(
                 fields_list=[
@@ -639,6 +674,7 @@ class EmpGridPageView(generic.ListView):
                     ,'annotated__full_name'
                 ]
                 ,custom_annotate_fct=annotate_emp_full_name
+                ,read_only = True
             ).order_by('last_name')
 
             site_dropdown_list = TblDOTSites.objects.using('OrgChartRead').values(
