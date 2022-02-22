@@ -611,9 +611,14 @@ def GetEmpGridStats(request):
 
     ## Get the data
     try:
+        def annotate_emp_full_name(qryset):
+            return qryset.annotate(
+                annotated__full_name=Concat( F('last_name'), Value(', '), F('first_name') )
+            )
+
         fields_list = [
             'pms'
-            # ,'annotated__full_name'
+            ,'annotated__full_name'
             ,'supervisor_pms__pms'
             ,'supervisor_pms__lv'
             ,'office_title'
@@ -621,10 +626,10 @@ def GetEmpGridStats(request):
             ,'actual_floor_id__site_id'
             ,'actual_site_type_id__site_type_id'
         ]
-        active_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=None)
-        active_emp = active_emp.order_by('wu__wu')
+        active_permitted_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=annotate_emp_full_name)
+        active_permitted_emp = active_permitted_emp.order_by('wu__wu')
 
-        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
         # if not is_admin:
 
 
@@ -640,9 +645,9 @@ def GetEmpGridStats(request):
 
         # Q(supervisor_pms__pms__exact=None) | Q(~supervisor_pms__lv__in=get_active_lv_list())
         def get_supervisor_completed():
-            total_count = active_emp.count()
+            total_count = active_permitted_emp.count()
 
-            sup_completed_count = active_emp.filter(
+            sup_completed_count = active_permitted_emp.filter(
                 Q(supervisor_pms__pms__isnull=False)    # not null
                 & ~Q(supervisor_pms__pms__exact="")     # not empty
             ).count()
@@ -652,9 +657,9 @@ def GetEmpGridStats(request):
             return sup_completed_percentage
 
         def get_office_title_completed():
-            total_count = active_emp.count()
+            total_count = active_permitted_emp.count()
 
-            office_title_completed_count = active_emp.filter(
+            office_title_completed_count = active_permitted_emp.filter(
                 Q(office_title__isnull=False)   # not null
                 & ~Q(office_title__exact="")    # not empty
             ).count()
@@ -663,9 +668,41 @@ def GetEmpGridStats(request):
 
             return office_title_completed_percentage
 
+        def get_latest_change():
+            # active_permitted_emp already check if client is admin. But if client is admin, the PMS list would be HUGE, so I am placing an check here to avoid computing the PMS list if client is admin.
+            # If client is admin, just return the latest row of the entire tblChanges without filtering for a PMS list
+            if is_admin:
+                changes = TblChanges.objects.using('OrgChartRead').order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
+
+            else:
+                permitted_pms_list = [each['pms'] for each in active_permitted_emp]
+
+                changes = TblChanges.objects.using('OrgChartRead').filter(
+                    updated_to_pms__in=permitted_pms_list
+                ).order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
+
+            return list(changes.values(
+                'id'
+                ,'updated_on'
+                ,'updated_by_pms'
+                ,'updated_to_pms'
+                ,'new_value'
+                ,'column_name'
+            ))[0]
+
+        def get_list_last_updated_on():
+            return get_latest_change()['updated_on']
+
+        def get_list_last_updated_by():
+            last_updated_by_pms = get_latest_change()['updated_by_pms']
+            return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
+
+
         emp_grid_stats_json = {
-            'supervisor_completed': get_supervisor_completed()
-            ,'office_title_completed': get_office_title_completed()
+            'supervisor_completed'      : get_supervisor_completed()
+            ,'office_title_completed'   : get_office_title_completed()
+            ,'list_last_updated_on'     : get_list_last_updated_on()
+            ,'list_last_updated_by'     : get_list_last_updated_by()
         }
 
 
