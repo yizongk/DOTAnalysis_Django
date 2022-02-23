@@ -2,6 +2,15 @@
 
 {% load static %}
 {% block custom_css %}
+    <!-- Popper.js is for Purple dropdowns (@TODO Replace with Fomantic UI) -->
+    <!-- Popper.js, and Vanilla jQuery -->
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/jquery/3.5.1/jquery.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/popper/1.16.1/popper.min.js' %}"></script>
+
+    <!-- BootStrap JS and CSS -->
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.css' %}"/>
+
     <!-- For the sort arrow css class -->
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
 
@@ -11,17 +20,17 @@
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
+    <div>
         <!-- Collapse buttons -->
         <div>
-            <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+            <a class="ui primary button" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                 Information: (Expand/Collapse)
             </a>
         </div>
         <!-- / Collapse buttons -->
         <!-- Collapsible element -->
         <div class="collapse" id="collapseExample">
-            <div class="mt-3">
+            <div>
                 This page show all past-due Indicators and its most recent-to-date data. The criteria for past-due Indicator is if the latest data was updated for a date over 2 months ago
             </div>
         </div>
