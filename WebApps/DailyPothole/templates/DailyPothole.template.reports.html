@@ -5,6 +5,10 @@
 {% load extra_tags %}
 
 {% block custom_css %}
+    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
+    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
+
     <!-- You MUST include jQuery before Fomantic -->
     <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
     <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
