@@ -22,84 +22,62 @@
 
 
 
-    <div class="card-columns">
-        <div class="card DOT-theme-color">
-            <div class="card-body">
-                <div>
-                    <h4 class="class-title font-weight-bold mb-2">Data Entry</h4>
+    <div class="ui link cards">
+
+        <a class="ui card" href="{% url 'perind_webgrid_view' %}">
+            <div class="image" >
+                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
+            </div>
+
+            <div class="content">
+                <div class="header">
+                    Data Entry
                 </div>
+                <div class="ui primary button">Head Over &raquo;</div>
+            </div>
+        </a>
+
+        <a class="ui card" href="#!" onClick="MyWindow=window.open('https://app.powerbigov.us/groups/663659b7-5b41-48b1-9d00-4c7170319cca/reports/52721a1a-9737-48f2-bbce-3acedf782629/ReportSection?openDashboardSource=SubscribeOthers&ctid=21c62253-c3dd-4661-9659-cd01aff2d452','_blank'); return false;">
+            <div class="image" >
+                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
             </div>
 
-            <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
-                <a href="{% url 'perind_webgrid_view' %}">
-                    <div class="mask rgba-white-light"></div>
-                </a>
-            </div>
-
-            <div class="card-body">
-                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_webgrid_view' %}">Head Over &raquo;</a>
-            </div>
-        </div>
-
-        <div class="card DOT-theme-color">
-            <div class="card-body">
-                <div>
-                    <h4 class="class-title font-weight-bold mb-2">Dashboard Reports</h4>
+            <div class="content">
+                <div class="header">
+                    Dashboard Reports
                 </div>
+                <div class="ui primary button">Head Over &raquo;</div>
             </div>
+        </a>
 
-            <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Reporting Logo">
-                <a href="#!" onClick="MyWindow=window.open('https://app.powerbigov.us/groups/663659b7-5b41-48b1-9d00-4c7170319cca/reports/52721a1a-9737-48f2-bbce-3acedf782629/ReportSection?openDashboardSource=SubscribeOthers&ctid=21c62253-c3dd-4661-9659-cd01aff2d452','_blank'); return false;">
-                    <div class="mask rgba-white-light"></div>
-                </a>
-            </div>
-
-            <div class="card-body">
-                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px" href="#!" onClick="MyWindow=window.open('https://app.powerbigov.us/groups/663659b7-5b41-48b1-9d00-4c7170319cca/reports/52721a1a-9737-48f2-bbce-3acedf782629/ReportSection?openDashboardSource=SubscribeOthers&ctid=21c62253-c3dd-4661-9659-cd01aff2d452','_blank'); return false;">Head Over &raquo;</a>
-            </div>
-        </div>
         {% if client_is_admin %}
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Past-due Indicators Report</h4>
+            <a class="ui card" href="{% url 'perind_pastdueindicators' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
+                </div>
+
+                <div class="content">
+                    <div class="header">
+                        Past-due Indicators Report
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'perind_adminpanel' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'perind_pastdueindicators' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_pastdueindicators' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Admin Panel</h4>
+                <div class="content">
+                    <div class="header">
+                        Admin Panel
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
                 </div>
-
-                <div class="view overlay">
-                    <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'perind_adminpanel' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_adminpanel' %}">Head Over &raquo;</a>
-                </div>
-            </div>
+            </a>
         {% endif %}
+
     </div>
 </div>
 

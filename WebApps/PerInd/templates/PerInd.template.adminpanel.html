@@ -11,50 +11,33 @@
 {% block content %}
     <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     {% if client_is_admin %}
-        <div class="card-columns">
+        <div class="ui link cards">
 
+            <a class="ui card" href="{% url 'perind_userspanel' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/512x512/users.png' %}">
+                </div>
 
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Users Panel</h4>
+                <div class="content">
+                    <div class="header">
+                        Users Panel
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'perind_userpermissionspanel' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/512x512/user_permissions.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <!-- Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/512x512/users.png' %}" alt="Users Panel Logo">
-                    <a href="{% url 'perind_userspanel' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_userspanel' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">User Permissions Panel</h4>
+                <div class="content">
+                    <div class="header">
+                        User Permissions Panel
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
                 </div>
-
-                <div class="view overlay">
-                    <!-- Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/512x512/user_permissions.png' %}" alt="User Permissions Panel Logo">
-                    <a href="{% url 'perind_userpermissionspanel' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'perind_userpermissionspanel' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
+            </a>
 
         </div>
     {% endif %}
