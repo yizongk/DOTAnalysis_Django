@@ -1,6 +1,11 @@
 {% extends 'PerInd.template.base.html' %}
 
 {% load static %}
+{% block custom_css %}
+    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
+    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
+{% endblock %}
 <!-- Will contain the template for the WebGrid html -->
 {% block content %}
     <style>
