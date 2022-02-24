@@ -3,9 +3,6 @@
 {% load static %}
 
 {% block custom_css %}
-    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
-    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +12,7 @@
 
             <a class="ui card" href="{% url 'dailypothole_users_panel_view' %}">
                 <div class="image" >
-                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/512x512/users.png' %}">
+                    <img src="{% static 'WebAppsMain/images/512x512/users.png' %}">
                 </div>
 
                 <div class="content">
@@ -28,7 +25,7 @@
 
             <a class="ui card" href="{% url 'dailypothole_user_permissions_panel_view' %}">
                 <div class="image" >
-                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/512x512/user_permissions.png' %}">
+                    <img src="{% static 'WebAppsMain/images/512x512/user_permissions.png' %}">
                 </div>
 
                 <div class="content">

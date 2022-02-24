@@ -5,16 +5,6 @@
 {% load extra_tags %}
 
 {% block custom_css %}
-    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
-    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
-
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -27,105 +17,89 @@
 
 
     {% if req_success %}
-    <div>
-        <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    {% comment %} <div class="modal-header text-center">
-                        <h4 class="modal-title w-100 font-weight-bold">Input Pothole Data</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div> {% endcomment %}
-                    <div class="modal-body mx-3">
-                        <div class="ui horizontal divider">Enter potholes data</div>
+        <div class="ui one column centered grid">
+            <div class="ui modal" id="modalNewRowForm">
+                <div class="content center aligned">
 
-                        <div>Date of repair</div>
-                        <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
-                            <input type="date" id="modalNewRowFormDateOfRepairInput" class="pothole_selection" value="{{ -1|addDaysFromToday }}">
-                        </div>
+                    <div class="ui horizontal divider">Enter potholes data</div>
 
-                        <div>Select operation</div>
-                        <div id="modalNewRowFormSelectOperationInputForPotholeDataBorder">
-                            <select id="modalNewRowFormSelectOperationInputForPotholeData" class="ui selection dropdown pothole_selection">
-                                {% for each in operation_list %}
-                                    <option value="{{ each }}">{{ each }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>Select borough</div>
-                        <div id="modalNewRowFormSelectBoroughInputForPotholeDataBorder">
-                            <select id="modalNewRowFormSelectBoroughInputForPotholeData" class="ui selection dropdown pothole_selection">
-                                {% for each in boro_list %}
-                                    <option value="{{ each }}">{{ each }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>Enter pothole crew count</div>
-                        <div id="modalNewRowFormPotholeCrewCountInputBorder" class="ui input">
-                            <input id="modalNewRowFormPotholeCrewCountInput">
-                        </div>
-
-                        <div>Enter potholes repaired</div>
-                        <div id="modalNewRowFormRegularHolesRepairedInputBorder" class="ui input">
-                            <input id="modalNewRowFormRegularHolesRepairedInput">
-                        </div>
-
-                        <div class="d-flex justify-content-center">
-                            <button id="modalNewRowFormAddButtonPotholeData" class="btn btn-default">Save Pothole Info</button>
-                        </div>
-
-
-
-
-                        <div class="ui horizontal divider">Enter information for today's crews</div>
-
-                        <div>Today's pothole crew count</div>
-                        <div id="modalNewRowFormTodayPotholeCrewCountInputBorder" class="ui input">
-                            <input id="modalNewRowFormTodayPotholeCrewCountInput">
-                        </div>
-
-                        <div>Date</div>
-                        <div id="modalNewRowFormTodayDateInputBorder" class="ui input">
-                            <input type="date" id="modalNewRowFormTodayDateInput" class="today_crew_count_selection" value="{{ today }}">
-                        </div>
-
-                        <div>Select operation</div>
-                        <div id="modalNewRowFormSelectOperationInputForTodayCrewBorder">
-                            <select id="modalNewRowFormSelectOperationInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
-                                {% for each in operation_list %}
-                                    <option value="{{ each }}">{{ each }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div>Select borough</div>
-                        <div id="modalNewRowFormSelectBoroughInputForTodayCrewBorder">
-                            <select id="modalNewRowFormSelectBoroughInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
-                                {% for each in boro_list %}
-                                    <option value="{{ each }}">{{ each }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="d-flex justify-content-center">
-                            <button id="modalNewRowFormAddButtonTodayCrewData" class="btn btn-default">Save Today's Crew</button>
-                        </div>
+                    <div>Date of repair</div>
+                    <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
+                        <input type="date" id="modalNewRowFormDateOfRepairInput" class="pothole_selection" value="{{ -1|addDaysFromToday }}">
                     </div>
-                    {% comment %} <div class="modal-footer d-flex justify-content-center">
-                        <button id="modalNewRowFormAddButton" class="btn btn-default">Add</button>
-                    </div> {% endcomment %}
-                    <div id='successMsg'></div>
-                </div>
-            </div>
-        </div>
 
-        <div class="text-center">
-            <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Input Pothole Data</a>
+                    <div>Select operation</div>
+                    <div id="modalNewRowFormSelectOperationInputForPotholeDataBorder">
+                        <select id="modalNewRowFormSelectOperationInputForPotholeData" class="ui selection dropdown pothole_selection">
+                            {% for each in operation_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>Select borough</div>
+                    <div id="modalNewRowFormSelectBoroughInputForPotholeDataBorder">
+                        <select id="modalNewRowFormSelectBoroughInputForPotholeData" class="ui selection dropdown pothole_selection">
+                            {% for each in boro_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>Enter pothole crew count</div>
+                    <div id="modalNewRowFormPotholeCrewCountInputBorder" class="ui input">
+                        <input id="modalNewRowFormPotholeCrewCountInput">
+                    </div>
+
+                    <div>Enter potholes repaired</div>
+                    <div id="modalNewRowFormRegularHolesRepairedInputBorder" class="ui input">
+                        <input id="modalNewRowFormRegularHolesRepairedInput">
+                    </div>
+
+                    <div class="ui horizontal divider"></div>
+                    <button id="modalNewRowFormAddButtonPotholeData" class="ui teal large button">Save Pothole Info</button>
+
+
+
+                    <div class="ui horizontal divider">Enter information for today's crews</div>
+
+                    <div>Today's pothole crew count</div>
+                    <div id="modalNewRowFormTodayPotholeCrewCountInputBorder" class="ui input">
+                        <input id="modalNewRowFormTodayPotholeCrewCountInput">
+                    </div>
+
+                    <div>Date</div>
+                    <div id="modalNewRowFormTodayDateInputBorder" class="ui input">
+                        <input type="date" id="modalNewRowFormTodayDateInput" class="today_crew_count_selection" value="{{ today }}">
+                    </div>
+
+                    <div>Select operation</div>
+                    <div id="modalNewRowFormSelectOperationInputForTodayCrewBorder">
+                        <select id="modalNewRowFormSelectOperationInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
+                            {% for each in operation_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>Select borough</div>
+                    <div id="modalNewRowFormSelectBoroughInputForTodayCrewBorder">
+                        <select id="modalNewRowFormSelectBoroughInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
+                            {% for each in boro_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="ui horizontal divider"></div>
+                    <button id="modalNewRowFormAddButtonTodayCrewData" class="ui teal large button">Save Today's Crew</button>
+
+                </div>
+                <div id='successMsg'></div>
+            </div>
+
+            <button id="trigger_input" class="ui teal large button">Input Pothole Data</button>
         </div>
-    </div>
     {% endif %}
 
 {% endblock content %}
@@ -144,6 +118,14 @@
             $('#modalNewRowFormSelectBoroughInputForPotholeData').dropdown();
             $('#modalNewRowFormSelectOperationInputForTodayCrew').dropdown();
             $('#modalNewRowFormSelectBoroughInputForTodayCrew').dropdown();
+
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
 
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {

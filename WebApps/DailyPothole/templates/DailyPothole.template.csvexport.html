@@ -5,14 +5,6 @@
 {% load extra_tags %}
 
 {% block custom_css %}
-    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
-    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
-
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -46,11 +38,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="dtRgSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="dtRgSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
 
@@ -72,11 +62,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="ytdRgL5YrSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="ytdRgL5YrSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
 
@@ -89,11 +77,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="fytdAndLWkNoArtMaintSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="fytdAndLWkNoArtMaintSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
     {% endif %}

@@ -3,11 +3,6 @@
 
 {% load static %}
 {% block custom_css %}
-    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
-    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
-
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
@@ -38,19 +33,6 @@
         </a>
 
         {% if client_is_admin %}
-            <a class="ui card" href="{% url 'dailypothole_pothole_data_grid_view' %}">
-                <div class="image" >
-                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
-                </div>
-
-                <div class="content">
-                    <div class="header">
-                        Daily Pothole Data Grid
-                    </div>
-                    <div class="ui primary button">Head Over &raquo;</div>
-                </div>
-            </a>
-
             <a class="ui card" href="{% url 'dailypothole_complaints_input_view' %}">
                 <div class="image" >
                     <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
@@ -64,19 +46,6 @@
                 </div>
             </a>
 
-            <a class="ui card" href="{% url 'dailypothole_reports_view' %}">
-                <div class="image" >
-                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
-                </div>
-
-                <div class="content">
-                    <div class="header">
-                        Reports PDF Generation
-                    </div>
-                    <div class="ui primary button">Head Over &raquo;</div>
-                </div>
-            </a>
-
             <a class="ui card" href="{% url 'dailypothole_admin_panel_view' %}">
                 <div class="image" >
                     <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
@@ -85,6 +54,32 @@
                 <div class="content">
                     <div class="header">
                         Admin Panel
+                    </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_pothole_data_grid_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
+                </div>
+
+                <div class="content">
+                    <div class="header">
+                        Daily Pothole Data Grid
+                    </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_reports_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
+                </div>
+
+                <div class="content">
+                    <div class="header">
+                        Reports PDF Generation
                     </div>
                     <div class="ui primary button">Head Over &raquo;</div>
                 </div>
