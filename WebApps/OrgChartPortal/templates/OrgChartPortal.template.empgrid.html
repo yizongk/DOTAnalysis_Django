@@ -3,12 +3,6 @@
 {% load static %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
-    <!-- <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" /> -->
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
 
@@ -85,24 +79,33 @@
     <script>
         var emp_col_def             = {{ emp_entry_columns_json|safe }};
         var emp_data                = {{ emp_entries_json|safe }};
-        var sup_dropdown            = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
+        var active_sup_dropdown     = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
         var site_dropdown           = {{ site_dropdown_list_json|safe }};
         var site_floor_dropdown     = {{ site_floor_dropdown_list_json|safe }};
         var site_type_dropdown      = {{ site_type_dropdown_list_json|safe }};
 
-        // Add a dummy object for empty superivor full name in the sort of the select list
-        sup_dropdown.push({         'pms': null,                        'annotated__full_name': null})
-        site_dropdown.push({        'site_id': null,                    'site': null})
-        site_floor_dropdown.push({  'floor_id': null,                   'site_id': null,                    'floor': null})
-        site_type_dropdown.push({   'site_type_id__site_type_id': null, 'site_type_id__site_type': null,    'floor_id__floor_id': null, 'floor_id__site_id': null})
+        var emp_not_found_placeholder       = '[Inactive Employee]'
+        var site_not_found_placeholder      = '[SITE NOT FOUND]'
+        var floor_not_found_placeholder     = '[FLOOR NOT FOUND]'
+        var site_type_not_found_placeholder = '[SITE TYPE NOT FOUND]'
 
-        var sup_name_from_pms = {};
-        for (const i in sup_dropdown) { sup_name_from_pms[sup_dropdown[i].pms] = sup_dropdown[i].annotated__full_name }
+        // Add a dummy object for empty superivor full name in the sort of the select list
+        //site_type_dropdown.push({   'site_type_id__site_type_id': null, 'site_type_id__site_type': null,    'floor_id__floor_id': null, 'floor_id__site_id': null})
+
+        var active_sup_pms_and_name = {};
+        for (const i in active_sup_dropdown) { active_sup_pms_and_name[active_sup_dropdown[i].pms] = active_sup_dropdown[i].annotated__full_name }
 
         class SupervisorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
                 let sup_pms         = ag_cell.value;
-                let sup_fullname    = sup_name_from_pms[sup_pms];
+                let sup_fullname    = active_sup_pms_and_name[sup_pms];
+
+                if ( sup_pms == null ) {
+                    sup_fullname = null
+                } else if ( sup_pms != null && typeof sup_fullname == 'undefined' ) {
+                    // sup_pms is not null, but is an inactive employee
+                    sup_fullname = emp_not_found_placeholder
+                }
 
                 let super_params = {
                     rendered_text : sup_fullname
@@ -113,16 +116,31 @@
 
         class SupervisorCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(active_sup_dropdown));
+
+                // Add dummy options for null and not founds
+                if (ag_cell.value == null) {
+                    dropdown.push({'pms': null, 'annotated__full_name': null})
+                } else if ( ag_cell.value != null && typeof(active_sup_pms_and_name[ag_cell.value]) == 'undefined' ) {
+                    dropdown.push({'pms': ag_cell.value, 'annotated__full_name': emp_not_found_placeholder})
+                }
+
                 let super_params = {
                     ag_cell                         : ag_cell,
-                    select_array                    : sup_dropdown,
+                    select_array                    : dropdown,
                     select_array_sort_fct           : function(x, y) {
                                                         if (x.pms == null && y.pms == null)   { return 0; }
                                                         if (x.pms == null)                    { return -1; }
                                                         if (y.pms == null)                    { return 1; }
 
-                                                        let x_fullname = sup_name_from_pms[x.pms].toUpperCase();
-                                                        let y_fullname = sup_name_from_pms[y.pms].toUpperCase();
+                                                        // Sort the elements if element is not null, and is not in the active employee look up list
+                                                        if (x.annotated__full_name == emp_not_found_placeholder && y.annotated__full_name == emp_not_found_placeholder)   { return 0; }
+                                                        if (x.annotated__full_name == emp_not_found_placeholder)                                                         { return -1; }
+                                                        if (y.annotated__full_name == emp_not_found_placeholder)                                                         { return 1; }
+
+                                                        let x_fullname = active_sup_pms_and_name[x.pms].toUpperCase();
+                                                        let y_fullname = active_sup_pms_and_name[y.pms].toUpperCase();
 
                                                         return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
                                                     },
@@ -138,7 +156,7 @@
         class SiteCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
                 let cur_site_id     = ag_cell.value;
-                let found           = site_dropdown.filter(site_obj => site_obj.site_id == cur_site_id);
+                let found           = site_dropdown.filter(x => x.site_id == cur_site_id);
                 let site_name       = found.length == 0 ? null : found[0].site;
 
                 let super_params    = {
@@ -150,10 +168,27 @@
 
         class SiteCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(site_dropdown));
+
+                // Add dummy options for null and not founds
+                if (ag_cell.value == null) {
+                    dropdown.push({'site_id': null          , 'site': null})
+                } else if ( ag_cell.value != null && dropdown.filter(x => x.site_id == ag_cell.value).length == 0 ) {
+                    dropdown.push({'site_id': ag_cell.value , 'site': site_not_found_placeholder})
+                }
+
                 let super_params = {
                     ag_cell                         : ag_cell,
-                    select_array                    : site_dropdown,
-                    select_array_sort_fct           : function(x, y) { return x.site < y.site ? -1 : x.site > y.site ? 1 : 0; },
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        // Sort the elements if element is not null, and is not in look up list
+                                                        if (x.site == site_not_found_placeholder && y.site == site_not_found_placeholder)   { return 0; }
+                                                        if (x.site == site_not_found_placeholder)                                           { return -1; }
+                                                        if (y.site == site_not_found_placeholder)                                           { return 1; }
+
+                                                        return x.site < y.site ? -1 : x.site > y.site ? 1 : 0;
+                                                    },
                     ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_id == ag_cell.value ? -1 : y.site_id == ag_cell.value ? 1 : 0; },
                     select_element_id               : 'site_select',
                     option_element_set_val_fct      : (each) => { return (each.site_id == null) ? '' : each.site_id; },
@@ -181,9 +216,19 @@
                 let cur_row_floor_id    = ag_cell.data.actual_site_id__site_id;
                 let sub_floor_array     = site_floor_dropdown.filter(x => x.site_id == cur_row_floor_id || x.site_id == null);
 
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(sub_floor_array));
+
+                // Add dummy options for null and not founds
+                if (ag_cell.value == null) {
+                    dropdown.push({'floor_id': null         , 'site_id': null, 'floor': null})
+                } else if ( ag_cell.value != null && dropdown.length == 0 ) {
+                    dropdown.push({'floor_id': ag_cell.value, 'site_id': null, 'floor': floor_not_found_placeholder})
+                }
+
                 let super_params = {
                     ag_cell                         : ag_cell,
-                    select_array                    : sub_floor_array,
+                    select_array                    : dropdown,
                     select_array_sort_fct           : function(x,y) {
                                                         /*  If floor is null, set it to null
                                                             If floor can be float, convert it to float
@@ -192,6 +237,12 @@
 
                                                             Sort desc by floor number
                                                         */
+
+                                                        // Sort the elements if element is not null, and is not in the look up list
+                                                        if (x.floor == floor_not_found_placeholder && y.floor == floor_not_found_placeholder)   { return 0; }
+                                                        if (x.floor == floor_not_found_placeholder)                                             { return -1; }
+                                                        if (y.floor == floor_not_found_placeholder)                                             { return 1; }
+
                                                         let x_float = ( (x.floor == null) ? -999 : !isNaN( parseFloat(x.floor) ) ? parseFloat(x.floor) : (x.floor.includes('SL') ? parseFloat(x.floor.replace('SL', '-')) : 0) );
                                                         let y_float = ( (y.floor == null) ? -999 : !isNaN( parseFloat(y.floor) ) ? parseFloat(y.floor) : (y.floor.includes('SL') ? parseFloat(y.floor.replace('SL', '-')) : 0) );
                                                         return x_float < y_float ? 1 : x_float > y_float ? -1 : 0;
@@ -240,10 +291,27 @@
                     // No need to return. Alert() seems to cause the cell to lose focus anyway, so the dropdown list never shows when the alert() is called.
                 }
 
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(sub_site_type_array));
+
+                // Add dummy options for null and not founds
+                if (ag_cell.value == null) {
+                    dropdown.push({'site_type_id__site_type_id': null           , 'site_type_id__site_type': null                           , 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                } else if ( ag_cell.value != null && dropdown.length == 0 ) {
+                    dropdown.push({'site_type_id__site_type_id': ag_cell.value  , 'site_type_id__site_type': site_type_not_found_placeholder, 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                }
+
                 let super_params = {
                     ag_cell                         : ag_cell,
-                    select_array                    : sub_site_type_array,
-                    select_array_sort_fct           : function(x, y) { return x.site_type_id__site_type < y.site_type_id__site_typeite ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0; },
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        // Sort the elements if element is not null, and is not in the look up list
+                                                        if (x.site_type_id__site_type == site_type_not_found_placeholder && y.site_type_id__site_type == site_type_not_found_placeholder)   { return 0; }
+                                                        if (x.site_type_id__site_type == site_type_not_found_placeholder)                                                                   { return -1; }
+                                                        if (y.site_type_id__site_type == site_type_not_found_placeholder)                                                                   { return 1; }
+
+                                                        return x.site_type_id__site_type < y.site_type_id__site_type ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0;
+                                                    },
                     ag_cell_val_bubble_up_sort_fct  : function(x, y) {
                                                         if ( sub_site_type_array.filter(x => x.site_type_id__site_type_id == ag_cell.value).length > 0 ) {
                                                             return x.site_type_id__site_type_id == ag_cell.value ? -1 : y.site_type_id__site_type_id == ag_cell.value ? 1 : 0;
