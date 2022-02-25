@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from WebApps import LookupTableManager
 from WebAppsMain.secret_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -273,6 +274,37 @@ else:
             'driver' :      'SQL Server Native Client 11.0',
         },
     }
+
+
+# Abrar- connection to my local database
+if LookupTableManager_UseWinAuth:
+    DATABASES['LookupTableManager'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        LookupTableManager_SQLServerHost,
+        'NAME' :        LookupTableManager_SQLServerDbName,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+else:
+    DATABASES['LookupTableManager'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        LookupTableManager_SQLServerHost,
+        'NAME' :        LookupTableManager_SQLServerDbName,
+        'USER' :        LookupTableManager_SQLServerUID,
+        'PASSWORD' :    LookupTableManager_SQLServerPWD,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+
+
 
 
 # Password validation

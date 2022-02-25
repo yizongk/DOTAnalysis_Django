@@ -24,3 +24,60 @@ class AboutPageView(TemplateView):
 
 class ContactPageView(TemplateView):
     template_name = 'LookupTableManager.template.contact.html'
+
+
+# Abrar- class for the AG-Grid
+###########################################################################################################################################################
+
+from .models import WUTable2
+import json
+from django.views.generic import ListView
+from django.core.serializers.json import DjangoJSONEncoder
+
+def get_active_emp_qryset(
+    fields_list = [
+    'wu'
+    ,'div'
+    ,'workunitdescription'
+    ,'divisiongroup'
+    ,'subdivision'
+    ]):
+    qryset = WUTable2.objects.all()
+    return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
+    #works fine 
+
+class LookUpView(ListView):
+    # Workunit = None
+    # queryset = WUTable2.objects.all()
+    model = WUTable2
+    template_name = 'Test.html'
+    context_object_name = 'Workunit'
+    Workunit = None
+    def get_queryset(self):
+        columnDefs = [
+            {'headerName': 'WU', 'field': 'wu'}
+            ,{'headerName': 'DIV', 'field': 'div'}
+            ,{'headerName': 'WorkUnitDescription', 'field': 'workunitdescription'}
+            ,{'headerName': 'DivisionGroup', 'field': 'divisiongroup'}
+            ,{'headerName': 'SubDivision', 'field': 'subdivision'}
+        ]
+        fields_list = [each['field'] for each in columnDefs]
+        Workunit = get_active_emp_qryset(fields_list= fields_list)
+        self.Workunit = json.dumps(list(Workunit), cls=DjangoJSONEncoder)
+        # return {'columnDefs': self.Workunit}
+
+
+    def get_context_data(self,**kwargs):
+        columnDefs = [
+            {'headerName': 'WU', 'field': 'wu'}
+            ,{'headerName': 'DIV', 'field': 'div'}
+            ,{'headerName': 'WorkUnitDescription', 'field': 'workunitdescription'}
+            ,{'headerName': 'DivisionGroup', 'field': 'divisiongroup'}
+            ,{'headerName': 'SubDivision', 'field': 'subdivision'}
+        ]
+        context = super().get_context_data(**kwargs)
+        context["Workunit"] = self.Workunit
+        context["columnDefs"] = columnDefs
+        return {'datadisplay': context["Workunit"], 'columnDefs': context["columnDefs"]}
+
+###########################################################################################################################################################
