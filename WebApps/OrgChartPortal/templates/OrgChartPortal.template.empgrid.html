@@ -85,26 +85,122 @@
         var site_type_dropdown      = {{ site_type_dropdown_list_json|safe }};
 
         var emp_not_found_placeholder       = '[Inactive Employee]'
-        var site_not_found_placeholder      = '[SITE NOT FOUND]'
-        var floor_not_found_placeholder     = '[FLOOR NOT FOUND]'
-        var site_type_not_found_placeholder = '[SITE TYPE NOT FOUND]'
-
-        // Add a dummy object for empty superivor full name in the sort of the select list
-        //site_type_dropdown.push({   'site_type_id__site_type_id': null, 'site_type_id__site_type': null,    'floor_id__floor_id': null, 'floor_id__site_id': null})
+        var site_not_found_placeholder      = '[Invalid Site]'
+        var floor_not_found_placeholder     = '[Invalid Floor]'
+        var site_type_not_found_placeholder = '[Invalid Site Type]'
 
         var active_sup_pms_and_name = {};
         for (const i in active_sup_dropdown) { active_sup_pms_and_name[active_sup_dropdown[i].pms] = active_sup_dropdown[i].annotated__full_name }
 
+
+        function supervisorNotFound({check_supervisor_pms=null} = {}) {
+            // Check if the provided @sup_pms is a valid pms from the active_sup_pms_and_name lookup
+            if ( typeof(active_sup_pms_and_name[check_supervisor_pms]) == 'undefined' ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        function getSupervisorName({check_supervisor_pms=null} = {}) {
+            // Get the full name of a given pms in @check_supervisor_pms from active_sup_pms_and_name lookup
+            // Return null if lookup fails
+            if ( supervisorNotFound({check_supervisor_pms: check_supervisor_pms}) ) {
+                return null
+            } else {
+                return active_sup_pms_and_name[check_supervisor_pms]
+            }
+        }
+
+        function supervisorIsInactive({check_supervisor_pms=null} = {}) {
+            // Check if the provided @sup_pms is an active employee
+            return supervisorNotFound({check_supervisor_pms: check_supervisor_pms});
+        }
+
+        function siteIsInvalid({check_site_id=null} = {}) {
+            // Check if the provided @site_id is a valid site id from the site_dropdown lookup
+            if ( site_dropdown.filter(x => x.site_id == check_site_id).length == 0 ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        function getSiteName({check_site_id=null} = {}) {
+            // Get the name of a given site id in @check_site_id from site_dropdown lookup
+            // Return null if lookup fails
+            if ( siteIsInvalid({check_site_id: check_site_id}) ) {
+                return null
+            } else {
+                return site_dropdown.filter(x => x.site_id == check_site_id)[0].site;
+            }
+        }
+
+        function floorIsInvalid({check_site_id=null, check_floor_id=null} = {}) {
+            // Check if the provided @check_floor_id is a valid floor id from the site_floor_dropdown lookup, AFTER filtering for valid options
+            let sub_floor_array = site_floor_dropdown.filter(
+                x =>
+                    x.site_id       == check_site_id
+                    && x.floor_id   == check_floor_id
+            );
+
+            // If len's zero, then return true cuz that means nothing's found, so floor_id must be invalid
+            return sub_floor_array.length == 0;
+        }
+
+        function getFloorName({check_site_id=null, check_floor_id=null} = {}) {
+            // Get the name of a given floor id in @check_site_id and @check_floor_id from site_floor_dropdown lookup
+            // Return null if lookup fails
+            if ( floorIsInvalid({check_site_id: check_site_id, check_floor_id: check_floor_id}) ) {
+                return null
+            } else {
+                return site_floor_dropdown.filter(
+                    x =>
+                        x.site_id == check_site_id
+                        && x.floor_id == check_floor_id
+                )[0].floor;
+            }
+        }
+
+        function siteTypeIsInvalid({check_site_id=null, check_floor_id=null, check_site_type_id=null} = {}) {
+            // Check if the provided @check_site_type_id is a valid site type id from the site_type_dropdown lookup, AFTER filtering for valid options
+            let sub_site_type_array = site_type_dropdown.filter(
+                x =>
+                    x.floor_id__site_id             == check_site_id
+                    && x.floor_id__floor_id         == check_floor_id
+                    && x.site_type_id__site_type_id == check_site_type_id
+            );
+
+            // If len's zero, then return true cuz that means nothing's found, so site_type_id must be invalid
+            return sub_site_type_array.length == 0;
+        }
+
+        function getSiteTypeName({check_site_id=null, check_floor_id=null, check_site_type_id=null} = {}) {
+            // Get the name of a given floor id in @check_site_id and @check_site_type_id from site_floor_dropdown lookup
+            // Return null if lookup fails
+            if ( siteTypeIsInvalid({check_site_id: check_site_id, check_floor_id: check_floor_id, check_site_type_id: check_site_type_id}) ) {
+                return null
+            } else {
+                return sub_site_type_array = site_type_dropdown.filter(
+                    x =>
+                        x.floor_id__site_id             == check_site_id
+                        && x.floor_id__floor_id         == check_floor_id
+                        && x.site_type_id__site_type_id == check_site_type_id
+                )[0].site_type_id__site_type
+            }
+        }
+
         class SupervisorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
                 let sup_pms         = ag_cell.value;
-                let sup_fullname    = active_sup_pms_and_name[sup_pms];
+                let sup_fullname    = null;
 
                 if ( sup_pms == null ) {
-                    sup_fullname = null
-                } else if ( sup_pms != null && typeof sup_fullname == 'undefined' ) {
-                    // sup_pms is not null, but is an inactive employee
-                    sup_fullname = emp_not_found_placeholder
+                    sup_fullname = null;
+                } else if ( supervisorIsInactive({check_supervisor_pms: sup_pms}) ) {
+                    sup_fullname = emp_not_found_placeholder;
+                } else {
+                    sup_fullname = getSupervisorName({check_supervisor_pms: sup_pms});
                 }
 
                 let super_params = {
@@ -121,9 +217,9 @@
 
                 // Add dummy options for null and not founds
                 if (ag_cell.value == null) {
-                    dropdown.push({'pms': null, 'annotated__full_name': null})
-                } else if ( ag_cell.value != null && typeof(active_sup_pms_and_name[ag_cell.value]) == 'undefined' ) {
-                    dropdown.push({'pms': ag_cell.value, 'annotated__full_name': emp_not_found_placeholder})
+                    dropdown.push({'pms': null, 'annotated__full_name': null});
+                } else if ( supervisorIsInactive({check_supervisor_pms: ag_cell.value}) ) {
+                    dropdown.push({'pms': ag_cell.value, 'annotated__full_name': emp_not_found_placeholder});
                 }
 
                 let super_params = {
@@ -155,9 +251,16 @@
 
         class SiteCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
-                let cur_site_id     = ag_cell.value;
-                let found           = site_dropdown.filter(x => x.site_id == cur_site_id);
-                let site_name       = found.length == 0 ? null : found[0].site;
+                let cur_site_id = ag_cell.value;
+                let site_name   = null;
+
+                if ( cur_site_id == null ) {
+                    site_name = null;
+                } else if ( siteIsInvalid({check_site_id: cur_site_id}) ) {
+                    site_name = site_not_found_placeholder
+                } else {
+                    site_name = getSiteName({check_site_id: cur_site_id})
+                }
 
                 let super_params    = {
                     rendered_text : site_name
@@ -168,14 +271,15 @@
 
         class SiteCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
+                let cur_site_id = ag_cell.value
                 // Quick deep copy, only works with basic data type
                 let dropdown = JSON.parse(JSON.stringify(site_dropdown));
 
                 // Add dummy options for null and not founds
-                if (ag_cell.value == null) {
-                    dropdown.push({'site_id': null          , 'site': null})
-                } else if ( ag_cell.value != null && dropdown.filter(x => x.site_id == ag_cell.value).length == 0 ) {
-                    dropdown.push({'site_id': ag_cell.value , 'site': site_not_found_placeholder})
+                if (cur_site_id == null) {
+                    dropdown.push({'site_id': null          , 'site': null});
+                } else if ( siteIsInvalid({check_site_id: cur_site_id}) ) {
+                    dropdown.push({'site_id': cur_site_id , 'site': site_not_found_placeholder});
                 }
 
                 let super_params = {
@@ -189,7 +293,7 @@
 
                                                         return x.site < y.site ? -1 : x.site > y.site ? 1 : 0;
                                                     },
-                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_id == ag_cell.value ? -1 : y.site_id == ag_cell.value ? 1 : 0; },
+                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_id == cur_site_id ? -1 : y.site_id == cur_site_id ? 1 : 0; },
                     select_element_id               : 'site_select',
                     option_element_set_val_fct      : (each) => { return (each.site_id == null) ? '' : each.site_id; },
                     option_element_set_txt_fct      : (each) => { return each.site; },
@@ -200,9 +304,17 @@
 
         class SiteFloorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
+                let cur_site_id     = ag_cell.data.actual_site_id__site_id;
                 let cur_floor_id    = ag_cell.value;
-                let found           = site_floor_dropdown.filter(x => x.floor_id == cur_floor_id);
-                let site_floor      = found.length == 0 ? null : found[0].floor;
+                let site_floor      = null;
+
+                if ( cur_floor_id == null ) {
+                    site_floor = null;
+                } else if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
+                    site_floor = floor_not_found_placeholder;
+                } else {
+                    site_floor = getFloorName({check_site_id: cur_site_id, check_floor_id: cur_floor_id});
+                }
 
                 let super_params = {
                     rendered_text : site_floor
@@ -213,17 +325,18 @@
 
         class SiteFloorCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
-                let cur_row_floor_id    = ag_cell.data.actual_site_id__site_id;
-                let sub_floor_array     = site_floor_dropdown.filter(x => x.site_id == cur_row_floor_id || x.site_id == null);
+                let cur_site_id     = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id    = ag_cell.value;
+                let sub_floor_array = site_floor_dropdown.filter(x => x.site_id == cur_site_id);
 
                 // Quick deep copy, only works with basic data type
                 let dropdown = JSON.parse(JSON.stringify(sub_floor_array));
 
                 // Add dummy options for null and not founds
-                if (ag_cell.value == null) {
+                if ( cur_floor_id == null ) {
                     dropdown.push({'floor_id': null         , 'site_id': null, 'floor': null})
-                } else if ( ag_cell.value != null && dropdown.length == 0 ) {
-                    dropdown.push({'floor_id': ag_cell.value, 'site_id': null, 'floor': floor_not_found_placeholder})
+                } else if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
+                    dropdown.push({'floor_id': cur_floor_id, 'site_id': null, 'floor': floor_not_found_placeholder})
                 }
 
                 let super_params = {
@@ -248,12 +361,12 @@
                                                         return x_float < y_float ? 1 : x_float > y_float ? -1 : 0;
                                                     },
                     ag_cell_val_bubble_up_sort_fct  : function(x, y) {
-                                                        if ( sub_floor_array.filter(x => x.floor_id == ag_cell.value).length > 0 ) {
-                                                            return x.floor_id == ag_cell.value ? -1 : y.floor_id == ag_cell.value ? 1 : 0;
+                                                        if ( sub_floor_array.filter(x => x.floor_id == cur_floor_id).length > 0 ) {
+                                                            return x.floor_id == cur_floor_id ? -1 : y.floor_id == cur_floor_id ? 1 : 0;
                                                         } else {
                                                             // If current floor is not a valid option for the current site, bubble the null option up to the top
                                                             // It is needed because the top option of the select list doesn't trigger the change event of the AG Grid
-                                                            // And in cases where ag_cell.value is not found in the select array, the resulting select list has a valid option as the top option
+                                                            // And in cases where cur_floor_id is not found in the select array, the resulting select list has a valid option as the top option
                                                             // Thus when trying to select this top option, AG Grid doesn't register it and doesn't trigger the change event and its associated function calls.
                                                             // Bubbling a null option to the top in cases like these, fixes this issue.
                                                             return x.floor_id == null ? -1 : y.floor_id == null ? 1 : 0;
@@ -269,9 +382,18 @@
 
         class SiteTypeCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
+                let cur_site_id         = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id        = ag_cell.data.actual_floor_id__floor_id;
                 let cur_site_type_id    = ag_cell.value;
-                let found               = site_type_dropdown.filter(x => x.site_type_id__site_type_id == cur_site_type_id);
-                let site_type           = found.length == 0 ? null : found[0].site_type_id__site_type;
+                let site_type           = null;
+
+                if ( cur_site_type_id == null ) {
+                    site_type = null;
+                } else if ( siteTypeIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id}) ) {
+                    site_type = site_type_not_found_placeholder;
+                } else {
+                    site_type = getSiteTypeName({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id});
+                }
 
                 let super_params = {
                     rendered_text : site_type
@@ -282,10 +404,12 @@
 
         class SiteTypeCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
-                let cur_row_floor_id    = ag_cell.data.actual_floor_id__floor_id;
-                let cur_row_site_id     = ag_cell.data.actual_site_id__site_id;
-                let sub_site_type_array = site_type_dropdown.filter( x => (x.floor_id__floor_id == cur_row_floor_id && x.floor_id__site_id == cur_row_site_id) || (x.floor_id__floor_id == null) );
-                if (sub_site_type_array.length == 1 && sub_site_type_array[0].floor_id__floor_id == null) {
+                let cur_site_id         = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id        = ag_cell.data.actual_floor_id__floor_id;
+                let cur_site_type_id    = ag_cell.value;
+
+                let sub_site_type_array = site_type_dropdown.filter( x => (x.floor_id__floor_id == cur_floor_id && x.floor_id__site_id == cur_site_id) || (x.floor_id__floor_id == null) );
+                if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
                     // Site and Site Floor are invalid combination, and so there isn't a valid list of Site Type to choose from
                     alert("Site and Site Floor are invalid combination, please fix that first")
                     // No need to return. Alert() seems to cause the cell to lose focus anyway, so the dropdown list never shows when the alert() is called.
@@ -295,10 +419,10 @@
                 let dropdown = JSON.parse(JSON.stringify(sub_site_type_array));
 
                 // Add dummy options for null and not founds
-                if (ag_cell.value == null) {
-                    dropdown.push({'site_type_id__site_type_id': null           , 'site_type_id__site_type': null                           , 'floor_id__floor_id': null, 'floor_id__site_id': null})
-                } else if ( ag_cell.value != null && dropdown.length == 0 ) {
-                    dropdown.push({'site_type_id__site_type_id': ag_cell.value  , 'site_type_id__site_type': site_type_not_found_placeholder, 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                if (cur_site_type_id == null) {
+                    dropdown.push({'site_type_id__site_type_id': null               , 'site_type_id__site_type': null                           , 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                } else if ( siteTypeIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id}) ) {
+                    dropdown.push({'site_type_id__site_type_id': cur_site_type_id   , 'site_type_id__site_type': site_type_not_found_placeholder, 'floor_id__floor_id': null, 'floor_id__site_id': null})
                 }
 
                 let super_params = {
@@ -313,12 +437,12 @@
                                                         return x.site_type_id__site_type < y.site_type_id__site_type ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0;
                                                     },
                     ag_cell_val_bubble_up_sort_fct  : function(x, y) {
-                                                        if ( sub_site_type_array.filter(x => x.site_type_id__site_type_id == ag_cell.value).length > 0 ) {
-                                                            return x.site_type_id__site_type_id == ag_cell.value ? -1 : y.site_type_id__site_type_id == ag_cell.value ? 1 : 0;
+                                                        if ( sub_site_type_array.filter(x => x.site_type_id__site_type_id == cur_site_type_id).length > 0 ) {
+                                                            return x.site_type_id__site_type_id == cur_site_type_id ? -1 : y.site_type_id__site_type_id == cur_site_type_id ? 1 : 0;
                                                         } else {
                                                             // If current site type is not a valid option for the current site floor, bubble the null option up to the top
                                                             // It is needed because the top option of the select list doesn't trigger the change event of the AG Grid
-                                                            // And in cases where ag_cell.value is not found in the select array, the resulting select list has a valid option as the top option
+                                                            // And in cases where cur_site_type_id is not found in the select array, the resulting select list has a valid option as the top option
                                                             // Thus when trying to select this top option, AG Grid doesn't register it and doesn't trigger the change event and its associated function calls.
                                                             // Bubbling a null option to the top in cases like these, fixes this issue.
                                                             return x.site_type_id__site_type_id == null ? -1 : y.site_type_id__site_type_id == null ? 1 : 0;
