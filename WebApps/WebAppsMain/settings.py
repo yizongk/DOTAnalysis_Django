@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from WebApps import LookupTableManager
+#from WebApps import LookupTableManager
 from WebAppsMain.secret_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -140,140 +140,140 @@ else:
         },
     }
 
-if FleetDataCollection_UseWinAuth:
-    DATABASES['FleetDataCollection'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        FleetDataCollection_SQLServerHost,
-        'NAME' :        FleetDataCollection_SQLServerDbName,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+# if FleetDataCollection_UseWinAuth:
+#     DATABASES['FleetDataCollection'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        FleetDataCollection_SQLServerHost,
+#         'NAME' :        FleetDataCollection_SQLServerDbName,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
-else:
-    DATABASES['FleetDataCollection'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        FleetDataCollection_SQLServerHost,
-        'NAME' :        FleetDataCollection_SQLServerDbName,
-        'USER' :        FleetDataCollection_SQLServerUID,
-        'PASSWORD' :    FleetDataCollection_SQLServerPWD,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
+# else:
+#     DATABASES['FleetDataCollection'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        FleetDataCollection_SQLServerHost,
+#         'NAME' :        FleetDataCollection_SQLServerDbName,
+#         'USER' :        FleetDataCollection_SQLServerUID,
+#         'PASSWORD' :    FleetDataCollection_SQLServerPWD,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
 
-if OrgChartRead_UseWinAuth:
-    DATABASES['OrgChartRead'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChartRead_SQLServerHost,
-        'NAME' :        OrgChartRead_SQLServerDbName,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+# if OrgChartRead_UseWinAuth:
+#     DATABASES['OrgChartRead'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        OrgChartRead_SQLServerHost,
+#         'NAME' :        OrgChartRead_SQLServerDbName,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
-else:
-    DATABASES['OrgChartRead'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChartRead_SQLServerHost,
-        'NAME' :        OrgChartRead_SQLServerDbName,
-        'USER' :        OrgChartRead_SQLServerUID,
-        'PASSWORD' :    OrgChartRead_SQLServerPWD,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
+# else:
+#     DATABASES['OrgChartRead'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        OrgChartRead_SQLServerHost,
+#         'NAME' :        OrgChartRead_SQLServerDbName,
+#         'USER' :        OrgChartRead_SQLServerUID,
+#         'PASSWORD' :    OrgChartRead_SQLServerPWD,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
 
-if M5_UseWinAuth:
-    DATABASES['M5'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        M5_SQLServerHost,
-        'NAME' :        M5_SQLServerDbName,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+# if M5_UseWinAuth:
+#     DATABASES['M5'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        M5_SQLServerHost,
+#         'NAME' :        M5_SQLServerDbName,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
-else:
-    DATABASES['M5'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        M5_SQLServerHost,
-        'NAME' :        M5_SQLServerDbName,
-        'USER' :        M5_SQLServerUID,
-        'PASSWORD' :    M5_SQLServerPWD,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
+# else:
+#     DATABASES['M5'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        M5_SQLServerHost,
+#         'NAME' :        M5_SQLServerDbName,
+#         'USER' :        M5_SQLServerUID,
+#         'PASSWORD' :    M5_SQLServerPWD,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
 
-if OrgChartWrite_UseWinAuth:
-    DATABASES['OrgChartWrite'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChartWrite_SQLServerHost,
-        'NAME' :        OrgChartWrite_SQLServerDbName,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+# if OrgChartWrite_UseWinAuth:
+#     DATABASES['OrgChartWrite'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        OrgChartWrite_SQLServerHost,
+#         'NAME' :        OrgChartWrite_SQLServerDbName,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
-else:
-    DATABASES['OrgChartWrite'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        OrgChartWrite_SQLServerHost,
-        'NAME' :        OrgChartWrite_SQLServerDbName,
-        'USER' :        OrgChartWrite_SQLServerUID,
-        'PASSWORD' :    OrgChartWrite_SQLServerPWD,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
+# else:
+#     DATABASES['OrgChartWrite'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        OrgChartWrite_SQLServerHost,
+#         'NAME' :        OrgChartWrite_SQLServerDbName,
+#         'USER' :        OrgChartWrite_SQLServerUID,
+#         'PASSWORD' :    OrgChartWrite_SQLServerPWD,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
 
-if DailyPothole_UseWinAuth:
-    DATABASES['DailyPothole'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        DailyPothole_SQLServerHost,
-        'NAME' :        DailyPothole_SQLServerDbName,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+# if DailyPothole_UseWinAuth:
+#     DATABASES['DailyPothole'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        DailyPothole_SQLServerHost,
+#         'NAME' :        DailyPothole_SQLServerDbName,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
-else:
-    DATABASES['DailyPothole'] = {
-        'ENGINE':       'sql_server.pyodbc',
-        'HOST' :        DailyPothole_SQLServerHost,
-        'NAME' :        DailyPothole_SQLServerDbName,
-        'USER' :        DailyPothole_SQLServerUID,
-        'PASSWORD' :    DailyPothole_SQLServerPWD,
-        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
-        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
+# else:
+#     DATABASES['DailyPothole'] = {
+#         'ENGINE':       'sql_server.pyodbc',
+#         'HOST' :        DailyPothole_SQLServerHost,
+#         'NAME' :        DailyPothole_SQLServerDbName,
+#         'USER' :        DailyPothole_SQLServerUID,
+#         'PASSWORD' :    DailyPothole_SQLServerPWD,
+#         'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+#         'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
-        'OPTIONS' : {
-            'driver' :      'SQL Server Native Client 11.0',
-        },
-    }
+#         'OPTIONS' : {
+#             'driver' :      'SQL Server Native Client 11.0',
+#         },
+#     }
 
 
 # Abrar- connection to my local database

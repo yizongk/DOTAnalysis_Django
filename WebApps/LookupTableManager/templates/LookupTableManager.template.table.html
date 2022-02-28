@@ -1,0 +1,50 @@
+{% extends 'LookupTableManager.template.base.html' %}
+
+
+{% load static %}
+{% block custom_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
+{% endblock %}
+{% block content %}
+
+
+<!DOCTYPE html>
+<head>
+    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+    
+    <title> Connect SQL SERVER From Django </title>
+</head>
+<body>
+    <div style="height: 40vw; width: auto;">
+        <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"> </div>
+    </div>
+    {% block custom_js %}
+    <script>
+        const columnDefs = [
+            {'headerName': 'WU', 'field': 'wu'}
+            ,{'headerName': 'DIV', 'field': 'div'}
+            ,{'headerName': 'WorkUnitDescription', 'field': 'workunitdescription'}
+            ,{'headerName': 'DivisionGroup', 'field': 'divisiongroup'}
+            ,{'headerName': 'SubDivision', 'field': 'subdivision'}
+        ]
+        const col_def = {{ columnDefs|safe}};
+        const data_display = {{ datadisplay|safe}};
+        console.log (data_display, col_def)
+        
+        const gridOptions = {
+            columnDefs: col_def,
+            rowData: data_display
+        };
+        const eGridDiv = document.getElementById('AGGrid');
+        // // create the grid passing in the div to use together with the columns & data we want to use
+        new agGrid.Grid(eGridDiv, gridOptions);
+    </script>
+    {% endblock custom_js %}
+</body>
+</html>
+
+
+{% endblock content %}

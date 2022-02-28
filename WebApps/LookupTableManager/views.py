@@ -42,7 +42,7 @@ def get_active_emp_qryset(
     ,'divisiongroup'
     ,'subdivision'
     ]):
-    qryset = WUTable2.objects.all()
+    qryset = WUTable2.objects.using('LookupTableManager').all()
     return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
     #works fine 
 
@@ -50,7 +50,7 @@ class LookUpView(ListView):
     # Workunit = None
     # queryset = WUTable2.objects.all()
     model = WUTable2
-    template_name = 'Test.html'
+    template_name = 'LookupTableManager.template.table.html'
     context_object_name = 'Workunit'
     Workunit = None
     def get_queryset(self):
