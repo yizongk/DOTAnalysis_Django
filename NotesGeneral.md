@@ -477,3 +477,11 @@ cd C:\Downloads\vs2017offline
 .\vs_BuildTools.exe --noweb
 ```
 And it will start up Visual Studio offline and now you can make changes.
+
+
+## To re-create the default tables needed by django.contrib.auth in your "default" database:
+```powershell
+cd /to/your/django/manage.py/dir
+## This will create the tables in your "default" database
+python manage.py migrate
+```
