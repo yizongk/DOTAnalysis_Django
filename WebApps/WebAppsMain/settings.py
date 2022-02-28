@@ -333,7 +333,7 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 # ]
 
 
-PER_IND_VERSION = '1.1.0'
+PER_IND_VERSION = '1.1.1'
 MAPS_APP_VERSION = '1.1.0'
 DAILY_POTHOLE_VERSION = '1.2.0'
 ORG_CHART_PORTAL_VERSION = '1.7.1'
