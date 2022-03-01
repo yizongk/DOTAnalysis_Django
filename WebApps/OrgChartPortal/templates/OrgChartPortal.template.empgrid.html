@@ -54,17 +54,108 @@
     </div>
 
     {% comment %} Footer {% endcomment %}
-    {% comment %} <div>
-        <div>Supervisor Field Complete</div>
-        <div>OfficeTitle Field Complete</div>
+    <div>
         <div>Refresh button??? or just ask user to refresh page?</div>
-        <div>Last Time List's Been Updated:</div>
-        <div>List Last Updated By:</div>
-        <div>Inactive Supervisor Stuff</div>
-        <div>Empty or Invalid Floor Combination with WorkLocation: Floor needs updating</div>
-        <div>Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating</div>
-    </div> {% endcomment %}
+    </div>
 
+
+
+    <div class="ui piled segments">
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+
+                <div id="supervisor_percent_progress_bar" class="ui indicating progress">
+                    <div class="bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="label">
+                        Supervisor Field Completed
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="ui segment">
+
+                <div id="office_title_percent_complete" class="ui indicating progress">
+                    <div class="bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="label">
+                        OfficeTitle Field Completed
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+                <div class="ui label inverted grey basic large">
+                    Inactive Supervisors
+                    <div id="inactive_supervisor_list" class="ui inverted list">
+                        <div class="item">
+                            Sup 1
+                        </div>
+                        <div class="item">
+                            Sup 2
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui segment">
+                <div class="ui label inverted grey basic large">
+                    Empty or Invalid Floor Combination with WorkLocation: Floor needs updating
+                    <div id="invalid_floor_list" class="ui inverted list">
+                        <div class="item">
+                            Floor 1
+                        </div>
+                        <div class="item">
+                            Floor 2
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui segment">
+                <div class="ui label inverted grey basic large">
+                    Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating
+                    <div id="invalid_site_type_list" class="ui inverted list">
+                        <div class="item">
+                            SiteType 1
+                        </div>
+                        <div class="item">
+                            SiteType 2
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+
+                <div class="ui statistic">
+                    <div class="label">List's Last Updated On:</div>
+                    <div class="value" id="last_updated_time"></div>
+                </div>
+
+            </div>
+
+            <div class="ui segment">
+
+                <div class="ui statistic">
+                    <div class="label">List Last Updated By:</div>
+                    <div class="value" id="last_updated_by"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 {% endblock content %}
 
 {% block custom_js %}
@@ -600,7 +691,7 @@
         });
     </script>
 
-    {% comment %} Side Bar Stuff {% endcomment %}
+    {% comment %} Side Bar and Footer Stuff {% endcomment %}
     <script>
         function upperCaseFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
@@ -683,34 +774,103 @@
             })
 
 
-            {% comment %}
             // Get emp grid stats
-            $.ajax({
-                url: "/OrgChartPortal/get_emp_grid_stats",
-                type: "POST",
-            })
-            .done(function(json_response) {
-                if (json_response["post_success"] == false) {
-                    console.log(`Error: Ajax calling GetEmpGridStats: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong while trying to get emp grid stats for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_emp_grid_stats: Server Response: ${json_response["post_msg"]}`);
-                } else { // Api call successful
-                    list_of_json_client_emp_grid_stats_response = json_response["post_data"]
+            let emp_grid_stats_api_url = '/OrgChartPortal/get_emp_grid_stats';
+            teammates_response = sentJsonBlobToApi({
+                api_url             : emp_grid_stats_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_emp_grid_stats_response) {
+                    console.log(json_emp_grid_stats_response)
 
-                    console.log('Dev purpose: GetEmpGridStats: ')
-                    console.log(list_of_json_client_emp_grid_stats_response)
-                }
-                return true;
+                    let supervisor_completed                    = json_emp_grid_stats_response["post_data"]["supervisor_completed"];
+                    let office_title_completed                  = json_emp_grid_stats_response["post_data"]["office_title_completed"];
+                    let list_last_updated_on                    = json_emp_grid_stats_response["post_data"]["list_last_updated_on"];
+                    let list_last_updated_by                    = json_emp_grid_stats_response["post_data"]["list_last_updated_by"];
+                    let inactive_supervisor_list                = json_emp_grid_stats_response["post_data"]["inactive_supervisor_list"];
+                    let empty_or_invalid_floor_combo_list       = json_emp_grid_stats_response["post_data"]["empty_or_invalid_floor_combo_list"];
+                    let empty_or_invalid_site_type_combo_list   = json_emp_grid_stats_response["post_data"]["empty_or_invalid_site_type_combo_list"];
+
+
+                    if ( $('#supervisor_percent_progress_bar') != null ) {
+                        $('#supervisor_percent_progress_bar').progress({
+                            percent: supervisor_completed
+                        });
+                        //document.getElementById('supervisor_percent_progress_bar').textContent = supervisor_completed+'%';
+                    } else {
+                        alert(`supervisor_percent_progress_bar is not a valid div ID`);
+                    }
+
+                    if ( $('#office_title_percent_complete') != null ) {
+                        $('#office_title_percent_complete').progress({
+                            percent: office_title_completed
+                        });
+                    } else {
+                        alert(`office_title_percent_complete is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('last_updated_time') != null ) {
+                         document.getElementById('last_updated_time').textContent = list_last_updated_on;
+                    } else {
+                        alert(`last_updated_time is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('last_updated_by') != null ) {
+                         document.getElementById('last_updated_by').textContent = list_last_updated_by;
+                    } else {
+                        alert(`last_updated_by is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('inactive_supervisor_list') != null ) {
+                        let inactive_supervisor_list_div = document.getElementById('inactive_supervisor_list');
+                        if ( inactive_supervisor_list_div.hasChildNodes() ) {
+                            inactive_supervisor_list_div.replaceChildren();
+                        }
+                        inactive_supervisor_list.forEach(function (x) {
+                            let div = document.createElement("div");
+                            div.className = "item";
+                            div.textContent = `${x.Employee}|${x.WU}|${x.Inactive_Supervisor}`;
+                            inactive_supervisor_list_div.append(div);
+                        });
+                    } else {
+                        alert(`inactive_supervisor_list is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('invalid_floor_list') != null ) {
+                        let invalid_floor_list_div = document.getElementById('invalid_floor_list');
+                        if ( invalid_floor_list_div.hasChildNodes() ) {
+                            invalid_floor_list_div.replaceChildren();
+                        }
+                        empty_or_invalid_floor_combo_list.forEach(function (x) {
+                            let div = document.createElement("div");
+                            div.className = "item";
+                            div.textContent = `${x.Employee}|${x.WU}`;
+                            invalid_floor_list_div.append(div);
+                        });
+                    } else {
+                        alert(`invalid_floor_list is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('invalid_site_type_list') != null ) {
+                        let invalid_site_type_list_div = document.getElementById('invalid_site_type_list');
+                        if ( invalid_site_type_list_div.hasChildNodes() ) {
+                            invalid_site_type_list_div.replaceChildren();
+                        }
+                        empty_or_invalid_site_type_combo_list.forEach(function (x) {
+                            let div = document.createElement("div");
+                            div.className = "item";
+                            div.textContent = `${x.Employee}|${x.WU}`;
+                            invalid_site_type_list_div.append(div);
+                        });
+                    } else {
+                        alert(`invalid_site_type_list is not a valid div ID`);
+                    }
+
+
+                },
+                clear_existing_err_on_success: false,
             })
-            .fail(function(json_response) {
-                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                return false;
-            });
-            {% endcomment %}
+
         });
     </script>
-
-    {% comment %} Footer Stuff {% endcomment %}
 
 {% endblock custom_js %}

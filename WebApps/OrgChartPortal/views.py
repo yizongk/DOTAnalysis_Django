@@ -797,7 +797,7 @@ def GetEmpGridStats(request):
         emp_grid_stats_json = {
             'supervisor_completed'                      : get_supervisor_completed()
             ,'office_title_completed'                   : get_office_title_completed()
-            ,'list_last_updated_on'                     : get_list_last_updated_on()
+            ,'list_last_updated_on'                     : get_list_last_updated_on().strftime('%m/%d/%Y %I:%M:%S %p')
             ,'list_last_updated_by'                     : get_list_last_updated_by()
             ,'inactive_supervisor_list'                 : get_inactive_supervisors()
             ,'empty_or_invalid_floor_combo_list'        : get_empty_or_invalid_floor_combo_list()
