@@ -211,7 +211,7 @@ When you call save():
     * Returns true if all is successful.
     * Raise the error if any exception is present.
 '''
-class EmppUpdateAndTrack:
+class EmpUpdateAndTrack:
     def __init__(
         self
         ,updated_by_pms = None
@@ -335,6 +335,34 @@ class EmppUpdateAndTrack:
                 else:
                     employee_row.actual_floor_id = new_floor_obj
 
+                    valid_site_types_obj = TblDOTSiteFloorSiteTypes.objects.using('OrgChartWrite').filter(
+                        floor_id__exact=self.new_value
+                    )
+                    if valid_site_types_obj.count() == 1:
+                        site_type_id                = valid_site_types_obj[:1][0].site_type_id.site_type_id ## [:1] is the LIMIT 1 query. And then [0] gets the first object out of the queryset
+                        only_site_type_for_floor    = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact=site_type_id)
+
+                        if (
+                            (employee_row.actual_site_type_id is None) # Existing is NULL, so replace it!
+                            or (employee_row.actual_site_type_id is not None and employee_row.actual_site_type_id.site_type_id != only_site_type_for_floor.site_type_id)
+                        ):
+                            ## Only update the site type id if it's different than existing
+                            employee_row.actual_site_type_id    = only_site_type_for_floor
+
+                            ## Additional operation to be perform in the transaction. Record the changes to Site Floor Id and Site Type Id.
+                            def additional_operation_tbl_changes():
+                                change_record_site_type_row = TblChanges(
+                                    updated_on      = updated_on
+                                    ,updated_by_pms = self.updated_by_pms
+                                    ,updated_to_pms = self.updated_to_pms
+                                    ,new_value      = only_site_type_for_floor.site_type_id
+                                    ,column_name    = 'ActualSiteTypeId'
+                                )
+
+                                change_record_site_type_row.save(using='OrgChartWrite')
+
+                            additional_operation = additional_operation_tbl_changes
+
             elif self.column_name == 'ActualSiteTypeId':
                 try:
                     new_site_type_obj = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact=self.new_value)
@@ -394,7 +422,7 @@ class EmppUpdateAndTrack:
 
             return True
         except Exception as e:
-            raise ValueError(f"Class EmppUpdateAndTrack: save(): {e}")
+            raise ValueError(f"Class EmpUpdateAndTrack: save(): {e}")
 
 
 def UpdateEmployeeData(request):
@@ -477,7 +505,7 @@ def UpdateEmployeeData(request):
             raise ValueError(f"The client '{remote_user}' is not a user of the system")
 
 
-        atomic_update = EmppUpdateAndTrack(
+        atomic_update = EmpUpdateAndTrack(
             updated_by_pms  = remote_user_obj.pms.pms
             ,updated_to_pms = to_pms
             ,new_value      = new_value

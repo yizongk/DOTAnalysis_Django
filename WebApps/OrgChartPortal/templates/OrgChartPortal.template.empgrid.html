@@ -605,15 +605,31 @@
                             let ag_node = props.ag_node;
 
                             ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+                            // If there is only one valid Site Type option for the newly selected floor, auto populate the Site Type with that option. The api does this on the backend as well.
+                            let valid_site_type_options = site_type_dropdown.filter(
+                                x =>
+                                    x.floor_id__site_id     == ag_node.data.actual_site_id__site_id
+                                    && x.floor_id__floor_id == ag_node.newValue
+                            );
 
-                            // Refresh ActualFloor as well as ActualSiteType, since on Floor change, this may invalidate the Site Type. Force refresh to skip change detection
+                            if (valid_site_type_options.length == 1 && valid_site_type_options[0].site_type_id__site_type_id != ag_node.data.actual_site_type_id__site_type_id) {
+                                // If only 1 valid option and is different from existing data, do the Site Type change and refresh
+                                ag_node.data['actual_site_type_id__site_type_id'] = valid_site_type_options[0].site_type_id__site_type_id;
+                                // Refresh ActualSiteType. Force refresh to skip change detection
+                                ag_node.api.refreshCells({
+                                    rowNodes: [ag_node.node],
+                                    columns: [
+                                        'actual_site_type_id__site_type_id'
+                                    ],
+                                    force: true,
+                                });
+                            }
+
                             ag_node.api.refreshCells({
                                 rowNodes: [ag_node.node],
                                 columns: [
                                     ag_node.column,
-                                    'actual_site_type_id__site_type_id'
                                 ],
-                                force: true,
                             });
                         },
                     }
@@ -805,8 +821,6 @@
                 api_url             : emp_grid_stats_api_url,
                 http_request_method : "POST",
                 successCallbackFct  : function(json_emp_grid_stats_response) {
-                    console.log(json_emp_grid_stats_response)
-
                     let supervisor_completed                    = json_emp_grid_stats_response["post_data"]["supervisor_completed"];
                     let office_title_completed                  = json_emp_grid_stats_response["post_data"]["office_title_completed"];
                     let list_last_updated_on                    = json_emp_grid_stats_response["post_data"]["list_last_updated_on"];
