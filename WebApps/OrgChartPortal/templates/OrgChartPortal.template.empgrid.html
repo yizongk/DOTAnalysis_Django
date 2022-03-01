@@ -592,6 +592,31 @@
                             });
                         },
                     }
+                } else if (ag_node.colDef.headerName == 'ActualFloor') {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_res, props) {
+                            let ag_node = props.ag_node;
+
+                            ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+
+                            // Refresh ActualFloor as well as ActualSiteType, since on Floor change, this may invalidate the Site Type. Force refresh to skip change detection
+                            ag_node.api.refreshCells({
+                                rowNodes: [ag_node.node],
+                                columns: [
+                                    ag_node.column,
+                                    'actual_site_type_id__site_type_id'
+                                ],
+                                force: true,
+                            });
+                        },
+                    }
                 } else {
                     post_params = {
                         api_json_blob   : {
