@@ -834,13 +834,21 @@
                     }
 
                     if ( document.getElementById('last_updated_time') != null ) {
-                         document.getElementById('last_updated_time').textContent = list_last_updated_on;
+                        if (list_last_updated_on != null) {
+                            document.getElementById('last_updated_time').textContent = list_last_updated_on;
+                        } else {
+                            document.getElementById('last_updated_time').textContent = 'NULL'
+                        }
                     } else {
                         alert(`last_updated_time is not a valid div ID`);
                     }
 
                     if ( document.getElementById('last_updated_by') != null ) {
-                         document.getElementById('last_updated_by').textContent = list_last_updated_by;
+                        if (list_last_updated_by !=  null) {
+                            document.getElementById('last_updated_by').textContent = list_last_updated_by;
+                        } else {
+                            document.getElementById('last_updated_by').textContent = 'NULL';
+                        }
                     } else {
                         alert(`last_updated_by is not a valid div ID`);
                     }

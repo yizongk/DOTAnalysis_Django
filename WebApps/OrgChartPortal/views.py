@@ -675,15 +675,18 @@ def GetEmpGridStats(request):
         def get_latest_change():
             # active_permitted_emp already check if client is admin. But if client is admin, the PMS list would be HUGE, so I am placing an check here to avoid computing the PMS list if client is admin.
             # If client is admin, just return the latest row of the entire tblChanges without filtering for a PMS list
-            if is_admin:
-                changes = TblChanges.objects.using('OrgChartRead').order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
-
-            else:
+            changes = TblChanges.objects.using('OrgChartRead')
+            if not is_admin:
                 permitted_pms_list = [each['pms'] for each in active_permitted_emp]
 
-                changes = TblChanges.objects.using('OrgChartRead').filter(
+                changes = changes.filter(
                     updated_to_pms__in=permitted_pms_list
-                ).order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
+                )
+
+            if changes.count() == 0:
+                return None
+            else:
+                changes = changes.order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
 
             return list(changes.values(
                 'id'
@@ -695,11 +698,19 @@ def GetEmpGridStats(request):
             ))[0]
 
         def get_list_last_updated_on():
-            return get_latest_change()['updated_on']
+            latest_change = get_latest_change()
+            if latest_change is None:
+                return None
+            else:
+                return get_latest_change()['updated_on'].strftime('%m/%d/%Y %I:%M:%S %p')
 
         def get_list_last_updated_by():
-            last_updated_by_pms = get_latest_change()['updated_by_pms']
-            return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
+            latest_change = get_latest_change()
+            if latest_change is None:
+                return None
+            else:
+                last_updated_by_pms = get_latest_change()['updated_by_pms']
+                return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
 
         def get_inactive_supervisors():
             inactive_sup = active_permitted_emp.filter(
@@ -797,7 +808,7 @@ def GetEmpGridStats(request):
         emp_grid_stats_json = {
             'supervisor_completed'                      : get_supervisor_completed()
             ,'office_title_completed'                   : get_office_title_completed()
-            ,'list_last_updated_on'                     : get_list_last_updated_on().strftime('%m/%d/%Y %I:%M:%S %p')
+            ,'list_last_updated_on'                     : get_list_last_updated_on()
             ,'list_last_updated_by'                     : get_list_last_updated_by()
             ,'inactive_supervisor_list'                 : get_inactive_supervisors()
             ,'empty_or_invalid_floor_combo_list'        : get_empty_or_invalid_floor_combo_list()
