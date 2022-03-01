@@ -1071,6 +1071,12 @@ def GetEmpCsv(request):
                 Q(wu__in=allowed_wu_list)
             )
 
+        if emp_data.count() == 0:
+            if not is_admin:
+                raise ValueError(f"Found no orgchart data with the following client permission(s): {allowed_wu_list}")
+            else:
+                raise ValueError(f"Found no orgchart data despite client being an admin")
+
         # If admin, flat_allowed_row_dict will be the same as flat_all_row_dict, else len(flat_allowed_row_dict) < len(flat_all_row_dict)
         flat_allowed_row_dict = emp_data.values(
             "pms"
@@ -1167,10 +1173,7 @@ def GetEmpCsv(request):
 
 
         if len(allowed_and_needed_nodes_dict) == 0:
-            if not is_admin:
-                raise ValueError(f"Found no orgchart data with the following client permission(s): {allowed_wu_list}")
-            else:
-                raise ValueError(f"Found no orgchart data despite client being an admin")
+            raise ValueError(f"Found no orgchart relationship from root pms")
 
 
         import csv

@@ -139,7 +139,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
     <script>
         $(document).ready( function () {
-            var chart
+            var chart;
 
             function setInitialMasterOrgChart() {
                 $(document).ajaxStart(function () {
@@ -158,12 +158,12 @@
                     successCallbackFct  : function(json_response) {
                         //alert(`data saved successfully!`)
 
-                        let root_pms = json_response.post_data
+                        let root_pms = json_response.post_data;
 
 
                         let json_blob = {
                             root_pms: root_pms
-                        }
+                        };
 
                         sentJsonBlobToApi({
                             json_blob           : json_blob,
