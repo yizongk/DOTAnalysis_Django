@@ -1221,7 +1221,6 @@ def GetEmpCsv(request):
         })
 
 
-## @TODO: Dont have a hard coded commisioner pms, serach for DOT commisioner office title, and active for that person
 def GetCommissionerPMS(request):
     ## Authenticate User
     remote_user = None
@@ -1252,18 +1251,22 @@ def GetCommissionerPMS(request):
         #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
 
 
-        from WebAppsMain.secret_settings import OrgChartRootPMS
-
         emp_data = TblEmployees.objects.using('OrgChartRead').filter(
-            pms__exact=f'{OrgChartRootPMS}',
-        ).first()
+            civil_title='Commissioner-DOT'
+            ,lv__in=get_active_lv_list()
+        )
 
-        pms = emp_data.pms
+        if emp_data.count() == 0:
+            raise ValueError(f"Cannot find an active DOT Commissioner in the database")
+        elif emp_data.count() > 1:
+            raise ValueError(f"Found more than one active DOT Commissioners in the database (Found {emp_data.count()})")
+
+        dot_commissioner = emp_data.first()
 
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
-            "post_data": pms,
+            "post_data": dot_commissioner.pms,
         })
     except Exception as e:
         err_msg = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
