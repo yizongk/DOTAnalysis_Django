@@ -224,6 +224,7 @@ class EmpUpdateAndTrack:
         self.new_value      = new_value
         self.column_name    = column_name
 
+        ## This list is the valid options for [ColumnName] in tblChanges
         self.valid_column_names = [
             'SupervisorPMS'
             ,'OfficeTitle'
@@ -468,11 +469,11 @@ def UpdateEmployeeData(request):
 
         # Front end column names mapping to backend field names
         valid_editable_column_names_mapping = {
-            'Supervisor'        : 'SupervisorPMS'
-            ,'OfficeTitle'      : 'OfficeTitle'
-            ,'ActualSite'       : 'ActualSiteId'
-            ,'ActualFloor'      : 'ActualFloorId'
-            ,'ActualSiteType'   : 'ActualSiteTypeId'
+            'Supervisor'    : 'SupervisorPMS'
+            ,'Office Title' : 'OfficeTitle'
+            ,'Site'         : 'ActualSiteId'
+            ,'Floor'        : 'ActualFloorId'
+            ,'Site Type'    : 'ActualSiteTypeId'
         }
 
         if column_name not in list(valid_editable_column_names_mapping.keys()):
@@ -897,17 +898,17 @@ class EmpGridPageView(generic.ListView):
                 )
 
             ag_grid_col_def = [ ## Need to format this way for AG Grid
-                {'headerName': 'PMS'              , 'field': 'pms'                                  , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 80}
-                ,{'headerName': 'Lv'              , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 65}
-                ,{'headerName': 'WU'              , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 75}
-                ,{'headerName': 'Title'           , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 230}
-                ,{'headerName': 'LastName'        , 'field': 'last_name'                            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
-                ,{'headerName': 'FirstName'       , 'field': 'first_name'                           , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
-                ,{'headerName': 'OfficeTitle'     , 'field': 'office_title'                         , 'suppressMovable': True , 'lockPinned': True}
-                ,{'headerName': 'Supervisor'      , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
-                ,{'headerName': 'ActualSite'      , 'field': 'actual_site_id__site_id'              , 'suppressMovable': True , 'lockPinned': True}
-                ,{'headerName': 'ActualFloor'     , 'field': 'actual_floor_id__floor_id'            , 'suppressMovable': True , 'lockPinned': True}
-                ,{'headerName': 'ActualSiteType'  , 'field': 'actual_site_type_id__site_type_id'    , 'suppressMovable': True , 'lockPinned': True}
+                {'headerName': 'PMS'            , 'field': 'pms'                                  , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 80}
+                ,{'headerName': 'Last Name'     , 'field': 'last_name'                            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
+                ,{'headerName': 'First Name'    , 'field': 'first_name'                           , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 110}
+                ,{'headerName': 'Lv'            , 'field': 'lv'                                   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 65}
+                ,{'headerName': 'WU'            , 'field': 'wu__wu'                               , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 75}
+                ,{'headerName': 'Title'         , 'field': 'civil_title'                          , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 230}
+                ,{'headerName': 'Office Title'  , 'field': 'office_title'                         , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'Supervisor'    , 'field': 'supervisor_pms__pms'                  , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'Site'          , 'field': 'actual_site_id__site_id'              , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'Floor'         , 'field': 'actual_floor_id__floor_id'            , 'suppressMovable': True , 'lockPinned': True}
+                ,{'headerName': 'Site Type'     , 'field': 'actual_site_type_id__site_type_id'    , 'suppressMovable': True , 'lockPinned': True}
             ]
 
             fields_list = [each['field'] for each in ag_grid_col_def]

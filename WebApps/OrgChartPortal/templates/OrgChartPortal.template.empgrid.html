@@ -85,7 +85,7 @@
                         <div class="progress"></div>
                     </div>
                     <div class="label">
-                        OfficeTitle Field Completed
+                        Office Title Field Completed
                     </div>
                 </div>
 
@@ -556,7 +556,7 @@
 
             function cellValueSetter(ag_node) {
                 let post_params = null;
-                if (ag_node.colDef.headerName == 'ActualSite') {
+                if (ag_node.colDef.headerName == 'Site') {
                     post_params = {
                         api_json_blob   : {
                             'to_pms'        : ag_node.data.pms,
@@ -583,7 +583,7 @@
                             });
                         },
                     }
-                } else if (ag_node.colDef.headerName == 'ActualFloor') {
+                } else if (ag_node.colDef.headerName == 'Floor') {
                     post_params = {
                         api_json_blob   : {
                             'to_pms'        : ag_node.data.pms,
@@ -606,7 +606,7 @@
                             if (valid_site_type_options.length == 1 && valid_site_type_options[0].site_type_id__site_type_id != ag_node.data.actual_site_type_id__site_type_id) {
                                 // If only 1 valid option and is different from existing data, do the Site Type change and refresh
                                 ag_node.data['actual_site_type_id__site_type_id'] = valid_site_type_options[0].site_type_id__site_type_id;
-                                // Refresh ActualSiteType. Force refresh to skip change detection
+                                // Refresh Site Type. Force refresh to skip change detection
                                 ag_node.api.refreshCells({
                                     rowNodes: [ag_node.node],
                                     columns: [
@@ -646,10 +646,10 @@
             // Specify the columns that is editable here
             var editable_column_names = [
                 'Supervisor',       // Select
-                'OfficeTitle',      // Input
-                'ActualSite',       // Select
-                'ActualFloor',      // Select
-                'ActualSiteType',   // Select
+                'Office Title',     // Input
+                'Site',             // Select
+                'Floor',            // Select
+                'Site Type',        // Select
             ]
 
             // Add a generic cell edit function to all editable cells
@@ -666,21 +666,21 @@
                         ag_column['cellEditor']     = 'supervisorCellEditor';
                     }
 
-                    if (ag_column.headerName == 'OfficeTitle') {
+                    if (ag_column.headerName == 'Office Title') {
                         // Default setting will do.
                     }
 
-                    if (ag_column.headerName == 'ActualSite') {
+                    if (ag_column.headerName == 'Site') {
                         ag_column['cellRenderer']   = 'siteCellRenderer';
                         ag_column['cellEditor']     = 'siteCellEditor';
                     }
 
-                    if (ag_column.headerName == 'ActualFloor') {
+                    if (ag_column.headerName == 'Floor') {
                         ag_column['cellRenderer']   = 'siteFloorCellRenderer';
                         ag_column['cellEditor']     = 'siteFloorCellEditor';
                     }
 
-                    if (ag_column.headerName == 'ActualSiteType') {
+                    if (ag_column.headerName == 'Site Type') {
                         ag_column['cellRenderer']   = 'siteTypeCellRenderer';
                         ag_column['cellEditor']     = 'siteTypeCellEditor';
                     }
