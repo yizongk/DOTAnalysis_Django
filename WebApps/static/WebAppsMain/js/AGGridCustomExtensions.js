@@ -202,19 +202,19 @@ class BaseAGGridCellSelectEditor {
     }
 
     /* Component Editor Lifecycle methods */
+    // gets called once before editing starts, to give editor a chance to cancel the editing before it even starts
+    isCancelBeforeStart() { return false; }
+
     // gets called once when grid ready to insert the element
     getGui() { return this.select_element; }
 
-    // the final value to sent to the grid, on completion of editing
-    getValue() { return this.ag_cell.value; }
-
-    // gets called once before editing starts, to give editor a chance to cancel the editing before it even starts
-    isCancelBeforeStart() { return false; }
+    // after this component has been created and inserted into the grid
+    afterGuiAttached() { this.select_element.focus(); }
 
     // gets called once when editing is finished (eg if Enter is pressed)
     // if you return true, then the result of the edit will be ignored
     isCancelAfterEnd() { return false; }
 
-    // after this component has been created and inserted into the grid
-    afterGuiAttached() { this.select_element.focus(); }
+    // the final value to sent to the grid, on completion of editing
+    getValue() { return this.ag_cell.value; }
 }
