@@ -54,6 +54,10 @@
     </div>
 
     {% comment %} Footer {% endcomment %}
+    <button id="reset_all_filters_btn" class="ui button">
+        <i class="filter icon"></i>
+        Reset All Filters
+    </button>
     <div>
         <div>Refresh button??? or just ask user to refresh page?</div>
     </div>
@@ -66,6 +70,24 @@
 
             <div class="ui segment">
 
+                <div id="office_title_percent_complete" class="ui indicating progress">
+                    <div class="bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="label">
+                        Office Title Field Completed
+                    </div>
+                </div>
+
+                <button id="office_title_percent_complete_filter_btn" class="ui button">
+                    <i class="filter icon"></i>
+                    Show the missing Office Title
+                </button>
+
+            </div>
+
+            <div class="ui segment">
+
                 <div id="supervisor_percent_progress_bar" class="ui indicating progress">
                     <div class="bar">
                         <div class="progress"></div>
@@ -75,19 +97,10 @@
                     </div>
                 </div>
 
-            </div>
-
-
-            <div class="ui segment">
-
-                <div id="office_title_percent_complete" class="ui indicating progress">
-                    <div class="bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="label">
-                        Office Title Field Completed
-                    </div>
-                </div>
+                <button id="supervisor_percent_progress_bar_filter_btn" class="ui button">
+                    <i class="filter icon"></i>
+                    Show the missing Supervisor
+                </button>
 
             </div>
 
@@ -109,6 +122,10 @@
                     </div>
                 </div>
 
+                <button id="inactive_supervisor_list_filter_btn" class="ui button">
+                    <i class="filter icon"></i>
+                    Show the inactive Supervisor
+                </button>
 
             </div>
 
@@ -652,6 +669,34 @@
                 'Site Type',        // Select
             ]
 
+            var isNullFilterOption = {
+                displayKey: 'isNull',
+                displayName: 'Is Null',
+                predicate: (filterValue, cellValue) => {return cellValue === null;},
+                numberOfInputs: 0,
+            }
+
+            var isEmptyStringFilterOption = {
+                displayKey: 'isEmptyString',
+                displayName: 'Is Empty String',
+                predicate: (filterValue, cellValue) => {return (cellValue === null) ? false : cellValue.toString().trim() === '';},
+                numberOfInputs: 0,
+            }
+
+            var isNullOrEmptyStringFilterOption = {
+                displayKey: 'isNullOrEmptyString',
+                displayName: 'Is Null or Empty String',
+                predicate: (filterValue, cellValue) => {return cellValue === null || cellValue.toString().trim() === '';},
+                numberOfInputs: 0,
+            }
+
+            var isInactiveEmployee = {
+                displayKey: 'isInactiveEmployee',
+                displayName: 'Is Inactive Employee',
+                predicate: (filterValue, cellValue) => {return cellValue != null && cellValue.toString().trim() != '' && supervisorIsInactive({check_supervisor_pms: cellValue});},
+                numberOfInputs: 0,
+            }
+
             // Add a generic cell edit function to all editable cells
             for (col_i in emp_col_def) {
                 ag_column = emp_col_def[col_i]
@@ -664,25 +709,90 @@
                     if (ag_column.headerName == 'Supervisor') {
                         ag_column['cellRenderer']   = 'supervisorCellRenderer';
                         ag_column['cellEditor']     = 'supervisorCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                            isInactiveEmployee,
+                                                        ]
+                                                    };
                     }
 
                     if (ag_column.headerName == 'Office Title') {
-                        // Default setting will do.
+                        ag_column['filterParams'] = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
                     }
 
                     if (ag_column.headerName == 'Site') {
                         ag_column['cellRenderer']   = 'siteCellRenderer';
                         ag_column['cellEditor']     = 'siteCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
                     }
 
                     if (ag_column.headerName == 'Floor') {
                         ag_column['cellRenderer']   = 'siteFloorCellRenderer';
                         ag_column['cellEditor']     = 'siteFloorCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
                     }
 
                     if (ag_column.headerName == 'Site Type') {
                         ag_column['cellRenderer']   = 'siteTypeCellRenderer';
                         ag_column['cellEditor']     = 'siteTypeCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
                     }
                 }
             }
@@ -864,6 +974,37 @@
             });
 
 
+            // Set up the clickable filter
+            $('#reset_all_filters_btn').click(function() {
+                gridOptions.api.setFilterModel(null);
+            });
+
+            $('#office_title_percent_complete_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    office_title: {
+                        filterType: 'text',
+                        type: 'isNull',
+                    },
+                });
+            })
+
+            $('#supervisor_percent_progress_bar_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    supervisor_pms__pms: {
+                        filterType: 'text',
+                        type: 'isNull',
+                    },
+                });
+            })
+
+            $('#inactive_supervisor_list_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    supervisor_pms__pms: {
+                        filterType: 'text',
+                        type: 'isInactiveEmployee',
+                    },
+                });
+            })
 
         });
     </script>
