@@ -61,7 +61,9 @@
 
 
     <div class="ui piled segments">
+
         <div class="ui horizontal segments">
+
             <div class="ui segment">
 
                 <div id="supervisor_percent_progress_bar" class="ui indicating progress">
@@ -88,10 +90,13 @@
                 </div>
 
             </div>
+
         </div>
 
         <div class="ui horizontal segments">
+
             <div class="ui segment">
+
                 <div class="ui label inverted grey basic large">
                     Inactive Supervisors
                     <div id="inactive_supervisor_list" class="ui inverted list">
@@ -103,38 +108,14 @@
                         </div>
                     </div>
                 </div>
+
+
             </div>
 
-            <div class="ui segment">
-                <div class="ui label inverted grey basic large">
-                    Empty or Invalid Floor Combination with WorkLocation: Floor needs updating
-                    <div id="invalid_floor_list" class="ui inverted list">
-                        <div class="item">
-                            Floor 1
-                        </div>
-                        <div class="item">
-                            Floor 2
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="ui segment">
-                <div class="ui label inverted grey basic large">
-                    Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating
-                    <div id="invalid_site_type_list" class="ui inverted list">
-                        <div class="item">
-                            SiteType 1
-                        </div>
-                        <div class="item">
-                            SiteType 2
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="ui horizontal segments">
+
             <div class="ui segment">
 
                 <div class="ui statistic">
@@ -547,6 +528,16 @@
             }
         }
 
+        function upperCaseFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function lowerCaseAllWordsExceptFirstLetters(string) {
+            return string.replace(/\S*/g, function (word) {
+                return word.charAt(0) + word.slice(1).toLowerCase();
+            });
+        }
+
         document.addEventListener("DOMContentLoaded", function(event) {
             // Reset the default viewport from css class container to container-fluid
             nodes = document.getElementsByClassName('container')
@@ -729,22 +720,8 @@
             const gridDiv = document.getElementById('AGGrid');
             new agGrid.Grid(gridDiv, gridOptions);
 
-        });
-    </script>
 
-    {% comment %} Side Bar and Footer Stuff {% endcomment %}
-    <script>
-        function upperCaseFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
-
-        function lowerCaseAllWordsExceptFirstLetters(string) {
-            return string.replace(/\S*/g, function (word) {
-                return word.charAt(0) + word.slice(1).toLowerCase();
-            });
-        }
-
-        $(document).ready( function () {
+            // Side Bar and Footer Stuff
             $('.ui.left.sidebar').sidebar({
                 dimPage: false,
                 transition: 'push',
@@ -781,7 +758,7 @@
                     console.log(`API ${wu_perms_api_url}(): fail ajax call`)
                 },
                 clear_existing_err_on_success: false,
-            })
+            });
 
 
             // Get teammates info
@@ -812,7 +789,7 @@
                     console.log(`API ${teammates_api_url}(): fail ajax call`)
                 },
                 clear_existing_err_on_success: false,
-            })
+            });
 
 
             // Get emp grid stats
@@ -882,40 +859,11 @@
                         alert(`inactive_supervisor_list is not a valid div ID`);
                     }
 
-                    if ( document.getElementById('invalid_floor_list') != null ) {
-                        let invalid_floor_list_div = document.getElementById('invalid_floor_list');
-                        if ( invalid_floor_list_div.hasChildNodes() ) {
-                            invalid_floor_list_div.replaceChildren();
-                        }
-                        empty_or_invalid_floor_combo_list.forEach(function (x) {
-                            let div = document.createElement("div");
-                            div.className = "item";
-                            div.textContent = `${x.Employee}|${x.WU}`;
-                            invalid_floor_list_div.append(div);
-                        });
-                    } else {
-                        alert(`invalid_floor_list is not a valid div ID`);
-                    }
-
-                    if ( document.getElementById('invalid_site_type_list') != null ) {
-                        let invalid_site_type_list_div = document.getElementById('invalid_site_type_list');
-                        if ( invalid_site_type_list_div.hasChildNodes() ) {
-                            invalid_site_type_list_div.replaceChildren();
-                        }
-                        empty_or_invalid_site_type_combo_list.forEach(function (x) {
-                            let div = document.createElement("div");
-                            div.className = "item";
-                            div.textContent = `${x.Employee}|${x.WU}`;
-                            invalid_site_type_list_div.append(div);
-                        });
-                    } else {
-                        alert(`invalid_site_type_list is not a valid div ID`);
-                    }
-
-
                 },
                 clear_existing_err_on_success: false,
-            })
+            });
+
+
 
         });
     </script>
