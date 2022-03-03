@@ -846,6 +846,104 @@ def GetEmpGridStats(request):
         })
 
 
+def EmpGridGetCsvExport(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": f"{request.method} HTTP request not supported",
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: EmpGridGetCsvExport(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "EmpGridGetCsvExport():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "Exception: OrgChartPortal: EmpGridGetCsvExport():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        import csv
+        from io import StringIO
+        dummy_in_mem_file = StringIO()
+
+        # some_post_param   = json_blob['some_post_param']
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+
+        fields_list = [
+            'pms'
+            ,'last_name'
+            ,'first_name'
+            ,'lv'
+            ,'wu__wu'
+            ,'civil_title'
+            ,'office_title'
+            ,'supervisor_pms__pms'
+            ,'annotated__supervisor_full_name'
+            ,'actual_site_id__site'
+            ,'actual_floor_id__floor'
+            ,'actual_site_type_id__site_type'
+        ]
+
+        def annotate_emp_full_name(qryset):
+            return qryset.annotate(
+                annotated__full_name=Concat( F('last_name'), Value(', '), F('first_name') )
+                ,annotated__supervisor_full_name=Concat( F('supervisor_pms__last_name'), Value(', '), F('supervisor_pms__first_name') )
+            )
+
+        active_permitted_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=annotate_emp_full_name)
+        active_permitted_emp = active_permitted_emp.order_by('wu__wu')
+
+
+        ## Create the csv
+        writer = csv.writer(dummy_in_mem_file)
+        writer.writerow(['PMS', 'Last Name', 'First Name', 'Lv', 'WU', 'Title', 'Office Title', 'Supervisor PMS', 'Supervisor', 'Site', 'Floor', 'Site Type'])
+
+        for each in active_permitted_emp:
+            eachrow = [
+                each['pms']
+                ,each['last_name']
+                ,each['first_name']
+                ,each['lv']
+                ,each['wu__wu']
+                ,each['civil_title']
+                ,each['office_title']
+                ,each['supervisor_pms__pms']
+                ,each['annotated__supervisor_full_name']
+                ,each['actual_site_id__site']
+                ,each['actual_floor_id__floor']
+                ,each['actual_site_type_id__site_type']
+            ]
+            writer.writerow(eachrow)
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "post_csv_bytes": dummy_in_mem_file.getvalue(),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": f"Exception: OrgChartPortal: EmpGridGetCsvExport():\n\nError: {e}",
+            # "post_msg": "Exception: OrgChartPortal: EmpGridGetCsvExport():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
 class EmpGridPageView(generic.ListView):
     template_name                   = 'OrgChartPortal.template.empgrid.html'
     context_object_name             = 'emp_entries'

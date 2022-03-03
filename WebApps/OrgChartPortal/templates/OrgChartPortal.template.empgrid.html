@@ -54,6 +54,10 @@
     </div>
 
     {% comment %} Footer {% endcomment %}
+    <button id="export_csv_btn" class="ui button">
+        <i class="download icon"></i>
+        Export as CSV
+    </button>
     <button id="reset_all_filters_btn" class="ui button">
         <i class="filter icon"></i>
         Reset All Filters
@@ -158,6 +162,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/FileSaver.min.js' %}"></script>
 
     {% comment %} AG Grid stuff {% endcomment %}
     <script>
@@ -947,6 +952,24 @@
 
 
             // Side Bar and Footer Stuff
+            $("#export_csv_btn").click(function() {
+                sentJsonBlobToApi({
+                    json_blob           : null,
+                    api_url             : "{% url 'orgchartportal_emp_grid_get_csv_export' %}",
+                    http_request_method : "POST",
+                    successCallbackFct  : function(json_response) {
+                                            csv_bytes_str = json_response.post_csv_bytes
+                                            var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                                            var fileName = `Employees.csv`;
+                                            saveAs(blob, fileName);
+
+                                        },
+                    failCallbackFct     : function(json_response) {
+                                            alert(JSON.stringify(json_response, null, 2))
+                                        },
+                });
+            });
+
             $('.ui.left.sidebar').sidebar({
                 dimPage: false,
                 transition: 'push',
