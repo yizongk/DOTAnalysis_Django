@@ -663,20 +663,7 @@ def GetEmpGridStats(request):
         active_permitted_emp = active_permitted_emp.order_by('wu__wu')
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        # if not is_admin:
 
-
-        # def get_possible_site_type(site_id=None, floor_id=None):
-        #     possible_site_types = TblDOTSiteFloorSiteTypes.objects.using("OrgChartRead").filter(
-        #         floor_id__site_id__site_id__exact=site_id
-        #         ,floor_id__floor_id__exact=floor_id
-        #     )
-        #     return list(possible_site_types.values('floor_id__site_id__site_id', 'floor_id__floor_id', 'site_type_id'))
-
-        # import json
-        # from django.core.serializers.json import DjangoJSONEncoder
-
-        # Q(supervisor_pms__pms__exact=None) | Q(~supervisor_pms__lv__in=get_active_lv_list())
         def get_supervisor_completed():
             total_count = active_permitted_emp.count()
 
