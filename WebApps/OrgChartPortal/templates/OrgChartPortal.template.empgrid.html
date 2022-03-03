@@ -681,6 +681,16 @@
 
             function cellValueSetter(ag_node) {
                 let post_params = null;
+
+                if (ag_node.newValue == null || ag_node.newValue.toString().trim() === '') {
+                    if      ( ag_node.colDef.headerName == 'Office Title' ) { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Supervisor' )   { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Site' )         { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Floor' )        { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Site Type' )    { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else                                                    { alert(`${ag_node.colDef.headerName} not recognized as a valid column name`); return false; }
+                }
+
                 if (ag_node.colDef.headerName == 'Site') {
                     post_params = {
                         api_json_blob   : {
