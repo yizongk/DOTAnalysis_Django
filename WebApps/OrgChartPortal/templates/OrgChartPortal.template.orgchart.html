@@ -167,7 +167,7 @@
 
                         sentJsonBlobToApi({
                             json_blob           : json_blob,
-                            api_url             : "{% url 'orgchartportal_get_emp_csv' %}",
+                            api_url             : "{% url 'orgchartportal_org_chart_get_emp_csv' %}",
                             http_request_method : "POST",
                             successCallbackFct  : function(json_response) {
                                 //alert(`data saved successfully!`)

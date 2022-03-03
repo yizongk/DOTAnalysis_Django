@@ -1037,16 +1037,16 @@ class OrgChartPageView(generic.ListView):
             return context
 
 
-def GetEmpCsv(request):
+def OrgChartGetEmpCsv(request):
     ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
         remote_user = request.user.username
     else:
-        print('Warning: OrgChartPortal: GetEmpCsv(): UNAUTHENTICATE USER!')
+        print('Warning: OrgChartPortal: OrgChartGetEmpCsv(): UNAUTHENTICATE USER!')
         return JsonResponse({
             "post_success": False,
-            "post_msg": "OrgChartPortal: GetEmpCsv():\n\nUNAUTHENTICATE USER!",
+            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUNAUTHENTICATE USER!",
         })
 
     ## Read the json request body
@@ -1055,7 +1055,7 @@ def GetEmpCsv(request):
     except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "OrgChartPortal: GetEmpCsv():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUnable to load request.body as a json object: {}".format(e),
         })
 
     ## Get the data
@@ -1087,7 +1087,7 @@ def GetEmpCsv(request):
 
         # Add allowed WU filter to queryset since client is not admin
         if not is_admin:
-            #raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetEmpCsv() api")
+            #raise ValueError(f"'{remote_user}' is not admin. Only admins can access the OrgChartGetEmpCsv() api")
             allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
             if allowed_wu_list_obj['success'] == False:
                 raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
@@ -1240,7 +1240,7 @@ def GetEmpCsv(request):
             "post_data": dummy_in_mem_file.getvalue(),
         })
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetEmpCsv(): {}".format(e)
+        err_msg = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
         print(err_msg)
         return JsonResponse({
             "post_success": False,
