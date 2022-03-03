@@ -58,11 +58,6 @@
         <i class="filter icon"></i>
         Reset All Filters
     </button>
-    <div>
-        <div>Refresh button??? or just ask user to refresh page?</div>
-    </div>
-
-
 
     <div class="ui piled segments">
 
@@ -555,6 +550,119 @@
             });
         }
 
+        function setGridStats({
+            office_title_completed  =null,
+            supervisor_completed    =null,
+            inactive_supervisor_list=null,
+        } = {}) {
+
+            if (office_title_completed == null) {   alert('setGridStats(): office_title_completed cannot be null');   return false}
+            if (supervisor_completed == null) {     alert('setGridStats(): supervisor_completed cannot be null');     return false}
+            if (inactive_supervisor_list == null) { alert('setGridStats(): inactive_supervisor_list cannot be null'); return false}
+
+            if ( $('#office_title_percent_complete') != null ) {
+                $('#office_title_percent_complete').progress({
+                    percent: office_title_completed
+                });
+            } else {
+                alert(`office_title_percent_complete is not a valid div ID`);
+            }
+
+            if ( $('#supervisor_percent_progress_bar') != null ) {
+                $('#supervisor_percent_progress_bar').progress({
+                    percent: supervisor_completed
+                });
+                //document.getElementById('supervisor_percent_progress_bar').textContent = supervisor_completed+'%';
+            } else {
+                alert(`supervisor_percent_progress_bar is not a valid div ID`);
+            }
+
+            if ( document.getElementById('inactive_supervisor_list') != null ) {
+                let inactive_supervisor_list_div = document.getElementById('inactive_supervisor_list');
+                if ( inactive_supervisor_list_div.hasChildNodes() ) {
+                    inactive_supervisor_list_div.replaceChildren();
+                }
+                inactive_supervisor_list.forEach(function (x) {
+                    let div = document.createElement("div");
+                    div.className = "item";
+                    div.textContent = `${x.Employee}|${x.WU}|${x.Inactive_Supervisor}`;
+                    inactive_supervisor_list_div.append(div);
+                });
+            } else {
+                alert(`inactive_supervisor_list is not a valid div ID`);
+            }
+
+            return
+        }
+
+        function calculateGridStats() {
+            /* Client side grid stats calculation
+            let emp_with_inactive_supervisor_list = emp_data.filter( x => x.supervisor_pms__pms != null && supervisorIsInactive({check_supervisor_pms: x.supervisor_pms__pms}) )
+            let inactive_supervisor_list = []
+            emp_with_inactive_supervisor_list.forEach(item => {
+                inactive_supervisor_list.push({
+                    'Employee'              : `${item.last_name}, ${item.first_name}`,
+                    'WU'                    : `${item.wu__wu}`,
+                    'Inactive_Supervisor'   : `${item.supervisor_pms__pms}`
+                })
+            });
+
+            let office_title_completed      = (emp_data.filter( x => x.office_title != null ).length / emp_data.length) * 100
+            let supervisor_completed        = (emp_data.filter( x => x.supervisor_pms__pms != null ).length / emp_data.length) * 100
+
+            setGridStats({
+                office_title_completed  : office_title_completed,
+                supervisor_completed    : supervisor_completed,
+                inactive_supervisor_list: inactive_supervisor_list,
+            });
+            */
+
+            // Get emp grid stats
+            let emp_grid_stats_api_url = '/OrgChartPortal/get_emp_grid_stats';
+            teammates_response = sentJsonBlobToApi({
+                api_url             : emp_grid_stats_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_emp_grid_stats_response) {
+                    let supervisor_completed                    = json_emp_grid_stats_response["post_data"]["supervisor_completed"];
+                    let office_title_completed                  = json_emp_grid_stats_response["post_data"]["office_title_completed"];
+                    let list_last_updated_on                    = json_emp_grid_stats_response["post_data"]["list_last_updated_on"];
+                    let list_last_updated_by                    = json_emp_grid_stats_response["post_data"]["list_last_updated_by"];
+                    let inactive_supervisor_list                = json_emp_grid_stats_response["post_data"]["inactive_supervisor_list"];
+                    let empty_or_invalid_floor_combo_list       = json_emp_grid_stats_response["post_data"]["empty_or_invalid_floor_combo_list"];
+                    let empty_or_invalid_site_type_combo_list   = json_emp_grid_stats_response["post_data"]["empty_or_invalid_site_type_combo_list"];
+
+
+                    setGridStats({
+                        office_title_completed  : office_title_completed,
+                        supervisor_completed    : supervisor_completed,
+                        inactive_supervisor_list: inactive_supervisor_list,
+                    });
+
+                    if ( document.getElementById('last_updated_time') != null ) {
+                        if (list_last_updated_on != null) {
+                            document.getElementById('last_updated_time').textContent = list_last_updated_on;
+                        } else {
+                            document.getElementById('last_updated_time').textContent = 'NULL'
+                        }
+                    } else {
+                        alert(`last_updated_time is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('last_updated_by') != null ) {
+                        if (list_last_updated_by !=  null) {
+                            document.getElementById('last_updated_by').textContent = list_last_updated_by;
+                        } else {
+                            document.getElementById('last_updated_by').textContent = 'NULL';
+                        }
+                    } else {
+                        alert(`last_updated_by is not a valid div ID`);
+                    }
+
+                },
+                clear_existing_err_on_success: false,
+            });
+        }
+
         document.addEventListener("DOMContentLoaded", function(event) {
             // Reset the default viewport from css class container to container-fluid
             nodes = document.getElementsByClassName('container')
@@ -596,6 +704,8 @@
                                     'actual_site_type_id__site_type_id'
                                 ],
                             });
+
+                            calculateGridStats();
                         },
                     }
                 } else if (ag_node.colDef.headerName == 'Floor') {
@@ -629,6 +739,8 @@
                                     force: true,
                                 });
                             }
+
+                            calculateGridStats();
                         },
                     }
                 } else {
@@ -638,8 +750,11 @@
                             'column_name'   : ag_node.colDef.headerName,
                             'new_value'     : ag_node.newValue,
                         },
-                        ag_node         : ag_node,
-                        post_url        : "update_employee_data",
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_res, props) {
+                            calculateGridStats();
+                        }
                     }
                 }
 
@@ -893,75 +1008,7 @@
 
 
             // Get emp grid stats
-            let emp_grid_stats_api_url = '/OrgChartPortal/get_emp_grid_stats';
-            teammates_response = sentJsonBlobToApi({
-                api_url             : emp_grid_stats_api_url,
-                http_request_method : "POST",
-                successCallbackFct  : function(json_emp_grid_stats_response) {
-                    let supervisor_completed                    = json_emp_grid_stats_response["post_data"]["supervisor_completed"];
-                    let office_title_completed                  = json_emp_grid_stats_response["post_data"]["office_title_completed"];
-                    let list_last_updated_on                    = json_emp_grid_stats_response["post_data"]["list_last_updated_on"];
-                    let list_last_updated_by                    = json_emp_grid_stats_response["post_data"]["list_last_updated_by"];
-                    let inactive_supervisor_list                = json_emp_grid_stats_response["post_data"]["inactive_supervisor_list"];
-                    let empty_or_invalid_floor_combo_list       = json_emp_grid_stats_response["post_data"]["empty_or_invalid_floor_combo_list"];
-                    let empty_or_invalid_site_type_combo_list   = json_emp_grid_stats_response["post_data"]["empty_or_invalid_site_type_combo_list"];
-
-
-                    if ( $('#supervisor_percent_progress_bar') != null ) {
-                        $('#supervisor_percent_progress_bar').progress({
-                            percent: supervisor_completed
-                        });
-                        //document.getElementById('supervisor_percent_progress_bar').textContent = supervisor_completed+'%';
-                    } else {
-                        alert(`supervisor_percent_progress_bar is not a valid div ID`);
-                    }
-
-                    if ( $('#office_title_percent_complete') != null ) {
-                        $('#office_title_percent_complete').progress({
-                            percent: office_title_completed
-                        });
-                    } else {
-                        alert(`office_title_percent_complete is not a valid div ID`);
-                    }
-
-                    if ( document.getElementById('last_updated_time') != null ) {
-                        if (list_last_updated_on != null) {
-                            document.getElementById('last_updated_time').textContent = list_last_updated_on;
-                        } else {
-                            document.getElementById('last_updated_time').textContent = 'NULL'
-                        }
-                    } else {
-                        alert(`last_updated_time is not a valid div ID`);
-                    }
-
-                    if ( document.getElementById('last_updated_by') != null ) {
-                        if (list_last_updated_by !=  null) {
-                            document.getElementById('last_updated_by').textContent = list_last_updated_by;
-                        } else {
-                            document.getElementById('last_updated_by').textContent = 'NULL';
-                        }
-                    } else {
-                        alert(`last_updated_by is not a valid div ID`);
-                    }
-
-                    if ( document.getElementById('inactive_supervisor_list') != null ) {
-                        let inactive_supervisor_list_div = document.getElementById('inactive_supervisor_list');
-                        if ( inactive_supervisor_list_div.hasChildNodes() ) {
-                            inactive_supervisor_list_div.replaceChildren();
-                        }
-                        inactive_supervisor_list.forEach(function (x) {
-                            let div = document.createElement("div");
-                            div.className = "item";
-                            div.textContent = `${x.Employee}|${x.WU}|${x.Inactive_Supervisor}`;
-                            inactive_supervisor_list_div.append(div);
-                        });
-                    } else {
-                        alert(`inactive_supervisor_list is not a valid div ID`);
-                    }
-
-                },
-                clear_existing_err_on_success: false,
-            });
+            calculateGridStats()
 
 
             // Set up the clickable filter
