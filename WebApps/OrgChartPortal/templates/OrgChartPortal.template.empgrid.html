@@ -585,7 +585,6 @@
                         on_success_callback : function(json_response, props) {
                             let ag_node = props.ag_node;
 
-                            ag_node.data[ag_node.colDef.field] = ag_node.newValue;
                             // Null the Actual Site Floor and Actual Site Type on Actual Site changes. The API has already made this change on a successfuly API call.
                             ag_node.data['actual_floor_id__floor_id']           = null;
                             ag_node.data['actual_site_type_id__site_type_id']   = null;
@@ -593,7 +592,6 @@
                             ag_node.api.refreshCells({
                                 rowNodes: [ag_node.node],
                                 columns: [
-                                    ag_node.column,
                                     'actual_floor_id__floor_id',
                                     'actual_site_type_id__site_type_id'
                                 ],
@@ -612,7 +610,6 @@
                         on_success_callback : function(json_res, props) {
                             let ag_node = props.ag_node;
 
-                            ag_node.data[ag_node.colDef.field] = ag_node.newValue;
                             // If there is only one valid Site Type option for the newly selected floor, auto populate the Site Type with that option. The api does this on the backend as well.
                             let valid_site_type_options = site_type_dropdown.filter(
                                 x =>
@@ -632,13 +629,6 @@
                                     force: true,
                                 });
                             }
-
-                            ag_node.api.refreshCells({
-                                rowNodes: [ag_node.node],
-                                columns: [
-                                    ag_node.column,
-                                ],
-                            });
                         },
                     }
                 } else {

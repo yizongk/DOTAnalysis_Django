@@ -32,7 +32,8 @@ class BaseAGGridCellValueSetter {
          *      - api_json_blob         : This will be the object that is POST to the API.
          *      - ag_node               : A reference to the AG node (Really the cell calls it) that called thsi function.
          *      - post_url              : The API URL that the request will POST to.
-         *      - on_success_callback   : (Optional) Expects two arguments json_response and props. Functions to be called on successful POST request
+         *      - on_success_callback   : (Optional) Expects two arguments json_response and props. Functions to be called on successful POST request.
+         *                                  Regardless of @on_success_callback being set or not, on success calls, ag grid will set new value to the grid and refresh the grid
          *      - on_fail_callback      : (Optional) Expects two arguments json_response and props. Functions to be called on failed POST request
          */
 
@@ -40,19 +41,27 @@ class BaseAGGridCellValueSetter {
             'ag_node': params.ag_node,
         }
 
+        let set_and_refresh_callback = function(json_response, props) {
+            let ag_node = props.ag_node;
+            ag_node.data[ag_node.colDef.field] = ag_node.newValue;
+            ag_node.api.refreshCells({
+                rowNodes: [ag_node.node],   // List of row nodes to restrict operation to
+                columns: [ag_node.column],  // List of columns to restrict operation to
+            });
+        };
+
         let success_callback = null;
+
         if (params.on_success_callback == null) {
             // default callbacks
             success_callback = function(json_response, props) {
-                let ag_node = props.ag_node;
-                ag_node.data[ag_node.colDef.field] = ag_node.newValue;
-                ag_node.api.refreshCells({
-                    rowNodes: [ag_node.node],   // List of row nodes to restrict operation to
-                    columns: [ag_node.column],  // List of columns to restrict operation to
-                });
+                set_and_refresh_callback(json_response, props);
             }
         } else {
-            success_callback = params.on_success_callback;
+            success_callback = function(json_response, props) {
+                set_and_refresh_callback(json_response, props);
+                params.on_success_callback(json_response, props);
+            }
         }
 
         let fail_callback = null;
