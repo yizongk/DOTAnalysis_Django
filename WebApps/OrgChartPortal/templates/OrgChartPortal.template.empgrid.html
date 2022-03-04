@@ -63,27 +63,35 @@
         </div>
     </div>
 
+    <button id="export_csv_btn" class="ui button">
+        <i class="download icon"></i>
+        Export as CSV
+    </button>
+
     {% comment %} AG Grid {% endcomment %}
     <div style="height: 40vw; width: auto;">
         <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
     </div>
 
     {% comment %} Footer {% endcomment %}
-    <button id="export_csv_btn" class="ui button">
-        <i class="download icon"></i>
-        Export as CSV
-    </button>
-    <button id="reset_all_filters_btn" class="ui button">
-        <i class="filter icon"></i>
-        Reset All Filters
-    </button>
+    <div class="ui segments">
+        <div class="ui segment">
+            <button id="reset_all_filters_btn" class="ui button">
+                <i class="filter icon"></i>
+                Reset All Filters
+            </button>
+        </div>
 
-    <div class="ui piled segments">
+        <div class="ui segment">
+            <div class="label">List's Last Updated On: <span id="last_updated_time" class="ui medium red text"></span></div>
+            <div class="label">List Last Updated By: <span id="last_updated_by" class="ui medium red text"></div>
+        </div>
+    </div>
 
+
+    <div class="ui segments">
         <div class="ui horizontal segments">
-
             <div class="ui segment">
-
                 <div id="office_title_percent_complete" class="ui indicating progress">
                     <div class="bar">
                         <div class="progress"></div>
@@ -97,11 +105,9 @@
                     <i class="filter icon"></i>
                     Show the missing Office Title
                 </button>
-
             </div>
 
             <div class="ui segment">
-
                 <div id="supervisor_percent_progress_bar" class="ui indicating progress">
                     <div class="bar">
                         <div class="progress"></div>
@@ -115,58 +121,35 @@
                     <i class="filter icon"></i>
                     Show the missing Supervisor
                 </button>
-
             </div>
-
         </div>
 
-        <div class="ui horizontal segments">
-
-            <div class="ui segment">
-
-                <div class="ui label inverted grey basic large">
-                    Inactive Supervisors
-                    <div id="inactive_supervisor_list" class="ui inverted list">
-                        <div class="item">
-                            Sup 1
-                        </div>
-                        <div class="item">
-                            Sup 2
-                        </div>
+        <div class="ui segment">
+            <div class="ui four column grid">
+                <div class="column">
+                    <div class="ui label inverted grey basic big">
+                        Inactive Supervisors
                     </div>
+
+                    <button id="inactive_supervisor_list_filter_btn" class="ui button">
+                        <i class="filter icon"></i>
+                        Show the inactive Supervisor
+                    </button>
+
+                    <table class="ui compact inverted table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>WU</th>
+                                <th>Supervisor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive_supervisor_list">
+                        </tbody>
+                    </table>
                 </div>
-
-                <button id="inactive_supervisor_list_filter_btn" class="ui button">
-                    <i class="filter icon"></i>
-                    Show the inactive Supervisor
-                </button>
-
             </div>
-
         </div>
-
-        <div class="ui horizontal segments">
-
-            <div class="ui segment">
-
-                <div class="ui statistic">
-                    <div class="label">List's Last Updated On:</div>
-                    <div class="value" id="last_updated_time"></div>
-                </div>
-
-            </div>
-
-            <div class="ui segment">
-
-                <div class="ui statistic">
-                    <div class="label">List Last Updated By:</div>
-                    <div class="value" id="last_updated_by"></div>
-                </div>
-
-            </div>
-
-        </div>
-
     </div>
 {% endblock content %}
 
@@ -602,11 +585,22 @@
                 if ( inactive_supervisor_list_div.hasChildNodes() ) {
                     inactive_supervisor_list_div.replaceChildren();
                 }
+
                 inactive_supervisor_list.forEach(function (x) {
-                    let div = document.createElement("div");
-                    div.className = "item";
-                    div.textContent = `${x.Employee}|${x.WU}|${x.Inactive_Supervisor}`;
-                    inactive_supervisor_list_div.append(div);
+                    let tr = document.createElement("tr");
+                    let td_emp = document.createElement("td");
+                    let td_wu  = document.createElement("td");
+                    let td_sup = document.createElement("td");
+
+                    td_emp.textContent = x.Employee;
+                    td_wu.textContent  = x.WU;
+                    td_sup.textContent = x.Inactive_Supervisor;
+
+                    tr.append(td_emp);
+                    tr.append(td_wu);
+                    tr.append(td_sup);
+
+                    inactive_supervisor_list_div.append(tr);
                 });
             } else {
                 alert(`inactive_supervisor_list is not a valid div ID`);
