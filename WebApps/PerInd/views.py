@@ -13,7 +13,7 @@ import json
 
 def get_admin_category_permissions():
     try:
-        user_permissions_list = Category.objects.all()
+        user_permissions_list = Category.objects.using('PerInd').all()
         return {
             "success": True,
             "pk_list": [x.category_id for x in user_permissions_list],
@@ -31,7 +31,7 @@ def get_admin_category_permissions():
 
 def get_user_category_permissions(username):
     try:
-        user_permissions_list = UserPermissions.objects.filter(user__login=username)
+        user_permissions_list = UserPermissions.objects.using('PerInd').filter(user__login=username)
         return {
             "success": True,
             "pk_list": [x.category.category_id for x in user_permissions_list],
@@ -50,7 +50,7 @@ def get_user_category_permissions(username):
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
-        admin_query = Admins.objects.filter(
+        admin_query = Admins.objects.using('PerInd').filter(
             user__login=username,
             active=True, ## Filters for active Admins
         )
@@ -72,7 +72,7 @@ def user_is_active_admin(username):
 
 def user_is_active_user(username):
     try:
-        user_query = Users.objects.filter(
+        user_query = Users.objects.using('PerInd').filter(
             login=username,
             active_user=True, ## Filters for active users
         )
@@ -121,7 +121,7 @@ def user_has_permission_to_edit(username, record_id):
             }
 
         category_id_permission_list = category_info["pk_list"]
-        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_info = IndicatorData.objects.using('PerInd').values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
         record_category_id = record_category_info["indicator__category__category_id"]
         record_category_name = record_category_info["indicator__category__category_name"]
         if len(category_id_permission_list) != 0:
@@ -255,13 +255,13 @@ class WebGridPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
 
         elif is_active_admin["success"] is None:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         if user_cat_permissions["success"] == True:
             category_pk_list = user_cat_permissions["pk_list"]
@@ -270,16 +270,16 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
         else:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Default filters on the WebGrid dataset
         try:
-            indicator_data_entries = IndicatorData.objects.filter(
+            indicator_data_entries = IndicatorData.objects.using('PerInd').filter(
                 indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
                 indicator__active=True, ## Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
@@ -298,7 +298,7 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         ## Filter dataset from Dropdown list
@@ -313,7 +313,7 @@ class WebGridPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by YYYYs
         if len(self.req_yr_list_filter) >= 1:
             try:
@@ -325,7 +325,7 @@ class WebGridPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by MMs
         if len(self.req_mn_list_filter) >= 1:
             try:
@@ -337,7 +337,7 @@ class WebGridPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by Fiscal Years
         if len(self.req_fy_list_filter) >= 1:
             try:
@@ -349,7 +349,7 @@ class WebGridPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by Categories
         if self.client_is_admin == True:
             if len(self.req_cat_list_filter) >= 1:
@@ -362,7 +362,7 @@ class WebGridPageView(generic.ListView):
                     self.req_success = False
                     self.err_msg = "Exception: WebGridPageView(): get_queryset(): Categories Filtering: {}".format(e)
                     print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
 
         ## Sort dataset from sort direction and sort column
         try:
@@ -378,12 +378,12 @@ class WebGridPageView(generic.ListView):
                     self.req_success = False
                     self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
                     print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
@@ -401,7 +401,7 @@ class WebGridPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         self.req_success = True
         return indicator_data_entries
@@ -510,7 +510,7 @@ class WebGridPageView(generic.ListView):
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["indicator_data_entries"] = IndicatorData.objects.none()
+            context["indicator_data_entries"] = None
 
             context["category_permissions"] = ""
 
@@ -629,14 +629,14 @@ def PerIndApiUpdateData(request):
         })
 
     if table == "IndicatorData":
-        row = IndicatorData.objects.get(record_id=id)
+        row = IndicatorData.objects.using('PerInd').get(record_id=id)
 
         if column=="val":
             try:
                 row.val = new_value
 
                 ## Update [last updated by] to current remote user, also make sure it's active user
-                user_obj = Users.objects.get(login=remote_user, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                user_obj = Users.objects.using('PerInd').get(login=remote_user, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                 row.update_user = user_obj
 
                 ## Update [updated date] to current time
@@ -777,7 +777,7 @@ def PerIndApiGetCsv(request):
 
     ## Default filters on the WebGrid dataset
     try:
-        csv_queryset = IndicatorData.objects.filter(
+        csv_queryset = IndicatorData.objects.using('PerInd').filter(
             indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
             indicator__active=True, ## Filters for active Indicator titles
             year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
@@ -985,12 +985,12 @@ class PastDueIndicatorsPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Use python to process the queryset to find a list of Indicator_Data.Records_IDs that meet the Past-Due-Criteria
         ## Criteria for past due, last month entered is at least three months in the past (Updated_Date = '1899-12-30', means no data was entered, it is also our default 'NULL/Empty' date)
         try:
-            base_data_qs = IndicatorData.objects.filter(
+            base_data_qs = IndicatorData.objects.using('PerInd').filter(
                 indicator__active=True, ## Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
@@ -1017,7 +1017,7 @@ class PastDueIndicatorsPageView(generic.ListView):
                         self.req_success = False
                         self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): ind_id_related queryset contains records tracking dates greater than current month and current year, the record tracks yyyy: '{}' and mm: '{}'".format(each_row.year_month.yyyy, each_row.year_month.mm)
                         print(self.err_msg)
-                        return IndicatorData.objects.none()
+                        return None
 
                     ## Indicator could be up-to-date, current record is for entry for the last three month (Counting current month, last month, and the month before)
                     if (
@@ -1080,18 +1080,18 @@ class PastDueIndicatorsPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Requery db to match up with the list of Indicator_Data.Records_IDs to pass to the client
         try:
-            indicator_data_entries = IndicatorData.objects.filter(
+            indicator_data_entries = IndicatorData.objects.using('PerInd').filter(
                 pk__in=past_due_record_id_list,
             )
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         ## Filter dataset from Dropdown list
@@ -1106,7 +1106,7 @@ class PastDueIndicatorsPageView(generic.ListView):
                 self.req_success = False
                 self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Categories Filtering: {}".format(e)
                 print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
 
         ## Sort dataset from sort direction and sort column
         try:
@@ -1123,12 +1123,12 @@ class PastDueIndicatorsPageView(generic.ListView):
                     self.req_success = False
                     self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
                     print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
@@ -1137,7 +1137,7 @@ class PastDueIndicatorsPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         self.req_success = True
         return indicator_data_entries
@@ -1197,7 +1197,7 @@ class PastDueIndicatorsPageView(generic.ListView):
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["indicator_data_entries"] = IndicatorData.objects.none()
+            context["indicator_data_entries"] = None
 
             context["sort_dir"] = ""
             context["sort_by"] = ""
@@ -1285,7 +1285,7 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
@@ -1295,20 +1295,20 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
-            permission_data_entries = UserPermissions.objects.all().order_by('user__login')
+            permission_data_entries = UserPermissions.objects.using('PerInd').all().order_by('user__login')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         # ## EXAMPLE: Get the active users login list in json format
         # try:
-        #     user_objs = Users.objects.filter(
+        #     user_objs = Users.objects.using('PerInd').filter(
         #         active_user=True
         #     ).order_by('login')
 
@@ -1319,12 +1319,12 @@ class UserPermissionsPanelPageView(generic.ListView):
         #     self.req_success = False
         #     self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
         #     print(self.err_msg)
-        #     return UserPermissions.objects.none()
+        #     return UserPermissions.objects.using('PerInd').none()
 
 
         ## Get the active users login list
         try:
-            user_objs = Users.objects.filter(
+            user_objs = Users.objects.using('PerInd').filter(
                 active_user=True
             ).order_by('login')
 
@@ -1333,17 +1333,17 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Get the category list
         try:
-            category_objs = Category.objects.all().order_by('category_name')
+            category_objs = Category.objects.using('PerInd').all().order_by('category_name')
             self.categories_list = category_objs
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         self.req_success = True
         return permission_data_entries
@@ -1460,10 +1460,10 @@ def UserPermissionsPanelApiUpdateData(request):
 
         ## Save the value
         try:
-            row = UserPermissions.objects.get(user_permission_id=id)
+            row = UserPermissions.objects.using('PerInd').get(user_permission_id=id)
             if column == "Login":
                 try:
-                    user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                    user_obj = Users.objects.using('PerInd').get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                     row.user = user_obj
 
                     row.save()
@@ -1578,7 +1578,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check that the login_selection and category_selection exists
     try:
-        if not Users.objects.filter(login__exact=login_selection, active_user__exact=True).exists():
+        if not Users.objects.using('PerInd').filter(login__exact=login_selection, active_user__exact=True).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' doesn't exists or it's not an active user".format(login_selection),
@@ -1590,7 +1590,7 @@ def UserPermissionsPanelApiAddRow(request):
         })
 
     try:
-         if not Category.objects.filter(category_name__exact=category_selection).exists():
+         if not Category.objects.using('PerInd').filter(category_name__exact=category_selection).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' doesn't exists as a Category".format(category_selection),
@@ -1603,7 +1603,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check for duplication of login and category
     try:
-        if UserPermissions.objects.filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
+        if UserPermissions.objects.using('PerInd').filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' already has access to '{}'".format(login_selection, category_selection),
@@ -1616,8 +1616,8 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Create the row!
     try:
-        user_obj = Users.objects.get(login=login_selection, active_user=True)
-        category_obj = Category.objects.get(category_name=category_selection)
+        user_obj = Users.objects.using('PerInd').get(login=login_selection, active_user=True)
+        category_obj = Category.objects.using('PerInd').get(category_name=category_selection)
         new_permission = UserPermissions(user=user_obj, category=category_obj)
         new_permission.save()
     except Exception as e:
@@ -1713,7 +1713,7 @@ def UserPermissionsPanelApiDeleteRow(request):
 
     ## Remove the permission row
     try:
-        permission_row = UserPermissions.objects.get(user_permission_id=user_permission_id)
+        permission_row = UserPermissions.objects.using('PerInd').get(user_permission_id=user_permission_id)
         permission_row.delete()
     except Exception as e:
         return JsonResponse({
@@ -1744,7 +1744,7 @@ class UsersPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "UsersPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
@@ -1754,16 +1754,16 @@ class UsersPanelPageView(generic.ListView):
             self.req_success = False
             self.err_msg = "UsersPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
-            users_data_entries = Users.objects.all().order_by('login')
+            users_data_entries = Users.objects.using('PerInd').all().order_by('login')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
             print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         self.req_success = True
         return users_data_entries
@@ -1872,7 +1872,7 @@ def UsersPanelApiAddRow(request):
 
     ## Check for duplication of login
     try:
-        if Users.objects.filter(login__exact=login_input).exists():
+        if Users.objects.using('PerInd').filter(login__exact=login_input).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' already exists in the Users table".format(login_input),
@@ -1980,7 +1980,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Get user row reference
     try:
-        user_row = Users.objects.get(user_id=user_id)
+        user_row = Users.objects.using('PerInd').get(user_id=user_id)
     except Exception as e:
         return JsonResponse({
             "post_success": False,
@@ -1989,7 +1989,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Check that there is no UserPermissions rows associated with given user_id
     try:
-        if UserPermissions.objects.filter(user__user_id__exact=user_id).exists():
+        if UserPermissions.objects.using('PerInd').filter(user__user_id__exact=user_id).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)".format(user_row.login),
@@ -2104,7 +2104,7 @@ def UsersPanelApiUpdateData(request):
 
         ## Save the value
         try:
-            row = Users.objects.get(user_id=id)
+            row = Users.objects.using('PerInd').get(user_id=id)
             if column == "Active_User":
                 row.active_user = new_value
                 row.save()

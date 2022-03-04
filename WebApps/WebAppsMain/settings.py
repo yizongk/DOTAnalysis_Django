@@ -105,11 +105,24 @@ WSGI_APPLICATION = 'WebAppsMain.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 DATABASES = {}
+DATABASES['default'] = {
+    ## Default database to create the default tables needed by django.contrib.auth
+    # 'ENGINE': 'django.db.backends.sqlite3',
+    # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    'ENGINE':       'sql_server.pyodbc',
+    'HOST' :        Default_SQLServerHost,
+    'NAME' :        Default_SQLServerDbName,
+    'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+    'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+    'OPTIONS' : {
+        'driver' :      'SQL Server Native Client 11.0',
+    },
+}
+
 if PerInd_UseWinAuth: # PerInd_UseWinAuth imported from secret_settings.py
     # https://django-mssql.readthedocs.io/en/latest/settings.html, read this doc on trusted connections. TLDR: Remove the line "'USER': '...'," and it will default to trusted connection
-    DATABASES['default'] = {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    DATABASES['PerInd'] = {
         'ENGINE':       'sql_server.pyodbc',
         'HOST' :        PerInd_SQLServerHost,
         'NAME' :        PerInd_SQLServerDbName,
@@ -121,9 +134,7 @@ if PerInd_UseWinAuth: # PerInd_UseWinAuth imported from secret_settings.py
         },
     }
 else:
-    DATABASES['default'] = {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    DATABASES['PerInd'] = {
         'ENGINE':       'sql_server.pyodbc',
         'HOST' :        PerInd_SQLServerHost,
         'NAME' :        PerInd_SQLServerDbName,
@@ -322,8 +333,8 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 # ]
 
 
-PER_IND_VERSION = '1.0.0'
-MAPS_APP_VERSION = '1.0.0'
-DAILY_POTHOLE_VERSION = '1.2.2'
-ORG_CHART_PORTAL_VERSION = '1.0.1'
-FLEET_DATA_COLLECTION_VERSION = '1.0.0'
+PER_IND_VERSION = '1.1.1'
+MAPS_APP_VERSION = '1.1.0'
+DAILY_POTHOLE_VERSION = '1.2.0'
+ORG_CHART_PORTAL_VERSION = '1.12.1'
+FLEET_DATA_COLLECTION_VERSION = '1.1.0'

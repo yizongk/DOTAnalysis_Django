@@ -3,138 +3,102 @@
 
 {% load static %}
 {% block custom_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
 
 <div class="container">
-    <div class="jumbotron" style=" font-family:sans-serif;">
-        <h1>RRM Daily Pothole</h1>
-        <p class="lead">Welcome!</p>
+    <div class="ui huge message">
+        <h1 class="ui huge header" >RRM Daily Pothole</h1>
+        <p>Welcome!</p>
     </div>
 
 
 
 
-    <div class="card-columns">
-        <div class="card DOT-theme-color">
-            <div class="card-body">
-                <div>
-                    <h4 class="class-title font-weight-bold mb-2">Daily Pothole Data Entry</h4>
+    <div class="ui link cards">
+
+        <a class="ui card" href="{% url 'dailypothole_pothole_data_entry_view' %}">
+            <div class="image" >
+                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
+            </div>
+
+            <div class="content">
+                <div class="header">
+                    Daily Pothole Data Entry
                 </div>
+                <div class="ui primary button">Head Over &raquo;</div>
             </div>
-
-            <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
-                <a href="{% url 'dailypothole_pothole_data_entry_view' %}">
-                    <div class="mask rgba-white-light"></div>
-                </a>
-            </div>
-
-            <div class="card-body">
-                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_pothole_data_entry_view' %}">Head Over &raquo;</a>
-            </div>
-        </div>
+        </a>
 
         {% if client_is_admin %}
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Daily Pothole Data Grid</h4>
+            <a class="ui card" href="{% url 'dailypothole_complaints_input_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
+                </div>
+
+                <div class="content">
+                    <div class="header">
+                        Complaints Input
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_admin_panel_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Data Grid Logo">
-                    <a href="{% url 'dailypothole_pothole_data_grid_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_pothole_data_grid_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Complaints Input</h4>
+                <div class="content">
+                    <div class="header">
+                        Admin Panel
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_pothole_data_grid_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'dailypothole_complaints_input_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_complaints_input_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Reports PDF Generation</h4>
+                <div class="content">
+                    <div class="header">
+                        Daily Pothole Data Grid
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_reports_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Reporting Logo">
-                    <a href="{% url 'dailypothole_reports_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_reports_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Admin Panel</h4>
+                <div class="content">
+                    <div class="header">
+                        Reports PDF Generation
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+
+            <a class="ui card" href="{% url 'dailypothole_csv_export_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}">
                 </div>
 
-                <div class="view overlay">
-                    <!-- CREDIT: <a href='https://pngtree.com/so/command'>command png from pngtree.com</a> -->
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'dailypothole_admin_panel_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_admin_panel_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">CSV Export</h4>
+                <div class="content">
+                    <div class="header">
+                        CSV Export
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
                 </div>
-
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/report_logo.png' %}" alt="Reporting Logo">
-                    <a href="{% url 'dailypothole_csv_export_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
-
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'dailypothole_csv_export_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
+            </a>
         {% endif %}
+
     </div>
 </div>
 

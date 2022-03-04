@@ -4,16 +4,27 @@ function csrfSafeMethod(method) {
 };
 
 
-function setDatabaseStatus(good, msg) {
+function setErrorStatus({error_msg = ''}  = {}) {
     // Set status light and error message to red and response error msg
-    if (good == true) {
-        $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
-        $('.status_info.err_msg').html("");
-    } else {
-        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-        $('.status_info.err_msg').html("Error: " + msg);
-    }
+    $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
+    $('.status_info.err_msg').html("Error: " + error_msg);
 };
+
+function clearErrorStatus() {
+    $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
+    $('.status_info.err_msg').html("");
+}
+
+function handleError({set_error=true, error_msg='', clear_error_on_success=true} = {}) {
+    if (set_error == true) {
+        setErrorStatus({error_msg: error_msg})
+    } else {
+        if (clear_error_on_success == true) {
+            clearErrorStatus()
+        }
+    }
+
+}
 
 
 // Sends a json blob to the api end point. Assumes the api end will know how to handle the json blob
@@ -26,7 +37,20 @@ function setDatabaseStatus(good, msg) {
 // ajaxFailCallbackFct stores calling parent data that can be pass to the various callback function
 // Returns a promise containing the POST call response data if call was successful.
 // Note: Cookies.get() comes from https://github.com/js-cookie/js-cookie/, so be sure to include this script in your html doc \<head\> tag like
-async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
+// @clear_existing_err_on_success, set this to False for api calls that's meant to be called once per refresh of the page, so it doens't erase any previous error messages caused by other modules.
+async function sentJsonBlobToApi(
+        {
+            json_blob                       = null,
+            api_url                         = null,
+            http_request_method             = "POST",
+            successCallbackFct              = function() { return; },
+            failCallbackFct                 = function() { return; },
+            ajaxFailCallbackFct             = function() { return; },
+            props                           = {},
+            clear_existing_err_on_success   = true,
+        } = {}
+    ) {
+
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -49,10 +73,10 @@ async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST"
 
             failCallbackFct(json_response, props)
             // Set status light and error message to red and response error msg
-            setDatabaseStatus(good=false, msg=json_response["post_msg"]);
+            handleError({set_error: true, error_msg: json_response["post_msg"]});
         } else { // Api call successful
             successCallbackFct(json_response, props);
-            setDatabaseStatus(good=true, msg="");
+            handleError({set_error: false, error_msg: "", clear_error_on_success: clear_existing_err_on_success});
         }
 
         return json_response['post_data'];
@@ -60,7 +84,7 @@ async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST"
     .fail(function (jqXHR) {
         var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
         ajaxFailCallbackFct(jqXHR, props)
-        setDatabaseStatus(good=false, msg=errorMessage);
+        handleError({set_error: true, error_msg: errorMessage});
 
         console.log(`Ajax Post: Error Occured: ${errorMessage}`);
         alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
@@ -98,8 +122,11 @@ async function sendCellToServer( node, api_url, http_request_method="POST", cell
         'cell_html_type': cell_html_type,
     }
 
-    api_json_response = await sentJsonBlobToApi( json_blob=json_obj_to_server, api_url=api_url, http_request_method=http_request_method,
-        successCallbackFct=function(json_response, props) {
+    api_json_response = await sentJsonBlobToApi({
+        json_blob           : json_obj_to_server,
+        api_url             : api_url,
+        http_request_method : http_request_method,
+        successCallbackFct : function(json_response, props) {
             // successful api call call-back fct
             td_node = props['td_node']
             new_value = props['new_value']
@@ -107,7 +134,8 @@ async function sendCellToServer( node, api_url, http_request_method="POST", cell
 
             td_node.html(new_value);
             finishEditMode(td_node, cell_html_type)
-        }, failCallbackFct=function(json_response, props) {
+        },
+        failCallbackFct : function(json_response, props) {
             // bad api call call-back fct
             td_node = props['td_node']
             old_val = props['old_val']
@@ -115,7 +143,8 @@ async function sendCellToServer( node, api_url, http_request_method="POST", cell
 
             td_node.html(old_val);
             finishEditMode(td_node, cell_html_type)
-        }, ajaxFailCallbackFct=function(jqXHR, props) {
+        },
+        ajaxFailCallbackFct : function(jqXHR, props) {
             // bad ajax call
             td_node = props['td_node']
             old_val = props['old_val']
@@ -124,8 +153,9 @@ async function sendCellToServer( node, api_url, http_request_method="POST", cell
             td_node.html(old_val);
             finishEditMode(td_node, cell_html_type)
         },
-        props
-    );
+        props               : props,
+    });
+
     result = {
         'td_node': td_node,
         'api_json_response': api_json_response
@@ -138,11 +168,29 @@ async function sendCellToServer( node, api_url, http_request_method="POST", cell
 
 // sql: UPDATE
 async function sendModalFormDataToServer( json_blob, api_url, http_request_method="PUT", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
+
+    await sentJsonBlobToApi({
+        json_blob           : json_blob,
+        api_url             : api_url,
+        http_request_method : http_request_method,
+        successCallbackFct  : successCallbackFct,
+        failCallbackFct     : failCallbackFct,
+        ajaxFailCallbackFct : ajaxFailCallbackFct,
+        props               : props,
+    });
 };
 
 
 // sql: DELETE
 async function deleteRecordToServer( json_blob, api_url, http_request_method="DELETE", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
+
+    await sentJsonBlobToApi({
+        json_blob           : json_blob,
+        api_url             : api_url,
+        http_request_method : http_request_method,
+        successCallbackFct  : successCallbackFct,
+        failCallbackFct     : failCallbackFct,
+        ajaxFailCallbackFct : ajaxFailCallbackFct,
+        props               : props,
+    });
 }

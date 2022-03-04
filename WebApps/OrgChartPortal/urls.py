@@ -9,7 +9,9 @@ urlpatterns = [
     path('orgchart', OrgChartPageView.as_view(), name='orgchartportal_orgchart_view'),
     path('get_client_wu_permissions_list', views.GetClientWUPermissions, name='orgchartportal_get_client_wu_permissions_list'),
     path('get_client_teammates_list', views.GetClientTeammates, name='orgchartportal_get_client_teammates_list'),
+    path('emp_grid_get_csv_export', views.EmpGridGetCsvExport, name='orgchartportal_emp_grid_get_csv_export'),
     path('get_emp_grid_stats', views.GetEmpGridStats, name='orgchartportal_get_emp_grid_stats'),
-    path('get_emp_csv', views.GetEmpCsv, name='orgchartportal_get_emp_csv'),
+    path('org_chart_get_emp_csv', views.OrgChartGetEmpCsv, name='orgchartportal_org_chart_get_emp_csv'),
     path('get_commissioner_pms', views.GetCommissionerPMS, name='orgchartportal_get_commissioner_pms'),
+    path('update_employee_data', views.UpdateEmployeeData, name='orgchartportal_update_employee_data'),
 ]

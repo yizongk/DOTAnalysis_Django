@@ -3,67 +3,53 @@
 
 {% load static %}
 {% block custom_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 {% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
 
 <div class="container">
-    <div class="jumbotron" style=" font-family:sans-serif;">
-        <h1>Org Chart Portal</h1>
-        <p class="lead">Welcome!</p>
+    <div class="ui huge message">
+        <h1 class="ui huge header">Org Chart Portal</h1>
+        <p>Welcome!</p>
     </div>
 
 
 
 
-    <div class="card-columns">
-        <div class="card DOT-theme-color">
-            <div class="card-body">
-                <div>
-                    <h4 class="class-title font-weight-bold mb-2">Data Entry</h4>
+    <div class="ui link cards">
+
+        <a class="ui card" href="{% url 'orgchartportal_empgrid_view' %}">
+            <div class="image" >
+                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
+            </div>
+
+            <div class="content">
+                <div class="header">
+                    Data Entry
                 </div>
+                <div class="ui primary button">Head Over &raquo;</div>
             </div>
+        </a>
 
-            <div class="view overlay">
-                <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}" alt="Data Entry Logo">
-                <a href="{% url 'orgchartportal_empgrid_view' %}">
-                    <div class="mask rgba-white-light"></div>
-                </a>
-            </div>
+        {% comment %} @TODO implement admin in database {% endcomment %}
+        {% if client_is_admin %}
+            <a class="ui card" href="">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
+                </div>
 
-            <div class="card-body">
-                <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'orgchartportal_empgrid_view' %}">Head Over &raquo;</a>
-            </div>
-        </div>
-
-    </div>
-
-    {% comment %} @TODO implement admin in database {% endcomment %}
-    {% if client_is_admin %}
-        <div class="card-columns">
-            <div class="card DOT-theme-color">
-                <div class="card-body">
-                    <div>
-                        <h4 class="class-title font-weight-bold mb-2">Org Chart</h4>
+                <div class="content">
+                    <div class="header">
+                        Admin Panel
                     </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
                 </div>
+            </a>
+        {% endif %}
 
-                <div class="view overlay">
-                    <img class="card-img-top bg-white" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}" alt="Data Entry Logo">
-                    <a href="{% url 'orgchartportal_orgchart_view' %}">
-                        <div class="mask rgba-white-light"></div>
-                    </a>
-                </div>
+    </div>
 
-                <div class="card-body">
-                    <a class="btn btn-primary" style="font-family:sans-serif; font-size: 15px; color: white;" href="{% url 'orgchartportal_orgchart_view' %}">Head Over &raquo;</a>
-                </div>
-            </div>
-
-        </div>
-    {% endif %}
 </div>
 
 </html>

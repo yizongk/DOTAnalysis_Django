@@ -5,17 +5,12 @@
 {% load extra_tags %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             FITS and Siebel Complaints input
         </h2>
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
@@ -23,61 +18,58 @@
 
 
     {% if client_is_admin %}
-        <div>
-            <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-body mx-3">
-                            <div class="ui horizontal divider">Enter Complaints data</div>
 
-                            <div>Complaint Date</div>
-                            <div id="modalNewRowFormInputBorderComplaintDate" class="ui input">
-                                <input type="date" id="modalNewRowFormInputComplaintDate" value="{{ today }}">
-                            </div>
+        <div class="ui one column centered grid">
+            <div class="ui modal" id="modalNewRowForm">
+                <div class="content center aligned">
 
-                            <div>FITS X (Bronx)</div>
-                            <div id="modalNewRowFormInputBorderFITSBronx" class="ui input">
-                                <input id="modalNewRowFormInputFITSBronx">
-                            </div>
+                    <div class="ui horizontal divider">Enter Complaints data</div>
 
-                            <div>FITS K (Brooklyn)</div>
-                            <div id="modalNewRowFormInputBorderFITSBrooklyn" class="ui input">
-                                <input id="modalNewRowFormInputFITSBrooklyn">
-                            </div>
-
-                            <div>FITS M (Manhattan)</div>
-                            <div id="modalNewRowFormInputBorderFITSManhattan" class="ui input">
-                                <input id="modalNewRowFormInputFITSManhattan">
-                            </div>
-
-                            <div>FITS Q (Queens)</div>
-                            <div id="modalNewRowFormInputBorderFITSQueens" class="ui input">
-                                <input id="modalNewRowFormInputFITSQueens">
-                            </div>
-
-                            <div>FITS R (Staten Island)</div>
-                            <div id="modalNewRowFormInputBorderFITSStatenIsland" class="ui input">
-                                <input id="modalNewRowFormInputFITSStatenIsland">
-                            </div>
-
-                            <div>Open Siebel Complaints</div>
-                            <div id="modalNewRowFormInputBorderOpenSiebel" class="ui input">
-                                <input id="modalNewRowFormInputOpenSiebel">
-                            </div>
-
-                            <div class="d-flex justify-content-center">
-                                <button id="modalNewRowFormAddButtonSubmitComplaintsData" class="btn btn-default">Save Complaints data</button>
-                            </div>
-                        </div>
-                        <div id='successMsg'></div>
+                    <div>Complaint Date</div>
+                    <div id="modalNewRowFormInputBorderComplaintDate" class="ui input">
+                        <input type="date" id="modalNewRowFormInputComplaintDate" value="{{ today }}">
                     </div>
+
+                    <div>FITS X (Bronx)</div>
+                    <div id="modalNewRowFormInputBorderFITSBronx" class="ui input">
+                        <input id="modalNewRowFormInputFITSBronx">
+                    </div>
+
+                    <div>FITS K (Brooklyn)</div>
+                    <div id="modalNewRowFormInputBorderFITSBrooklyn" class="ui input">
+                        <input id="modalNewRowFormInputFITSBrooklyn">
+                    </div>
+
+                    <div>FITS M (Manhattan)</div>
+                    <div id="modalNewRowFormInputBorderFITSManhattan" class="ui input">
+                        <input id="modalNewRowFormInputFITSManhattan">
+                    </div>
+
+                    <div>FITS Q (Queens)</div>
+                    <div id="modalNewRowFormInputBorderFITSQueens" class="ui input">
+                        <input id="modalNewRowFormInputFITSQueens">
+                    </div>
+
+                    <div>FITS R (Staten Island)</div>
+                    <div id="modalNewRowFormInputBorderFITSStatenIsland" class="ui input">
+                        <input id="modalNewRowFormInputFITSStatenIsland">
+                    </div>
+
+                    <div>Open Siebel Complaints</div>
+                    <div id="modalNewRowFormInputBorderOpenSiebel" class="ui input">
+                        <input id="modalNewRowFormInputOpenSiebel">
+                    </div>
+
+                    <div class="ui horizontal divider">-</div>
+                    <button id="modalNewRowFormAddButtonSubmitComplaintsData" class="ui teal large button">Save Complaints data</button>
+
                 </div>
+                <div id='successMsg'></div>
             </div>
 
-            <div class="text-center">
-                <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Input Complaints data</a>
-            </div>
+            <button id="trigger_input" class="ui teal large button">Input Complaints data</button>
         </div>
+
 
 
         <table class="table table-striped table-hover" id="JSDataTable">
@@ -135,6 +127,14 @@
                     }
                 }
             });
+
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
 
 
             // Add extra row to the HTML table's header for individual column filtering

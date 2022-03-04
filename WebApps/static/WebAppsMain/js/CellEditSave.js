@@ -87,40 +87,67 @@ function enterCellEditMode(td_node) {
     td_node.removeClass("editable");
 };
 
-
-// param selections is a array of strings that will populate the selection list. If has_selection_additional_info is true, selection_additional_info_json must be a json with the param selections as index and it element will be used to attach on to the option in the select list
-// param how_display_additional_info specify the order of data in the option display
-function enterCellEditSelectMode(td_node, selections, has_selection_additional_info, selection_additional_info_json, how_display_additional_info) {
-    var old_value = td_node.text();
-    // var input = "<input type='text' class='input-data' value='" + old_value + "' class='form-control'>";
-    if (has_selection_additional_info == true && !selection_additional_info_json) {
-        console.log(`Error: enterCellEditSelectMode(): paremeter has_selection_additional_info is set to true, but paremeter selection_additional_info_json is null: ${selection_additional_info_json}`)
+/*
+ * Set @selections to your default list of Select values, expects an array of values
+ * Set @use_custom_display to true if you want to pass in a @custom_display_fct
+ * @custom_display_fct will take in a @param json obj which will contain @selections as the first element "selections", and @custom_data_json as the second element "custom_data_json"
+ * @custom_display_fct must return a string of
+ * `
+ * <options>...</option>
+ * ...
+ * <options>...</option>
+ * `
+ *
+ * @custom_data_json is an JSON Object that is passed to @custom_display_fct to do what every that fct wants
+ * Set @old_value to something if you want the select list to retain the old value in the html
+ */
+function getSelectModeHtml(selections=[], old_value=null, use_custom_display=false, custom_data_json={}, custom_display_fct=null) {
+    if (use_custom_display == true && !custom_data_json) {
+        console.log(`Error: getSelectModeHtml(): paremeter use_custom_display is set to true, but paremeter custom_data_json is null: ${custom_data_json}`)
         return
     }
 
-    if (has_selection_additional_info == true) {
-        if (how_display_additional_info == "display additional first") {
-            var options = selections.map(function (each_select) {
-                return `<option value='${each_select}'>${selection_additional_info_json[each_select]} | ${each_select}</option>`
-            }).join('')
-        } else {
-            var options = selections.map(function (each_select) {
-                return `<option value='${each_select}'>${each_select} | ${selection_additional_info_json[each_select]}</option>`
-            }).join('')
-        }
+    if (use_custom_display == true) {
+        var options = custom_display_fct({"selections": selections, "custom_data_json": custom_data_json});
     } else {
         var options = selections.map(function (each_select) {
             return `<option value='${each_select}'>${each_select}</option>`
         }).join('')
     }
 
+    if (old_value == null) {
+        return `
+            <select class='input-data-select'>
+                ${options}
+            </select>
+        `
+    } else {
+        return `
+            <select class='input-data-select' old_value='${old_value}'>
+                ${options}
+            </select>
+        `
+    }
+}
 
-    var input = `
-        <select class='input-data-select' old_value='${old_value}'>
-            ${options}
-        </select>
-    `
-    td_node.html(input);
+// param selections is a array of strings that will populate the selection list. If use_custom_display is true, custom_data_json must be a json with the param selections as index and it element will be used to attach on to the option in the select list
+function enterCellEditSelectMode(td_node=null, selections=[], use_custom_display=false, custom_data_json={}, custom_display_fct=null) {
+    var old_value = td_node.text();
+
+    // Sort the selections arrary so that the current old value is at the top of the list
+    selections.sort(function(x, y) {
+        return x == old_value ? -1 : y == old_value ? 1 : 0;
+    });
+
+    var select_html = getSelectModeHtml(
+        selections          = selections,
+        old_value           = old_value,
+        use_custom_display  = use_custom_display,
+        custom_data_json    = custom_data_json,
+        custom_display_fct  = custom_display_fct
+    );
+
+    td_node.html(select_html);
     td_node.removeClass("editable-select");
 };
 

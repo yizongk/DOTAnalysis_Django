@@ -5,27 +5,21 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <!-- Popper.js, and Vanilla jQuery -->
-        <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/jquery/3.5.1/jquery.min.js' %}"></script>
-        <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/popper/1.16.1/popper.min.js' %}"></script>
-
-        <!-- BootStrap JS and CSS -->
-        <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.js' %}"></script>
-        <link rel="stylesheet" href="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.css' %}"/>
+        <!-- Default CSS framework - Fomantic UI -->
+        <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
+        <script src="{% static 'WebAppsMain/fomantic-ui/2.8.8/semantic.min.js' %}"></script>
+        <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.8/semantic.min.css' %}">
 
         <!-- For getting CSRF Token from cookie on the front end -->
         <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/js-cookie/3.0.0/js-cookie@rc' %}"></script>
-
-        <!-- For the sort arrow css class -->
-        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
 
         <!-- For status light and loading modal -->
         <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/status_led.css' %}" />
         <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/loadingModal.css' %}" />
 
-        <!-- Material Design Bootstrap -->
-        <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
-        <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
+        <!-- For the green background color of Cards -->
+        <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
+
 
         {% block custom_css %}{% endblock %}
 
@@ -47,46 +41,37 @@
     </head>
 
     <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <a class="navbar-brand" href="{% block customize_logo_link %}{% endblock %}">
+        <nav class="ui inverted menu">
+            <a class="item" href="{% block customize_logo_link %}{% endblock %}">
                 <img src="{% static 'WebAppsMain/images/dot_logo.jpg' %}" alt="My image" style="height:30px; width: 50px">
             </a>
 
-            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="true" aria-label="Toggle navigation">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-
-
-            <div class="collapse navbar-collapse" id="navbarSupportedContent" >
-                <ul class="navbar-nav mr-auto" >
-                    <li class="nav-item" >
-                        <a class="nav-link" href="http://dotanalytics01" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">DOT Analytics  </a>
-                    </li>
-                    <li class="nav-item" >
-                        <div class="nav-link" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;"> > </div>
-                    </li>
-                    <li class="nav-item" >
-                        <a class="nav-link" href="{% block customize_home_link %}{% endblock %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">{% block customize_home_link_name %}{% endblock %}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% block customize_about_link %}{% endblock %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">{% block customize_about_link_name %}{% endblock %}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% block customize_contact_link %}{% endblock %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">Contact  <span class="sr-only">(current)</span></a>
-                    </li>
-                    {% block customize_nav_items %}
-                    {% endblock %}
-
-                </ul>
-                <p class="nav navbar-text navbar-right" style=" font-family:sans-serif;">Hello, {{user.username}}</p>
+            <a class="item" href="http://dotanalytics01" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">
+                DOT Analytics
+            </a>
+            <div class="item" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">
+                >
             </div>
+            <a class="item" href="{% block customize_home_link %}{% endblock %}" style=" font-family:sans-serif;color:darkgrey; font-size: 15px;">
+                {% block customize_home_link_name %}{% endblock %}
+            </a>
+            <a class="item" href="{% block customize_about_link %}{% endblock %}" style=" font-family:sans-serif; color:darkgrey; font-size: 15px;">
+                {% block customize_about_link_name %}{% endblock %}
+            </a>
+            <a class="item" href="{% block customize_contact_link %}{% endblock %}" style="font-family:sans-serif; color:darkgrey; font-size: 15px;">
+                Contact
+            </a>
+            {% block customize_nav_items %}
+            {% endblock %}
+
+            <div class="right menu">
+                <p class="item" style=" font-family:sans-serif;">Hello, {{user.username}}</p>
+            </dvv>
         </nav>
 
         <div class="loadingmodal"></div>
 
-        <div class="container">
+        <div class="ui container">
         {% block content %}{% endblock %}
         {% block custom_js %}{% endblock %}
         </div>

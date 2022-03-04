@@ -30,8 +30,8 @@
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             Org Chart View
         </h2>
         <div class="ui inverted segment">Note: <span class="ui warning text">Any edits made on this orgchart visual, will not be reflected in the actual backend database!</span></div>
@@ -139,7 +139,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/d3js/d3-flextree/2.0.0/d3-flextree.js' %}"></script>
     <script>
         $(document).ready( function () {
-            var chart
+            var chart;
 
             function setInitialMasterOrgChart() {
                 $(document).ajaxStart(function () {
@@ -151,224 +151,230 @@
                 //@TODO: Implement reset chart button. Probably just a recall of the api and re-initalize the chart
                 //@TODO: Try to implement drag and drop.
 
-                sentJsonBlobToApi( json_blob={}, api_url="{% url 'orgchartportal_get_commissioner_pms' %}", http_request_method="POST",
-                    successCallbackFct=function(json_response) {
+                sentJsonBlobToApi({
+                    json_blob           : {},
+                    api_url             : "{% url 'orgchartportal_get_commissioner_pms' %}",
+                    http_request_method : "POST",
+                    successCallbackFct  : function(json_response) {
                         //alert(`data saved successfully!`)
 
-                        let root_pms = json_response.post_data
+                        let root_pms = json_response.post_data;
 
 
                         let json_blob = {
                             root_pms: root_pms
-                        }
+                        };
 
-                        sentJsonBlobToApi( json_blob=json_blob, api_url="{% url 'orgchartportal_get_emp_csv' %}", http_request_method="POST",
-                                successCallbackFct=function(json_response) {
-                                    //alert(`data saved successfully!`)
+                        sentJsonBlobToApi({
+                            json_blob           : json_blob,
+                            api_url             : "{% url 'orgchartportal_org_chart_get_emp_csv' %}",
+                            http_request_method : "POST",
+                            successCallbackFct  : function(json_response) {
+                                //alert(`data saved successfully!`)
 
-                                    let emp_data_csv_master = json_response.post_data
-                                    let d3_parsed_csv = d3.csvParse(emp_data_csv_master)
+                                let emp_data_csv_master = json_response.post_data
+                                let d3_parsed_csv = d3.csvParse(emp_data_csv_master)
 
-                                    // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
-                                    chart = new d3.OrgChart().nodeId(d => d.pms)
-                                        .parentNodeId(d => d.sup_pms)
-                                        .container('#chartContainerId')
-                                        .data(d3_parsed_csv)
-                                        .nodeHeight(d => 120)
-                                        .nodeWidth(d => 220)
-                                        .childrenMargin(d => 50)
-                                        .compactMarginBetween(d => 50)
-                                        .compactMarginPair(d => 50)
-                                        .neightbourMargin((a,b) => 25)
-                                        .siblingsMargin(d => 25)
-                                        .buttonContent(({node, state}) => {
-                                            return `<div style="px;color:#716E7B;border-radius:5px;padding:4px;font-size:10px;margin:auto auto;background-color:white;border: 1px solid #E4E2E9"> <span style="font-size:9px">${
-                                                    node.children
-                                                        ? `<i class="fas fa-angle-up"></i>`
-                                                        : `<i class="fas fa-angle-down"></i>`
-                                                }</span> ${node.data._directSubordinates} / ${node.data._totalSubordinates} </div>`
+                                // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88
+                                chart = new d3.OrgChart().nodeId(d => d.pms)
+                                    .parentNodeId(d => d.sup_pms)
+                                    .container('#chartContainerId')
+                                    .data(d3_parsed_csv)
+                                    .nodeHeight(d => 120)
+                                    .nodeWidth(d => 220)
+                                    .childrenMargin(d => 50)
+                                    .compactMarginBetween(d => 50)
+                                    .compactMarginPair(d => 50)
+                                    .neightbourMargin((a,b) => 25)
+                                    .siblingsMargin(d => 25)
+                                    .buttonContent(({node, state}) => {
+                                        return `<div style="px;color:#716E7B;border-radius:5px;padding:4px;font-size:10px;margin:auto auto;background-color:white;border: 1px solid #E4E2E9"> <span style="font-size:9px">${
+                                                node.children
+                                                    ? `<i class="fas fa-angle-up"></i>`
+                                                    : `<i class="fas fa-angle-down"></i>`
+                                            }</span> ${node.data._directSubordinates} / ${node.data._totalSubordinates} </div>`
+                                    })
+                                    // linkUpdate sets the color of the lines between nodes when selected
+                                    .linkUpdate(function(d, i, arr) {
+                                        //console.log(d.data)
+                                        d3.select(this)
+                                            .attr('stroke', d =>
+                                                d.data._upToTheRootHighlighted ? '#152785' : '#E4E2E9'
+                                            )
+                                            .attr('stroke-width', d =>
+                                                d.data._upToTheRootHighlighted ? 5 : 1
+                                            )
+
+                                        if (d.data._upToTheRootHighlighted) {
+                                            d3.select(this).raise()
+                                        }
+                                    })
+                                    // nodeUpdate sets the color of the nodes when selected
+                                    .nodeUpdate(function(d, i, arr) {
+                                        d3.select(this)
+                                            .select('.node-rect')
+                                            .attr("stroke", d => d.data._highlighted || d.data._upToTheRootHighlighted ? '#00FF2A' : 'none')
+                                            .attr("stroke-width", d.data._highlighted || d.data._upToTheRootHighlighted ? 40 : 1)
+                                    })
+                                    .nodeContent(function(d, i, arr, state) {
+                                        const default_color = '#FFFFFF'
+                                        return `
+                                        <div style="font-family: 'Inter', sans-serif;background-color:${default_color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
+                                            <div style="background-color:${default_color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
+                                            <img src="{% static 'WebAppsMain/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
+
+                                            <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
+
+                                            <div style="font-size:15px;color:#08011E;margin-left:20px;margin-top:32px"> ${
+                                                d.data.last_name + ', ' + d.data.first_name
+                                            } </div>
+                                            <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                d.data.office_title
+                                            } </div>
+                                            <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                d.data.civil_title
+                                            } </div>
+                                            <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
+                                                d.data.wu_desc
+                                            } </div>
+
+
+                                        </div>
+                                        `
+                                    })
+                                    .onNodeClick(function(d) { // d is the pms number of the clicked node
+                                        // Remove all event listener of the buttons
+                                        removeAllEditButtonEventListeners()
+
+                                        let selected_node = chart.data().filter(node=>node.pms==d)[0]
+                                        // The node was already highlighted, unselect it and not add any event listener to the edit buttons
+                                        if (selected_node._highlighted == true) {
+                                            chart.clearHighlighting()
+                                            return
+                                        }
+
+                                        // Highlight the current selected node, and unhighlight the rest.
+                                        chart.clearHighlighting()
+                                        chart.setHighlighted(d).render()
+
+
+                                        // Reset all the event listener of the buttons
+                                        $("#addNodeBelowBtn").click(function() {
+                                            //console.log(`event click: ${d}`)
+                                            let random_7_digit = Math.floor(Math.random() * 10000000)
+                                            //console.log(`random generated: ${random_7_digit}`)
+                                            let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
+                                            let new_node = makeDefaultNewNode(new_node_pms, d)
+                                            addNode(new_node)
+                                            //console.log(`Inserting this -> ${new_node_pms}`)
+                                            //console.log(chart.data())
                                         })
-                                        // linkUpdate sets the color of the lines between nodes when selected
-                                        .linkUpdate(function(d, i, arr) {
-                                            //console.log(d.data)
-                                            d3.select(this)
-                                                .attr('stroke', d =>
-                                                    d.data._upToTheRootHighlighted ? '#152785' : '#E4E2E9'
-                                                )
-                                                .attr('stroke-width', d =>
-                                                    d.data._upToTheRootHighlighted ? 5 : 1
-                                                )
-
-                                            if (d.data._upToTheRootHighlighted) {
-                                                d3.select(this).raise()
-                                            }
-                                        })
-                                        // nodeUpdate sets the color of the nodes when selected
-                                        .nodeUpdate(function(d, i, arr) {
-                                            d3.select(this)
-                                                .select('.node-rect')
-                                                .attr("stroke", d => d.data._highlighted || d.data._upToTheRootHighlighted ? '#00FF2A' : 'none')
-                                                .attr("stroke-width", d.data._highlighted || d.data._upToTheRootHighlighted ? 40 : 1)
-                                        })
-                                        .nodeContent(function(d, i, arr, state) {
-                                            const default_color = '#FFFFFF'
-                                            return `
-                                            <div style="font-family: 'Inter', sans-serif;background-color:${default_color}; position:absolute;margin-top:-1px; margin-left:-1px;width:${d.width}px;height:${d.height}px;border-radius:10px;border: 1px solid #E4E2E9">
-                                                <div style="background-color:${default_color};position:absolute;margin-top:-25px;margin-left:${15}px;border-radius:100px;width:50px;height:50px;" ></div>
-                                                <img src="{% static 'WebAppsMain/images/dot_logo.jpg' %}" style="position:absolute;margin-top:-20px;margin-left:${20}px;border-radius:100px;width:40px;height:40px;" />
-
-                                                <div style="color:#08011E;position:absolute;right:20px;top:17px;font-size:10px;"><i class="fas fa-ellipsis-h"></i></div>
-
-                                                <div style="font-size:15px;color:#08011E;margin-left:20px;margin-top:32px"> ${
-                                                    d.data.last_name + ', ' + d.data.first_name
-                                                } </div>
-                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
-                                                    d.data.office_title
-                                                } </div>
-                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
-                                                    d.data.civil_title
-                                                } </div>
-                                                <div style="color:#716E7B;margin-left:20px;margin-top:3px;font-size:10px;"> ${
-                                                    d.data.wu_desc
-                                                } </div>
 
 
-                                            </div>
-                                            `
-                                        })
-                                        .onNodeClick(function(d) { // d is the pms number of the clicked node
-                                            // Remove all event listener of the buttons
-                                            removeAllEditButtonEventListeners()
-
-                                            let selected_node = chart.data().filter(node=>node.pms==d)[0]
-                                            // The node was already highlighted, unselect it and not add any event listener to the edit buttons
-                                            if (selected_node._highlighted == true) {
-                                                chart.clearHighlighting()
+                                        $("#addNodeAboveBtn").click(function() {
+                                            if (d == root_pms) {
+                                                alert('Cannot insert before the root')
                                                 return
                                             }
 
-                                            // Highlight the current selected node, and unhighlight the rest.
-                                            chart.clearHighlighting()
-                                            chart.setHighlighted(d).render()
+                                            let random_7_digit = Math.floor(Math.random() * 10000000)
+                                            let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
+                                            let new_node = makeDefaultNewNode(new_node_pms, selected_node.sup_pms)
+                                            addNode(new_node)
+                                            selected_node.sup_pms = new_node_pms
 
-
-                                            // Reset all the event listener of the buttons
-                                            $("#addNodeBelowBtn").click(function() {
-                                                //console.log(`event click: ${d}`)
-                                                let random_7_digit = Math.floor(Math.random() * 10000000)
-                                                //console.log(`random generated: ${random_7_digit}`)
-                                                let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
-                                                let new_node = makeDefaultNewNode(new_node_pms, d)
-                                                addNode(new_node)
-                                                //console.log(`Inserting this -> ${new_node_pms}`)
-                                                //console.log(chart.data())
-                                            })
-
-
-                                            $("#addNodeAboveBtn").click(function() {
-                                                if (d == root_pms) {
-                                                    alert('Cannot insert before the root')
-                                                    return
-                                                }
-
-                                                let random_7_digit = Math.floor(Math.random() * 10000000)
-                                                let new_node_pms = `null_${random_7_digit}` // Generate a 7 digit number, preceded by 'null_' to indicate that it's a manually added node
-                                                let new_node = makeDefaultNewNode(new_node_pms, selected_node.sup_pms)
-                                                addNode(new_node)
-                                                selected_node.sup_pms = new_node_pms
-
-                                                chart.render()
-                                                //console.log(`Inserting this -> ${new_node_pms}`)
-                                                //console.log(chart.data())
-                                            })
-
-
-                                            $("#editNodeBtn").click(function() {
-                                                $("#modalEditNodeFormSubmitButton")     .unbind()
-                                                $("#modalEditNodeFormLastNameInput")    .val("")
-                                                $("#modalEditNodeFormFirstNameInput")   .val("")
-                                                $("#modalEditNodeFormOfficeTitleInput") .val("")
-                                                $("#modalEditNodeFormCivilTitleInput")  .val("")
-                                                $("#modalEditNodeFormWUDescInput")      .val("")
-
-                                                // Can only edit name, office title, civil title, and division info
-                                                $("#modalEditNodeForm")
-                                                .modal("show")
-
-                                                $("#modalEditNodeFormLastNameInput")    .val(selected_node.last_name)
-                                                $("#modalEditNodeFormFirstNameInput")   .val(selected_node.first_name)
-                                                $("#modalEditNodeFormOfficeTitleInput") .val(selected_node.office_title)
-                                                $("#modalEditNodeFormCivilTitleInput")  .val(selected_node.civil_title)
-                                                $("#modalEditNodeFormWUDescInput")      .val(selected_node.wu_desc)
-
-                                                $("#modalEditNodeFormSubmitButton").click(function() {
-                                                    selected_node.last_name     = $("#modalEditNodeFormLastNameInput")      .val()
-                                                    selected_node.first_name    = $("#modalEditNodeFormFirstNameInput")     .val()
-                                                    selected_node.office_title  = $("#modalEditNodeFormOfficeTitleInput")   .val()
-                                                    selected_node.civil_title   = $("#modalEditNodeFormCivilTitleInput")    .val()
-                                                    selected_node.wu_desc       = $("#modalEditNodeFormWUDescInput")        .val()
-
-                                                    chart.render()
-                                                    $("#modalEditNodeForm")
-                                                    .modal("hide")
-                                                })
-
-
-                                            })
-
-
-                                            $("#removeNodeAndChildrenBtn").click(function() {
-                                                if (d == root_pms) {
-                                                    alert('Cannot delete the root')
-                                                    return
-                                                }
-                                                removeNodeAndChildren(d)
-                                                // Remove all event listener of the buttons
-                                                removeAllEditButtonEventListeners()
-                                                //console.log(`Removed ${d}`)
-                                                //console.log(chart.data())
-                                            })
-
-
-                                            $("#removeNodeBtn").click(function() {
-                                                if (d == root_pms) {
-                                                    alert('Cannot remove the root')
-                                                    return
-                                                }
-
-                                                // Edit the child to have parent's parent
-                                                let childs_of_selected = chart.data().filter(node=>node.sup_pms==d)
-                                                childs_of_selected.forEach((item, index) => {
-                                                    item.sup_pms = selected_node.sup_pms
-                                                })
-
-                                                // Must render it here, to save the childs_of_selected into the chart
-                                                chart.render()
-
-                                                // Remove it, at this point, the node will have no child
-                                                removeNodeAndChildren(d)
-                                                // Remove all event listener of the buttons
-                                                removeAllEditButtonEventListeners()
-
-                                                //console.log(selected_node)
-                                                //console.log(childs_of_selected)
-                                            })
+                                            chart.render()
+                                            //console.log(`Inserting this -> ${new_node_pms}`)
+                                            //console.log(chart.data())
                                         })
-                                        .render();
-                                        //console.log(chart)
 
 
-                                },
-                                failCallbackFct=function(json_response) {
-                                    alert(JSON.stringify(json_response, null, 2))
-                                }
-                            )
+                                        $("#editNodeBtn").click(function() {
+                                            $("#modalEditNodeFormSubmitButton")     .unbind()
+                                            $("#modalEditNodeFormLastNameInput")    .val("")
+                                            $("#modalEditNodeFormFirstNameInput")   .val("")
+                                            $("#modalEditNodeFormOfficeTitleInput") .val("")
+                                            $("#modalEditNodeFormCivilTitleInput")  .val("")
+                                            $("#modalEditNodeFormWUDescInput")      .val("")
+
+                                            // Can only edit name, office title, civil title, and division info
+                                            $("#modalEditNodeForm")
+                                            .modal("show")
+
+                                            $("#modalEditNodeFormLastNameInput")    .val(selected_node.last_name)
+                                            $("#modalEditNodeFormFirstNameInput")   .val(selected_node.first_name)
+                                            $("#modalEditNodeFormOfficeTitleInput") .val(selected_node.office_title)
+                                            $("#modalEditNodeFormCivilTitleInput")  .val(selected_node.civil_title)
+                                            $("#modalEditNodeFormWUDescInput")      .val(selected_node.wu_desc)
+
+                                            $("#modalEditNodeFormSubmitButton").click(function() {
+                                                selected_node.last_name     = $("#modalEditNodeFormLastNameInput")      .val()
+                                                selected_node.first_name    = $("#modalEditNodeFormFirstNameInput")     .val()
+                                                selected_node.office_title  = $("#modalEditNodeFormOfficeTitleInput")   .val()
+                                                selected_node.civil_title   = $("#modalEditNodeFormCivilTitleInput")    .val()
+                                                selected_node.wu_desc       = $("#modalEditNodeFormWUDescInput")        .val()
+
+                                                chart.render()
+                                                $("#modalEditNodeForm")
+                                                .modal("hide")
+                                            })
+
+
+                                        })
+
+
+                                        $("#removeNodeAndChildrenBtn").click(function() {
+                                            if (d == root_pms) {
+                                                alert('Cannot delete the root')
+                                                return
+                                            }
+                                            removeNodeAndChildren(d)
+                                            // Remove all event listener of the buttons
+                                            removeAllEditButtonEventListeners()
+                                            //console.log(`Removed ${d}`)
+                                            //console.log(chart.data())
+                                        })
+
+
+                                        $("#removeNodeBtn").click(function() {
+                                            if (d == root_pms) {
+                                                alert('Cannot remove the root')
+                                                return
+                                            }
+
+                                            // Edit the child to have parent's parent
+                                            let childs_of_selected = chart.data().filter(node=>node.sup_pms==d)
+                                            childs_of_selected.forEach((item, index) => {
+                                                item.sup_pms = selected_node.sup_pms
+                                            })
+
+                                            // Must render it here, to save the childs_of_selected into the chart
+                                            chart.render()
+
+                                            // Remove it, at this point, the node will have no child
+                                            removeNodeAndChildren(d)
+                                            // Remove all event listener of the buttons
+                                            removeAllEditButtonEventListeners()
+
+                                            //console.log(selected_node)
+                                            //console.log(childs_of_selected)
+                                        })
+                                    })
+                                    .render();
+                                    //console.log(chart)
+
+
+                            },
+                            failCallbackFct     : function(json_response) {
+                                alert(JSON.stringify(json_response, null, 2))
+                            }
+                        })
 
                     },
-                    failCallbackFct=function(json_response) {
+                    failCallbackFct     : function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))
                     }
-                )
+                })
             }
 
             setInitialMasterOrgChart()
