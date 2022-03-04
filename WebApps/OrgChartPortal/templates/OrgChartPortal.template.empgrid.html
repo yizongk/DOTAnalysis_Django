@@ -33,19 +33,34 @@
         Show my profile (Hide/Show)
     </div>
 
-    <div class="ui inverted left vertical sidebar menu">
-        <div id='client_wu_permissions_info'>
-            <p class='active item'>My WU Permissions</p>
+    <div class="ui inverted left vertical sidebar accordion menu">
+        <div class="item">
+            <a class="active title">
+                My WU Permissions <br> (Click to collapse/uncollapse)
+            </a>
+            <div class="active content memnu">
+                <div id='client_wu_permissions_info'  class="menu">
+                </div>
+            </div>
         </div>
 
-        <div id='client_data_entry_team_info'>
-            <p class='active item'>My Data Entry Team</p>
+        <div class="item">
+            <a class="active title">
+                My Data Entry Team <br> (Click to collapse/uncollapse)
+            </a>
+            <div class="active content">
+                <div id='client_data_entry_team_info' class="menu">
+                </div>
+            </div>
         </div>
 
-        <p class="active item">To add someone to your data entry team, please email:
-            <p class="item">Max Siegel <br> (msiegel@dot.nyc.gov)</P>
-            <p class="item">Yi Zong Kuang <br> (ykuang@dot.nyc.gov)</P>
-        </p>
+        <div class="item">
+            <p>To add someone to your data entry team, please email:</p>
+            <div class="menu">
+                <p class="item">Max Siegel <br> (msiegel@dot.nyc.gov)</P>
+                <p class="item">Yi Zong Kuang <br> (ykuang@dot.nyc.gov)</P>
+            </div>
+        </div>
     </div>
 
     {% comment %} AG Grid {% endcomment %}
@@ -968,6 +983,10 @@
                                             alert(JSON.stringify(json_response, null, 2))
                                         },
                 });
+            });
+
+            $('.ui.accordion').accordion({
+                exclusive: false,
             });
 
             $('.ui.left.sidebar').sidebar({
