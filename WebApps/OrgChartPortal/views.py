@@ -149,7 +149,7 @@ def get_active_emp_qryset(
             )
     '''
 
-    qryset = get_active_tblemployee_qryset(read_only=False)
+    qryset = get_active_tblemployee_qryset(read_only=read_only)
 
     if custom_annotate_fct is not None:
         qryset = custom_annotate_fct(qryset)
@@ -665,161 +665,191 @@ def GetEmpGridStats(request):
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
 
         def get_supervisor_completed():
-            total_count = active_permitted_emp.count()
+            try:
+                total_count = active_permitted_emp.count()
 
-            sup_completed_count = active_permitted_emp.filter(
-                Q(supervisor_pms__pms__isnull=False)    # not null
-                & ~Q(supervisor_pms__pms__exact="")     # not empty
-            ).count()
+                sup_completed_count = active_permitted_emp.filter(
+                    Q(supervisor_pms__pms__isnull=False)    # not null
+                    & ~Q(supervisor_pms__pms__exact="")     # not empty
+                ).count()
 
-            sup_completed_percentage = float(sup_completed_count)/float(total_count) * 100
+                sup_completed_percentage = float(sup_completed_count)/float(total_count) * 100
 
-            return sup_completed_percentage
+                return sup_completed_percentage
+            except Exception as e:
+                raise ValueError(f"get_supervisor_completed(): {e}")
 
         def get_office_title_completed():
-            total_count = active_permitted_emp.count()
+            try:
+                total_count = active_permitted_emp.count()
 
-            office_title_completed_count = active_permitted_emp.filter(
-                Q(office_title__isnull=False)   # not null
-                & ~Q(office_title__exact="")    # not empty
-            ).count()
+                office_title_completed_count = active_permitted_emp.filter(
+                    Q(office_title__isnull=False)   # not null
+                    & ~Q(office_title__exact="")    # not empty
+                ).count()
 
-            office_title_completed_percentage = float(office_title_completed_count)/float(total_count) * 100
+                office_title_completed_percentage = float(office_title_completed_count)/float(total_count) * 100
 
-            return office_title_completed_percentage
+                return office_title_completed_percentage
+            except Exception as e:
+                raise ValueError(f"get_office_title_completed(): {e}")
 
         def get_latest_change():
-            # active_permitted_emp already check if client is admin. But if client is admin, the PMS list would be HUGE, so I am placing an check here to avoid computing the PMS list if client is admin.
-            # If client is admin, just return the latest row of the entire tblChanges without filtering for a PMS list
-            changes = TblChanges.objects.using('OrgChartRead')
-            if not is_admin:
-                permitted_pms_list = [each['pms'] for each in active_permitted_emp]
+            try:
+                total_count = active_permitted_emp.count()
+                # active_permitted_emp already check if client is admin. But if client is admin, the PMS list would be HUGE, so I am placing an check here to avoid computing the PMS list if client is admin.
+                # If client is admin, just return the latest row of the entire tblChanges without filtering for a PMS list
+                changes = TblChanges.objects.using('OrgChartRead')
+                if not is_admin:
+                    changes = changes.filter(
+                        ## Provide an inner query instead of a python list, to bypass the 1000 items for the IN clause limit
+                        updated_to_pms__in=active_permitted_emp.values('pms')
+                    )
 
-                changes = changes.filter(
-                    updated_to_pms__in=permitted_pms_list
-                )
+                if changes.count() == 0:
+                    return None
+                else:
+                    changes = changes.order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
 
-            if changes.count() == 0:
-                return None
-            else:
-                changes = changes.order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
-
-            return list(changes.values(
-                'id'
-                ,'updated_on'
-                ,'updated_by_pms'
-                ,'updated_to_pms'
-                ,'new_value'
-                ,'column_name'
-            ))[0]
+                # raise ValueError('debug3')
+                return list(changes.values(
+                    'id'
+                    ,'updated_on'
+                    ,'updated_by_pms'
+                    ,'updated_to_pms'
+                    ,'new_value'
+                    ,'column_name'
+                ))[0]
+            except Exception as e:
+                raise ValueError(f"get_latest_change(): {e}")
 
         def get_list_last_updated_on():
-            latest_change = get_latest_change()
-            if latest_change is None:
-                return None
-            else:
-                return get_latest_change()['updated_on'].strftime('%m/%d/%Y %I:%M:%S %p')
+            try:
+                total_count = active_permitted_emp.count()
+                latest_change = get_latest_change()
+                if latest_change is None:
+                    return None
+                else:
+                    return get_latest_change()['updated_on'].strftime('%m/%d/%Y %I:%M:%S %p')
+            except Exception as e:
+                raise ValueError(f"get_list_last_updated_on(): {e}")
 
         def get_list_last_updated_by():
-            latest_change = get_latest_change()
-            if latest_change is None:
-                return None
-            else:
-                last_updated_by_pms = get_latest_change()['updated_by_pms']
-                return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
+            try:
+                total_count = active_permitted_emp.count()
+                latest_change = get_latest_change()
+                if latest_change is None:
+                    return None
+                else:
+                    last_updated_by_pms = get_latest_change()['updated_by_pms']
+                    return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
+            except Exception as e:
+                raise ValueError(f"get_list_last_updated_by(): {e}")
 
         def get_inactive_supervisors():
-            inactive_sup = active_permitted_emp.filter(
-                Q(supervisor_pms__pms__isnull=False)
-                & ~Q(supervisor_pms__lv__in=get_active_lv_list())
-            )
+            try:
+                total_count = active_permitted_emp.count()
+                inactive_sup = active_permitted_emp.filter(
+                    Q(supervisor_pms__pms__isnull=False)
+                    & ~Q(supervisor_pms__lv__in=get_active_lv_list())
+                )
 
-            return [
-                {
-                    'Employee'              : each['annotated__full_name']
-                    ,'WU'                   : each['wu__wu']
-                    ,'Inactive_Supervisor'  : each['annotated__supervisor_full_name']
-                }
-                for each
-                in inactive_sup
-            ]
+                return [
+                    {
+                        'Employee'              : each['annotated__full_name']
+                        ,'WU'                   : each['wu__wu']
+                        ,'Inactive_Supervisor'  : each['annotated__supervisor_full_name']
+                    }
+                    for each
+                    in inactive_sup
+                ]
+            except Exception as e:
+                raise ValueError(f"get_inactive_supervisors(): {e}")
 
         def get_empty_or_invalid_floor_combo_list():
-            invalid_site_and_floor = active_permitted_emp.filter(
-                Q(actual_floor_id__floor_id__isnull=True)
-                | ~Q(actual_floor_id__site_id=F('actual_site_id__site_id'))
-            )
+            try:
+                total_count = active_permitted_emp.count()
+                invalid_site_and_floor = active_permitted_emp.filter(
+                    Q(actual_floor_id__floor_id__isnull=True)
+                    | ~Q(actual_floor_id__site_id=F('actual_site_id__site_id'))
+                )
 
-            return [
-                {
-                    'Employee'  : each['annotated__full_name']
-                    ,'WU'       : each['wu__wu']
-                }
-                for each
-                in invalid_site_and_floor
-            ]
+                return [
+                    {
+                        'Employee'  : each['annotated__full_name']
+                        ,'WU'       : each['wu__wu']
+                    }
+                    for each
+                    in invalid_site_and_floor
+                ]
+            except Exception as e:
+                raise ValueError(f"get_empty_or_invalid_floor_combo_list(): {e}")
 
         def get_empty_or_invalid_site_type_combo_list():
-            valid_combo = TblDOTSiteFloorSiteTypes.objects.using('OrgChartRead').values(
-                'site_type_id'
-                ,'floor_id__floor_id'
-                ,'floor_id__site_id'
-            )
-            valid_combo = list(valid_combo)
+            try:
+                total_count = active_permitted_emp.count()
+                valid_combo = TblDOTSiteFloorSiteTypes.objects.using('OrgChartRead').values(
+                    'site_type_id'
+                    ,'floor_id__floor_id'
+                    ,'floor_id__site_id'
+                )
+                valid_combo = list(valid_combo)
 
-            invalid_site_and_floor_and_site_type = [
-                {
-                    'Employee'                              : each['annotated__full_name']
-                    ,'WU'                                   : each['wu__wu']
-                    ,'actual_site_id__site_id'              : each['actual_site_id__site_id']
-                    ,'actual_floor_id__floor_id'            : each['actual_floor_id__floor_id']
-                    ,'actual_site_type_id__site_type_id'    : each['actual_site_type_id__site_type_id']
-                }
-                for each
-                in active_permitted_emp
-            ]
-
-            def is_valid_combo(valid_combo=None, row=None):
-                actual_site_type_id = row['actual_site_type_id__site_type_id']
-                actual_floor_id     = row['actual_floor_id__floor_id']
-                actual_site_id      = row['actual_site_id__site_id']
-
-                found = [
-                    each
+                invalid_site_and_floor_and_site_type = [
+                    {
+                        'Employee'                              : each['annotated__full_name']
+                        ,'WU'                                   : each['wu__wu']
+                        ,'actual_site_id__site_id'              : each['actual_site_id__site_id']
+                        ,'actual_floor_id__floor_id'            : each['actual_floor_id__floor_id']
+                        ,'actual_site_type_id__site_type_id'    : each['actual_site_type_id__site_type_id']
+                    }
                     for each
-                    in valid_combo
-                    if (
-                        each['site_type_id']            == actual_site_type_id
-                        and each['floor_id__floor_id']  == actual_floor_id
-                        and each['floor_id__site_id']   == actual_site_id
-                    )
+                    in active_permitted_emp
                 ]
 
-                if len(found) > 1:
-                    raise ValueError(f"Found more than one valid combo for Site Type. Should only find one match, not {len(found)} matches: {found}")
-                elif len(found) == 1:
-                    return True
-                else:
-                    return False
+                def is_valid_combo(valid_combo=None, row=None):
+                    actual_site_type_id = row['actual_site_type_id__site_type_id']
+                    actual_floor_id     = row['actual_floor_id__floor_id']
+                    actual_site_id      = row['actual_site_id__site_id']
+
+                    found = [
+                        each
+                        for each
+                        in valid_combo
+                        if (
+                            each['site_type_id']            == actual_site_type_id
+                            and each['floor_id__floor_id']  == actual_floor_id
+                            and each['floor_id__site_id']   == actual_site_id
+                        )
+                    ]
+
+                    if len(found) > 1:
+                        raise ValueError(f"Found more than one valid combo for Site Type. Should only find one match, not {len(found)} matches: {found}")
+                    elif len(found) == 1:
+                        return True
+                    else:
+                        return False
 
 
-            for each in invalid_site_and_floor_and_site_type:
-                if is_valid_combo(valid_combo=valid_combo, row=each):
-                    each['valid_site_type_combo'] = True
-                else:
-                    each['valid_site_type_combo'] = False
+                for each in invalid_site_and_floor_and_site_type:
+                    if is_valid_combo(valid_combo=valid_combo, row=each):
+                        each['valid_site_type_combo'] = True
+                    else:
+                        each['valid_site_type_combo'] = False
 
-            invalid_site_and_floor_and_site_type = [
-                {
-                    'Employee'  : each['Employee']
-                    ,'WU'       : each['WU']
-                }
-                for each
-                in invalid_site_and_floor_and_site_type
-                if each['valid_site_type_combo'] == False
-            ]
+                invalid_site_and_floor_and_site_type = [
+                    {
+                        'Employee'  : each['Employee']
+                        ,'WU'       : each['WU']
+                    }
+                    for each
+                    in invalid_site_and_floor_and_site_type
+                    if each['valid_site_type_combo'] == False
+                ]
 
-            return list(invalid_site_and_floor_and_site_type)
+                return list(invalid_site_and_floor_and_site_type)
+            except Exception as e:
+                raise ValueError(f"get_empty_or_invalid_site_type_combo_list(): {e}")
 
         emp_grid_stats_json = {
             'supervisor_completed'                      : get_supervisor_completed()
