@@ -133,12 +133,12 @@ class BaseAGGridCellSelectEditor {
      *             select_array_sort_fct           : function(x, y) {
      *                                                 return x < y ? -1 : x > y ? 1 : 0;
      *                                             },
-     *             ag_cell_val_bubble_up_sort_fct  : function(x, y) {
+     *             selected_val_bubble_up_sort_fct : function(x, y) {
      *                                                 return x == ag_cell.value ? -1 : y == ag_cell.value ? 1 : 0;
      *                                             },
-     *             select_element_id               : 'some_id_for_your_select_element',
-     *             option_element_set_val_fct      : (each) => { return each.some_property; },
-     *             option_element_set_txt_fct      : (each) => { return `${each.some_property} - ${each.some_property2}`; },
+     *             select_id                       : 'some_id_for_your_select',
+     *             option_set_val_fct              : (each) => { return each.some_property; },
+     *             option_set_txt_fct              : (each) => { return `${each.some_property} - ${each.some_property2}`; },
      *         }
      *         this.initBase(super_params)
      *     }
@@ -151,24 +151,24 @@ class BaseAGGridCellSelectEditor {
          *      - select_array                      : The array of items for the Select list
          *      - select_array_sort_fct             : (Optional) A function that will be used to sort the Select list.
          *                                              If none is provided, it will use JS native sort()
-         *      - ag_cell_val_bubble_up_sort_fct    : (Optional) After Select list is sorted by select_array_sort_fct,
+         *      - selected_val_bubble_up_sort_fct   : (Optional) After Select list is sorted by select_array_sort_fct,
          *                                              this function will be used to bring the current selected value up to the top of the Select list.
          *                                              If none is provided, it will use JS native sort()
-         *      - select_element_id                 : (Optional)) Will be assigned as the Select list's ID in the DOM
-         *      - option_element_set_val_fct        : (Optional)) Will be called to set the value for each of the options in the Select list.
+         *      - select_id                         : (Optional)) Will be assigned as the Select list's ID in the DOM
+         *      - option_set_val_fct                : (Optional)) Will be called to set the value for each of the options in the Select list.
          *                                              Takes in select_array as an argument.
          *                                              If none is provided, each item in select_array will be set as the value
-         *      - option_element_set_txt_fct        : (Optional)) Will be called to set the text for each of the options in the Select list.
+         *      - option_set_txt_fct                : (Optional)) Will be called to set the text for each of the options in the Select list.
          *                                              Takes in select_array as an argument.
          *                                              If none is provided, each item in select_array will be set as the text
          */
         this.ag_cell                            = params.ag_cell;
         this.select_array                       = params.select_array;
         this.select_array_sort_fct              = params.select_array_sort_fct;
-        this.ag_cell_val_bubble_up_sort_fct     = params.ag_cell_val_bubble_up_sort_fct;
-        this.select_element_id                  = params.select_element_id;
-        this.option_element_set_val_fct         = params.option_element_set_val_fct;
-        this.option_element_set_txt_fct         = params.option_element_set_txt_fct;
+        this.selected_val_bubble_up_sort_fct    = params.selected_val_bubble_up_sort_fct;
+        this.select_id                          = params.select_id;
+        this.option_set_val_fct                 = params.option_set_val_fct;
+        this.option_set_txt_fct                 = params.option_set_txt_fct;
 
         // Reset select list's sort. Uses default sort if @select_array_sort_fct is not provided
         if (this.select_array_sort_fct == null) {
@@ -178,7 +178,7 @@ class BaseAGGridCellSelectEditor {
         }
 
         // Bring current selection to top of the select list
-        if (this.ag_cell_val_bubble_up_sort_fct == null) {
+        if (this.selected_val_bubble_up_sort_fct == null) {
             this.select_array.sort(
                 function(x, y) {
                     if ( this.select_array.filter(x => x == this.ag_cell.value) > 0 ) {
@@ -192,17 +192,17 @@ class BaseAGGridCellSelectEditor {
                 }
             )
         } else {
-            this.select_array.sort(this.ag_cell_val_bubble_up_sort_fct)
+            this.select_array.sort(this.selected_val_bubble_up_sort_fct)
         }
 
-        this.select_element = createSelectDropdown({ // From HTMLElementGenerator.js
-            id          : this.select_element_id,
+        this.select = createSelectDropdown({ // From HTMLElementGenerator.js
+            id          : this.select_id,
             arr         : this.select_array,
-            set_val_fct : this.option_element_set_val_fct,
-            set_txt_fct : this.option_element_set_txt_fct,
+            set_val_fct : this.option_set_val_fct,
+            set_txt_fct : this.option_set_txt_fct,
         })
 
-        this.select_element.addEventListener('input', (event) => {
+        this.select.addEventListener('input', (event) => {
             // Javascript null = html empty string '', and since event.target.value is an HTML value, '' will be considered as null
             this.ag_cell.value = (event.target.value == '') ? '' : event.target.value;
             this.ag_cell.stopEditing();
@@ -215,10 +215,10 @@ class BaseAGGridCellSelectEditor {
     isCancelBeforeStart() { return false; }
 
     // gets called once when grid ready to insert the element
-    getGui() { return this.select_element; }
+    getGui() { return this.select; }
 
     // after this component has been created and inserted into the grid
-    afterGuiAttached() { this.select_element.focus(); }
+    afterGuiAttached() { this.select.focus(); }
 
     // gets called once when editing is finished (eg if Enter is pressed)
     // if you return true, then the result of the edit will be ignored

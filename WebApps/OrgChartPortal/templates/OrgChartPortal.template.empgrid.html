@@ -327,10 +327,10 @@
 
                                                         return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
                                                     },
-                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.pms == ag_cell.value ? -1 : y.pms == ag_cell.value ? 1 : 0; },
-                    select_element_id               : 'sup_select',
-                    option_element_set_val_fct      : (each) => { return (each.pms == null) ? '' : each.pms; },
-                    option_element_set_txt_fct      : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x.pms == ag_cell.value ? -1 : y.pms == ag_cell.value ? 1 : 0; },
+                    select_id                       : 'sup_select',
+                    option_set_val_fct              : (each) => { return (each.pms == null) ? '' : each.pms; },
+                    option_set_txt_fct              : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
                 };
                 this.initBase(super_params);
             }
@@ -380,10 +380,10 @@
 
                                                         return x.site < y.site ? -1 : x.site > y.site ? 1 : 0;
                                                     },
-                    ag_cell_val_bubble_up_sort_fct  : function(x, y) { return x.site_id == cur_site_id ? -1 : y.site_id == cur_site_id ? 1 : 0; },
-                    select_element_id               : 'site_select',
-                    option_element_set_val_fct      : (each) => { return (each.site_id == null) ? '' : each.site_id; },
-                    option_element_set_txt_fct      : (each) => { return each.site; },
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x.site_id == cur_site_id ? -1 : y.site_id == cur_site_id ? 1 : 0; },
+                    select_id                       : 'site_select',
+                    option_set_val_fct              : (each) => { return (each.site_id == null) ? '' : each.site_id; },
+                    option_set_txt_fct              : (each) => { return each.site; },
                 };
                 this.initBase(super_params);
             }
@@ -447,7 +447,7 @@
                                                         let y_float = ( (y.floor == null) ? -999 : !isNaN( parseFloat(y.floor) ) ? parseFloat(y.floor) : (y.floor.includes('SL') ? parseFloat(y.floor.replace('SL', '-')) : 0) );
                                                         return x_float < y_float ? 1 : x_float > y_float ? -1 : 0;
                                                     },
-                    ag_cell_val_bubble_up_sort_fct  : function(x, y) {
+                    selected_val_bubble_up_sort_fct : function(x, y) {
                                                         if ( sub_floor_array.filter(x => x.floor_id == cur_floor_id).length > 0 ) {
                                                             return x.floor_id == cur_floor_id ? -1 : y.floor_id == cur_floor_id ? 1 : 0;
                                                         } else {
@@ -459,9 +459,9 @@
                                                             return x.floor_id == null ? -1 : y.floor_id == null ? 1 : 0;
                                                         }
                                                     },
-                    select_element_id               : 'floor_select',
-                    option_element_set_val_fct      : (each) => { return (each.floor_id == null) ? '' : each.floor_id; },
-                    option_element_set_txt_fct      : (each) => { return each.floor; },
+                    select_id                       : 'floor_select',
+                    option_set_val_fct              : (each) => { return (each.floor_id == null) ? '' : each.floor_id; },
+                    option_set_txt_fct              : (each) => { return each.floor; },
                 };
                 this.initBase(super_params);
             }
@@ -523,7 +523,7 @@
 
                                                         return x.site_type_id__site_type < y.site_type_id__site_type ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0;
                                                     },
-                    ag_cell_val_bubble_up_sort_fct  : function(x, y) {
+                    selected_val_bubble_up_sort_fct : function(x, y) {
                                                         if ( sub_site_type_array.filter(x => x.site_type_id__site_type_id == cur_site_type_id).length > 0 ) {
                                                             return x.site_type_id__site_type_id == cur_site_type_id ? -1 : y.site_type_id__site_type_id == cur_site_type_id ? 1 : 0;
                                                         } else {
@@ -535,9 +535,9 @@
                                                             return x.site_type_id__site_type_id == null ? -1 : y.site_type_id__site_type_id == null ? 1 : 0;
                                                         }
                                                     },
-                    select_element_id               : 'site_type_select',
-                    option_element_set_val_fct      : (each) => { return (each.site_type_id__site_type_id == null) ? '' : each.site_type_id__site_type_id; },
-                    option_element_set_txt_fct      : (each) => { return each.site_type_id__site_type; },
+                    select_id                       : 'site_type_select',
+                    option_set_val_fct              : (each) => { return (each.site_type_id__site_type_id == null) ? '' : each.site_type_id__site_type_id; },
+                    option_set_txt_fct              : (each) => { return each.site_type_id__site_type; },
                 };
                 this.initBase(super_params);
             }
