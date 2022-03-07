@@ -14,4 +14,4 @@ class WUTable2(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'WorkUnitTable2'
+        db_table = 'tblWorkUnits' 

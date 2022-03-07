@@ -18,26 +18,26 @@
     <title> Connect SQL SERVER From Django </title>
 </head>
 <body>
-    <div style="height: 40vw; width: auto;">
+    <div style="height: 43vw; width: auto;">
+        <br>
         <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"> </div>
     </div>
     {% block custom_js %}
     <script>
-        const columnDefs = [
-            {'headerName': 'WU', 'field': 'wu'}
-            ,{'headerName': 'DIV', 'field': 'div'}
-            ,{'headerName': 'WorkUnitDescription', 'field': 'workunitdescription'}
-            ,{'headerName': 'DivisionGroup', 'field': 'divisiongroup'}
-            ,{'headerName': 'SubDivision', 'field': 'subdivision'}
-        ]
         const col_def = {{ columnDefs|safe}};
         const data_display = {{ datadisplay|safe}};
-        console.log (data_display, col_def)
         
         const gridOptions = {
             columnDefs: col_def,
-            rowData: data_display
-        };
+            rowData: data_display,
+            defaultColDef: {
+                editable: true,
+                sortable: true,
+                filter: true,
+            },
+            // multiSortKey: "ctrl",
+            // sideBar: true,
+        }
         const eGridDiv = document.getElementById('AGGrid');
         // // create the grid passing in the div to use together with the columns & data we want to use
         new agGrid.Grid(eGridDiv, gridOptions);
