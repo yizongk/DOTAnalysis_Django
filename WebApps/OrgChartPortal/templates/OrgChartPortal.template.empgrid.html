@@ -277,6 +277,20 @@
             }
         }
 
+        class OfficeTitleWithSpellCheckerCellEditor extends BaseAGGridCellEditor {
+            init(ag_cell) {
+                // Create the input div
+                let input = document.createElement('input');
+                input.setAttribute('spellcheck', true);
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    input_element                   : input,
+                };
+                this.initBase(super_params);
+            }
+        }
+
         class SupervisorCellRenderer extends BaseAGGridCellRenderer {
             init(ag_cell) {
                 let sup_pms         = ag_cell.value;
@@ -856,7 +870,8 @@
                     }
 
                     if (ag_column.headerName == 'Office Title') {
-                        ag_column['filterParams'] = {
+                        ag_column['cellEditor']     = 'officeTitleWithSpellCheckerCellEditor'
+                        ag_column['filterParams']   = {
                                                         filterOptions: [
                                                             'equals',
                                                             'notEquals',
@@ -955,14 +970,15 @@
 
                 stopEditingWhenCellsLoseFocus: true,
                 components: {
-                    supervisorCellRenderer  : SupervisorCellRenderer,
-                    supervisorCellEditor    : SupervisorCellEditor,
-                    siteCellRenderer        : SiteCellRenderer,
-                    siteCellEditor          : SiteCellEditor,
-                    siteFloorCellRenderer   : SiteFloorCellRenderer,
-                    siteFloorCellEditor     : SiteFloorCellEditor,
-                    siteTypeCellRenderer    : SiteTypeCellRenderer,
-                    siteTypeCellEditor      : SiteTypeCellEditor,
+                    officeTitleWithSpellCheckerCellEditor   : OfficeTitleWithSpellCheckerCellEditor,
+                    supervisorCellRenderer                  : SupervisorCellRenderer,
+                    supervisorCellEditor                    : SupervisorCellEditor,
+                    siteCellRenderer                        : SiteCellRenderer,
+                    siteCellEditor                          : SiteCellEditor,
+                    siteFloorCellRenderer                   : SiteFloorCellRenderer,
+                    siteFloorCellEditor                     : SiteFloorCellEditor,
+                    siteTypeCellRenderer                    : SiteTypeCellRenderer,
+                    siteTypeCellEditor                      : SiteTypeCellEditor,
                 },
             }
 

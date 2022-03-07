@@ -227,3 +227,59 @@ class BaseAGGridCellSelectEditor {
     // the final value to sent to the grid, on completion of editing
     getValue() { return this.ag_cell.value; }
 }
+
+class BaseAGGridCellEditor {
+    /**
+     * A base class to be reused for any AG Grid Cell select editing
+     *
+     * Usage:
+     * class SupervisorCellEditor extends BaseAGGridCellSelectEditor {
+     *     init(ag_cell) {
+     *         let super_params = {
+     *             ag_cell                         : ag_cell,
+     *             input_element                   : document.createElement('input'),
+     *         }
+     *         this.initBase(super_params)
+     *     }
+     * }
+     */
+    initBase(params) {
+        /**
+         * Expects params to have properties:
+         *      - ag_cell                           : A reference to the AG Cell that called thsi class
+         *      - input_element                     : (Optional) A fully constructed html element that is to replace the default input element.
+         *                                              If it is not provided, then it will use a simple default <input> element
+         */
+        this.ag_cell = params.ag_cell;
+
+        if ( params.input_element != null ) {
+            this.input = params.input_element;
+        } else {
+            this.input = document.createElement('input');
+        }
+        this.input.value = this.ag_cell.value;
+
+        this.input.addEventListener('input', (event) => {
+            // Javascript null = html empty string '', and since event.target.value is an HTML value, '' will be considered as null
+            this.ag_cell.value = (event.target.value == '') ? '' : event.target.value;
+        });
+
+    }
+
+    /* Component Editor Lifecycle methods */
+    // gets called once before editing starts, to give editor a chance to cancel the editing before it even starts
+    isCancelBeforeStart() { return false; }
+
+    // gets called once when grid ready to insert the element
+    getGui() { return this.input; }
+
+    // after this component has been created and inserted into the grid
+    afterGuiAttached() { this.input.focus(); }
+
+    // gets called once when editing is finished (eg if Enter is pressed)
+    // if you return true, then the result of the edit will be ignored
+    isCancelAfterEnd() { return false; }
+
+    // the final value to sent to the grid, on completion of editing
+    getValue() { return this.ag_cell.value; }
+}
