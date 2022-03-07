@@ -830,6 +830,7 @@
             for (col_i in emp_col_def) {
                 ag_column = emp_col_def[col_i]
 
+                // Editable cell def
                 if ( editable_column_names.includes(ag_column.headerName) ) {
                     ag_column['editable']       = true;
                     ag_column['valueSetter']    = cellValueSetter;
@@ -923,6 +924,15 @@
                                                         ]
                                                     };
                     }
+                }
+
+                // General cell def
+                if (ag_column.headerName == 'Last Name') {
+                    ag_column['cellStyle'] = {fontWeight: 'bold'};
+                }
+
+                if (ag_column.headerName == 'First Name') {
+                    ag_column['cellStyle'] = {fontWeight: 'bold'};
                 }
             }
 
