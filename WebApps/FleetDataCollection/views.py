@@ -22,7 +22,6 @@ def user_is_active_admin(username):
             "err": '{} is not an active Admin'.format(username),
         }
     except Exception as e:
-        print("Exception: FleetDataCollection: user_is_active_admin(): {}".format(e))
         return {
             "success": None,
             "err": 'Exception: FleetDataCollection: user_is_active_admin(): {}'.format(e),
@@ -46,7 +45,6 @@ def get_allowed_list_of_wu(username):
             "err": "Cannot find any WU permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: FleetDataCollection: get_allowed_list_of_wu(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_wu(): {}'.format(e),
@@ -95,7 +93,6 @@ def get_allowed_list_of_domiciles(username):
             "err": "Cannot find any domicile permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_domiciles(): {}'.format(e),
@@ -111,7 +108,6 @@ def get_domicile_for_unit_number(unit_no):
             "domicile": domicile,
         }
     except Exception as e:
-        print("Exception: FleetDataCollection: get_domicile_for_unit_number(): {}, for unit_no '{}'".format(e, unit_no))
         return {
             "success": False,
             "err": "Exception: FleetDataCollection: get_domicile_for_unit_number(): {}, for unit_no '{}'".format(e, unit_no),
@@ -144,7 +140,6 @@ def get_allowed_list_of_unit_numbers(username):
             "err": "Cannot find any allowed unit_number for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: FleetDataCollection: get_allowed_list_of_unit_numbers(): {}'.format(e),
@@ -206,7 +201,6 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DriverAndTypeAssignmentConfirmationPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return M5DriverVehicleDataConfirmations.objects.none()
 
         self.req_success = True
@@ -224,7 +218,6 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -249,7 +242,6 @@ class AdminPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
             return
 
         self.req_success = True
@@ -266,7 +258,6 @@ class AdminPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -331,7 +322,6 @@ def GetPermittedEmpDataList(request):
         })
     except Exception as e:
         err_msg = "Exception: FleetDataCollection: GetPermittedEmpDataList(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -373,7 +363,6 @@ def GetEmpLookUpDataList(request):
         })
     except Exception as e:
         err_msg = "Exception: FleetDataCollection: GetEmpLookUpDataList(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -407,7 +396,6 @@ def GetM5LookUpDataList(request):
         })
     except Exception as e:
         err_msg = "Exception: FleetDataCollection: GetPermittedM5DataList(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -521,7 +509,6 @@ def UpdateM5DriverVehicleDataConfirmations(request):
         })
     except Exception as e:
         err_msg = "Exception: FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -556,7 +543,6 @@ class WuPermissionsPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "WuPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
             return WUPermissions.objects.none()
 
         ## Get the permissions data
@@ -565,7 +551,6 @@ class WuPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return WUPermissions.objects.none()
 
         ## Get the existing wu permission data from tblEmployees
@@ -574,7 +559,6 @@ class WuPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return WUPermissions.objects.none()
 
         self.req_success = True
@@ -598,7 +582,6 @@ class WuPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -649,7 +632,6 @@ class WuPermissionsPanelPageView(generic.ListView):
 #     if is_active_user["success"] == True:
 #         pass
 #     else:
-#         print("WUPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
 #         return JsonResponse({
 #             "post_success": False,
 #             "post_msg": "WUPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
@@ -675,7 +657,6 @@ class WuPermissionsPanelPageView(generic.ListView):
 #             try:
 #                 new_value = bool(new_value)
 #             except Exception as e:
-#                 print("Error: WUPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
 #                 return JsonResponse({
 #                     "post_success": False,
 #                     "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
@@ -684,7 +665,6 @@ class WuPermissionsPanelPageView(generic.ListView):
 #             try:
 #                 new_value = str(new_value)
 #             except Exception as e:
-#                 print("Error: WUPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
 #                 return JsonResponse({
 #                     "post_success": False,
 #                     "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
@@ -706,19 +686,16 @@ class WuPermissionsPanelPageView(generic.ListView):
 #                     #     "post_msg": "trying to save: '{}'".format(new_value),
 #                     # })
 
-#                     print("Api Log: WUPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
 #                     return JsonResponse({
 #                         "post_success": True,
 #                         "post_msg": "",
 #                     })
 #                 except Exception as e:
-#                     print("Error: WUPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
 #                     return JsonResponse({
 #                         "post_success": False,
 #                         "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
 #                     })
 #         except Exception as e:
-#             print("Error: WUPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
 #             return JsonResponse({
 #                 "post_success": False,
 #                 "post_msg": "Error: WUPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
@@ -728,7 +705,6 @@ class WuPermissionsPanelPageView(generic.ListView):
 #     #     pass
 
 
-#     print("Warning: WUPermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
 #     return JsonResponse({
 #         "post_success": False,
 #         "post_msg": "Warning: WUPermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
@@ -947,7 +923,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
             return WUPermissions.objects.none()
 
         ## Get the permissions data
@@ -956,7 +931,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return DomicilePermissions.objects.none()
 
         ## Get the existing domicile permission data from tblEmployees
@@ -965,7 +939,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return DomicilePermissions.objects.none()
 
         self.req_success = True
@@ -989,7 +962,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1040,7 +1012,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 #     if is_active_user["success"] == True:
 #         pass
 #     else:
-#         print("DomicilePermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
 #         return JsonResponse({
 #             "post_success": False,
 #             "post_msg": "DomicilePermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
@@ -1066,7 +1037,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 #             try:
 #                 new_value = bool(new_value)
 #             except Exception as e:
-#                 print("Error: DomicilePermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
 #                 return JsonResponse({
 #                     "post_success": False,
 #                     "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
@@ -1075,7 +1045,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 #             try:
 #                 new_value = str(new_value)
 #             except Exception as e:
-#                 print("Error: DomicilePermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
 #                 return JsonResponse({
 #                     "post_success": False,
 #                     "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
@@ -1097,19 +1066,16 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 #                     #     "post_msg": "trying to save: '{}'".format(new_value),
 #                     # })
 
-#                     print("Api Log: DomicilePermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
 #                     return JsonResponse({
 #                         "post_success": True,
 #                         "post_msg": "",
 #                     })
 #                 except Exception as e:
-#                     print("Error: DomicilePermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
 #                     return JsonResponse({
 #                         "post_success": False,
 #                         "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
 #                     })
 #         except Exception as e:
-#             print("Error: DomicilePermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
 #             return JsonResponse({
 #                 "post_success": False,
 #                 "post_msg": "Error: DomicilePermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
@@ -1119,7 +1085,6 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 #     #     pass
 
 
-#     print("Warning: DomicilePermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
 #     return JsonResponse({
 #         "post_success": False,
 #         "post_msg": "Warning: DomicilePermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),

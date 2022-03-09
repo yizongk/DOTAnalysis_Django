@@ -33,7 +33,6 @@ def user_is_active_admin(username=None):
             "err": '{} is not an active Admin'.format(username),
         }
     except Exception as e:
-        print("Exception: user_is_active_admin(): {}".format(e))
         return {
             "isAdmin": None,
             "err": 'Exception: user_is_active_admin(): {}'.format(e),
@@ -82,7 +81,6 @@ def get_allowed_list_of_wu(username=None):
             "err": "Cannot find any WU permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("get_allowed_list_of_wu(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: OrgChartPortal: get_allowed_list_of_wu(): {}'.format(e),
@@ -869,7 +867,6 @@ def GetEmpGridStats(request):
         })
     except Exception as e:
         err_msg = "Exception: OrgChartPortal: GetEmpGridStats(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -1071,7 +1068,6 @@ class EmpGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -1096,7 +1092,6 @@ class EmpGridPageView(generic.ListView):
         except Exception as e:
             self.req_success                            = False
             self.err_msg                                = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context                                     = super().get_context_data(**kwargs)
             context["req_success"]                      = self.req_success
@@ -1137,7 +1132,6 @@ class OrgChartPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: OrgChartPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -1155,7 +1149,6 @@ class OrgChartPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1369,7 +1362,6 @@ def OrgChartGetEmpCsv(request):
         })
     except Exception as e:
         err_msg = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg
@@ -1425,7 +1417,6 @@ def GetCommissionerPMS(request):
         })
     except Exception as e:
         err_msg = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
-        print(err_msg)
         return JsonResponse({
             "post_success": False,
             "post_msg": err_msg

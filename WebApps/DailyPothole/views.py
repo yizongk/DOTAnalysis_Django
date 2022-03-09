@@ -68,7 +68,6 @@ def get_user_operation_and_boro_permission(username):
             "err": "Cannot find any permissions for '{}'".format(username),
         }
     except Exception as e:
-        print("Exception: DailyPothole: get_user_operation_and_boro_permission(): {}".format(e))
         return {
             "success": False,
             "err": 'Exception: DailyPothole: get_user_operation_and_boro_permission(): {}'.format(e),
@@ -92,7 +91,6 @@ def user_is_active_admin(username):
             "err": '{} is not an active Admin'.format(username),
         }
     except Exception as e:
-        print("Exception: user_is_active_admin(): {}".format(e))
         return {
             "isAdmin": None,
             "err": 'Exception: user_is_active_admin(): {}'.format(e),
@@ -161,7 +159,6 @@ class PotholeDataEntryPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DateCollectionPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -183,7 +180,6 @@ class PotholeDataEntryPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: DateCollectionPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -239,7 +235,6 @@ class PotholeDataGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -257,7 +252,6 @@ class PotholeDataGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -296,7 +290,6 @@ class ComplaintsInputPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: ComplaintsInputPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return TblComplaint.objects.none()
 
         self.req_success = True
@@ -314,7 +307,6 @@ class ComplaintsInputPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: ComplaintsInputPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -347,7 +339,6 @@ class ReportsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: ReportsPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return TblComplaint.objects.none()
 
         self.req_success = True
@@ -365,7 +356,6 @@ class ReportsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1480,7 +1470,6 @@ class AdminPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return TblComplaint.objects.none()
 
         self.req_success = True
@@ -1498,7 +1487,6 @@ class AdminPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1531,7 +1519,6 @@ class UsersPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -1549,7 +1536,6 @@ class UsersPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1761,7 +1747,7 @@ def DeleteUser(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
 
 
         try:
@@ -1823,7 +1809,6 @@ class UserPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return None
 
         self.req_success = True
@@ -1845,7 +1830,6 @@ class UserPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -2149,7 +2133,6 @@ class CsvExportPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
             return TblComplaint.objects.none()
 
         self.req_success = True
@@ -2168,7 +2151,6 @@ class CsvExportPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
