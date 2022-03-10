@@ -100,7 +100,8 @@ class BaseAGGridCellRenderer {
      *     init(ag_cell) {
      *         let some_text = ...
      *         let super_params = {
-     *             rendered_text : some_text
+     *             rendered_element : some_html_element
+     *             rendered_text    : some_text
      *         }
      *         this.initBase(super_params);
      *     }
@@ -109,10 +110,19 @@ class BaseAGGridCellRenderer {
     initBase(params) {
         /**
          * Expects params to have properties:
-         *      - rendered_text: Will be use to be display on the AG Grid Cell
+         *      - rendered_element  : A html element
+         *                              If @rendered_element is not null, @rendered_text won't be used
+         *                              Will append to AG Grid Cell as its child
+         *      - rendered_text     : A text value
+         *                              If @rendered_element is not null, @rendered_text won't be used
+         *                              Will create a default <div> element and set the innerHTML to @rendered_text and then append to AG Grid Cell as its child
          */
-        this.eGui = document.createElement('div');
-        this.eGui.innerHTML = params.rendered_text;
+        if (params.rendered_element != null) {
+            this.eGui = params.rendered_element;
+        } else {
+            this.eGui = document.createElement('div');
+            this.eGui.innerHTML = params.rendered_text;
+        }
     }
 
     getGui() {
