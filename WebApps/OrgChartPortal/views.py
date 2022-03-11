@@ -1485,8 +1485,8 @@ class ManageUsersPageView(generic.ListView):
         try:
             if self.client_is_admin:
                 ag_grid_col_def = [ ## Need to format this way for AG Grid
-                    {'headerName': 'PMS'                , 'field': 'pms'                , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'pk'}
-                    ,{'headerName': 'Windows Username'  , 'field': 'windows_username'   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'pk'}
+                    {'headerName': 'PMS'                , 'field': 'pms'                , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Windows Username'  , 'field': 'windows_username'   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
                     ,{'headerName': 'Is Admin'          , 'field': 'is_admin'           , 'suppressMovable': True , 'lockPinned': True}
                     ,{'headerName': 'Active'            , 'field': 'active'             , 'suppressMovable': True , 'lockPinned': True}
                     ,{'headerName': 'Delete?'           , 'field': None                 , 'suppressMovable': True , 'lockPinned': True}

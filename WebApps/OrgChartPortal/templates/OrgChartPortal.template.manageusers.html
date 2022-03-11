@@ -7,8 +7,8 @@
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
 
     <style>
-        /* Dimming the PK column */
-        .pk {
+        /* Dimming the notEditableColorCode column */
+        .notEditableColorCode {
             background-color: lightgrey;
         }
     </style>
@@ -143,23 +143,6 @@
                 params.api.sizeColumnsToFit();
             }
 
-            class DeleteCellRenderer extends BaseAGGridCellRenderer {
-                init(ag_cell) {
-                    let a = document.createElement('a');
-                    a.setAttribute('class', 'deletable');
-
-                    let i = document.createElement('i');
-                    i.setAttribute('class', 'trash alternate icon');
-
-                    a.append(i)
-
-                    let super_params = {
-                        rendered_element : a
-                    };
-                    this.initBase(super_params);
-                }
-            }
-
             class BooleanCellEditor extends BaseAGGridCellSelectEditor {
                 init(ag_cell) {
                     // Quick deep copy, only works with basic data type
@@ -181,7 +164,7 @@
             ]
 
             for (col_i in col_def) {
-                ag_column = col_def[col_i]
+                ag_column = col_def[col_i];
 
                 // Editable cell def
                 if ( editable_col.includes(ag_column.headerName) ) {

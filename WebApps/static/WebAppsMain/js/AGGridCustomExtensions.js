@@ -293,3 +293,20 @@ class BaseAGGridCellEditor {
     // the final value to sent to the grid, on completion of editing
     getValue() { return this.ag_cell.value; }
 }
+
+class DeleteCellRenderer extends BaseAGGridCellRenderer {
+    init(ag_cell) {
+        let a = document.createElement('a');
+        a.setAttribute('class', 'deletable');
+
+        let i = document.createElement('i');
+        i.setAttribute('class', 'trash alternate icon');
+
+        a.append(i)
+
+        let super_params = {
+            rendered_element : a
+        };
+        this.initBase(super_params);
+    }
+}
