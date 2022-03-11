@@ -1663,7 +1663,7 @@ def UpdateUser(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to update a user".format(remote_user))
 
 
         if table == 'tblUser' and column == 'IsAdmin':
