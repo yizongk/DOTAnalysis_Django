@@ -1509,7 +1509,7 @@ class ManageUsersPageView(generic.ListView):
             return None
 
         self.req_success = True
-        return users_data
+        return None
 
     def get_context_data(self, **kwargs):
         try:
@@ -1531,6 +1531,256 @@ class ManageUsersPageView(generic.ListView):
             context["ag_grid_col_def_json"] = None
             context["users_data_json"]      = None
             return context
+
+
+def AddUser(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AddUser(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUser():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUser():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        windows_username    = json_blob['windows_username']
+        pms                 = json_blob['pms']
+        is_admin            = json_blob['is_admin']
+
+
+        if not user_is_active_admin(remote_user)["isAdmin"]:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        if windows_username is None:
+            raise ValueError("windows_username cannot be null")
+        elif windows_username == '':
+            raise ValueError("windows_username cannot be empty string")
+        elif ' ' in windows_username:
+            raise ValueError("windows_username cannot contain whitespace")
+
+        if pms is None:
+            raise ValueError("pms cannot be null")
+        elif pms == '':
+            raise ValueError("pms cannot be empty string")
+        elif len(pms) != 7 or not pms.isdigit():
+            raise ValueError("pms is not a 7 digit number")
+
+        if is_admin not in ['True', 'False']:
+            raise ValueError(f"Unrecognized is_admin value '{is_admin}', must be either 'True' or 'False'")
+
+
+        try:
+            emp = TblEmployees.objects.using("OrgChartWrite").get(pms=pms)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find an employee in TblEmployees with the pms '{pms}'")
+
+        try:
+            new_user = TblUsers(windows_username=windows_username, pms=emp, is_admin=is_admin)
+            new_user.save(using='OrgChartWrite')
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success"      : True,
+            "post_msg"          : None,
+            "windows_username"  : new_user.windows_username,
+            "pms"               : new_user.pms.pms,
+            "is_admin"          : new_user.is_admin,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success"      : False,
+            "post_msg"          : f"OrgChartPortal: AddUser():\n\nError: {e}",
+            "windows_username"  : new_user.windows_username
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
+            # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })
+
+
+def UpdateUser(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdateUser(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateUser():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "UpdateUser():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        to_windows_username = json_blob['to_windows_username']
+        column_name         = json_blob['column_name']
+        new_value           = json_blob['new_value']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+
+
+        valid_editable_ag_column_names = ['Is Admin', 'Active']
+        if column_name not in valid_editable_ag_column_names:
+            raise ValueError(f"Not allow to edit the AG Column '{column_name}' in this api")
+
+
+        if to_windows_username is None:
+            raise ValueError(f"windows_username '{to_windows_username}' cannot be null")
+        elif to_windows_username == '':
+            raise ValueError(f"windows_username '{to_windows_username}' cannot be empty string")
+        elif ' ' in to_windows_username:
+            raise ValueError(f"windows_username '{to_windows_username}' cannot contain whitespace")
+
+
+        if column_name == 'Is Admin':
+            new_value = new_value.title() ## Convert first char to capital. (Title Case)
+            if new_value not in ['True', 'False']:
+                raise ValueError(f"Unrecognized is_admin value '{new_value}', must be either 'True' or 'False'")
+
+        if column_name == 'Active':
+            new_value = new_value.title() ## Convert first char to capital. (Title Case)
+            if new_value not in ['True', 'False']:
+                raise ValueError(f"Unrecognized active value '{new_value}', must be either 'True' or 'False'")
+
+
+        try:
+            user = TblUsers.objects.using("OrgChartWrite").get(windows_username=to_windows_username)
+
+            if column_name == 'Is Admin':
+                user.is_admin = new_value
+            elif column_name == 'Active':
+                user.active = new_value
+            else:
+                raise ValueError(f"column_name '{column_name}' is not a valid editable column in this api")
+
+            user.save(using='OrgChartWrite')
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Can't find a user with this windows_username '{to_windows_username}'")
+
+        return JsonResponse({
+            "post_success"          : True,
+            "post_msg"              : None,
+            "to_windows_username"   : to_windows_username,
+            "column_name"           : column_name,
+            "new_value"             : new_value,
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}",
+            # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })
+
+
+def DeleteUser(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: DeleteUser(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DeleteUser():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DeleteUser():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        windows_username = json_blob['windows_username']
+
+        if windows_username is None:
+            raise ValueError("windows_username cannot be null")
+        elif windows_username == '':
+            raise ValueError("windows_username cannot be empty string")
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
+
+        try:
+            user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
+            user.delete()
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find user with this username: '{windows_username}'")
+
+        return JsonResponse({
+            "post_success"      : True,
+            "post_msg"          : None,
+            "windows_username"  : windows_username
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })
 
 
 class ManagePermissionsPageView(generic.ListView):

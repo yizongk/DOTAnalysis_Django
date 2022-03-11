@@ -17,4 +17,7 @@ urlpatterns = [
     path('org_chart_get_emp_csv', views.OrgChartGetEmpCsv, name='orgchartportal_org_chart_get_emp_csv'),
     path('get_commissioner_pms', views.GetCommissionerPMS, name='orgchartportal_get_commissioner_pms'),
     path('update_employee_data', views.UpdateEmployeeData, name='orgchartportal_update_employee_data'),
+    path('add_user', views.AddUser, name='orgchartportal_add_user'),
+    path('delete_user', views.DeleteUser, name='orgchartportal_delete_user'),
+    path('update_user', views.UpdateUser, name='orgchartportal_update_user'),
 ]
