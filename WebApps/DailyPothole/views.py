@@ -1882,7 +1882,7 @@ def AddUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to add user permissions".format(remote_user))
 
 
         if username_input is None:
@@ -1978,7 +1978,7 @@ def UpdateUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to update user permissions".format(remote_user))
 
 
         if  (
@@ -2075,7 +2075,7 @@ def DeleteUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not admin and does not have the permission to delete user permissions".format(remote_user))
 
 
         try:
