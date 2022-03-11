@@ -1,12 +1,15 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, EmpGridPageView, OrgChartPageView
+from .views import HomePageView, AboutPageView, ContactPageView, EmpGridPageView, OrgChartPageView, AdminPanelPageView, ManageUsersPageView, ManagePermissionsPageView
 urlpatterns = [
     path('', HomePageView.as_view(), name='orgchartportal_home_view'),
     path('about', AboutPageView.as_view(), name='orgchartportal_about_view'),
     path('contact', ContactPageView.as_view(), name='orgchartportal_contact_view'),
     path('empgrid', EmpGridPageView.as_view(), name='orgchartportal_empgrid_view'),
     path('orgchart', OrgChartPageView.as_view(), name='orgchartportal_orgchart_view'),
+    path('admin_panel', AdminPanelPageView.as_view(), name='orgchartportal_admin_panel_view'),
+    path('manage_users', ManageUsersPageView.as_view(), name='orgchartportal_manage_users_view'),
+    path('manage_permissions', ManagePermissionsPageView.as_view(), name='orgchartportal_manage_permissions_view'),
     path('get_client_wu_permissions_list', views.GetClientWUPermissions, name='orgchartportal_get_client_wu_permissions_list'),
     path('get_client_teammates_list', views.GetClientTeammates, name='orgchartportal_get_client_teammates_list'),
     path('emp_grid_get_csv_export', views.EmpGridGetCsvExport, name='orgchartportal_emp_grid_get_csv_export'),
