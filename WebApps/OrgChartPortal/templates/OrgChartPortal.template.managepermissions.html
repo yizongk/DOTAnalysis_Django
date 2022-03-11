@@ -3,7 +3,15 @@
 {% load static %}
 
 {% block custom_css %}
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
+
+    <style>
+        /* Dimming the notEditableColorCode column */
+        .notEditableColorCode {
+            background-color: lightgrey;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -22,11 +30,21 @@
 
                     <div class="ui horizontal divider">Add new user permission</div>
 
-                    <div>Username</div>
-                    <div id="modalNewRowFormSelectUsernameInputBorder" class="ui input">
-                        <select id="modalNewRowFormSelectUsernameInput" class="ui selection dropdown">
+                    <div>User</div>
+                    <div id="modalNewRowFormSelectUserInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectUserInput" class="ui selection dropdown">
                             <option value=""></option>
                             {% for each in user_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>Division</div>
+                    <div id="modalNewRowFormSelectWUInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectWUInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in division_list %}
                                 <option value="{{ each }}">{{ each }}</option>
                             {% endfor %}
                         </select>
@@ -45,40 +63,23 @@
 
 
         <!--admin access control web grid-->
-        <table class="table table-striped table-hover" id="WebGridTable">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Boro</th>
-                    <th>Delete?</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for entry in user_permissions %}
-                <tr>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select"     >{{ entry.user_id.username }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select"     >{{ entry.boro_id.boro_long }}</td>
-                    <td data-id="{{ entry.permission_id }}" ></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="height: 40vw; width: auto;">
+            <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+        </div>
         <!--End admin access control web grid-->
     {% endif %}
 {% endblock content %}
 
 {% block custom_js %}
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}" type=""></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
 
     <script>
         $(document).ready( function () {
             // Initializing the existing select divs into a dropdown menu for Formantic UI
-            $('#modalNewRowFormSelectUsernameInput').dropdown();
-            $('#modalNewRowFormSelectOperationInput').dropdown();
-            $('#modalNewRowFormSelectBoroInput').dropdown();
+            $('#modalNewRowFormSelectUserInput').dropdown();
+            $('#modalNewRowFormSelectWUInput').dropdown();
 
             if ( document.getElementById('trigger_input') != null ) {
                 document.getElementById('trigger_input').addEventListener("click", function() {
@@ -88,171 +89,50 @@
                 alert(`Cannot find a div with the ID 'trigger_input'`)
             }
 
-            var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
-                "columnDefs": [{
-                    "targets": -1,
-                    "data": null,
-                    "defaultContent": '<a class="deletable"><i class="trash alternate icon"></i></a>'
-                }]
-            });
+            function onFirstDataRendered(params) {
+                params.api.sizeColumnsToFit();
+            }
 
-            /*
-            // Example codes showing how CellEditSave.js works with the html table
-            // For cell edit mode
-            $(document).on("dblclick", ".editable", function () {
-                enterCellEditMode($(this))
-            });
+            var col_def = {{ ag_grid_col_def_json|safe }};
+            var data    = {{ permissions_json|safe }};
 
-            $(document).on("keyup", ".input-data", function (e) {
-                var key = e.which;
-                if (key === 13) { // 13 is the return key, aka 'ENTER' key
-                    sendCellToServer(node=this, api_url="users_panel_api_update_row", http_request_method="POST", cell_html_type="input");
+            for (col_i in col_def) {
+                ag_column = col_def[col_i];
+
+                if (ag_column.headerName == 'Delete?') {
+                    ag_column['cellRenderer']   = 'deleteCellRenderer';
                 }
-                if (key === 27) { // 27 is the ESC key
-                    cancelEditMode(this);
-                }
-            });
-            */
+            }
 
-            // For cell select mode
-            $(document).on("dblclick", ".editable-select", function () {
-                if ( $(this).data('table') == 'tblUser' ) {
-                    select_array = [
-                        {% for each in user_list %}
-                            '{{ each }}',
-                        {% endfor %}
-                    ]
-                }
+            var gridOptions = {
+                // PROPERTIES
+                // Objects like myRowData and myColDefs would be created in your application
+                //getRowNodeId: (data) => data.windows_username,
+                columnDefs: col_def,
+                rowData: data,
+                domLayout: 'normal',
 
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                },
 
+                onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
+                rowSelection: 'single',
 
+                stopEditingWhenCellsLoseFocus: true,
+                components: {
+                    deleteCellRenderer  : DeleteCellRenderer,
+                },
+            }
 
-                //select_array = ['True', 'False']
-                // Move current select element to the top of the array
-                var current_value = $(this).text()
-                select_array.sort(function(x, y) {
-                    return x == current_value ? -1 : y == current_value ? 1 : 0;
-                });
-                enterCellEditSelectMode(td_node=$(this), selections=select_array)
-            });
-
-            $(document).on("keyup", ".input-data-select", function (e) {
-                var key = e.which;
-                if (key === 27) { // 27 is the ESC key
-                    cancelSelectMode(this);
-                }
-            });
-
-            $(document).on("change", ".input-data-select", function () {
-                sendCellToServer(node=this, api_url="{% url 'dailypothole_update_user_permission_api' %}", http_request_method="POST", cell_html_type="select");
-            });
-
-            // For row delete, with support for only JS Datatable
-            //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
-            $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
-                if (confirm(`Are you sure you want to delete?`)) {
-                    permission_id = $(this).parent().attr('data-id')
-                    json_blob = {
-                        'permission_id': permission_id
-                    }
-
-                    props = {
-                        'table': table,
-                        'tr_row': $(this).parent().parent()
-                    }
-
-                    deleteRecordToServer( json_blob=json_blob, api_url="{% url 'dailypothole_delete_user_permission_api' %}", http_request_method="POST",
-                        successCallbackFct=function(json_response, props) {
-                            // successful api call
-                            table = props['table']
-                            tr_row = props['tr_row']
-                            table.row(tr_row).remove().draw();
-
-                            return;
-                        }, failCallbackFct=function(json_response, props) {
-                            // On failed api calls do nothing.
-                            return;
-                        }, ajaxFailCallbackFct=function(jqXHR, props) {
-                            // On failed ajax request do nothing.
-                            return;
-                        },
-                        props
-                    )
-                }
-
-            })
-
-            // For row add, with support for only JS Datatable
-            $('#modalNewRowFormAddButton').on("click", function() {
-
-                let usernameInput = $("#modalNewRowFormSelectUsernameInput").val()
-                let operationInput = $("#modalNewRowFormSelectOperationInput").val()
-                let boroInput = $("#modalNewRowFormSelectBoroInput").val()
-
-                $('#modalNewRowFormSelectUsernameInputBorder').css("border", "")
-                $('#modalNewRowFormSelectOperationInputBorder').css("border", "")
-                $('#modalNewRowFormSelectBoroInputBorder').css("border", "")
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
 
 
-                if (usernameInput == '') {
-                    $('#modalNewRowFormSelectUsernameInputBorder').css("border", "2px solid red")
-                    return
-                }
 
-                if (operationInput == '') {
-                    $('#modalNewRowFormSelectOperationInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                if (boroInput == '') {
-                    $('#modalNewRowFormSelectBoroInputBorder').css("border", "2px solid red")
-                    return
-                }
-
-                json_blob = {
-                    "username_input": usernameInput,
-                    "operation_input": operationInput,
-                    "boro_input": boroInput,
-                }
-
-                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_permission_api' %}", http_request_method="POST",
-                    successCallbackFct=function(json_response) {
-                        alert(`Successfully added permission to User Permissions table!`)
-
-                        // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.username, json_response.operation, json_response.boro_long, ] )
-                        .draw()
-                        .node();
-
-                        // Add permission_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.permission_id);
-                        // Add the proper data-... attribute to the row
-                        $(rowNode).children().each( (index, childNode) => {
-                            if (index == 0) {
-                                $(childNode).attr("data-table", "tblUser")
-                                $(childNode).attr("data-column", "Username")
-                                $(childNode).attr("class", "editable-select")
-                            } else if (index == 1) {
-                                $(childNode).attr("data-table", "tblOperation")
-                                $(childNode).attr("data-column", "Operation")
-                                $(childNode).attr("class", "editable-select")
-                            } else if (index == 2) {
-                                $(childNode).attr("data-table", "tblBoro")
-                                $(childNode).attr("data-column", "BoroLong")
-                                $(childNode).attr("class", "editable-select")
-                            } else if (index == 3) {
-                                // Nothing to add for the Delete icon
-                            } else {
-                                alert(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                                console.log(`After adding a new row: Not sure what to do with child: ${childNode}`)
-                            }
-                        })
-
-                        $(rowNode).css('color', 'green')
-                        .animate( { color: 'black' } );
-                    }
-                )
-            })
 
         });
     </script>

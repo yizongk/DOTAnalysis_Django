@@ -1784,16 +1784,18 @@ def DeleteUser(request):
 
 
 class ManagePermissionsPageView(generic.ListView):
-    template_name = 'OrgChartPortal.template.managepermissions.html'
+    template_name       = 'OrgChartPortal.template.managepermissions.html'
     context_object_name = 'user_permissions'
 
-    req_success = False
-    err_msg = ""
+    req_success         = False
+    err_msg             = ""
+    client_is_admin     = False
 
-    user_list = []
-    wu_list = []
+    ag_grid_col_def_json= None
+    permissions_json    = []
+    user_list           = []
+    division_list       = []
 
-    client_is_admin = False
 
     def get_queryset(self):
         # Check for Active Admins
@@ -1802,38 +1804,55 @@ class ManagePermissionsPageView(generic.ListView):
         ## Get the core data
         try:
             if self.client_is_admin:
-                user_permissions_data   = TblPermissionsWorkUnit.objects.using('OrgChartRead').all().order_by('wu')
-                self.user_list          = [each.windows_username for each in TblUsers.objects.using('OrgChartRead').all().order_by('windows_username')]
-                self.wu_list            = [each.wu for each in TblWorkUnits.objects.using('OrgChartRead').all()]
+                ag_grid_col_def = [ ## Need to format this way for AG Grid
+                    {'headerName': 'Windows Username'  , 'field': 'user_id__windows_username'   , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'WU'               , 'field': 'wu__wu'                      , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Sub Division'     , 'field': 'wu__subdiv'                  , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Desc'             , 'field': 'wu__wu_desc'                 , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Delete?'          , 'field': None                          , 'suppressMovable': True , 'lockPinned': True}
+                ]
+                fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
+
+                import json
+                from django.core.serializers.json import DjangoJSONEncoder
+
+                self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
+                self.permissions_json       = json.dumps(list(TblPermissionsWorkUnit.objects.using('OrgChartRead').all().order_by('wu').values(*fields_list)), cls=DjangoJSONEncoder)
+                self.user_list              = [each['windows_username'] for each in TblUsers.objects.using('OrgChartRead').all().order_by('windows_username').values('windows_username')]
+                self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').all().values('subdiv').distinct()]
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ManagePermissionsPageView(): get_queryset(): {}".format(e)
+            self.req_success    = False
+            self.err_msg        = "Exception: ManagePermissionsPageView(): get_queryset(): {}".format(e)
             return None
 
         self.req_success = True
-        return user_permissions_data
+        return None
 
     def get_context_data(self, **kwargs):
         try:
-            context                     = super().get_context_data(**kwargs)
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
-            context["client_is_admin"]  = self.client_is_admin
-            context["user_list"]        = self.user_list
-            context["wu_list"]          = self.operation_list
+            context                         = super().get_context_data(**kwargs)
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = self.client_is_admin
+            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+            context["permissions_json"]     = self.permissions_json
+            context["user_list"]            = self.user_list
+            context["division_list"]        = self.division_list
             return context
         except Exception as e:
-            self.req_success            = False
-            self.err_msg                = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
+            self.req_success                = False
+            self.err_msg                    = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
 
-            context                     = super().get_context_data(**kwargs)
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
-            context["client_is_admin"]  = False
-            context["user_list"]        = self.user_list
-            context["wu_list"]          = self.operation_list
+            context                         = super().get_context_data(**kwargs)
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = False
+            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+            context["permissions_json"]     = self.permissions_json
+            context["user_list"]            = self.user_list
+            context["division_list"]        = self.division_list
             return context
 
