@@ -7,7 +7,7 @@ from django.db.models import Min, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.utils import timezone
 from datetime import timedelta
 
@@ -1819,7 +1819,7 @@ class ManagePermissionsPageView(generic.ListView):
                 self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.permissions_json       = json.dumps(list(TblPermissionsWorkUnit.objects.using('OrgChartRead').all().order_by('wu').values(*fields_list)), cls=DjangoJSONEncoder)
                 self.user_list              = [each['windows_username'] for each in TblUsers.objects.using('OrgChartRead').all().order_by('windows_username').values('windows_username')]
-                self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').all().values('subdiv').distinct()]
+                self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('subdiv').distinct()]
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
@@ -1856,3 +1856,114 @@ class ManagePermissionsPageView(generic.ListView):
             context["division_list"]        = self.division_list
             return context
 
+
+def AddUserPermission(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: AddUserPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "AddUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        windows_username    = json_blob['windows_username']
+        add_by              = json_blob['add_by']
+        subdiv              = json_blob['subdiv']
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to add a new user permission".format(remote_user))
+
+
+        if windows_username is None:
+            raise ValueError(f"windows_username '{windows_username}' cannot be null")
+        elif windows_username == '':
+            raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
+
+        valid_action_by = ['division', 'wu']
+        if add_by not in valid_action_by:
+            raise ValueError(f"add_by '{add_by}' must be one of these options {valid_action_by}")
+
+        if add_by == 'division':
+            if subdiv is None:
+                raise ValueError(f"subdiv '{subdiv}' cannot be null")
+            elif subdiv == '':
+                raise ValueError(f"subdiv '{subdiv}' cannot be empty string")
+        elif add_by == 'wu':
+            ...
+            #@TODO implement this
+
+
+        try:
+            user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Could not find a valid user with this windows_username: '{windows_username}'")
+
+        workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(subdiv__isnull=False, subdiv=subdiv)
+        if workunits.count() == 0:
+            raise ValueError(f"Could not find any work units related to subdiv: '{subdiv}'")
+
+        existing_perms = TblPermissionsWorkUnit.objects.using("OrgChartWrite").filter(user_id__windows_username=windows_username)
+        if existing_perms.count() > 0:
+            ## Filter out any overlaping existing WU permissions
+            workunits = workunits.exclude(wu__in=[each.wu.wu for each in existing_perms])
+
+            if workunits.count() == 0:
+                raise ValueError(f"'{windows_username}' already has permissions to all the WUs related to '{subdiv}'")
+
+        # Save the data in a single atomic transaction
+        try:
+            with transaction.atomic(using='OrgChartWrite'):
+                for each in workunits:
+                    new_permission = TblPermissionsWorkUnit(
+                        user_id=user
+                        ,wu=each
+                    )
+                    new_permission.save(using='OrgChartWrite')
+
+        except IntegrityError as e:
+            if 'UNIQUE KEY constraint' in str(e):
+                raise ValueError(f"Violation of UNIQUE KEY constraint: Happened while trying to insert ('{user.windows_username}', '{each.wu}') into work unit permissions table")
+            else:
+                raise e
+        except Exception as e:
+            raise
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "windows_username": user.windows_username,
+            "subdiv": subdiv,
+            "wu_list": [each.wu for each in workunits],
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
+            # "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })

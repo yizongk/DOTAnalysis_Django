@@ -41,8 +41,8 @@
                     </div>
 
                     <div>Division</div>
-                    <div id="modalNewRowFormSelectWUInputBorder" class="ui input">
-                        <select id="modalNewRowFormSelectWUInput" class="ui selection dropdown">
+                    <div id="modalNewRowFormSelectDivisionInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectDivisionInput" class="ui selection dropdown">
                             <option value=""></option>
                             {% for each in division_list %}
                                 <option value="{{ each }}">{{ each }}</option>
@@ -79,7 +79,7 @@
         $(document).ready( function () {
             // Initializing the existing select divs into a dropdown menu for Formantic UI
             $('#modalNewRowFormSelectUserInput').dropdown();
-            $('#modalNewRowFormSelectWUInput').dropdown();
+            $('#modalNewRowFormSelectDivisionInput').dropdown();
 
             if ( document.getElementById('trigger_input') != null ) {
                 document.getElementById('trigger_input').addEventListener("click", function() {
@@ -133,6 +133,51 @@
 
 
 
+            // For row add, with support for only JS Datatable
+            $('#modalNewRowFormAddButton').on("click", function() {
+                let user    = $("#modalNewRowFormSelectUserInput").val();
+                let subdiv  = $("#modalNewRowFormSelectDivisionInput").val();
+
+                $('#modalNewRowFormSelectUserInputBorder').css("border", "");
+                $('#modalNewRowFormSelectDivisionInputBorder').css("border", "");
+
+
+                if (user == '') {
+                    alert(`User cannot be empty`);
+                    $('#modalNewRowFormSelectUserInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (subdiv == '') {
+                    alert(`Division cannot be empty`);
+                    $('#modalNewRowFormSelectDivisionInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                json_blob = {
+                    "windows_username"  : user,
+                    "add_by"            : 'division',
+                    "subdiv"            : subdiv,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${json_response.windows_username}' - '${json_response.subdiv}' Work Unit Permissions added successfully!`);
+                        //@TODO
+                        console.log(json_response)
+                        //gridOptions.api.applyTransaction({
+                        //    add     : [{
+                        //                pms             : json_response.pms,
+                        //                windows_username: json_response.windows_username,
+                        //                is_admin        : json_response.is_admin.toLowerCase(),
+                        //                active          : 'true'
+                        //            }],
+                        //    addIndex: 0
+                        //});
+                        return;
+                    }
+                )
+            })
 
         });
     </script>

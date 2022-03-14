@@ -20,4 +20,5 @@ urlpatterns = [
     path('add_user', views.AddUser, name='orgchartportal_add_user'),
     path('delete_user', views.DeleteUser, name='orgchartportal_delete_user'),
     path('update_user', views.UpdateUser, name='orgchartportal_update_user'),
+    path('add_user_permission', views.AddUserPermission, name='orgchartportal_add_user_permission'),
 ]

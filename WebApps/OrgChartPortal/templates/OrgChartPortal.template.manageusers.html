@@ -250,7 +250,7 @@
                     alert(`pms cannot be empty`);
                     $('#modalNewRowFormPMSInputBorder').css("border", "2px solid red");
                     return;
-                }else if ( !stringContainsOnlyDigits({str: pms}) || pms.length != 7 ) {
+                } else if ( !stringContainsOnlyDigits({str: pms}) || pms.length != 7 ) {
                     alert(`pms '${pms}' is not a 7 digit number`);
                     $('#modalNewRowFormPMSInputBorder').css("border", "2px solid red");
                     return;
