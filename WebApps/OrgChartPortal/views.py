@@ -1967,3 +1967,87 @@ def AddUserPermission(request):
             "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
             # "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
+
+
+def DeleteUserPermission(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: DeleteUserPermission(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "OrgChartPortal: DeleteUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        windows_username    = json_blob['windows_username']
+        delete_by           = json_blob['delete_by']
+        wu                  = json_blob['wu']
+
+        if windows_username is None:
+            raise ValueError(f"windows_username '{windows_username}' cannot be null")
+        elif windows_username == '':
+            raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
+
+        valid_action_by = ['division', 'wu']
+        if delete_by not in valid_action_by:
+            raise ValueError(f"delete_by '{delete_by}' must be one of these options {valid_action_by}")
+
+        if delete_by == 'division':
+            ...
+            #@TODO implement this
+        elif delete_by == 'wu':
+            if wu is None:
+                raise ValueError(f"wu '{wu}' cannot be null")
+            elif wu == '':
+                raise ValueError(f"wu '{wu}' cannot be empty string")
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
+
+        try:
+            wu_permission = TblPermissionsWorkUnit.objects.using("OrgChartWrite").get(
+                user_id__windows_username=windows_username
+                ,wu__wu=wu
+            )
+            wu_permission.delete()
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{wu}'")
+        except Exception as e:
+            raise e
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "windows_username": windows_username,
+            "wu": wu,
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
+            # "post_msg": f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })

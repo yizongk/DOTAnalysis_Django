@@ -132,6 +132,31 @@
             new agGrid.Grid(gridDiv, gridOptions);
 
 
+            $('#AGGrid').on("click", ".deletable", function() {
+                // only 1 row is returned due to rowSelection: 'single' in gridOptions
+                const selected_row = gridOptions.api.getSelectedRows()[0];
+
+                if (confirm(`Are you sure you want to delete ('${selected_row.user_id__windows_username}' - '${selected_row.wu__wu}')?`)) {
+                    json_blob = {
+                        'windows_username'  : selected_row.user_id__windows_username,
+                        'delete_by'         : 'wu',
+                        'wu'                : selected_row.wu__wu
+                    }
+
+                    sentJsonBlobToApi({
+                        json_blob           : json_blob,
+                        api_url             : "{% url 'orgchartportal_delete_user_permission' %}",
+                        http_request_method : "POST",
+                        successCallbackFct  : function(json_response) {
+                                                alert(`('${json_response.windows_username}' - '${json_response.wu}') removed successfully!`);
+                                                gridOptions.api.applyTransaction({ remove: [selected_row] });
+                                                return;
+                                            }
+                    })
+                }
+
+            });
+
 
             // For row add, with support for only JS Datatable
             $('#modalNewRowFormAddButton').on("click", function() {
