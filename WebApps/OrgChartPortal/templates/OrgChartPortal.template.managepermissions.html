@@ -188,17 +188,20 @@
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
                         alert(`'${json_response.windows_username}' - '${json_response.subdiv}' Work Unit Permissions added successfully!`);
-                        //@TODO
-                        console.log(json_response)
-                        //gridOptions.api.applyTransaction({
-                        //    add     : [{
-                        //                pms             : json_response.pms,
-                        //                windows_username: json_response.windows_username,
-                        //                is_admin        : json_response.is_admin.toLowerCase(),
-                        //                active          : 'true'
-                        //            }],
-                        //    addIndex: 0
-                        //});
+
+                        let new_wu_perm = json_response.wu_list;
+                        new_wu_perm.forEach(x => {
+                            gridOptions.api.applyTransaction({
+                                add     : [{
+                                            user_id__windows_username   : json_response.windows_username,
+                                            wu__wu                      : x.wu,
+                                            wu__subdiv                  : x.subdiv,
+                                            wu__wu_desc                 : x.wu_desc
+                                        }],
+                                addIndex: 0
+                            });
+                        });
+
                         return;
                     }
                 )

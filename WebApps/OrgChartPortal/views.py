@@ -1951,7 +1951,7 @@ def AddUserPermission(request):
             "post_msg": None,
             "windows_username": user.windows_username,
             "subdiv": subdiv,
-            "wu_list": [each.wu for each in workunits],
+            "wu_list": list(workunits.values('wu', 'subdiv', 'wu_desc')),
         })
     except Exception as e:
         return JsonResponse({
