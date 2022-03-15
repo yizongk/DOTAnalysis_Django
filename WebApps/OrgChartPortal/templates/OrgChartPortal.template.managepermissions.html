@@ -28,18 +28,40 @@
             <div class="ui modal" id="modalNewRowForm">
                 <div class="content center aligned">
 
-                    <div class="ui horizontal divider">Add new user permission</div>
-
+                    <div class="ui horizontal divider">Add new user permission by Work Unit Desc</div>
                     <div>User</div>
-                    <div id="modalNewRowFormSelectUserInputBorder" class="ui input">
-                        <select id="modalNewRowFormSelectUserInput" class="ui selection dropdown">
+                    <div id="modalNewRowFormSelectUserByWUDescInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectUserByWUDescInput" class="ui selection dropdown">
                             <option value=""></option>
                             {% for each in user_list %}
                                 <option value="{{ each }}">{{ each }}</option>
                             {% endfor %}
                         </select>
                     </div>
+                    <div>Work Unit Desc</div>
+                    <div id="modalNewRowFormSelectWUDescInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectWUDescInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in wu_desc_list %}
+                                <option value="{{ each.wu }}">{{ each.wu_desc }} - {{ each.wu }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ui horizontal divider">
+                        <button id="modalNewRowFormAddByWUDescButton" class="ui teal large button">Add new user permission by Work Unit Desc</button>
+                    </div>
 
+
+                    <div class="ui horizontal divider">Add new user permission by Division</div>
+                    <div>User</div>
+                    <div id="modalNewRowFormSelectUserByDivisionInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectUserByDivisionInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in user_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div>Division</div>
                     <div id="modalNewRowFormSelectDivisionInputBorder" class="ui input">
                         <select id="modalNewRowFormSelectDivisionInput" class="ui selection dropdown">
@@ -49,10 +71,9 @@
                             {% endfor %}
                         </select>
                     </div>
-
-
-                    <div class="ui horizontal divider">-</div>
-                    <button id="modalNewRowFormAddButton" class="ui teal large button">Add new user permission</button>
+                    <div class="ui horizontal divider">
+                        <button id="modalNewRowFormAddByDivisionButton" class="ui teal large button">Add new user permission by Division</button>
+                    </div>
 
                 </div>
                 <div id='successMsg'></div>
@@ -78,8 +99,10 @@
     <script>
         $(document).ready( function () {
             // Initializing the existing select divs into a dropdown menu for Formantic UI
-            $('#modalNewRowFormSelectUserInput').dropdown();
+            $('#modalNewRowFormSelectUserByDivisionInput').dropdown();
             $('#modalNewRowFormSelectDivisionInput').dropdown();
+            $('#modalNewRowFormSelectUserByWUDescInput').dropdown();
+            $('#modalNewRowFormSelectWUDescInput').dropdown();
 
             if ( document.getElementById('trigger_input') != null ) {
                 document.getElementById('trigger_input').addEventListener("click", function() {
@@ -139,8 +162,8 @@
                 if (confirm(`Are you sure you want to delete ('${selected_row.user_id__windows_username}' - '${selected_row.wu__wu}')?`)) {
                     json_blob = {
                         'windows_username'  : selected_row.user_id__windows_username,
-                        'delete_by'         : 'wu',
-                        'wu'                : selected_row.wu__wu
+                        'perm_delete_by'    : 'wu',
+                        'perm_identifier'   : selected_row.wu__wu
                     }
 
                     sentJsonBlobToApi({
@@ -148,7 +171,7 @@
                         api_url             : "{% url 'orgchartportal_delete_user_permission' %}",
                         http_request_method : "POST",
                         successCallbackFct  : function(json_response) {
-                                                alert(`('${json_response.windows_username}' - '${json_response.wu}') removed successfully!`);
+                                                alert(`('${json_response.windows_username}' - '${json_response.perm_identifier}') removed successfully!`);
                                                 gridOptions.api.applyTransaction({ remove: [selected_row] });
                                                 return;
                                             }
@@ -158,18 +181,66 @@
             });
 
 
-            // For row add, with support for only JS Datatable
-            $('#modalNewRowFormAddButton').on("click", function() {
-                let user    = $("#modalNewRowFormSelectUserInput").val();
+            $('#modalNewRowFormAddByWUDescButton').on("click", function() {
+                let user    = $("#modalNewRowFormSelectUserByWUDescInput").val();
+                let wu      = $("#modalNewRowFormSelectWUDescInput").val();
+
+                $('#modalNewRowFormSelectUserByWUDescInputBorder').css("border", "");
+                $('#modalNewRowFormSelectWUDescInputBorder').css("border", "");
+
+
+                if (user == '') {
+                    alert(`User cannot be empty`);
+                    $('#modalNewRowFormSelectUserByWUDescInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (wu == '') {
+                    alert(`WUDesc cannot be empty`);
+                    $('#modalNewRowFormSelectWUDescInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                json_blob = {
+                    "windows_username"  : user,
+                    "perm_add_by"       : 'wu',
+                    "perm_identifier"   : wu,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
+
+                        let new_wu_perms = json_response.wu_added_list;
+                        new_wu_perms.forEach(x => {
+                            gridOptions.api.applyTransaction({
+                                add     : [{
+                                            user_id__windows_username   : json_response.windows_username,
+                                            wu__wu                      : x.wu,
+                                            wu__subdiv                  : x.subdiv,
+                                            wu__wu_desc                 : x.wu_desc
+                                        }],
+                                addIndex: 0
+                            });
+                        });
+
+                        return;
+                    }
+                )
+            })
+
+
+            $('#modalNewRowFormAddByDivisionButton').on("click", function() {
+                let user    = $("#modalNewRowFormSelectUserByDivisionInput").val();
                 let subdiv  = $("#modalNewRowFormSelectDivisionInput").val();
 
-                $('#modalNewRowFormSelectUserInputBorder').css("border", "");
+                $('#modalNewRowFormSelectUserByDivisionInputBorder').css("border", "");
                 $('#modalNewRowFormSelectDivisionInputBorder').css("border", "");
 
 
                 if (user == '') {
                     alert(`User cannot be empty`);
-                    $('#modalNewRowFormSelectUserInputBorder').css("border", "2px solid red");
+                    $('#modalNewRowFormSelectUserByDivisionInputBorder').css("border", "2px solid red");
                     return;
                 }
 
@@ -181,16 +252,16 @@
 
                 json_blob = {
                     "windows_username"  : user,
-                    "add_by"            : 'division',
-                    "subdiv"            : subdiv,
+                    "perm_add_by"       : 'division',
+                    "perm_identifier"   : subdiv,
                 }
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.windows_username}' - '${json_response.subdiv}' Work Unit Permissions added successfully!`);
+                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
 
-                        let new_wu_perm = json_response.wu_list;
-                        new_wu_perm.forEach(x => {
+                        let new_wu_perms = json_response.wu_added_list;
+                        new_wu_perms.forEach(x => {
                             gridOptions.api.applyTransaction({
                                 add     : [{
                                             user_id__windows_username   : json_response.windows_username,

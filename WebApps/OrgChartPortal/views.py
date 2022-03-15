@@ -1797,6 +1797,7 @@ class ManagePermissionsPageView(generic.ListView):
     permissions_json    = []
     user_list           = []
     division_list       = []
+    wu_desc_list        = []
 
 
     def get_queryset(self):
@@ -1818,7 +1819,8 @@ class ManagePermissionsPageView(generic.ListView):
                 self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.permissions_json       = json.dumps(list(TblPermissionsWorkUnit.objects.using('OrgChartRead').all().order_by('wu').values(*fields_list)), cls=DjangoJSONEncoder)
                 self.user_list              = [each['windows_username'] for each in TblUsers.objects.using('OrgChartRead').all().order_by('windows_username').values('windows_username')]
-                self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('subdiv').distinct()]
+                self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('subdiv').distinct()] ## subidv not null filters out the WU 9999 On-Loan
+                self.wu_desc_list           = list(TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('wu', 'wu_desc')) ## subidv not null filters out the WU 9999 On-Loan
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
@@ -1840,6 +1842,7 @@ class ManagePermissionsPageView(generic.ListView):
             context["permissions_json"]     = self.permissions_json
             context["user_list"]            = self.user_list
             context["division_list"]        = self.division_list
+            context["wu_desc_list"]         = self.wu_desc_list
             return context
         except Exception as e:
             self.req_success                = False
@@ -1853,6 +1856,7 @@ class ManagePermissionsPageView(generic.ListView):
             context["permissions_json"]     = self.permissions_json
             context["user_list"]            = self.user_list
             context["division_list"]        = self.division_list
+            context["wu_desc_list"]         = self.wu_desc_list
             return context
 
 
@@ -1889,8 +1893,8 @@ def AddUserPermission(request):
 
     try:
         windows_username    = json_blob['windows_username']
-        add_by              = json_blob['add_by']
-        subdiv              = json_blob['subdiv']
+        perm_add_by         = json_blob['perm_add_by']
+        perm_identifier     = json_blob['perm_identifier']
 
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
@@ -1903,9 +1907,14 @@ def AddUserPermission(request):
         elif windows_username == '':
             raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
 
+        if perm_identifier is None:
+            raise ValueError(f"perm_identifier '{perm_identifier}' cannot be null")
+        elif perm_identifier == '':
+            raise ValueError(f"perm_identifier '{perm_identifier}' cannot be empty string")
+
         valid_action_by = ['division', 'wu']
-        if add_by not in valid_action_by:
-            raise ValueError(f"add_by '{add_by}' must be one of these options {valid_action_by}")
+        if perm_add_by not in valid_action_by:
+            raise ValueError(f"perm_add_by '{perm_add_by}' must be one of these options {valid_action_by}")
 
 
         try:
@@ -1914,22 +1923,17 @@ def AddUserPermission(request):
             raise ValueError(f"Could not find a valid user with this windows_username: '{windows_username}'")
 
 
-        if add_by == 'division':
-            if subdiv is None:
-                raise ValueError(f"subdiv '{subdiv}' cannot be null")
-            elif subdiv == '':
-                raise ValueError(f"subdiv '{subdiv}' cannot be empty string")
-
-            workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(subdiv__isnull=False, subdiv=subdiv)
+        if perm_add_by == 'division':
+            workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(subdiv__isnull=False, subdiv=perm_identifier)
             if workunits.count() == 0:
-                raise ValueError(f"Could not find any work units related to subdiv: '{subdiv}'")
+                raise ValueError(f"Could not find any work units related to subdiv: '{perm_identifier}'")
 
-        elif add_by == 'wu':
-            ...
+        elif perm_add_by == 'wu':
+            raise ValueError('wu not yet implemeneted')
             #@TODO implement this
 
         else:
-            raise ValueError(f"Unrecognized add_by '{add_by}'. Must be one of these options {valid_action_by}")
+            raise ValueError(f"Unrecognized perm_add_by '{perm_add_by}'. Must be one of these options {valid_action_by}")
 
 
         existing_perms = TblPermissionsWorkUnit.objects.using("OrgChartWrite").filter(user_id__windows_username=windows_username)
@@ -1938,7 +1942,7 @@ def AddUserPermission(request):
             workunits = workunits.exclude(wu__in=[each.wu.wu for each in existing_perms])
 
             if workunits.count() == 0:
-                raise ValueError(f"'{windows_username}' already has permissions to all the WUs related to '{subdiv}'")
+                raise ValueError(f"'{windows_username}' already has permissions to all the WUs related to '{perm_identifier}'")
 
         # Save the data in a single atomic transaction
         try:
@@ -1960,17 +1964,17 @@ def AddUserPermission(request):
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "windows_username": user.windows_username,
-            "subdiv": subdiv,
-            "wu_list": list(workunits.values('wu', 'subdiv', 'wu_desc')),
+            "post_success"      : True,
+            "post_msg"          : None,
+            "windows_username"  : user.windows_username,
+            "perm_identifier"   : perm_identifier,
+            "wu_added_list"     : list(workunits.values('wu', 'subdiv', 'wu_desc')),
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
-            # "post_msg": f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
+            # "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
 
 
@@ -2007,8 +2011,8 @@ def DeleteUserPermission(request):
 
     try:
         windows_username    = json_blob['windows_username']
-        delete_by           = json_blob['delete_by']
-        wu                  = json_blob['wu']
+        perm_delete_by      = json_blob['perm_delete_by']
+        perm_identifier     = json_blob['perm_identifier']
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
@@ -2020,42 +2024,42 @@ def DeleteUserPermission(request):
             raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
 
         valid_action_by = ['division', 'wu']
-        if delete_by not in valid_action_by:
-            raise ValueError(f"delete_by '{delete_by}' must be one of these options {valid_action_by}")
+        if perm_delete_by not in valid_action_by:
+            raise ValueError(f"perm_delete_by '{perm_delete_by}' must be one of these options {valid_action_by}")
 
-        if delete_by == 'division':
+        if perm_delete_by == 'division':
             ...
             #@TODO implement this
 
-        elif delete_by == 'wu':
-            if wu is None:
-                raise ValueError(f"wu '{wu}' cannot be null")
-            elif wu == '':
-                raise ValueError(f"wu '{wu}' cannot be empty string")
+        elif perm_delete_by == 'wu':
+            if perm_identifier is None:
+                raise ValueError(f"wu '{perm_identifier}' cannot be null")
+            elif perm_identifier == '':
+                raise ValueError(f"wu '{perm_identifier}' cannot be empty string")
 
             try:
                 wu_permission = TblPermissionsWorkUnit.objects.using("OrgChartWrite").get(
                     user_id__windows_username=windows_username
-                    ,wu__wu=wu
+                    ,wu__wu=perm_identifier
                 )
                 wu_permission.delete()
             except ObjectDoesNotExist as e:
-                raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{wu}'")
+                raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{perm_identifier}'")
             except Exception as e:
                 raise e
 
         else:
-            raise ValueError(f"Unrecognized delete_by '{delete_by}'. Must be one of these options {valid_action_by}")
+            raise ValueError(f"Unrecognized perm_delete_by '{perm_delete_by}'. Must be one of these options {valid_action_by}")
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "windows_username": windows_username,
-            "wu": wu,
+            "post_success"      : True,
+            "post_msg"          : None,
+            "windows_username"  : windows_username,
+            "perm_identifier"   : perm_identifier,
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
-            # "post_msg": f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
