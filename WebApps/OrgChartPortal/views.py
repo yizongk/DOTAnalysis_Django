@@ -1929,8 +1929,11 @@ def AddUserPermission(request):
                 raise ValueError(f"Could not find any work units related to subdiv: '{perm_identifier}'")
 
         elif perm_add_by == 'wu':
-            raise ValueError('wu not yet implemeneted')
-            #@TODO implement this
+            workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(wu__isnull=False, wu=perm_identifier)
+            if workunits.count() == 0:
+                raise ValueError(f"Could not find the work unit related to wu: '{perm_identifier}'")
+            elif workunits.count() != 1:
+                raise ValueError(f"Found multiple work units related to wu: '{perm_identifier}' (Should only find one)")
 
         else:
             raise ValueError(f"Unrecognized perm_add_by '{perm_add_by}'. Must be one of these options {valid_action_by}")
