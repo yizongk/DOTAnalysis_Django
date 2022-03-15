@@ -6,6 +6,7 @@ from .models import *
 from django.db.models import Min, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, IntegrityError
 from django.utils import timezone
@@ -1055,9 +1056,6 @@ class EmpGridPageView(generic.ListView):
                 ,'floor_id__site_id'
             ).order_by('site_type_id__site_type')
 
-            import json
-            from django.core.serializers.json import DjangoJSONEncoder
-
             self.emp_entry_columns_json         = json.dumps(list(ag_grid_col_def)          , cls=DjangoJSONEncoder)
             self.emp_entries_json               = json.dumps(list(emp_entries)              , cls=DjangoJSONEncoder)
             self.supervisor_dropdown_list_json  = json.dumps(list(supervisor_dropdown_list) , cls=DjangoJSONEncoder)
@@ -1495,9 +1493,6 @@ class ManageUsersPageView(generic.ListView):
 
                 users_data = TblUsers.objects.using('OrgChartRead').all().order_by('windows_username').values(*fields_list)
 
-                import json
-                from django.core.serializers.json import DjangoJSONEncoder
-
                 self.ag_grid_col_def_json = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.users_data_json      = json.dumps(list(users_data)     , cls=DjangoJSONEncoder)
             else:
@@ -1812,9 +1807,6 @@ class ManagePermissionsPageView(generic.ListView):
                     ,{'headerName': 'Delete?'          , 'field': None                          , 'suppressMovable': True , 'lockPinned': True}
                 ]
                 fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
-
-                import json
-                from django.core.serializers.json import DjangoJSONEncoder
 
                 self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.permissions_json       = json.dumps(list(TblPermissionsWorkUnit.objects.using('OrgChartRead').all().order_by('wu').values(*fields_list)), cls=DjangoJSONEncoder)
