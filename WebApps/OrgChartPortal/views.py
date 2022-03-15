@@ -1907,11 +1907,23 @@ def AddUserPermission(request):
         if add_by not in valid_action_by:
             raise ValueError(f"add_by '{add_by}' must be one of these options {valid_action_by}")
 
+
+        try:
+            user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Could not find a valid user with this windows_username: '{windows_username}'")
+
+
         if add_by == 'division':
             if subdiv is None:
                 raise ValueError(f"subdiv '{subdiv}' cannot be null")
             elif subdiv == '':
                 raise ValueError(f"subdiv '{subdiv}' cannot be empty string")
+
+            workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(subdiv__isnull=False, subdiv=subdiv)
+            if workunits.count() == 0:
+                raise ValueError(f"Could not find any work units related to subdiv: '{subdiv}'")
+
         elif add_by == 'wu':
             ...
             #@TODO implement this
@@ -1919,14 +1931,6 @@ def AddUserPermission(request):
         else:
             raise ValueError(f"Unrecognized add_by '{add_by}'. Must be one of these options {valid_action_by}")
 
-        try:
-            user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"Could not find a valid user with this windows_username: '{windows_username}'")
-
-        workunits = TblWorkUnits.objects.using("OrgChartWrite").filter(subdiv__isnull=False, subdiv=subdiv)
-        if workunits.count() == 0:
-            raise ValueError(f"Could not find any work units related to subdiv: '{subdiv}'")
 
         existing_perms = TblPermissionsWorkUnit.objects.using("OrgChartWrite").filter(user_id__windows_username=windows_username)
         if existing_perms.count() > 0:
@@ -2006,6 +2010,10 @@ def DeleteUserPermission(request):
         delete_by           = json_blob['delete_by']
         wu                  = json_blob['wu']
 
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
+
         if windows_username is None:
             raise ValueError(f"windows_username '{windows_username}' cannot be null")
         elif windows_username == '':
@@ -2025,24 +2033,19 @@ def DeleteUserPermission(request):
             elif wu == '':
                 raise ValueError(f"wu '{wu}' cannot be empty string")
 
+            try:
+                wu_permission = TblPermissionsWorkUnit.objects.using("OrgChartWrite").get(
+                    user_id__windows_username=windows_username
+                    ,wu__wu=wu
+                )
+                wu_permission.delete()
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{wu}'")
+            except Exception as e:
+                raise e
+
         else:
             raise ValueError(f"Unrecognized delete_by '{delete_by}'. Must be one of these options {valid_action_by}")
-
-
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
-
-        try:
-            wu_permission = TblPermissionsWorkUnit.objects.using("OrgChartWrite").get(
-                user_id__windows_username=windows_username
-                ,wu__wu=wu
-            )
-            wu_permission.delete()
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{wu}'")
-        except Exception as e:
-            raise e
 
         return JsonResponse({
             "post_success": True,
