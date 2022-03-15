@@ -1763,6 +1763,13 @@ def DeleteUser(request):
             user.delete()
         except ObjectDoesNotExist as e:
             raise ValueError(f"Cannot find user with this username: '{windows_username}'")
+        except IntegrityError as e:
+            if 'REFERENCE constraint' in str(e):
+                raise ValueError(f"Violation of REFERENCE constraint: User still has permissions attached to them, please delete those first. Error happened while trying to delete '{windows_username}' from the user table")
+            else:
+                raise e
+        except Exception as e:
+            raise e
 
         return JsonResponse({
             "post_success"      : True,
@@ -1909,6 +1916,8 @@ def AddUserPermission(request):
             ...
             #@TODO implement this
 
+        else:
+            raise ValueError(f"Unrecognized add_by '{add_by}'. Must be one of these options {valid_action_by}")
 
         try:
             user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
@@ -2009,11 +2018,15 @@ def DeleteUserPermission(request):
         if delete_by == 'division':
             ...
             #@TODO implement this
+
         elif delete_by == 'wu':
             if wu is None:
                 raise ValueError(f"wu '{wu}' cannot be null")
             elif wu == '':
                 raise ValueError(f"wu '{wu}' cannot be empty string")
+
+        else:
+            raise ValueError(f"Unrecognized delete_by '{delete_by}'. Must be one of these options {valid_action_by}")
 
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
