@@ -49,6 +49,13 @@
                         <input id="reportingFormInputFITSStatenIsland"  readonly>
                     </div>
                     <div class="disabled field">
+                        <div>FITS Unassigned</div>
+                        <input id="reportingFormInputFITSUnassigned"    readonly>
+                    </div>
+                </div>
+
+                <div class="fields">
+                    <div class="disabled field">
                         <div>Open Siebel Reports</div>
                         <input id="reportingFormInputOpenSiebel"        readonly>
                     </div>
@@ -146,6 +153,7 @@
                     $("#reportingFormInputFITSManhattan").val(    '')
                     $("#reportingFormInputFITSQueens").val(       '')
                     $("#reportingFormInputFITSStatenIsland").val( '')
+                    $("#reportingFormInputFITSUnassigned").val(   '')
                     $("#reportingFormInputOpenSiebel").val(       '')
                     return
                 } else {
@@ -165,6 +173,7 @@
                             let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
                             let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
                             let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
+                            let fits_unassigned     = json_response.fits_unassigned == null      ? '' : json_response.fits_unassigned
                             let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
 
                             $("#reportingFormInputFITSBronx").val(        fits_bronx);
@@ -172,6 +181,7 @@
                             $("#reportingFormInputFITSManhattan").val(    fits_manhattan);
                             $("#reportingFormInputFITSQueens").val(       fits_queens);
                             $("#reportingFormInputFITSStatenIsland").val( fits_staten_island);
+                            $("#reportingFormInputFITSUnassigned").val(   fits_unassigned);
                             $("#reportingFormInputOpenSiebel").val(       open_siebel);
 
                         },
