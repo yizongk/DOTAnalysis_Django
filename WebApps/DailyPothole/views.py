@@ -225,7 +225,7 @@ class PotholeDataGridPageView(generic.ListView):
                     ,'repair_crew_count'
                     ,'holes_repaired'
                     ,'daily_crew_count'
-                    ,'last_modified_stamp'
+                    ,'last_modified_timestamp'
                     ,'last_modified_by_user_id__username'
                 ]
                 pothole_data = pothole_data.values(*fields_list) ## Run the query once, since the dataset is large, this will speed things up on the front end.
@@ -485,13 +485,13 @@ def UpdatePotholesData(request):
         if type_of_pothole_info == 'PotholeData':
             pothole_data.repair_crew_count = pothole_crew_count_input
             pothole_data.holes_repaired = regular_holes_repaired_input
-            pothole_data.last_modified_stamp = timestamp
+            pothole_data.last_modified_timestamp = timestamp
             pothole_data.last_modified_by_user_id = user_obj
             pothole_data.save()
 
         if type_of_pothole_info == 'TodayCrewData':
             pothole_data.daily_crew_count = today_pothole_crew_count_input
-            pothole_data.last_modified_stamp = timestamp
+            pothole_data.last_modified_timestamp = timestamp
             pothole_data.last_modified_by_user_id = user_obj
             pothole_data.save()
 
@@ -508,7 +508,7 @@ def UpdatePotholesData(request):
             # "today_date_input": today_date_input,
             # "timestamp": timestamp,
             # "user_id": user_obj.user_id,
-            # "record": [pothole_data.pothole_master_id, pothole_data.repair_date, pothole_data.operation_id.operation_id, pothole_data.boro_id.boro_id, pothole_data.repair_crew_count, pothole_data.holes_repaired, pothole_data.daily_crew_count, pothole_data.last_modified_stamp, pothole_data.last_modified_by_user_id.user_id],
+            # "record": [pothole_data.pothole_master_id, pothole_data.repair_date, pothole_data.operation_id.operation_id, pothole_data.boro_id.boro_id, pothole_data.repair_crew_count, pothole_data.holes_repaired, pothole_data.daily_crew_count, pothole_data.last_modified_timestamp, pothole_data.last_modified_by_user_id.user_id],
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({

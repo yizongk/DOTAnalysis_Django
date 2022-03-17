@@ -44,6 +44,7 @@ class TblUser(models.Model):
     def __str__(self):
         return self.username
 
+
 class TblPermission(models.Model):
     permission_id = models.AutoField(db_column='PermissionId', primary_key=True)
     user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='UserId', on_delete=models.DO_NOTHING)
@@ -66,7 +67,7 @@ class TblPotholeMaster(models.Model):
     daily_crew_count = models.DecimalField(db_column='PlannedCrewCount', max_digits=11, decimal_places=2)
     repair_crew_count = models.DecimalField(db_column='ActualCrewCount', max_digits=11, decimal_places=2)
     holes_repaired = models.IntegerField(db_column='ActualPotholesRepaired')
-    last_modified_stamp = models.DateTimeField(db_column='LastModifiedStamp')
+    last_modified_timestamp = models.DateTimeField(db_column='LastModifiedTimestamp')
     last_modified_by_user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='LastModifiedByUserId', on_delete=models.DO_NOTHING)
 
     class Meta:
