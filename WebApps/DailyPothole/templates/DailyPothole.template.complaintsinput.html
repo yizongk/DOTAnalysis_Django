@@ -55,6 +55,11 @@
                         <input id="modalNewRowFormInputFITSStatenIsland">
                     </div>
 
+                    <div>FITS Unassigned</div>
+                    <div id="modalNewRowFormInputBorderFITSUnassigned" class="ui input">
+                        <input id="modalNewRowFormInputFITSUnassigned">
+                    </div>
+
                     <div>Open Siebel Complaints</div>
                     <div id="modalNewRowFormInputBorderOpenSiebel" class="ui input">
                         <input id="modalNewRowFormInputOpenSiebel">
@@ -82,6 +87,7 @@
                     <th>FITS Manhattan</th>
                     <th>FITS Queens</th>
                     <th>FITS Staten Island</th>
+                    <th>FITS Unassigned</th>
                     <th>Siebel Complaints</th>
                 </tr>
             </thead>
@@ -96,6 +102,7 @@
                     <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSManhattan"     >{{ entry.fits_manhattan                }}</td>
                     <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSQueens"        >{{ entry.fits_queens                   }}</td>
                     <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSStatenIsland"  >{{ entry.fits_staten_island            }}</td>
+                    <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="FITSUnassigned"    >{{ entry.fits_unassigned               }}</td>
                     <td data-entryComplaintId="{{ entry.complaint_date|date:"Y-m-d"  }}" data-table="tblComplaint" data-column="SiebelComplaints"  >{{ entry.siebel_complaints             }}</td>
                 </tr>
                 {% endfor %}
@@ -116,7 +123,7 @@
     <script>
         $(document).ready( function () {
             // Reset the default viewport from css class container to container-fluid
-            $(".container").attr('class', 'container-fluid')
+            $(".container").attr('class', 'container-fluid');
 
 
             $.ajaxSetup({
@@ -130,10 +137,10 @@
 
             if ( document.getElementById('trigger_input') != null ) {
                 document.getElementById('trigger_input').addEventListener("click", function() {
-                    $('#modalNewRowForm').modal('show')
+                    $('#modalNewRowForm').modal('show');
                 });
             } else {
-                alert(`Cannot find a div with the ID 'trigger_input'`)
+                alert(`Cannot find a div with the ID 'trigger_input'`);
             }
 
 
@@ -172,30 +179,32 @@
 
             $('#modalNewRowFormAddButtonSubmitComplaintsData').on("click", function() {
 
-                let ComplaintDate       = $("#modalNewRowFormInputComplaintDate").val()
-                let FITSBronx           = $("#modalNewRowFormInputFITSBronx").val()
-                let FITSBrooklyn        = $("#modalNewRowFormInputFITSBrooklyn").val()
-                let FITSManhattan       = $("#modalNewRowFormInputFITSManhattan").val()
-                let FITSQueens          = $("#modalNewRowFormInputFITSQueens").val()
-                let FITSStatenIsland    = $("#modalNewRowFormInputFITSStatenIsland").val()
-                let OpenSiebel          = $("#modalNewRowFormInputOpenSiebel").val()
+                let ComplaintDate       = $("#modalNewRowFormInputComplaintDate").val();
+                let FITSBronx           = $("#modalNewRowFormInputFITSBronx").val();
+                let FITSBrooklyn        = $("#modalNewRowFormInputFITSBrooklyn").val();
+                let FITSManhattan       = $("#modalNewRowFormInputFITSManhattan").val();
+                let FITSQueens          = $("#modalNewRowFormInputFITSQueens").val();
+                let FITSStatenIsland    = $("#modalNewRowFormInputFITSStatenIsland").val();
+                let FITSUnassigned      = $("#modalNewRowFormInputFITSUnassigned").val();
+                let OpenSiebel          = $("#modalNewRowFormInputOpenSiebel").val();
 
-                $('#modalNewRowFormInputBorderComplaintDate'    ).removeClass("error")
+                $('#modalNewRowFormInputBorderComplaintDate'    ).removeClass("error");
 
                 if (ComplaintDate == '') {
-                    $('#modalNewRowFormInputBorderComplaintDate').addClass("error")
-                    return
+                    $('#modalNewRowFormInputBorderComplaintDate').addClass("error");
+                    return;
                 }
 
                 json_blob = {
-                    "complaint_date": ComplaintDate,
-                    "fits_bronx": FITSBronx,
-                    "fits_brooklyn": FITSBrooklyn,
-                    "fits_manhattan": FITSManhattan,
-                    "fits_queens": FITSQueens,
+                    "complaint_date"    : ComplaintDate,
+                    "fits_bronx"        : FITSBronx,
+                    "fits_brooklyn"     : FITSBrooklyn,
+                    "fits_manhattan"    : FITSManhattan,
+                    "fits_queens"       : FITSQueens,
                     "fits_staten_island": FITSStatenIsland,
-                    "open_siebel": OpenSiebel,
-                }
+                    "fits_unassigned"   : FITSUnassigned,
+                    "open_siebel"       : OpenSiebel,
+                };
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_complaints_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
@@ -206,6 +215,7 @@
                         let fits_manhattan      = json_response.fits_manhattan == null       ? 'None' : json_response.fits_manhattan
                         let fits_queens         = json_response.fits_queens == null          ? 'None' : json_response.fits_queens
                         let fits_staten_island  = json_response.fits_staten_island == null   ? 'None' : json_response.fits_staten_island
+                        let fits_unassigned     = json_response.fits_unassigned == null      ? 'None' : json_response.fits_unassigned
                         let open_siebel         = json_response.open_siebel == null          ? 'None' : json_response.open_siebel
 
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).text(        fits_bronx);
@@ -213,14 +223,16 @@
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).text(    fits_manhattan);
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).text(       fits_queens);
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).text( fits_staten_island);
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).text(   fits_unassigned);
                         $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).text( open_siebel);
 
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).css('color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).css('color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).css('color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css('color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css('color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css('color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).css(         'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).css(      'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).css(     'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css(        'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css(  'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).css(    'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css(  'color', 'green').animate( { color: 'black' } );
                     },
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))
@@ -232,41 +244,44 @@
             $('#modalNewRowFormInputComplaintDate').on("change", function() {
                 if ($(this).val() == "") {
                     // reset field values
-                    $("#modalNewRowFormInputFITSBronx").val(        '')
-                    $("#modalNewRowFormInputFITSBrooklyn").val(     '')
-                    $("#modalNewRowFormInputFITSManhattan").val(    '')
-                    $("#modalNewRowFormInputFITSQueens").val(       '')
-                    $("#modalNewRowFormInputFITSStatenIsland").val( '')
-                    $("#modalNewRowFormInputOpenSiebel").val(       '')
-                    return
+                    $("#modalNewRowFormInputFITSBronx").val(        '');
+                    $("#modalNewRowFormInputFITSBrooklyn").val(     '');
+                    $("#modalNewRowFormInputFITSManhattan").val(    '');
+                    $("#modalNewRowFormInputFITSQueens").val(       '');
+                    $("#modalNewRowFormInputFITSStatenIsland").val( '');
+                    $("#modalNewRowFormInputFITSUnassigned").val(   '');
+                    $("#modalNewRowFormInputOpenSiebel").val(       '');
+                    return;
                 } else {
                     // Call lookup api to populate fields
                     json_blob = {
                         "complaint_date": $(this).val(),
-                    }
+                    };
 
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
                         successCallbackFct=function(json_response) {
 
-                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx
-                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn
-                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
-                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
-                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
-                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
+                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx;
+                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn;
+                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan;
+                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens;
+                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island;
+                            let fits_unassigned     = json_response.fits_unassigned == null      ? '' : json_response.fits_unassigned;
+                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel;
 
                             $("#modalNewRowFormInputFITSBronx").val(        fits_bronx);
                             $("#modalNewRowFormInputFITSBrooklyn").val(     fits_brooklyn);
                             $("#modalNewRowFormInputFITSManhattan").val(    fits_manhattan);
                             $("#modalNewRowFormInputFITSQueens").val(       fits_queens);
                             $("#modalNewRowFormInputFITSStatenIsland").val( fits_staten_island);
+                            $('#modalNewRowFormInputFITSUnassigned').val(   fits_unassigned);
                             $("#modalNewRowFormInputOpenSiebel").val(       open_siebel);
 
                         },
                         failCallbackFct=function(json_response) {
-                            alert(JSON.stringify(json_response, null, 2))
+                            alert(JSON.stringify(json_response, null, 2));
                         }
-                    )
+                    );
 
                     return
                 }

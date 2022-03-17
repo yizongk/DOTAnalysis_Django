@@ -79,15 +79,16 @@ class TblPotholeMaster(models.Model):
 
 
 class TblComplaint(models.Model):
-    complaint_id = models.AutoField(db_column='ComplaintId', primary_key=True)
-    complaint_date = models.DateField(db_column='ComplaintDate', unique=True)
-    fits_complaints = models.IntegerField(db_column='FITSComplaints')
-    fits_bronx = models.IntegerField(db_column='FITSBronx')
-    fits_brooklyn = models.IntegerField(db_column='FITSBrooklyn')
-    fits_manhattan = models.IntegerField(db_column='FITSManhattan')
-    fits_queens = models.IntegerField(db_column='FITSQueens')
-    fits_staten_island = models.IntegerField(db_column='FITSStatenIsland')
-    siebel_complaints = models.IntegerField(db_column='SiebelComplaints')
+    complaint_id        = models.AutoField(     db_column='ComplaintId'     , primary_key=True)
+    complaint_date      = models.DateField(     db_column='ComplaintDate'   , unique=True)
+    fits_complaints     = models.IntegerField(  db_column='FITSComplaints'  )
+    fits_bronx          = models.IntegerField(  db_column='FITSBronx'       )
+    fits_brooklyn       = models.IntegerField(  db_column='FITSBrooklyn'    )
+    fits_manhattan      = models.IntegerField(  db_column='FITSManhattan'   )
+    fits_queens         = models.IntegerField(  db_column='FITSQueens'      )
+    fits_staten_island  = models.IntegerField(  db_column='FITSStatenIsland')
+    fits_unassigned     = models.IntegerField(  db_column='FITSUnassigned'  )
+    siebel_complaints   = models.IntegerField(  db_column='SiebelComplaints')
 
     class Meta:
         managed = False

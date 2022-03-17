@@ -561,6 +561,7 @@ def UpdateComplaintsData(request):
         fits_manhattan      = json_blob['fits_manhattan']
         fits_queens         = json_blob['fits_queens']
         fits_staten_island  = json_blob['fits_staten_island']
+        fits_unassigned     = json_blob['fits_unassigned']
         open_siebel         = json_blob['open_siebel']
 
 
@@ -622,6 +623,16 @@ def UpdateComplaintsData(request):
             raise
 
         try:
+            if fits_unassigned is not None and fits_unassigned != "":
+                fits_unassigned = int(fits_unassigned)
+            elif fits_unassigned == "":
+                fits_unassigned = None
+        except ValueError as e:
+            raise ValueError("fits_unassigned '{}' cannot be converted into an Int".format(fits_unassigned))
+        except Exception as e:
+            raise
+
+        try:
             if open_siebel is not None and open_siebel != "":
                 open_siebel = int(open_siebel)
             elif open_siebel == "":
@@ -646,31 +657,33 @@ def UpdateComplaintsData(request):
         complaint_data.fits_manhattan     = fits_manhattan
         complaint_data.fits_queens        = fits_queens
         complaint_data.fits_staten_island = fits_staten_island
+        complaint_data.fits_unassigned    = fits_unassigned
         complaint_data.siebel_complaints  = open_siebel
         complaint_data.save()
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "complaint_date": complaint_date,
-            "fits_bronx": fits_bronx,
-            "fits_brooklyn": fits_brooklyn,
-            "fits_manhattan": fits_manhattan,
-            "fits_queens": fits_queens,
+            "post_success"      : True,
+            "post_msg"          : None,
+            "complaint_date"    : complaint_date,
+            "fits_bronx"        : fits_bronx,
+            "fits_brooklyn"     : fits_brooklyn,
+            "fits_manhattan"    : fits_manhattan,
+            "fits_queens"       : fits_queens,
             "fits_staten_island": fits_staten_island,
-            "open_siebel": open_siebel,
+            "fits_unassigned"   : fits_unassigned,
+            "open_siebel"       : open_siebel,
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. For '{complaint_date}'",
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: UpdateComplaintsData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
 
 
@@ -722,30 +735,32 @@ def LookupComplaintsData(request):
         fits_manhattan      = complaint_data.fits_manhattan
         fits_queens         = complaint_data.fits_queens
         fits_staten_island  = complaint_data.fits_staten_island
+        fits_unassigned     = complaint_data.fits_unassigned
         open_siebel         = complaint_data.siebel_complaints
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "complaint_date": complaint_date,
-            "fits_bronx": fits_bronx,
-            "fits_brooklyn": fits_brooklyn,
-            "fits_manhattan": fits_manhattan,
-            "fits_queens": fits_queens,
-            "fits_staten_island": fits_staten_island,
-            "open_siebel": open_siebel,
+            "post_success"          : True,
+            "post_msg"              : None,
+            "complaint_date"        : complaint_date,
+            "fits_bronx"            : fits_bronx,
+            "fits_brooklyn"         : fits_brooklyn,
+            "fits_manhattan"        : fits_manhattan,
+            "fits_queens"           : fits_queens,
+            "fits_staten_island"    : fits_staten_island,
+            "fits_unassigned"       : fits_unassigned,
+            "open_siebel"           : open_siebel,
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_success"  : False,
+            "post_msg"      : "DailyPothole: LookupComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: LookupComplaintsData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
 
 
