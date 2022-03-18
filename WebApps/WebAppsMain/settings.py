@@ -335,6 +335,6 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 
 PER_IND_VERSION = '1.1.2'
 MAPS_APP_VERSION = '1.1.0'
-DAILY_POTHOLE_VERSION = '1.3.1'
+DAILY_POTHOLE_VERSION = '1.4.0'
 ORG_CHART_PORTAL_VERSION = '1.15.0'
 FLEET_DATA_COLLECTION_VERSION = '1.1.1'
