@@ -607,6 +607,24 @@ def GetClientTeammates(request):
         })
 
 
+def GetRemoteUserEmpObj(remote_user):
+    try:
+        try:
+            remote_user_obj = TblUsers.objects.using('OrgChartRead').get(windows_username__exact=remote_user)
+            remote_user_pms  = remote_user_obj.pms.pms
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"The client '{remote_user}' is not a user of the system")
+
+        try:
+            remote_user_emp_obj = TblEmployees.objects.using('OrgChartRead').get(pms__exact=remote_user_pms)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"The client '{remote_user}' with the pms '{remote_user_pms}' doesn't exist in the employees table")
+
+        return remote_user_emp_obj
+    except Exception as e:
+        raise ValueError(f"GetRemoteUserEmpObj(): {e}")
+
+
 def GetEmpGridStats(request):
     ## Authenticate User
     remote_user = None
@@ -722,8 +740,18 @@ def GetEmpGridStats(request):
                 if latest_change is None:
                     return None
                 else:
-                    last_updated_by_pms = get_latest_change()['updated_by_pms']
-                    return active_permitted_emp.get(pms=last_updated_by_pms)['annotated__full_name']
+                    lastest_updated_by_pms = get_latest_change()['updated_by_pms']
+
+                    ## If remote_user's PMS is the lastest_updated_by_pms, but remote_user don't have permission to edit his/her WU, their PMS won't be in active_permitted_emp, and will raise error
+                    remote_user_emp_obj = GetRemoteUserEmpObj(remote_user=remote_user)
+                    remote_user_wu      = remote_user_emp_obj.wu.wu
+                    allowed_wu_list     = get_allowed_list_of_wu(username=remote_user)
+                    if remote_user_wu not in allowed_wu_list:
+                        ## If remote_user don't have WU permission to self, just return a quick look of his/her name
+                        return f"{remote_user_emp_obj.last_name}, {remote_user_emp_obj.first_name}"
+                    else:
+                        ## remote_user's PMS is not the latest_udpated_by_pms, so the content in latest_udpated_by_pms should be in remote_user's WU permission
+                        return active_permitted_emp.get(pms=lastest_updated_by_pms)['annotated__full_name']
             except Exception as e:
                 raise ValueError(f"get_list_last_updated_by(): {e}")
 
