@@ -72,20 +72,10 @@ def get_allowed_list_of_wu(username=None):
         ).order_by('wu__wu')
 
         if wu_query.count() > 0:
-            return {
-                "success": True,
-                "err": "",
-                "wu_list": [each.wu.wu for each in wu_query],
-            }
-        return {
-            "success": False,
-            "err": "Cannot find any WU permissions for '{}'".format(username),
-        }
+            return [each.wu.wu for each in wu_query]
+        raise ValueError(f"Cannot find any WU permissions for '{username}'")
     except Exception as e:
-        return {
-            "success": False,
-            "err": 'Exception: OrgChartPortal: get_allowed_list_of_wu(): {}'.format(e),
-        }
+        raise ValueError(f"get_allowed_list_of_wu(): {e}")
 
 
 def get_active_lv_list():
@@ -175,11 +165,7 @@ def get_active_permitted_emp_qryset(username=None, fields_list=None, read_only=T
         if client_is_admin:
             return emp_data
         else:
-            allowed_wu_list_obj = get_allowed_list_of_wu(username)
-            if allowed_wu_list_obj['success'] == False:
-                raise ValueError(f"{allowed_wu_list_obj['err']}")
-            else:
-                allowed_wu_list = allowed_wu_list_obj['wu_list']
+            allowed_wu_list = get_allowed_list_of_wu(username)
 
             emp_data = emp_data.filter(
                 wu__wu__in=allowed_wu_list,
@@ -484,11 +470,7 @@ def UpdateEmployeeData(request):
         # Check for permission to edit the target employee row
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            wu_permissions = get_allowed_list_of_wu(remote_user)
-            if wu_permissions['success']:
-                allowed_wu_list = wu_permissions['wu_list']
-            else:
-                raise ValueError(f"get_allowed_list_of_wu() failed: {wu_permissions['err']}")
+            allowed_wu_list = get_allowed_list_of_wu(remote_user)
 
             try:
                 employee_row = get_active_tblemployee_qryset(read_only=False).get(pms__exact=to_pms)
@@ -1207,11 +1189,7 @@ def OrgChartGetEmpCsv(request):
         # Add allowed WU filter to queryset since client is not admin
         if not is_admin:
             #raise ValueError(f"'{remote_user}' is not admin. Only admins can access the OrgChartGetEmpCsv() api")
-            allowed_wu_list_obj = get_allowed_list_of_wu(remote_user)
-            if allowed_wu_list_obj['success'] == False:
-                raise ValueError(f"get_allowed_list_of_wu() failed: {allowed_wu_list_obj['err']}")
-            else:
-                allowed_wu_list = allowed_wu_list_obj['wu_list']
+            allowed_wu_list = get_allowed_list_of_wu(remote_user)
 
             emp_data = emp_data.filter(
                 Q(wu__in=allowed_wu_list)
