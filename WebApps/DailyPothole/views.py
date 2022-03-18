@@ -6,6 +6,7 @@ from django.db.models import Q
 from .models import *
 from django.http import JsonResponse
 import json
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -192,14 +193,161 @@ class PotholeDataEntryPageView(generic.ListView):
             return context
 
 
+def UpdatePotholesFromDataGrid(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdatePotholesFromDataGrid(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : "UpdatePotholesFromDataGrid():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        repair_date     = json_blob['repair_date']
+        operation       = json_blob['operation']
+        boro_long       = json_blob['boro_long']
+        column_name     = json_blob['column_name']
+        new_value       = json_blob['new_value']
+
+        if repair_date is None or repair_date == '':
+            raise ValueError(f"repair_date: '{repair_date}' cannot be None or Empty string")
+        if operation is None or operation == '':
+            raise ValueError(f"operation: '{operation}' cannot be None or Empty string")
+        if boro_long is None or boro_long == '':
+            raise ValueError(f"boro_long: '{boro_long}' cannot be None or Empty string")
+        if column_name is None or column_name == '':
+            raise ValueError(f"column_name: '{column_name}' cannot be None or Empty string")
+        if new_value is None or new_value == '':
+            raise ValueError(f"new_value: '{new_value}' cannot be None or Empty string")
+
+        try:
+            test_float = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"new_value: '{new_value}' must be a number")
+        if test_float < 0:
+            raise ValueError(f"new_value: '{new_value}' must be a positve number")
+        if len(new_value.split(".")) > 1 and len(new_value.split(".")[1]) > 2:
+            ## Str is a decimal and contain more than 2 decimal places
+            raise ValueError(f"new_value: '{new_value}' cannot not have more than 2 decimal places")
+
+
+        valid_editable_col = [
+            'Repair Crew Count'
+            ,'Holes Repaired'
+            ,'Daily Crew Count'
+        ]
+
+        if column_name not in valid_editable_col:
+            raise ValueError(f"column_name '{column_name}' is not a valid editable column")
+
+        try:
+            if column_name == 'Repair Crew Count':
+                new_value = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
+        except Exception as e:
+            raise
+
+        try:
+            if column_name == 'Holes Repaired':
+                new_value = int(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Int")
+        except Exception as e:
+            raise
+
+        try:
+            if column_name == 'Daily Crew Count':
+                new_value = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
+        except Exception as e:
+            raise
+
+
+        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        if not is_admin:
+            raise ValueError(f"'{remote_user}' is not an admin, and cannot use this API")
+
+        pothole_data = TblPotholeMaster.objects.using('DailyPothole')
+        try:
+            pothole_data = filter_out_excluded_operation_boro(pothole_data)
+            pothole_data = pothole_data.get(
+                operation_id__operation__exact=operation,
+                boro_id__boro_long__exact=boro_long,
+                repair_date__exact=repair_date,
+            )
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find pothole record with '{date_input}', '{operation_input}' and '{borough_input}'")
+
+        try:
+            user_obj = TblUser.objects.using("DailyPothole").get(
+                username__exact=remote_user,
+            )
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find user record with client's name '{remote_user}'")
+
+        from django.utils import timezone as tz, dateformat
+        timestamp = tz.localtime(tz.now())
+
+        if column_name == 'Repair Crew Count':
+            pothole_data.repair_crew_count = new_value
+
+        elif column_name == 'Holes Repaired':
+            pothole_data.holes_repaired = new_value
+
+        elif column_name == 'Daily Crew Count':
+            pothole_data.daily_crew_count = new_value
+
+
+        pothole_data.last_modified_timestamp = timestamp
+        pothole_data.last_modified_by_user_id = user_obj
+        pothole_data.save()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })
+
+
 class PotholeDataGridPageView(generic.ListView):
-    template_name = 'DailyPothole.template.datagrid.html'
-    context_object_name = 'daily_pothole'
+    template_name           = 'DailyPothole.template.datagrid.html'
+    context_object_name     = 'daily_pothole'
 
-    req_success = False
-    err_msg = ""
+    req_success             = False
+    err_msg                 = ""
+    client_is_admin         = False
 
-    client_is_admin = False
+    ag_grid_col_def_json    = None
+    pothole_data_json       = None
 
     def get_queryset(self):
         # Check for Active Admins
@@ -218,46 +366,56 @@ class PotholeDataGridPageView(generic.ListView):
                 )
                 pothole_data = filter_out_excluded_operation_boro(pothole_data)
                 pothole_data = pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
-                fields_list = [
-                    'repair_date'
-                    ,'operation_id__operation'
-                    ,'boro_id__boro_long'
-                    ,'repair_crew_count'
-                    ,'holes_repaired'
-                    ,'daily_crew_count'
-                    ,'last_modified_timestamp'
-                    ,'last_modified_by_user_id__username'
+
+                ag_grid_col_def = [
+                    {'headerName': 'Repair Date'                , 'field': 'repair_date'                        , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Operation'                 , 'field': 'operation_id__operation'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Boro'                      , 'field': 'boro_id__boro_long'                 , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Repair Crew Count'         , 'field': 'repair_crew_count'                  , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Holes Repaired'            , 'field': 'holes_repaired'                     , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Daily Crew Count'          , 'field': 'daily_crew_count'                   , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Last Modified Timestamp'   , 'field': 'last_modified_timestamp'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Last Modified by'          , 'field': 'last_modified_by_user_id__username' , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
                 ]
+                fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
+
                 pothole_data = pothole_data.values(*fields_list) ## Run the query once, since the dataset is large, this will speed things up on the front end.
+
+                self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def)  , cls=DjangoJSONEncoder)
+                self.pothole_data_json      = json.dumps(list(pothole_data)     , cls=DjangoJSONEncoder)
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
+            self.req_success    = False
+            self.err_msg        = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
             return None
 
         self.req_success = True
-        return pothole_data
+        return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = self.client_is_admin
 
-            context["client_is_admin"] = self.client_is_admin
+            context['ag_grid_col_def_json'] = self.ag_grid_col_def_json
+            context['pothole_data_json']    = self.pothole_data_json
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
+            self.req_success    = False
+            self.err_msg        = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = False
 
-            context["client_is_admin"] = False
+            context['ag_grid_col_def_json'] = None
+            context['pothole_data_json']    = None
             return context
 
 

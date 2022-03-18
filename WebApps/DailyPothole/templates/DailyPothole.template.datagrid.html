@@ -4,7 +4,15 @@
 {% load tz %}
 
 {% block custom_css %}
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
+
+    <style>
+        /* Dimming the notEditableColorCode column */
+        .notEditableColorCode {
+            background-color: lightgrey;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -17,44 +25,21 @@
 
 
     {% if client_is_admin %}
-        <table class="table table-striped table-hover" id="JSDataTable">
-            <thead>
-                <tr>
-                    <th>Repair Date</th>
-                    <th>Operation</th>
-                    <th>Boro</th>
-                    <th>Repair Crew Count</th>
-                    <th>Holes Repaired</th>
-                    <th>Daily Crew Count</th>
-                    <th>Last Modified Timestamp</th>
-                    <th>Last Modified by</th>
-                </tr>
-            </thead>
-
-            <body id="JSDataTableBody">
-                {% for entry in daily_pothole %}
-                <tr>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairDate"            >{{ entry.repair_date|date:"Y-m-d"          }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblOperation"     data-column="Operation"             >{{ entry.operation_id__operation            }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblBoro"          data-column="BoroLong"              >{{ entry.boro_id__boro_long                }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="RepairCrewCount"       >{{ entry.repair_crew_count                 }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="HolesRepaired"         >{{ entry.holes_repaired                    }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="DailyCrewCount"        >{{ entry.daily_crew_count                  }}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="tblPotholeMaster" data-column="LastModifiedTimestamp" >{{ entry.last_modified_timestamp|localtime}}</td>
-                    <td data-entryPotholeMasterId="{{ entry.pothole_master_id }}" data-table="TblUser"          data-column="Username"              >{{ entry.last_modified_by_user_id__username }}</td>
-                </tr>
-                {% endfor %}
-            </body>
-        </table>
+        <button id="export_csv_btn" class="ui button">
+            <i class="download icon"></i>
+            Export as CSV
+        </button>
+        <div style="height: 40vw; width: auto;">
+            <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+        </div>
     {% endif %}
 {% endblock content %}
 
 {% block custom_js %}
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}" type=""></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
 
-    {% comment %} JS Datatable stuff {% endcomment %}
     <script>
         $(document).ready( function () {
             // Reset the default viewport from css class container to container-fluid
@@ -69,37 +54,135 @@
                 }
             });
 
-            // Add extra row to the HTML table's header for individual column filtering
-            $('#JSDataTable thead tr').clone(true).appendTo( '#JSDataTable thead' );
-            $('#JSDataTable thead tr:eq(1) th').each( function (i) {
-                var title = $(this).text();
-                $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+            var col_def = {{ ag_grid_col_def_json|safe }};
+            var data    = {{ pothole_data_json|safe }};
 
-                $( 'input', this ).on( 'keyup change', function() {
-                    if ( table.column(i).search() !== this.value ) {
-                        table
-                            .column(i)
-                            .search( this.value )
-                            .draw();
+            function countDecimals({value=null} = {}) {
+                // str is a positive integer
+                if (Math.floor(value) === value) return 0;
+
+                var str = value.toString();
+                if (str === "") {
+                    return 0;
+                } else if (str.indexOf(".") !== -1 && str.indexOf("-") !== -1) {
+                    // str is a negative decimal
+                    return countDecimals({value: (str.split("-")[1] || '')});
+                } else if (str.indexOf(".") !== -1) {
+                    // str is a positive decimal
+                    return str.split(".")[1].length || 0;
+                } else {
+                    // str is a negative integer
+                    return countDecimals({value: (str.split("-")[1] || '')});
+                }
+            }
+
+            function isNumeric({str=null} = {}) { // Can accept float or int
+                if (typeof str != "string") return false // we only process strings!
+                return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+                       !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+            }
+
+            function cellValueSetter(ag_node) {
+                let post_params = null;
+
+                // Check Columns that cannot be blank
+                if ( ag_node.newValue == null || ag_node.newValue.toString().trim() === '' ) {
+                    alert(`${ag_node.colDef.headerName} cannot be null or empty`);
+                    return false;
+                }
+
+                // Check columns that must be postive int/decimal
+                if ( ag_node.colDef.headerName == 'Repair Crew Count' || ag_node.colDef.headerName == 'Daily Crew Count' ) {
+                    if ( !isNumeric({str: ag_node.newValue}) ) {
+                        alert(`${ag_node.colDef.headerName} must be a number`);
+                        return false;
+                    } else if ( ag_node.newValue.toString().indexOf("-") !== -1 ) {
+                        alert(`${ag_node.colDef.headerName} cannot a negative number`);
+                        return false;
+                    } else if ( countDecimals({value: ag_node.newValue}) > 2 ) {
+                        alert(`${ag_node.colDef.headerName} cannot have more than 2 decimal points`);
+                        return false;
                     }
-                });
-            } );
+                }
 
-            var table = $('#JSDataTable').DataTable({
-                dom: 'Blfrtip',  // Look at the documention on the possible options: https://datatables.net/reference/option/dom
-                buttons: [
-                    {
-                        extend: 'csv',
-                        text: 'Download as CSV',
-                    },
-                ],
-                orderCellsTop: true,
-                fixedHeader: true,
-                pageLength: 10,
-                lengthMenu: [ 10, 25, 50, 75, 100 ],
-                order: [[0, 'desc']]
+                if ( ag_node.colDef.headerName == 'Holes Repaired' ) {
+                    if ( !isNumeric({str: ag_node.newValue}) ) {
+                        alert(`${ag_node.colDef.headerName} must be a number`);
+                        return false;
+                    } else if ( ag_node.newValue.toString().indexOf("-") !== -1 ) {
+                        alert(`${ag_node.colDef.headerName} cannot a negative number`);
+                        return false;
+                    } else if ( ag_node.newValue.toString().indexOf(".") !== -1 ) {
+                        alert(`${ag_node.colDef.headerName} cannot a decimal number`);
+                        return false;
+                    }
+                }
+
+                post_params = {
+                    api_json_blob   : {
+                                        'repair_date'   : ag_node.data.repair_date,
+                                        'operation'     : ag_node.data.operation_id__operation,
+                                        'boro_long'     : ag_node.data.boro_id__boro_long,
+                                        'column_name'   : ag_node.colDef.headerName,
+                                        'new_value'     : ag_node.newValue,
+                                    },
+                    ag_node         : ag_node,
+                    post_url        : "{% url 'dailypothole_update_potholes_from_data_grid_api' %}",
+                }
+
+                return BaseAGGridCellValueSetter.setAndPOST(post_params);
+            }
+
+            function onFirstDataRendered(params) {
+                params.api.sizeColumnsToFit();
+            }
+
+            var editable_col = [
+                'Repair Crew Count'
+                ,'Holes Repaired'
+                ,'Daily Crew Count'
+            ];
+
+            for (i in col_def) {
+                ag_col = col_def[i];
+
+                // Editable cell def
+                if ( editable_col.includes(ag_col.headerName) ) {
+                    ag_col['editable']      = true;
+                    ag_col['valueSetter']   = cellValueSetter;
+                }
+            }
+
+            var gridOptions = {
+                //getRowNodeId: (data) => data.windows_username,
+                columnDefs: col_def,
+                rowData: data,
+                domLayout: 'normal',
+
+                defaultColDef: {
+                    sortable:   true,
+                    filter:     true,
+                    resizable:  true,
+                },
+
+                onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
+                rowSelection: 'single',
+
+                stopEditingWhenCellsLoseFocus: true,
+                pagination: true,
+                paginationAutoPageSize: true,
+
+                suppressExcelExport: true,
+                popupParent: document.body,
+            };
+
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+
+            $("#export_csv_btn").click(function() {
+                gridOptions.api.exportDataAsCsv();
             });
-
         });
     </script>
 {% endblock custom_js %}
