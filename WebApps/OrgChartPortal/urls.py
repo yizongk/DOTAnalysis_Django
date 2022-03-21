@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomePageView, AboutPageView, ContactPageView, EmpGridPageView, OrgChartPageView, AdminPanelPageView, ManageUsersPageView, ManagePermissionsPageView
+from .views import HomePageView, AboutPageView, ContactPageView, EmpGridPageView, OrgChartPageView, AdminPanelPageView, ManageUsersPageView, ManagePermissionsPageView, HowToUsePageView
 urlpatterns = [
     path('', HomePageView.as_view(), name='orgchartportal_home_view'),
     path('about', AboutPageView.as_view(), name='orgchartportal_about_view'),
@@ -22,4 +22,5 @@ urlpatterns = [
     path('update_user', views.UpdateUser, name='orgchartportal_update_user'),
     path('add_user_permission', views.AddUserPermission, name='orgchartportal_add_user_permission'),
     path('delete_user_permission', views.DeleteUserPermission, name='orgchartportal_delete_user_permission'),
+    path('how_to_use', HowToUsePageView.as_view(), name='orgchartportal_how_to_use_view'),
 ]

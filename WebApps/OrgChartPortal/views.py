@@ -2075,3 +2075,8 @@ def DeleteUserPermission(request):
             "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
             # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
+
+
+class HowToUsePageView(TemplateView):
+    """Display a PDF with instructions on how to use EmpGridPageView()"""
+    template_name = 'OrgChartPortal.template.howtouse.html'
