@@ -136,6 +136,31 @@
                 }
             });
 
+            function countDecimals({value=null} = {}) {
+                // str is a positive integer
+                if (Math.floor(value) === value) return 0;
+
+                var str = value.toString();
+                if (str === "") {
+                    return 0;
+                } else if (str.indexOf(".") !== -1 && str.indexOf("-") !== -1) {
+                    // str is a negative decimal
+                    return countDecimals({value: (str.split("-")[1] || '')});
+                } else if (str.indexOf(".") !== -1) {
+                    // str is a positive decimal
+                    return str.split(".")[1].length || 0;
+                } else {
+                    // str is a negative integer
+                    return countDecimals({value: (str.split("-")[1] || '')});
+                }
+            }
+
+            function isNumeric({str=null} = {}) { // Can accept float or int
+                if (typeof str != "string") return false // we only process strings!
+                return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+                       !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+            }
+
             $('#modalNewRowFormAddButtonPotholeData').on("click", function() {
 
                 let DateOfRepairInput           = $("#modalNewRowFormDateOfRepairInput").val()
@@ -152,28 +177,52 @@
 
 
                 if (DateOfRepairInput == '') {
-                    $('#modalNewRowFormDateOfRepairInputBorder').addClass("error")
-                    return
+                    $('#modalNewRowFormDateOfRepairInputBorder').addClass("error");
+                    return;
                 }
 
                 if (SelectOperationInput == '') {
-                    $('#modalNewRowFormSelectOperationInputForPotholeData').addClass("error")
-                    return
+                    $('#modalNewRowFormSelectOperationInputForPotholeData').addClass("error");
+                    return;
                 }
 
                 if (SelectBoroughInput == '') {
-                    $('#modalNewRowFormSelectBoroughInputForPotholeData').addClass("error")
-                    return
+                    $('#modalNewRowFormSelectBoroughInputForPotholeData').addClass("error");
+                    return;
                 }
 
                 if (PotholeCrewCountInput == '') {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error")
-                    return
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
+                    return;
+                } else if ( !isNumeric({str: PotholeCrewCountInput}) ) {
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
+                    alert(`Pothole Crew Count must be a number`);
+                    return;
+                } else if ( PotholeCrewCountInput.toString().indexOf("-") !== -1 ) {
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
+                    alert(`Pothole Crew Count cannot a negative number`);
+                    return;
+                } else if ( countDecimals({value: PotholeCrewCountInput}) > 2 ) {
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
+                    alert(`Pothole Crew Count cannot have more than 2 decimal points`);
+                    return;
                 }
 
                 if (RegularHolesRepairedInput == '') {
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error")
-                    return
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
+                    return;
+                } else if ( !isNumeric({str: RegularHolesRepairedInput}) ) {
+                    alert(`Regular Holes Repaired must be a number`);
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
+                    return;
+                } else if ( RegularHolesRepairedInput.toString().indexOf("-") !== -1 ) {
+                    alert(`Regular Holes Repaired cannot a negative number`);
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
+                    return;
+                } else if ( RegularHolesRepairedInput.toString().indexOf(".") !== -1 ) {
+                    alert(`Regular Holes Repaired cannot a decimal number`);
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
+                    return;
                 }
 
                 json_blob = {
@@ -213,6 +262,18 @@
                 if (TodayPotholeCrewCountInput == '') {
                     $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
                     return
+                } else if ( !isNumeric({str: TodayPotholeCrewCountInput}) ) {
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
+                    alert(`Today Pothole Crew Count must be a number`);
+                    return;
+                } else if ( TodayPotholeCrewCountInput.toString().indexOf("-") !== -1 ) {
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
+                    alert(`Today Pothole Crew Count cannot a negative number`);
+                    return;
+                } else if ( countDecimals({value: TodayPotholeCrewCountInput}) > 2 ) {
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
+                    alert(`Today Pothole Crew Count cannot have more than 2 decimal points`);
+                    return;
                 }
 
                 if (TodayDateInput == '') {
@@ -294,7 +355,9 @@
             $('.pothole_selection').on("change", function() {
                 if ($(this).attr('id') == 'modalNewRowFormDateOfRepairInput' && $(this).val() == "") {
                     // reset field values
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').removeClass("error")
                     $("#modalNewRowFormPotholeCrewCountInput").val('')
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').removeClass("error")
                     $("#modalNewRowFormRegularHolesRepairedInput").val('')
                     return
                 } else {
@@ -303,6 +366,9 @@
                     if ($('#modalNewRowFormDateOfRepairInput').val() == "") {
                         return
                     }
+
+                    $('#modalNewRowFormPotholeCrewCountInputBorder').removeClass("error")
+                    $('#modalNewRowFormRegularHolesRepairedInputBorder').removeClass("error")
 
                     json_blob = {
                         "look_up_date": $('#modalNewRowFormDateOfRepairInput').val(),
@@ -331,6 +397,7 @@
             $('.today_crew_count_selection').on("change", function() {
                 if ($(this).attr('id') == 'modalNewRowFormTodayDateInput' && $(this).val() == "") {
                     // reset field values
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').removeClass("error")
                     $("#modalNewRowFormTodayPotholeCrewCountInput").val('')
                     return
                 } else {
@@ -339,6 +406,8 @@
                     if ($('#modalNewRowFormTodayDateInput').val() == "") {
                         return
                     }
+
+                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').removeClass("error")
 
                     json_blob = {
                         "look_up_date": $('#modalNewRowFormTodayDateInput').val(),
