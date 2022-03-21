@@ -119,15 +119,25 @@
                 }
 
                 post_params = {
-                    api_json_blob   : {
-                                        'repair_date'   : ag_node.data.repair_date,
-                                        'operation'     : ag_node.data.operation_id__operation,
-                                        'boro_long'     : ag_node.data.boro_id__boro_long,
-                                        'column_name'   : ag_node.colDef.headerName,
-                                        'new_value'     : ag_node.newValue,
-                                    },
-                    ag_node         : ag_node,
-                    post_url        : "{% url 'dailypothole_update_potholes_from_data_grid_api' %}",
+                    api_json_blob       : {
+                                            'repair_date'   : ag_node.data.repair_date,
+                                            'operation'     : ag_node.data.operation_id__operation,
+                                            'boro_long'     : ag_node.data.boro_id__boro_long,
+                                            'column_name'   : ag_node.colDef.headerName,
+                                            'new_value'     : ag_node.newValue,
+                                        },
+                    ag_node             : ag_node,
+                    post_url            : "{% url 'dailypothole_update_potholes_from_data_grid_api' %}",
+                    on_success_callback : function(json_res) {
+                        ag_node.data['last_modified_by_user_id__username'] = `${json_res.post_data.updated_by}`;
+
+                        ag_node.api.refreshCells({
+                            rowNodes: [ag_node.node],
+                            columns: [
+                                'last_modified_by_user_id__username',
+                            ],
+                        });
+                    }
                 }
 
                 return BaseAGGridCellValueSetter.setAndPOST(post_params);

@@ -220,8 +220,8 @@ def UpdatePotholesFromDataGrid(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {e}",
         })
 
     try:
@@ -329,6 +329,14 @@ def UpdatePotholesFromDataGrid(request):
         return JsonResponse({
             "post_success"  : True,
             "post_msg"      : None,
+            "post_data"     : {
+                                "repair_date"   : repair_date
+                                ,"operation"    : operation
+                                ,"boro_long"    : boro_long
+                                ,"column_name"  : column_name
+                                ,"new_value"    : new_value
+                                ,"updated_by"   : user_obj.username
+                            },
         })
     except Exception as e:
         return JsonResponse({
