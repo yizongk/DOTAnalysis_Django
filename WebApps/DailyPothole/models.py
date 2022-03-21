@@ -60,15 +60,19 @@ class TblPermission(models.Model):
 
 
 class TblPotholeMaster(models.Model):
+    '''
+    Some of the ForeignKey has null=True, to allow for Django Queryset to use LEFT JOIN/LEFT OUTER JOIN (They are the same MS Sql Server) instead of INNER JOIN.
+    This way, the LEFT JOIN will keeps rows with NULL fks.(Especially when you you want to use some_model.values(...))
+    '''
     pothole_master_id = models.AutoField(db_column='PotholeMasterId', primary_key=True)
     repair_date = models.DateField(db_column='RepairDate')
-    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING)
+    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING, null=True)
+    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING, null=True)
     daily_crew_count = models.DecimalField(db_column='PlannedCrewCount', max_digits=11, decimal_places=2)
     repair_crew_count = models.DecimalField(db_column='ActualCrewCount', max_digits=11, decimal_places=2)
     holes_repaired = models.IntegerField(db_column='ActualPotholesRepaired')
     last_modified_timestamp = models.DateTimeField(db_column='LastModifiedTimestamp')
-    last_modified_by_user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='LastModifiedByUserId', on_delete=models.DO_NOTHING)
+    last_modified_by_user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='LastModifiedByUserId', on_delete=models.DO_NOTHING, null=True)
 
     class Meta:
         managed = False
