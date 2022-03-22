@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from django.views import generic
 from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.db.models import Min, Q, F, Value, Case, When
+from django.db.models import Min, Max, Q, F, Value, Case, When
 from django.db.models.functions import Concat
 import json
 from django.core.serializers.json import DjangoJSONEncoder
@@ -84,14 +84,31 @@ def get_active_lv_list():
 
 
 def get_active_tblemployee_qryset(read_only=True):
-    if read_only:
+    """
+        Return a queryset filtered to contain only records with active lv status plus a subset of 'L' leave status
+        Lv status 'L' is usually Inactive, but when it is due to 'B10' Leave Status Reason (Look up from payroll history), that employee is actually Active
+    """
+    try:
+        latest_pay_date = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
+        active_L_pms_qryset = TblPayrollHistory.objects.using('HRReportingRead').filter(
+            lv__exact='L'
+            ,lv_reason_code__exact='B10'
+            ,paydate__exact=latest_pay_date
+        )
+        active_L_pms_list = [each['pms'] for each in list(active_L_pms_qryset.values('pms', 'lname', 'fname'))]
+
+        if read_only:
             return TblEmployees.objects.using('OrgChartRead').filter(
-            lv__in=get_active_lv_list()
-        )
-    else:
-        return TblEmployees.objects.using('OrgChartWrite').filter(
-            lv__in=get_active_lv_list()
-        )
+                Q( lv__in=get_active_lv_list() )
+                | Q( pms__in=active_L_pms_list )
+            )
+        else:
+            return TblEmployees.objects.using('OrgChartWrite').filter(
+                Q( lv__in=get_active_lv_list() )
+                | Q( pms__in=active_L_pms_list )
+            )
+    except Exception as e:
+        raise ValueError(f"get_active_tblemployee_qryset(): {e}")
 
 
 def get_active_emp_qryset(

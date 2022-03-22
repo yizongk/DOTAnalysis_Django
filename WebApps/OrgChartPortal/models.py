@@ -152,6 +152,21 @@ class TblPermissionsWorkUnit(models.Model):
     def __str__(self):
         return self.wu
 
+class TblPayrollHistory(models.Model):
+    pms             = models.CharField(db_column='PMS-EMP-NO', max_length=7, primary_key=True)
+    lname           = models.CharField(db_column='LAST-NAME', max_length=50)
+    fname           = models.CharField(db_column='FIRST-NAME', max_length=50)
+    lv              = models.CharField(db_column='LEAVE-STATUS', max_length=2)
+    lv_reason_code  = models.CharField(db_column='LEAVE-STATUS-REASON-CODE', max_length=3)
+    paydate         = models.DateField(db_column='PayDate')
+
+    class Meta:
+        managed = False
+        db_table = 'tbl_PayrollHistory'
+
+    def __str__(self):
+        return f"{self.paydate} - {self.pms}"
+
 # class TblPositions(models.Model):
 #     position_id = models.AutoField(db_column='PositionID', primary_key=True)
 #     reports_to_position_id = models.ForeignKey(to='TblPositions', to_field='position_id', db_column='ReportsToPositionID', max_length=7, on_delete=models.DO_NOTHING)
