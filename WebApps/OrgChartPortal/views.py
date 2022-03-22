@@ -226,10 +226,14 @@ class EmpUpdateAndTrack:
             if self.new_value is None:      raise ValueError("new_value cannot be None.")
             if self.column_name is None:    raise ValueError("column_name cannot be None.")
 
-            ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. I need to trick it into storing EST time in sql server, so a manually -5 hour difference is applied here.
-            updated_on = timezone.now() - timezone.timedelta(hours=5)
+            ## timezone.now() is timezone awared, so when entered into the sql server, it will be stored as a UTC time. (Returns an aware or naive datetime.datetime, depending on settings.USE_TZ.)
+            updated_on = timezone.now()
             if updated_on is None:
-                raise ValueError("updated_on cannot be None.")
+                raise ValueError(f"updated_on cannot be None.")
+            if timezone.is_naive(updated_on):
+                raise ValueError(f"updated_on cannot be a naive datetime object: '{updated_on}'")
+            if timezone.is_aware(updated_on) and updated_on.tzname() not in ['UTC', 'Coordinated Universal Time']:
+                raise ValueError(f"updated_on must be an aware datetime object in UTC timezone. updated_on's value: '{updated_on}' and timezone: '{updated_on.tzname()}'")
 
             if self.column_name not in self.valid_column_names:
                 raise ValueError(f"{self.column_name} is not a valid column name.")
