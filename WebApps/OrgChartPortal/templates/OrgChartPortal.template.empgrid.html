@@ -652,7 +652,7 @@
                 successCallbackFct  : function(json_emp_grid_stats_response) {
                     let supervisor_completed                    = Math.floor(json_emp_grid_stats_response["post_data"]["supervisor_completed"]);
                     let office_title_completed                  = Math.floor(json_emp_grid_stats_response["post_data"]["office_title_completed"]);
-                    let list_last_updated_on                    = json_emp_grid_stats_response["post_data"]["list_last_updated_on"];
+                    let list_last_updated_on_est                = json_emp_grid_stats_response["post_data"]["list_last_updated_on_est"];
                     let list_last_updated_by                    = json_emp_grid_stats_response["post_data"]["list_last_updated_by"];
                     let inactive_supervisor_list                = json_emp_grid_stats_response["post_data"]["inactive_supervisor_list"];
                     let empty_or_invalid_floor_combo_list       = json_emp_grid_stats_response["post_data"]["empty_or_invalid_floor_combo_list"];
@@ -666,8 +666,8 @@
                     });
 
                     if ( document.getElementById('last_updated_time') != null ) {
-                        if (list_last_updated_on != null) {
-                            document.getElementById('last_updated_time').textContent = list_last_updated_on;
+                        if (list_last_updated_on_est != null) {
+                            document.getElementById('last_updated_time').textContent = list_last_updated_on_est;
                         } else {
                             document.getElementById('last_updated_time').textContent = 'NULL'
                         }

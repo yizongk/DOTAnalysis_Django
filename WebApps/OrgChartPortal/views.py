@@ -11,6 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, IntegrityError
 from django.utils import timezone
 from datetime import timedelta
+from dateutil import tz
 
 
 # Create your views here.
@@ -714,8 +715,7 @@ def GetEmpGridStats(request):
                 else:
                     changes = changes.order_by('-updated_on')[:1] ## Offset 0, Limit 1 in SQL
 
-                # raise ValueError('debug3')
-                return list(changes.values(
+                latest_change = list(changes.values(
                     'id'
                     ,'updated_on'
                     ,'updated_by_pms'
@@ -723,19 +723,21 @@ def GetEmpGridStats(request):
                     ,'new_value'
                     ,'column_name'
                 ))[0]
+                latest_change['updated_on_est'] = latest_change['updated_on'].astimezone(tz.gettz('America/New_York'))
+                return latest_change
             except Exception as e:
                 raise ValueError(f"get_latest_change(): {e}")
 
-        def get_list_last_updated_on():
+        def get_list_last_updated_on_est():
             try:
                 total_count = active_permitted_emp.count()
                 latest_change = get_latest_change()
                 if latest_change is None:
                     return None
                 else:
-                    return get_latest_change()['updated_on'].strftime('%m/%d/%Y %I:%M:%S %p')
+                    return get_latest_change()['updated_on_est'].strftime('%m/%d/%Y %I:%M:%S %p')
             except Exception as e:
-                raise ValueError(f"get_list_last_updated_on(): {e}")
+                raise ValueError(f"get_list_last_updated_on_est(): {e}")
 
         def get_list_last_updated_by():
             try:
@@ -870,7 +872,7 @@ def GetEmpGridStats(request):
         emp_grid_stats_json = {
             'supervisor_completed'                      : get_supervisor_completed()
             ,'office_title_completed'                   : get_office_title_completed()
-            ,'list_last_updated_on'                     : get_list_last_updated_on()
+            ,'list_last_updated_on_est'                 : get_list_last_updated_on_est()
             ,'list_last_updated_by'                     : get_list_last_updated_by()
             ,'inactive_supervisor_list'                 : get_inactive_supervisors()
             ,'empty_or_invalid_floor_combo_list'        : get_empty_or_invalid_floor_combo_list()

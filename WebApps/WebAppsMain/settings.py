@@ -315,7 +315,8 @@ USE_I18N = True
 
 USE_L10N = True
 
-# Take a look at README.md for some info on USE_TZ
+# Take a look at README.md for some info on USE_TZ.
+# Essentially timezone.now() returns UTC time if USE_TZ = True, else returns local time (In our case, America/New_York which is also EDT, Eastern Daylight Time)
 USE_TZ = True
 
 
