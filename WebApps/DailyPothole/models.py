@@ -35,7 +35,7 @@ class TblOperation(models.Model):
 class TblUser(models.Model):
     user_id = models.AutoField(db_column='UserId', primary_key=True)
     username = models.CharField(db_column='Username', max_length=50, unique=True)
-    is_admin = models.BooleanField(db_column='IsAdmin')
+    is_admin = models.BooleanField(db_column='IsAdmin', blank=False, null=False, default=False)
 
     class Meta:
         managed = False
