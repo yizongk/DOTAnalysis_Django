@@ -47,6 +47,21 @@ def get_excluded_operation_boro_as_where_cond():
     """
 
 
+## Check if remote user is admin and is active
+def user_is_active_admin(username):
+    try:
+        admin_query = TblUser.objects.using('DailyPothole').filter(
+            username=username,
+            is_admin=True, ## Filters for Admins
+        )
+        if admin_query.count() > 0:
+            return True
+        else:
+            return False
+    except Exception as e:
+        raise ValueError(f"user_is_active_admin(): {e}")
+
+
 ## Return a list of Operations that the client has access to. Returns not limited to 1 Operation, can be multiple.
 def get_user_operation_and_boro_permission(username):
     try:
@@ -75,27 +90,6 @@ def get_user_operation_and_boro_permission(username):
         }
 
 
-## Check if remote user is admin and is active
-def user_is_active_admin(username):
-    try:
-        admin_query = TblUser.objects.using('DailyPothole').filter(
-            username=username,
-            is_admin=True, ## Filters for Admins
-        )
-        if admin_query.count() > 0:
-            return {
-                "isAdmin": True,
-                "err": "",
-            }
-        return {
-            "isAdmin": False,
-            "err": '{} is not an active Admin'.format(username),
-        }
-    except Exception as e:
-        return {
-            "isAdmin": None,
-            "err": 'Exception: user_is_active_admin(): {}'.format(e),
-        }
 
 
 # Create your views here.
@@ -107,7 +101,7 @@ class HomePageView(TemplateView):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
-            self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+            self.client_is_admin = user_is_active_admin(self.request.user)
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
@@ -136,11 +130,11 @@ class PotholeDataEntryPageView(generic.ListView):
     today = None
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
                 self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
@@ -287,7 +281,7 @@ def UpdatePotholesFromDataGrid(request):
             raise
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError(f"'{remote_user}' is not an admin, and cannot use this API")
 
@@ -358,11 +352,11 @@ class PotholeDataGridPageView(generic.ListView):
     pothole_data_json       = None
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 import datetime
                 from dateutil.relativedelta import relativedelta
@@ -437,11 +431,11 @@ class ComplaintsInputPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 import datetime
                 from dateutil.relativedelta import relativedelta
@@ -492,11 +486,11 @@ class ReportsPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 complaints_data = TblComplaint.objects.none()
             else:
@@ -620,7 +614,7 @@ def UpdatePotholesData(request):
             raise
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             user_permissions = get_user_operation_and_boro_permission(remote_user)
             if user_permissions['success'] == False:
@@ -809,7 +803,7 @@ def UpdateComplaintsData(request):
             raise
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to edit complaints data".format(remote_user))
 
@@ -887,7 +881,7 @@ def LookupComplaintsData(request):
     try:
         complaint_date      = json_blob['complaint_date']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin. Only admins can access the LookupComplaintsData() api".format(remote_user))
 
@@ -963,7 +957,7 @@ def GetPDFReport(request):
     try:
         report_date      = json_blob['report_date']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin. Only admins can access the GetPDFReport() api".format(remote_user))
 
@@ -1584,7 +1578,7 @@ def LookupPotholesAndCrewData(request):
         operation       = json_blob['operation']
         borough         = json_blob['borough']
 
-        client_is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        client_is_admin = user_is_active_admin(remote_user)
 
         ## Get the core data
         if client_is_admin:
@@ -1640,11 +1634,11 @@ class AdminPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 complaints_data = TblComplaint.objects.none()
             else:
@@ -1689,11 +1683,11 @@ class UsersPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 users_data = TblUser.objects.using('DailyPothole').all().order_by('username')
             else:
@@ -1764,7 +1758,7 @@ def AddUser(request):
         is_admin_input      = json_blob['is_admin_input']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
 
@@ -1844,7 +1838,7 @@ def UpdateUser(request):
         column              = json_blob['column']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to update a user".format(remote_user))
 
@@ -1928,7 +1922,7 @@ def DeleteUser(request):
     try:
         user_id               = json_blob['user_id']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
 
@@ -1976,11 +1970,11 @@ class UserPermissionsPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
                 self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
@@ -2063,7 +2057,7 @@ def AddUserPermission(request):
         boro_input          = json_blob['boro_input']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to add user permissions".format(remote_user))
 
@@ -2159,7 +2153,7 @@ def UpdateUserPermission(request):
         column              = json_blob['column']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to update user permissions".format(remote_user))
 
@@ -2256,7 +2250,7 @@ def DeleteUserPermission(request):
     try:
         permission_id               = json_blob['permission_id']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to delete user permissions".format(remote_user))
 
@@ -2301,11 +2295,11 @@ class CsvExportPageView(generic.ListView):
     operation_list = []
 
     def get_queryset(self):
-        # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-
         ## Get the core data
         try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
             if self.client_is_admin:
                 complaints_data = TblComplaint.objects.none()
             else:
@@ -2384,7 +2378,7 @@ def GetCsvExport(request):
         operation_list  = json_blob['operation_list']
         type_of_query   = json_blob['type_of_query']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin. Only admins can access the GetCsvExport() api".format(remote_user))
 
