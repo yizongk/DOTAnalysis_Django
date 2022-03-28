@@ -211,7 +211,8 @@ When you call save():
     * A current timestamp is also generated.
     * Then with all the data, it will be inserted into  tblChanges.
     * If the new value is the same as the old value, this will return False.
-    * Returns true if all is successful.
+    * Returns True if new data is saved successfully.
+    * Returns False if new data is the same as old data, presenting no change.
     * Raise the error if any exception is present.
 '''
 class EmpUpdateAndTrack:
@@ -274,7 +275,7 @@ class EmpUpdateAndTrack:
                     raise ValueError(f"The Supervisor PMS '{self.new_value}' is either inactive or doesn't exist")
 
                 ## Data validation
-                if employee_row.supervisor_pms is not None and employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
+                if employee_row.supervisor_pms_id is not None and employee_row.supervisor_pms_id.strip() != '' and employee_row.supervisor_pms.pms == new_supervisor_obj.pms:
                     ## Return False because new value is same as old value
                     return False
                 elif employee_row.pms == new_supervisor_obj.pms:
@@ -426,7 +427,7 @@ class EmpUpdateAndTrack:
 
                     change_record_row.save(using='OrgChartWrite')
             except Exception as e:
-                raise
+                raise ValueError(f"While commiting the atomic transaction: {e}")
 
             return True
         except Exception as e:
