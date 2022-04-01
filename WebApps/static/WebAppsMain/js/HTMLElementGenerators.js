@@ -13,27 +13,31 @@ function createSelectElement({
     class_names=null,   // Leave this null if you don't want to add class names to the select element. A single string containing one or more class names
 }={} ) {
     // Creates dropdown with customizations
-    select = document.createElement('select');
+    try {
+        select = document.createElement('select');
 
-    arr.forEach( (each) => {
-        var option = document.createElement('option');
-        if (id != null) { select.id = id; }
-        if (class_names != null) { select.class = class_names; }
+        arr.forEach( (each) => {
+            var option = document.createElement('option');
+            if (id != null) { select.id = id; }
+            if (class_names != null) { select.class = class_names; }
 
-        if (set_val_fct != null) {
-            option.value = set_val_fct(each);
-        } else {
-            option.value = each
-        }
+            if (set_val_fct != null) {
+                option.value = set_val_fct(each);
+            } else {
+                option.value = each
+            }
 
-        if (set_txt_fct != null) {
-            option.text = set_txt_fct(each);
-        } else {
-            option.text = each;
-        }
+            if (set_txt_fct != null) {
+                option.text = set_txt_fct(each);
+            } else {
+                option.text = each;
+            }
 
-        select.appendChild(option);
-    });
+            select.appendChild(option);
+        });
 
-    return select
+        return select
+    } catch(e) {
+        throw `createSelectElement(): ${e}`;
+    }
 }
