@@ -205,7 +205,7 @@ class BaseAGGridCellSelectEditor {
             this.select_array.sort(this.selected_val_bubble_up_sort_fct)
         }
 
-        this.select = createSelectDropdown({ // From HTMLElementGenerator.js
+        this.select = createSelectElement({ // From HTMLElementGenerator.js
             id          : this.select_id,
             arr         : this.select_array,
             set_val_fct : this.option_set_val_fct,

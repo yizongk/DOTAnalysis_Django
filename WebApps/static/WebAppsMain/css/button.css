@@ -38,7 +38,7 @@
     .webGridBtn.webGridBtn-Warning:hover {
         color: #FFFFFF;
         background-color: #980404;
-    }   
+    }
 
 @media all and (max-width:30em) {
     .webGridBtn.webGridBtn-Success {
