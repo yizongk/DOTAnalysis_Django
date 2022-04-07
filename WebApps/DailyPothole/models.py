@@ -70,7 +70,7 @@ class TblPermission(models.Model):
         db_table = 'tblPermission'
 
     def __str__(self):
-        return self.user_id
+        return f"{self.permission_id}"
 
 
 class TblPotholeMaster(models.Model):

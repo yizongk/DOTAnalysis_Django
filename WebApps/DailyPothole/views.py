@@ -398,7 +398,7 @@ class PotholeDataEntryPageView(generic.ListView):
                     op_boro_combo[each.operation_boro_id.operation_id.operation].append(each.operation_boro_id.boro_id.boro_long)
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: DateCollectionPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: DataCollectionPageView(): get_queryset(): {}".format(e)
             return None
 
         self.req_success = True
@@ -416,7 +416,7 @@ class PotholeDataEntryPageView(generic.ListView):
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: DateCollectionPageView(): get_context_data(): {}".format(e)
+            self.err_msg = "Exception: DataCollectionPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -603,17 +603,17 @@ class PotholeDataGridPageView(generic.ListView):
                 pothole_data = get_active_pothole_qryset().filter(
                     repair_date__range=[then, now]
                 )
-                pothole_data = pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
+                pothole_data = pothole_data.order_by('-repair_date', 'operation_boro_id__operation_id', 'operation_boro_id__boro_id')
 
                 ag_grid_col_def = [
-                    {'headerName': 'Repair Date'                , 'field': 'repair_date'                        , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Operation'                 , 'field': 'operation_id__operation'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Boro'                      , 'field': 'boro_id__boro_long'                 , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Repair Crew Count'         , 'field': 'repair_crew_count'                  , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Holes Repaired'            , 'field': 'holes_repaired'                     , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Daily Crew Count'          , 'field': 'daily_crew_count'                   , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Last Modified Timestamp'   , 'field': 'last_modified_timestamp'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Last Modified by'          , 'field': 'last_modified_by_user_id__username' , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    {'headerName': 'Repair Date'                , 'field': 'repair_date'                                , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Operation'                 , 'field': 'operation_boro_id__operation_id__operation' , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Boro'                      , 'field': 'operation_boro_id__boro_id__boro_long'      , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Repair Crew Count'         , 'field': 'repair_crew_count'                          , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Holes Repaired'            , 'field': 'holes_repaired'                             , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Daily Crew Count'          , 'field': 'daily_crew_count'                           , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Last Modified Timestamp'   , 'field': 'last_modified_timestamp'                    , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Last Modified by'          , 'field': 'last_modified_by_user_id__username'         , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
                 ]
                 fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
 
