@@ -58,12 +58,14 @@ class TestViewPageResponses(unittest.TestCase):
             'dailypothole_admin_panel_view',
             'dailypothole_users_panel_view',
             'dailypothole_user_permissions_panel_view',
-            'dailypothole_csv_export_view',]
+            'dailypothole_csv_export_view',
+        ]
 
     def test_views_response(self):
         for view in self.views:
             response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True")
 
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
