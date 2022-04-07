@@ -18,81 +18,61 @@
 
     {% if req_success %}
         <div class="ui one column centered grid">
-            <div class="ui modal" id="modalNewRowForm">
+            <div class="ui modal" id="modalForm">
                 <div class="content center aligned">
 
                     <div class="ui horizontal divider">Enter potholes data</div>
 
                     <div>Date of repair</div>
-                    <div id="modalNewRowFormDateOfRepairInputBorder" class="ui input">
-                        <input type="date" id="modalNewRowFormDateOfRepairInput" class="pothole_selection" value="{{ -1|addDaysFromToday }}">
+                    <div id="DateOfRepairBorder" class="ui input">
+                        <input type="date" id="DateOfRepairInput" value="{{ -1|addDaysFromToday }}">
                     </div>
 
                     <div>Select operation</div>
-                    <div id="modalNewRowFormSelectOperationInputForPotholeDataBorder">
-                        <select id="modalNewRowFormSelectOperationInputForPotholeData" class="ui selection dropdown pothole_selection">
-                            {% for each in operation_list %}
-                                <option value="{{ each }}">{{ each }}</option>
-                            {% endfor %}
-                        </select>
+                    <div id="SelectPotholeDataOperationBorder">
                     </div>
 
                     <div>Select borough</div>
-                    <div id="modalNewRowFormSelectBoroughInputForPotholeDataBorder">
-                        <select id="modalNewRowFormSelectBoroughInputForPotholeData" class="ui selection dropdown pothole_selection">
-                            {% for each in boro_list %}
-                                <option value="{{ each }}">{{ each }}</option>
-                            {% endfor %}
-                        </select>
+                    <div id="SelectPotholeDataBoroughBorder">
                     </div>
 
                     <div>Enter pothole crew count</div>
-                    <div id="modalNewRowFormPotholeCrewCountInputBorder" class="ui input">
-                        <input id="modalNewRowFormPotholeCrewCountInput">
+                    <div id="PotholeCrewCountBorder" class="ui input">
+                        <input id="PotholeCrewCountInput">
                     </div>
 
                     <div>Enter potholes repaired</div>
-                    <div id="modalNewRowFormRegularHolesRepairedInputBorder" class="ui input">
-                        <input id="modalNewRowFormRegularHolesRepairedInput">
+                    <div id="RegularHolesRepairedBorder" class="ui input">
+                        <input id="RegularHolesRepaired">
                     </div>
 
                     <div class="ui horizontal divider"></div>
-                    <button id="modalNewRowFormAddButtonPotholeData" class="ui teal large button">Save Pothole Info</button>
+                    <button id="SavePotholeData" class="ui teal large button">Save Pothole Info</button>
 
 
 
                     <div class="ui horizontal divider">Enter information for today's crews</div>
 
                     <div>Today's pothole crew count</div>
-                    <div id="modalNewRowFormTodayPotholeCrewCountInputBorder" class="ui input">
-                        <input id="modalNewRowFormTodayPotholeCrewCountInput">
+                    <div id="TodayPotholeCrewCountBorder" class="ui input">
+                        <input id="TodayPotholeCrewCount">
                     </div>
 
                     <div>Date</div>
-                    <div id="modalNewRowFormTodayDateInputBorder" class="ui input">
-                        <input type="date" id="modalNewRowFormTodayDateInput" class="today_crew_count_selection" value="{{ today }}">
+                    <div id="TodayCrewDateBorder" class="ui input">
+                        <input type="date" id="TodayCrewDate" value="{{ today }}">
                     </div>
 
                     <div>Select operation</div>
-                    <div id="modalNewRowFormSelectOperationInputForTodayCrewBorder">
-                        <select id="modalNewRowFormSelectOperationInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
-                            {% for each in operation_list %}
-                                <option value="{{ each }}">{{ each }}</option>
-                            {% endfor %}
-                        </select>
+                    <div id="SelectTodayCrewOperationBorder">
                     </div>
 
                     <div>Select borough</div>
-                    <div id="modalNewRowFormSelectBoroughInputForTodayCrewBorder">
-                        <select id="modalNewRowFormSelectBoroughInputForTodayCrew" class="ui selection dropdown today_crew_count_selection">
-                            {% for each in boro_list %}
-                                <option value="{{ each }}">{{ each }}</option>
-                            {% endfor %}
-                        </select>
+                    <div id="SelectTodayCrewBoroughBorder">
                     </div>
 
                     <div class="ui horizontal divider"></div>
-                    <button id="modalNewRowFormAddButtonTodayCrewData" class="ui teal large button">Save Today's Crew</button>
+                    <button id="SaveTodayCrewData" class="ui teal large button">Save Today's Crew</button>
 
                 </div>
                 <div id='successMsg'></div>
@@ -108,35 +88,37 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/FomanticUICustomExtension.js' %}"></script>
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
         {% if req_success %}
         $(document).ready( function () {
-            // Initializing the existing select divs into a dropdown menu for Formantic UI
-            $('#modalNewRowFormSelectOperationInputForPotholeData').dropdown();
-            $('#modalNewRowFormSelectBoroughInputForPotholeData').dropdown();
-            $('#modalNewRowFormSelectOperationInputForTodayCrew').dropdown();
-            $('#modalNewRowFormSelectBoroughInputForTodayCrew').dropdown();
+            let select_pothole_data_operation_id    = 'SelectPotholeDataOperation';
+            let select_pothole_data_boro_id         = 'SelectPotholeDataBorough';
+            let select_today_crew_operation_id      = 'SelectTodayCrewOperation';
+            let select_today_crew_boro_id           = 'SelectTodayCrewBorough';
 
-            if ( document.getElementById('trigger_input') != null ) {
-                document.getElementById('trigger_input').addEventListener("click", function() {
-                    $('#modalNewRowForm').modal('show')
-                });
-            } else {
-                alert(`Cannot find a div with the ID 'trigger_input'`)
+            const operation_boro_permissions = {{ operation_boro_permissions|safe }};
+            var operations_dropdown = [];
+            for (const [key, value] of Object.entries(operation_boro_permissions)) {
+                if (operations_dropdown.length == 0) { // Let the first item to the default selected item
+                    operations_dropdown.push({
+                        value: key,
+                        text: key,
+                        selected : true
+                    });
+                } else {
+                    operations_dropdown.push({
+                        value: key,
+                        text: key,
+                    });
+                }
             }
 
-            $.ajaxSetup({
-                beforeSend: function (xhr, settings) {
-                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                        // Only send the token to relative URLs i.e. locally.
-                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-                    }
-                }
-            });
 
-            function countDecimals({value=null} = {}) {
+            function count_decimals({value=null} = {}) {
                 // str is a positive integer
                 if (Math.floor(value) === value) return 0;
 
@@ -145,291 +127,348 @@
                     return 0;
                 } else if (str.indexOf(".") !== -1 && str.indexOf("-") !== -1) {
                     // str is a negative decimal
-                    return countDecimals({value: (str.split("-")[1] || '')});
+                    return count_decimals({value: (str.split("-")[1] || '')});
                 } else if (str.indexOf(".") !== -1) {
                     // str is a positive decimal
                     return str.split(".")[1].length || 0;
                 } else {
                     // str is a negative integer
-                    return countDecimals({value: (str.split("-")[1] || '')});
+                    return count_decimals({value: (str.split("-")[1] || '')});
                 }
             }
 
-            function isNumeric({str=null} = {}) { // Can accept float or int
+            function is_numeric({str=null} = {}) { // Can accept float or int
                 if (typeof str != "string") return false // we only process strings!
                 return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
                        !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
             }
 
-            $('#modalNewRowFormAddButtonPotholeData').on("click", function() {
+            function setup_boro_dropdown({parent_id=parent_id, select_id=null, operation=null}={}) {
+                try {
+                    let boros_dropdown  = [];
+                    operation_boro_permissions[operation].forEach((x, index) => {
+                        if ( index === 0 ) {
+                            boros_dropdown.push({
+                                value: x,
+                                text: x,
+                                selected : true,
+                            });
+                        } else {
+                            boros_dropdown.push({
+                                value: x,
+                                text: x,
+                            });
+                        }
+                    });
 
-                let DateOfRepairInput           = $("#modalNewRowFormDateOfRepairInput").val()
-                let SelectOperationInput        = $("#modalNewRowFormSelectOperationInputForPotholeData").val()
-                let SelectBoroughInput          = $("#modalNewRowFormSelectBoroughInputForPotholeData").val()
-                let PotholeCrewCountInput       = $("#modalNewRowFormPotholeCrewCountInput").val()
-                let RegularHolesRepairedInput   = $("#modalNewRowFormRegularHolesRepairedInput").val()
-
-                $('#modalNewRowFormDateOfRepairInputBorder'             ).removeClass("error")
-                $('#modalNewRowFormSelectOperationInputForPotholeData'  ).removeClass("error")
-                $('#modalNewRowFormSelectBoroughInputForPotholeData'    ).removeClass("error")
-                $('#modalNewRowFormPotholeCrewCountInputBorder'         ).removeClass("error")
-                $('#modalNewRowFormRegularHolesRepairedInputBorder'     ).removeClass("error")
-
-
-                if (DateOfRepairInput == '') {
-                    $('#modalNewRowFormDateOfRepairInputBorder').addClass("error");
-                    return;
+                    initialize_fomantic_dropdown({parent_id: parent_id, select_id: select_id, arr: boros_dropdown});
+                } catch(e) {
+                    throw `setup_boro_dropdown(): ${e}`;
                 }
+            }
 
-                if (SelectOperationInput == '') {
-                    $('#modalNewRowFormSelectOperationInputForPotholeData').addClass("error");
-                    return;
-                }
-
-                if (SelectBoroughInput == '') {
-                    $('#modalNewRowFormSelectBoroughInputForPotholeData').addClass("error");
-                    return;
-                }
-
-                if (PotholeCrewCountInput == '') {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
-                    return;
-                } else if ( !isNumeric({str: PotholeCrewCountInput}) ) {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
-                    alert(`Pothole Crew Count must be a number`);
-                    return;
-                } else if ( PotholeCrewCountInput.toString().indexOf("-") !== -1 ) {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
-                    alert(`Pothole Crew Count cannot a negative number`);
-                    return;
-                } else if ( countDecimals({value: PotholeCrewCountInput}) > 2 ) {
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').addClass("error");
-                    alert(`Pothole Crew Count cannot have more than 2 decimal points`);
-                    return;
-                }
-
-                if (RegularHolesRepairedInput == '') {
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
-                    return;
-                } else if ( !isNumeric({str: RegularHolesRepairedInput}) ) {
-                    alert(`Regular Holes Repaired must be a number`);
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
-                    return;
-                } else if ( RegularHolesRepairedInput.toString().indexOf("-") !== -1 ) {
-                    alert(`Regular Holes Repaired cannot a negative number`);
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
-                    return;
-                } else if ( RegularHolesRepairedInput.toString().indexOf(".") !== -1 ) {
-                    alert(`Regular Holes Repaired cannot a decimal number`);
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').addClass("error");
-                    return;
-                }
-
+            function lookup_and_display_potholes_data_group_data() {
                 json_blob = {
-                    "type_of_pothole_info": "PotholeData",
-                    "date_of_repair_input": DateOfRepairInput,
-                    "select_operation_input": SelectOperationInput,
-                    "select_borough_input": SelectBoroughInput,
-                    "pothole_crew_count_input": PotholeCrewCountInput,
-                    "regular_holes_repaired_input": RegularHolesRepairedInput,
-                    "today_pothole_crew_count_input": null,
-                    "today_date_input": null,
+                    "look_up_date": $('#DateOfRepairInput').val(),
+                    "operation": $(`#${select_pothole_data_operation_id}`).val(),
+                    "borough": $(`#${select_pothole_data_boro_id}`).val(),
                 }
-
-                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`data saved successfully!`)
-                        //alert(JSON.stringify(json_response, null, 2))
-                    }),
-                    failCallbackFct=function(json_response) {
-                        alert(JSON.stringify(json_response, null, 2))
+
+                        let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
+                        let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
+
+                        $("#PotholeCrewCountInput").val(repair_crew_count);
+                        $("#RegularHolesRepaired").val(holes_repaired);
+
                     }
-            })
+                )
+            }
 
-            $('#modalNewRowFormAddButtonTodayCrewData').on("click", function() {
-
-                let TodayPotholeCrewCountInput  = $("#modalNewRowFormTodayPotholeCrewCountInput").val()
-                let TodayDateInput              = $("#modalNewRowFormTodayDateInput").val()
-                let SelectOperationInput        = $("#modalNewRowFormSelectOperationInputForTodayCrew").val()
-                let SelectBoroughInput          = $("#modalNewRowFormSelectBoroughInputForTodayCrew").val()
-
-                $('#modalNewRowFormTodayPotholeCrewCountInputBorder'    ).removeClass("error")
-                $('#modalNewRowFormTodayDateInputBorder'                ).removeClass("error")
-                $('#modalNewRowFormSelectOperationInputForTodayCrew'    ).removeClass("error")
-                $('#modalNewRowFormSelectBoroughInputForTodayCrew'      ).removeClass("error")
-
-
-                if (TodayPotholeCrewCountInput == '') {
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
+            function potholes_data_change_event() {
+                if ($(this).attr('id') == 'DateOfRepairInput' && $(this).val() == "") {
+                    // reset field values if date is cleared by user
+                    $('#PotholeCrewCountBorder').removeClass("error")
+                    $("#PotholeCrewCountInput").val('')
+                    $('#RegularHolesRepairedBorder').removeClass("error")
+                    $("#RegularHolesRepaired").val('')
                     return
-                } else if ( !isNumeric({str: TodayPotholeCrewCountInput}) ) {
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
-                    alert(`Today Pothole Crew Count must be a number`);
-                    return;
-                } else if ( TodayPotholeCrewCountInput.toString().indexOf("-") !== -1 ) {
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
-                    alert(`Today Pothole Crew Count cannot a negative number`);
-                    return;
-                } else if ( countDecimals({value: TodayPotholeCrewCountInput}) > 2 ) {
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').addClass("error")
-                    alert(`Today Pothole Crew Count cannot have more than 2 decimal points`);
-                    return;
-                }
+                } else {
+                    // Call lookup api to populate fields
+                    // If the date input is not entered, skip the api call
+                    if ($('#DateOfRepairInput').val() == "") {
+                        return
+                    }
 
-                if (TodayDateInput == '') {
-                    $('#modalNewRowFormTodayDateInputBorder').addClass("error")
+                    $('#PotholeCrewCountBorder').removeClass("error")
+                    $('#RegularHolesRepairedBorder').removeClass("error")
+
+                    lookup_and_display_potholes_data_group_data();
+
                     return
                 }
+            }
 
-                if (SelectOperationInput == '') {
-                    $('#modalNewRowFormSelectOperationInputForTodayCrew').addClass("error")
-                    return
+            function setup_potholes_data_group_change_event() {
+                // Remove any existing identical event first
+                $(`#DateOfRepairInput, #${select_pothole_data_operation_id}, #${select_pothole_data_boro_id}`).off("change", potholes_data_change_event);
+                $(`#DateOfRepairInput, #${select_pothole_data_operation_id}, #${select_pothole_data_boro_id}`).on("change", potholes_data_change_event);
+            }
+
+            function setup_potholes_data_boro_dropdown_and_change_event() {
+                try {
+                    let selected_op = $(`#${select_pothole_data_operation_id}`).val();
+                    setup_boro_dropdown({parent_id: 'SelectPotholeDataBoroughBorder', select_id: select_pothole_data_boro_id, operation: selected_op});
+                    setup_potholes_data_group_change_event();
+                } catch(e) {
+                    throw `setup_potholes_data_boro_dropdown_and_change_event(): ${e}`;
                 }
+            }
 
-                if (SelectBoroughInput == '') {
-                    $('#modalNewRowFormSelectBoroughInputForTodayCrew').addClass("error")
-                    return
-                }
+            function setup_potholes_data_save_btn() {
+                $('#SavePotholeData').on("click", function() {
 
+                    let DateOfRepairInput           = $("#DateOfRepairInput").val();
+                    let SelectOperationInput        = $(`#${select_pothole_data_operation_id}`).dropdown('get text');
+                    let SelectBoroughInput          = $(`#${select_pothole_data_boro_id}`).dropdown('get text');
+                    let PotholeCrewCountInput       = $("#PotholeCrewCountInput").val();
+                    let RegularHolesRepaired        = $("#RegularHolesRepaired").val();
+
+                    $('#DateOfRepairBorder'                 ).removeClass("error");
+                    $(`#${select_pothole_data_operation_id}`).parent().removeClass("error");
+                    $(`#${select_pothole_data_boro_id}`     ).parent().removeClass("error");
+                    $('#PotholeCrewCountBorder'             ).removeClass("error");
+                    $('#RegularHolesRepairedBorder'         ).removeClass("error");
+
+
+                    if (DateOfRepairInput === null || DateOfRepairInput == '') {
+                        $('#DateOfRepairBorder').addClass("error");
+                        return;
+                    }
+
+                    if (SelectOperationInput === null || SelectOperationInput == '') {
+                        $(`#${select_pothole_data_operation_id}`).parent().addClass("error");
+                        return;
+                    }
+
+                    if (SelectBoroughInput === null || SelectBoroughInput == '') {
+                        $(`#${select_pothole_data_boro_id}`).parent().addClass("error");
+                        return;
+                    }
+
+                    if (PotholeCrewCountInput === null || PotholeCrewCountInput == '') {
+                        $('#PotholeCrewCountBorder').addClass("error");
+                        return;
+                    } else if ( !is_numeric({str: PotholeCrewCountInput}) ) {
+                        $('#PotholeCrewCountBorder').addClass("error");
+                        alert(`Pothole Crew Count must be a number`);
+                        return;
+                    } else if ( PotholeCrewCountInput.toString().indexOf("-") !== -1 ) {
+                        $('#PotholeCrewCountBorder').addClass("error");
+                        alert(`Pothole Crew Count cannot a negative number`);
+                        return;
+                    } else if ( count_decimals({value: PotholeCrewCountInput}) > 2 ) {
+                        $('#PotholeCrewCountBorder').addClass("error");
+                        alert(`Pothole Crew Count cannot have more than 2 decimal points`);
+                        return;
+                    }
+
+                    if (RegularHolesRepaired === null || RegularHolesRepaired == '') {
+                        $('#RegularHolesRepairedBorder').addClass("error");
+                        return;
+                    } else if ( !is_numeric({str: RegularHolesRepaired}) ) {
+                        alert(`Regular Holes Repaired must be a number`);
+                        $('#RegularHolesRepairedBorder').addClass("error");
+                        return;
+                    } else if ( RegularHolesRepaired.toString().indexOf("-") !== -1 ) {
+                        alert(`Regular Holes Repaired cannot a negative number`);
+                        $('#RegularHolesRepairedBorder').addClass("error");
+                        return;
+                    } else if ( RegularHolesRepaired.toString().indexOf(".") !== -1 ) {
+                        alert(`Regular Holes Repaired cannot a decimal number`);
+                        $('#RegularHolesRepairedBorder').addClass("error");
+                        return;
+                    }
+
+                    json_blob = {
+                        "request_type"              : "PotholeData",
+                        "date_of_repair"            : DateOfRepairInput,
+                        "operation"                 : SelectOperationInput,
+                        "borough"                   : SelectBoroughInput,
+                        "crew_count"                : PotholeCrewCountInput,
+                        "holes_repaired"            : RegularHolesRepaired,
+                        "planned_crew_count"        : null,
+                        "planned_date"              : null,
+                    }
+
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+                            alert(`data saved successfully!`)
+                            //alert(JSON.stringify(json_response, null, 2))
+                        }),
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                })
+            }
+
+            function setup_potholes_data_group() {
+                initialize_fomantic_dropdown({parent_id: 'SelectPotholeDataOperationBorder', select_id: select_pothole_data_operation_id, arr: operations_dropdown})
+                $(`#${select_pothole_data_operation_id}`).on("change", function() {
+                    setup_potholes_data_boro_dropdown_and_change_event();
+                });
+                setup_potholes_data_boro_dropdown_and_change_event()
+                setup_potholes_data_save_btn();
+            }
+
+            function lookup_and_display_today_crew_group_data() {
                 json_blob = {
-                    "type_of_pothole_info": "TodayCrewData",
-                    "date_of_repair_input": null,
-                    "select_operation_input": SelectOperationInput,
-                    "select_borough_input": SelectBoroughInput,
-                    "pothole_crew_count_input": null,
-                    "regular_holes_repaired_input": null,
-                    "today_pothole_crew_count_input": TodayPotholeCrewCountInput,
-                    "today_date_input": TodayDateInput,
+                    "look_up_date": $('#TodayCrewDate').val(),
+                    "operation": $(`#${select_today_crew_operation_id}`).val(),
+                    "borough": $(`#${select_today_crew_boro_id}`).val(),
                 }
-
-                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`data saved successfully!`)
-                        //alert(JSON.stringify(json_response, null, 2))
-                    }),
-                    failCallbackFct=function(json_response) {
-                        alert(JSON.stringify(json_response, null, 2))
-                    }
-            })
 
+                        let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
+
+                        $("#TodayPotholeCrewCount").val(daily_crew_count);
+
+                    }
+                )
+            }
+
+            function today_crew_change_event() {
+                if ($(this).attr('id') == 'TodayCrewDate' && $(this).val() == "") {
+                    // reset field values if user cleared the dates field
+                    $('#TodayPotholeCrewCountBorder').removeClass("error")
+                    $("#TodayPotholeCrewCount").val('')
+                    return
+                } else {
+                    // Call lookup api to populate fields
+                    // If the date input is not entered, skip the api call
+                    if ($('#TodayCrewDate').val() == "") {
+                        return
+                    }
+
+                    $('#TodayPotholeCrewCountBorder').removeClass("error")
+
+                    lookup_and_display_today_crew_group_data();
+
+                    return
+                }
+            }
+
+            function setup_today_crew_group_change_event() {
+                // Remove any existing identical event first
+                $(`#TodayCrewDate, #${select_today_crew_operation_id}, #${select_today_crew_boro_id}`).off("change", today_crew_change_event);
+                $(`#TodayCrewDate, #${select_today_crew_operation_id}, #${select_today_crew_boro_id}`).on("change", today_crew_change_event);
+            }
+
+            function setup_today_crew_boro_dropdown_and_change_event() {
+                try {
+                    let selected_op = $(`#${select_today_crew_operation_id}`).val();
+                    setup_boro_dropdown({parent_id: 'SelectTodayCrewBoroughBorder', select_id: select_today_crew_boro_id, operation: selected_op});
+                    setup_today_crew_group_change_event();
+                } catch(e) {
+                    throw `setup_today_crew_boro_dropdown_and_change_event(): ${e}`;
+                }
+            }
+
+            function setup_today_crew_save_btn() {
+                $('#SaveTodayCrewData').on("click", function() {
+
+                    let TodayPotholeCrewCount       = $("#TodayPotholeCrewCount").val();
+                    let TodayCrewDate               = $("#TodayCrewDate").val();
+                    let SelectOperationInput        = $(`#${select_today_crew_operation_id}`).dropdown('get text');
+                    let SelectBoroughInput          = $(`#${select_today_crew_boro_id}`).dropdown('get text');
+
+                    $('#TodayPotholeCrewCountBorder'    ).removeClass("error");
+                    $('#TodayCrewDateBorder'            ).removeClass("error");
+                    $(`#${select_today_crew_operation_id}`     ).parent().removeClass("error");
+                    $(`#${select_today_crew_boro_id}`   ).parent().removeClass("error");
+
+
+                    if (TodayPotholeCrewCount == '') {
+                        $('#TodayPotholeCrewCountBorder').addClass("error")
+                        return
+                    } else if ( !is_numeric({str: TodayPotholeCrewCount}) ) {
+                        $('#TodayPotholeCrewCountBorder').addClass("error")
+                        alert(`Today Pothole Crew Count must be a number`);
+                        return;
+                    } else if ( TodayPotholeCrewCount.toString().indexOf("-") !== -1 ) {
+                        $('#TodayPotholeCrewCountBorder').addClass("error")
+                        alert(`Today Pothole Crew Count cannot a negative number`);
+                        return;
+                    } else if ( count_decimals({value: TodayPotholeCrewCount}) > 2 ) {
+                        $('#TodayPotholeCrewCountBorder').addClass("error")
+                        alert(`Today Pothole Crew Count cannot have more than 2 decimal points`);
+                        return;
+                    }
+
+                    if (TodayCrewDate === null || TodayCrewDate == '') {
+                        $('#TodayCrewDateBorder').addClass("error");
+                        return;
+                    }
+
+                    if (SelectOperationInput === null || SelectOperationInput == '') {
+                        $(`#${select_today_crew_operation_id}`).parent().addClass("error");
+                        return;
+                    }
+
+                    if (SelectBoroughInput === null || SelectBoroughInput == '') {
+                        $(`#${select_today_crew_boro_id}`).parent().addClass("error");
+                        return;
+                    }
+
+                    json_blob = {
+                        "request_type"              : "TodayCrewData",
+                        "date_of_repair"            : null,
+                        "operation"                 : SelectOperationInput,
+                        "borough"                   : SelectBoroughInput,
+                        "crew_count"                : null,
+                        "holes_repaired"            : null,
+                        "planned_crew_count"        : TodayPotholeCrewCount,
+                        "planned_date"              : TodayCrewDate,
+                    }
+
+                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_update_potholes_data_api' %}", http_request_method="POST",
+                        successCallbackFct=function(json_response) {
+                            alert(`data saved successfully!`)
+                            //alert(JSON.stringify(json_response, null, 2))
+                        }),
+                        failCallbackFct=function(json_response) {
+                            alert(JSON.stringify(json_response, null, 2))
+                        }
+                })
+            }
+
+            function setup_today_crew_group() {
+                initialize_fomantic_dropdown({parent_id: 'SelectTodayCrewOperationBorder', select_id: select_today_crew_operation_id, arr: operations_dropdown})
+                $(`#${select_today_crew_operation_id}`).on("change", function() {
+                    setup_today_crew_boro_dropdown_and_change_event();
+                });
+                setup_today_crew_boro_dropdown_and_change_event();
+                setup_today_crew_save_btn();
+            }
+
+
+            // Initializes the two groups of data
+            setup_potholes_data_group();
+            setup_today_crew_group();
+
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
 
             // An initial load of the pothole and crew data if it already exists
-            json_blob = {
-                "look_up_date": $('#modalNewRowFormDateOfRepairInput').val(),
-                "operation": $('#modalNewRowFormSelectOperationInputForPotholeData').val(),
-                "borough": $('#modalNewRowFormSelectBoroughInputForPotholeData').val(),
-            }
-            sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
-                successCallbackFct=function(json_response) {
-
-                    let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
-                    let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
-
-                    $("#modalNewRowFormPotholeCrewCountInput").val(     repair_crew_count);
-                    $("#modalNewRowFormRegularHolesRepairedInput").val( holes_repaired);
-
-                },
-                failCallbackFct=function(json_response) {
-                    //alert(JSON.stringify(json_response, null, 2))
-                }
-            )
-
-            json_blob = {
-                "look_up_date": $('#modalNewRowFormTodayDateInput').val(),
-                "operation": $('#modalNewRowFormSelectOperationInputForTodayCrew').val(),
-                "borough": $('#modalNewRowFormSelectBoroughInputForTodayCrew').val(),
-            }
-            sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
-                successCallbackFct=function(json_response) {
-
-                    let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
-
-                    $("#modalNewRowFormTodayPotholeCrewCountInput").val(daily_crew_count);
-
-                },
-                failCallbackFct=function(json_response) {
-                    //alert(JSON.stringify(json_response, null, 2))
-                }
-            )
-            // Now on date change, refresh those data
-            $('.pothole_selection').on("change", function() {
-                if ($(this).attr('id') == 'modalNewRowFormDateOfRepairInput' && $(this).val() == "") {
-                    // reset field values
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').removeClass("error")
-                    $("#modalNewRowFormPotholeCrewCountInput").val('')
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').removeClass("error")
-                    $("#modalNewRowFormRegularHolesRepairedInput").val('')
-                    return
-                } else {
-                    // Call lookup api to populate fields
-                    // If the date input is not entered, skip the api call
-                    if ($('#modalNewRowFormDateOfRepairInput').val() == "") {
-                        return
-                    }
-
-                    $('#modalNewRowFormPotholeCrewCountInputBorder').removeClass("error")
-                    $('#modalNewRowFormRegularHolesRepairedInputBorder').removeClass("error")
-
-                    json_blob = {
-                        "look_up_date": $('#modalNewRowFormDateOfRepairInput').val(),
-                        "operation": $('#modalNewRowFormSelectOperationInputForPotholeData').val(),
-                        "borough": $('#modalNewRowFormSelectBoroughInputForPotholeData').val(),
-                    }
-                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
-                        successCallbackFct=function(json_response) {
-
-                            let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
-                            let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
-
-                            $("#modalNewRowFormPotholeCrewCountInput").val(     repair_crew_count);
-                            $("#modalNewRowFormRegularHolesRepairedInput").val( holes_repaired);
-
-                        },
-                        failCallbackFct=function(json_response) {
-                            //alert(JSON.stringify(json_response, null, 2))
-                        }
-                    )
-
-                    return
-                }
-            })
-
-            $('.today_crew_count_selection').on("change", function() {
-                if ($(this).attr('id') == 'modalNewRowFormTodayDateInput' && $(this).val() == "") {
-                    // reset field values
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').removeClass("error")
-                    $("#modalNewRowFormTodayPotholeCrewCountInput").val('')
-                    return
-                } else {
-                    // Call lookup api to populate fields
-                    // If the date input is not entered, skip the api call
-                    if ($('#modalNewRowFormTodayDateInput').val() == "") {
-                        return
-                    }
-
-                    $('#modalNewRowFormTodayPotholeCrewCountInputBorder').removeClass("error")
-
-                    json_blob = {
-                        "look_up_date": $('#modalNewRowFormTodayDateInput').val(),
-                        "operation": $('#modalNewRowFormSelectOperationInputForTodayCrew').val(),
-                        "borough": $('#modalNewRowFormSelectBoroughInputForTodayCrew').val(),
-                    }
-                    sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
-                        successCallbackFct=function(json_response) {
-
-                            let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
-
-                            $("#modalNewRowFormTodayPotholeCrewCountInput").val(daily_crew_count);
-
-                        },
-                        failCallbackFct=function(json_response) {
-                            //alert(JSON.stringify(json_response, null, 2))
-                        }
-                    )
-
-                    return
-                }
-            })
+            lookup_and_display_potholes_data_group_data();
+            lookup_and_display_today_crew_group_data();
 
         });
         {% endif %}
