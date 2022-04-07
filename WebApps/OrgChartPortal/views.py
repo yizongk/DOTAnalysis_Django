@@ -44,44 +44,56 @@ def user_is_active_admin(username=None):
 class HomePageView(TemplateView):
     template_name = 'OrgChartPortal.template.home.html'
     client_is_admin = False
+    req_success     = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-            context["client_is_admin"] = self.client_is_admin
+            context["client_is_admin"]  = self.client_is_admin
+            context["req_success"]      = self.req_success
+            context["err_msg"]          = self.err_msg
             return context
         except Exception as e:
-            context["client_is_admin"] = False
+            context["client_is_admin"]  = False
+            context["req_success"]      = False
+            context["err_msg"]          = None
             return context
 
 
 class AboutPageView(TemplateView):
-    template_name = 'OrgChartPortal.template.about.html'
-    req_success = True
+    template_name   = 'OrgChartPortal.template.about.html'
+    req_success     = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
+            context["req_success"]  = self.req_success
+            context["err_msg"]      = self.err_msg
             return context
         except Exception as e:
-            context["req_success"] = False
+            context["req_success"]  = False
+            context["err_msg"]      = None
             return context
 
 
 class ContactPageView(TemplateView):
     template_name = 'OrgChartPortal.template.contact.html'
     req_success = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
+            context["req_success"]  = self.req_success
+            context["err_msg"]      = self.err_msg
             return context
         except Exception as e:
-            context["req_success"] = False
+            context["req_success"]  = False
+            context["err_msg"]      = None
             return context
 
 

@@ -61,50 +61,59 @@ def get_active_user_permissions_qryset(username):
 
 # Create your views here.
 class HomePageView(TemplateView):
-    template_name = 'DailyPothole.template.home.html'
+    template_name   = 'DailyPothole.template.home.html'
     client_is_admin = False
-    req_success = True
+    req_success     = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)
-            context["req_success"] = self.req_success
-            context["client_is_admin"] = self.client_is_admin
+            context["req_success"]      = self.req_success
+            context["err_msg"]          = self.err_msg
+            context["client_is_admin"]  = self.client_is_admin
             return context
         except Exception as e:
-            context["req_success"] = False
-            context["client_is_admin"] = False
+            context["req_success"]      = False
+            context["err_msg"]          = False
+            context["client_is_admin"]  = False
             return context
 
 
 class AboutPageView(TemplateView):
-    template_name = 'DailyPothole.template.about.html'
-    req_success = True
+    template_name   = 'DailyPothole.template.about.html'
+    req_success     = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
+            context["req_success"]  = self.req_success
+            context["err_msg"]      = self.err_msg
             return context
         except Exception as e:
-            context["req_success"] = False
+            context["req_success"]  = False
+            context["err_msg"]      = None
             return context
 
 
 class ContactPageView(TemplateView):
-    template_name = 'DailyPothole.template.contact.html'
-    req_success = True
+    template_name   = 'DailyPothole.template.contact.html'
+    req_success     = True
+    err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
+            context["req_success"]  = self.req_success
+            context["err_msg"]      = self.err_msg
             return context
 
         except Exception as e:
-            context["req_success"] = False
+            context["req_success"]  = False
+            context["err_msg"]      = None
             return context
 
 
@@ -573,7 +582,7 @@ class PotholeDataGridPageView(generic.ListView):
     context_object_name     = 'daily_pothole'
 
     req_success             = True
-    err_msg                 = ""
+    err_msg                 = None
     client_is_admin         = False
 
     ag_grid_col_def_json    = None
@@ -617,7 +626,7 @@ class PotholeDataGridPageView(generic.ListView):
 
         except Exception as e:
             self.req_success    = False
-            self.err_msg        = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
+            self.err_msg        = f"Exception: PotholeDataGridPageView(): get_queryset(): {e}"
             return None
 
         self.req_success = True
