@@ -11,32 +11,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone, dateformat
 
 
-## Special case due to bad data design. Need to take care of CW_RESURFACING 1, 2 and 3 operation in special filter
-def filter_out_excluded_operation_boro(query_set):
-    query_set = query_set.exclude(
-        ## Keep only Queens for CW 1
-        ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BRONX') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='BROOKLYN') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='MANHATTAN') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 1') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
-
-        ## Keep only Brooklyn for CW 2
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='BRONX') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='MANHATTAN') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='QUEENS') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 2') & Q(boro_id__boro_long__exact='STATEN ISLAND') )
-
-        ## Keep only Staten Island for CW 3
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BRONX') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='BROOKLYN') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='MANHATTAN') )
-        | ( Q(operation_id__operation__exact='CW_RESURFACING 3') & Q(boro_id__boro_long__exact='QUEENS') )
-    )
-
-    return query_set
-
 def get_active_pothole_qryset():
     return TblPotholeMaster.objects.using('DailyPothole').filter(operation_boro_id__is_active__exact=True)
+
 
 ## Used by raw sql: Special case due to bad data design. Need to take care of CW_RESURFACING 1, 2 and 3 operation in special filter.
 def get_excluded_operation_boro_as_where_cond():
@@ -105,72 +82,6 @@ class AboutPageView(TemplateView):
 
 class ContactPageView(TemplateView):
     template_name = 'DailyPothole.template.contact.html'
-
-
-class PotholeDataEntryPageView(generic.ListView):
-    template_name = 'DailyPothole.template.datacollection.html'
-    context_object_name = 'operation_boro_permissions'
-
-    req_success = False
-    err_msg = ""
-
-    client_is_admin = False
-    today = None
-
-    def get_queryset(self):
-        ## Get the core data
-        try:
-            # Check for Active Admins
-            self.client_is_admin = user_is_active_admin(self.request.user)
-
-            op_boro_combo = {}
-            if self.client_is_admin:
-                operation_list  = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
-                boro_list       = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
-
-                for each_op in operation_list:
-                    op_boro_combo[each_op] = [each for each in boro_list]
-            else:
-                ## Get the remote user's Operation list and Borough list
-                permission_obj  = get_active_user_permissions_qryset(self.request.user)
-
-                operation_list  = list(set([each.operation_boro_id.operation_id.operation for each in permission_obj]))
-                boro_list       = list(set([each.operation_boro_id.boro_id.boro_long for each in permission_obj]))
-
-                for each in permission_obj:
-                    if each.operation_boro_id.operation_id.operation not in op_boro_combo:
-                        op_boro_combo[each.operation_boro_id.operation_id.operation] = []
-
-                    op_boro_combo[each.operation_boro_id.operation_id.operation].append(each.operation_boro_id.boro_id.boro_long)
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DateCollectionPageView(): get_queryset(): {}".format(e)
-            return None
-
-        self.req_success = True
-        return op_boro_combo
-
-    def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = self.client_is_admin
-            context["today"] = dateformat.format(timezone.localtime(timezone.now()).date(), 'Y-m-d')
-            return context
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DateCollectionPageView(): get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = False
-            context["today"] = None
-            return context
 
 
 def UpdatePotholesData(request):
@@ -332,6 +243,385 @@ def UpdatePotholesData(request):
             "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}".format(e),
             # "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
         })
+
+
+def LookupPotholesAndCrewData(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "{} HTTP request not supported".format(request.method),
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: LookupPotholesAndCrewData(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "LookupPotholesAndCrewData():\n\nUNAUTHENTICATE USER!",
+            "post_data": None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nUnable to load request.body as a json object: {}".format(e),
+        })
+
+    try:
+        look_up_date    = json_blob['look_up_date']
+        operation       = json_blob['operation']
+        borough         = json_blob['borough']
+
+        client_is_admin = user_is_active_admin(remote_user)
+
+        ##TODO replace all instacne of TblPermission with get_active_user_permissions_qryset()!!!!!!!!!
+        ## Get the core data
+        if client_is_admin:
+            pass
+        else:
+            permission_obj = get_active_user_permissions_qryset(remote_user).filter(
+                operation_boro_id__operation_id__operation__exact=operation
+                ,operation_boro_id__boro_id__boro_long__exact=borough
+            )
+
+            if permission_obj.count() == 0:
+                raise ValueError(f"'{remote_user}' does not have any permission for '{operation}' and '{borough}'")
+
+        pothole_and_crew_data = get_active_pothole_qryset().get(
+            repair_date__exact=look_up_date,
+            operation_boro_id__operation_id__operation__exact=operation,
+            operation_boro_id__boro_id__boro_long__exact=borough,
+        )
+
+        repair_crew_count   = pothole_and_crew_data.repair_crew_count
+        holes_repaired      = pothole_and_crew_data.holes_repaired
+        daily_crew_count    = pothole_and_crew_data.daily_crew_count
+
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "look_up_date": look_up_date,
+            "repair_crew_count": repair_crew_count,
+            "holes_repaired": holes_repaired,
+            "daily_crew_count": daily_crew_count,
+        })
+    except ObjectDoesNotExist as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. For '{}'".format(e, look_up_date),
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success": False,
+            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}".format(e),
+            # "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+        })
+
+
+class PotholeDataEntryPageView(generic.ListView):
+    template_name = 'DailyPothole.template.datacollection.html'
+    context_object_name = 'operation_boro_permissions'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+    today = None
+
+    def get_queryset(self):
+        ## Get the core data
+        try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
+            op_boro_combo = {}
+            if self.client_is_admin:
+                operation_list  = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
+                boro_list       = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
+
+                for each_op in operation_list:
+                    op_boro_combo[each_op] = [each for each in boro_list]
+            else:
+                ## Get the remote user's Operation list and Borough list
+                permission_obj  = get_active_user_permissions_qryset(self.request.user)
+
+                operation_list  = list(set([each.operation_boro_id.operation_id.operation for each in permission_obj]))
+                boro_list       = list(set([each.operation_boro_id.boro_id.boro_long for each in permission_obj]))
+
+                for each in permission_obj:
+                    if each.operation_boro_id.operation_id.operation not in op_boro_combo:
+                        op_boro_combo[each.operation_boro_id.operation_id.operation] = []
+
+                    op_boro_combo[each.operation_boro_id.operation_id.operation].append(each.operation_boro_id.boro_id.boro_long)
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: DateCollectionPageView(): get_queryset(): {}".format(e)
+            return None
+
+        self.req_success = True
+        return op_boro_combo
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            context["today"] = dateformat.format(timezone.localtime(timezone.now()).date(), 'Y-m-d')
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: DateCollectionPageView(): get_context_data(): {}".format(e)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            context["today"] = None
+            return context
+
+
+def UpdatePotholesFromDataGrid(request):
+
+    if request.method != "POST":
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+        })
+
+
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: UpdatePotholesFromDataGrid(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : "UpdatePotholesFromDataGrid():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
+        })
+
+
+    ## Read the json request body
+    try:
+        json_blob = json.loads(request.body)
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {e}",
+        })
+
+    try:
+        repair_date     = json_blob['repair_date']
+        operation       = json_blob['operation']
+        boro_long       = json_blob['boro_long']
+        column_name     = json_blob['column_name']
+        new_value       = json_blob['new_value']
+
+        if repair_date is None or repair_date == '':
+            raise ValueError(f"repair_date: '{repair_date}' cannot be None or Empty string")
+        if operation is None or operation == '':
+            raise ValueError(f"operation: '{operation}' cannot be None or Empty string")
+        if boro_long is None or boro_long == '':
+            raise ValueError(f"boro_long: '{boro_long}' cannot be None or Empty string")
+        if column_name is None or column_name == '':
+            raise ValueError(f"column_name: '{column_name}' cannot be None or Empty string")
+        if new_value is None or new_value == '':
+            raise ValueError(f"new_value: '{new_value}' cannot be None or Empty string")
+
+        try:
+            test_float = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"new_value: '{new_value}' must be a number")
+        if test_float < 0:
+            raise ValueError(f"new_value: '{new_value}' must be a positve number")
+        if len(new_value.split(".")) > 1 and len(new_value.split(".")[1]) > 2:
+            ## Str is a decimal and contain more than 2 decimal places
+            raise ValueError(f"new_value: '{new_value}' cannot not have more than 2 decimal places")
+
+
+        valid_editable_col = [
+            'Repair Crew Count'
+            ,'Holes Repaired'
+            ,'Daily Crew Count'
+        ]
+
+        if column_name not in valid_editable_col:
+            raise ValueError(f"column_name '{column_name}' is not a valid editable column")
+
+        try:
+            if column_name == 'Repair Crew Count':
+                new_value = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
+        except Exception as e:
+            raise
+
+        try:
+            if column_name == 'Holes Repaired':
+                new_value = int(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Int")
+        except Exception as e:
+            raise
+
+        try:
+            if column_name == 'Daily Crew Count':
+                new_value = float(new_value)
+        except ValueError as e:
+            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
+        except Exception as e:
+            raise
+
+
+        is_admin = user_is_active_admin(remote_user)
+        if not is_admin:
+            raise ValueError(f"'{remote_user}' is not an admin, and cannot use this API")
+
+        try:
+            pothole_data = get_active_pothole_qryset().get(
+                operation_id__operation__exact=operation,
+                boro_id__boro_long__exact=boro_long,
+                repair_date__exact=repair_date,
+            )
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find pothole record with '{date_input}', '{operation_input}' and '{borough_input}'")
+
+        try:
+            user_obj = TblUser.objects.using("DailyPothole").get(
+                username__exact=remote_user,
+            )
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Cannot find user record with client's name '{remote_user}'")
+
+        timestamp = timezone.now() ## UTC time aware
+
+        if column_name == 'Repair Crew Count':
+            pothole_data.repair_crew_count = new_value
+
+        elif column_name == 'Holes Repaired':
+            pothole_data.holes_repaired = new_value
+
+        elif column_name == 'Daily Crew Count':
+            pothole_data.daily_crew_count = new_value
+
+
+        pothole_data.last_modified_timestamp = timestamp
+        pothole_data.last_modified_by_user_id = user_obj
+        pothole_data.save()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                                "repair_date"   : repair_date
+                                ,"operation"    : operation
+                                ,"boro_long"    : boro_long
+                                ,"column_name"  : column_name
+                                ,"new_value"    : new_value
+                                ,"updated_by"   : user_obj.username
+                            },
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+        })
+
+
+class PotholeDataGridPageView(generic.ListView):
+    template_name           = 'DailyPothole.template.datagrid.html'
+    context_object_name     = 'daily_pothole'
+
+    req_success             = False
+    err_msg                 = ""
+    client_is_admin         = False
+
+    ag_grid_col_def_json    = None
+    pothole_data_json       = None
+
+    def get_queryset(self):
+        ## Get the core data
+        try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
+            if self.client_is_admin:
+                import datetime
+                from dateutil.relativedelta import relativedelta
+                now = datetime.datetime.now().strftime("%Y-%m-%d")
+                # then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
+                then = '2017-07-01'
+                pothole_data = get_active_pothole_qryset().filter(
+                    repair_date__range=[then, now]
+                )
+                pothole_data = pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
+
+                ag_grid_col_def = [
+                    {'headerName': 'Repair Date'                , 'field': 'repair_date'                        , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Operation'                 , 'field': 'operation_id__operation'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Boro'                      , 'field': 'boro_id__boro_long'                 , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Repair Crew Count'         , 'field': 'repair_crew_count'                  , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Holes Repaired'            , 'field': 'holes_repaired'                     , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Daily Crew Count'          , 'field': 'daily_crew_count'                   , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Last Modified Timestamp'   , 'field': 'last_modified_timestamp'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                    ,{'headerName': 'Last Modified by'          , 'field': 'last_modified_by_user_id__username' , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
+                ]
+                fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
+
+                pothole_data = pothole_data.values(*fields_list) ## Run the query once, since the dataset is large, this will speed things up on the front end.
+
+                self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def)  , cls=DjangoJSONEncoder)
+                self.pothole_data_json      = json.dumps(list(pothole_data)     , cls=DjangoJSONEncoder)
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+        except Exception as e:
+            self.req_success    = False
+            self.err_msg        = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
+            return None
+
+        self.req_success = True
+        return None
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = self.client_is_admin
+
+            context['ag_grid_col_def_json'] = self.ag_grid_col_def_json
+            context['pothole_data_json']    = self.pothole_data_json
+            return context
+        except Exception as e:
+            self.req_success    = False
+            self.err_msg        = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"]          = self.req_success
+            context["err_msg"]              = self.err_msg
+            context["client_is_admin"]      = False
+
+            context['ag_grid_col_def_json'] = None
+            context['pothole_data_json']    = None
+            return context
 
 
 def UpdateComplaintsData(request):
@@ -575,236 +865,6 @@ def LookupComplaintsData(request):
         })
 
 
-class PotholeDataGridPageView(generic.ListView):
-    template_name           = 'DailyPothole.template.datagrid.html'
-    context_object_name     = 'daily_pothole'
-
-    req_success             = False
-    err_msg                 = ""
-    client_is_admin         = False
-
-    ag_grid_col_def_json    = None
-    pothole_data_json       = None
-
-    def get_queryset(self):
-        ## Get the core data
-        try:
-            # Check for Active Admins
-            self.client_is_admin = user_is_active_admin(self.request.user)
-
-            if self.client_is_admin:
-                import datetime
-                from dateutil.relativedelta import relativedelta
-                now = datetime.datetime.now().strftime("%Y-%m-%d")
-                # then = (datetime.datetime.now() - relativedelta(weeks=2)).strftime("%Y-%m-%d")
-                then = '2017-07-01'
-                pothole_data = get_active_pothole_qryset().filter(
-                    repair_date__range=[then, now]
-                )
-                pothole_data = pothole_data.order_by('-repair_date', 'operation_id', 'boro_id')
-
-                ag_grid_col_def = [
-                    {'headerName': 'Repair Date'                , 'field': 'repair_date'                        , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Operation'                 , 'field': 'operation_id__operation'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Boro'                      , 'field': 'boro_id__boro_long'                 , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Repair Crew Count'         , 'field': 'repair_crew_count'                  , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Holes Repaired'            , 'field': 'holes_repaired'                     , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Daily Crew Count'          , 'field': 'daily_crew_count'                   , 'suppressMovable': True , 'lockPinned': True}
-                    ,{'headerName': 'Last Modified Timestamp'   , 'field': 'last_modified_timestamp'            , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                    ,{'headerName': 'Last Modified by'          , 'field': 'last_modified_by_user_id__username' , 'suppressMovable': True , 'lockPinned': True , 'cellClass': 'notEditableColorCode'}
-                ]
-                fields_list = [ each['field'] for each in ag_grid_col_def if each['field'] is not None ]
-
-                pothole_data = pothole_data.values(*fields_list) ## Run the query once, since the dataset is large, this will speed things up on the front end.
-
-                self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def)  , cls=DjangoJSONEncoder)
-                self.pothole_data_json      = json.dumps(list(pothole_data)     , cls=DjangoJSONEncoder)
-            else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
-
-        except Exception as e:
-            self.req_success    = False
-            self.err_msg        = "Exception: PotholeDataGridPageView(): get_queryset(): {}".format(e)
-            return None
-
-        self.req_success = True
-        return None
-
-    def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
-            context["client_is_admin"]      = self.client_is_admin
-
-            context['ag_grid_col_def_json'] = self.ag_grid_col_def_json
-            context['pothole_data_json']    = self.pothole_data_json
-            return context
-        except Exception as e:
-            self.req_success    = False
-            self.err_msg        = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
-            context["client_is_admin"]      = False
-
-            context['ag_grid_col_def_json'] = None
-            context['pothole_data_json']    = None
-            return context
-
-
-def UpdatePotholesFromDataGrid(request):
-
-    if request.method != "POST":
-        return JsonResponse({
-            "post_success"  : False,
-            "post_msg"      : f"{request.method} HTTP request not supported",
-        })
-
-
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UpdatePotholesFromDataGrid(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success"  : False,
-            "post_msg"      : "UpdatePotholesFromDataGrid():\n\nUNAUTHENTICATE USER!",
-            "post_data"     : None,
-        })
-
-
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success"  : False,
-            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {e}",
-        })
-
-    try:
-        repair_date     = json_blob['repair_date']
-        operation       = json_blob['operation']
-        boro_long       = json_blob['boro_long']
-        column_name     = json_blob['column_name']
-        new_value       = json_blob['new_value']
-
-        if repair_date is None or repair_date == '':
-            raise ValueError(f"repair_date: '{repair_date}' cannot be None or Empty string")
-        if operation is None or operation == '':
-            raise ValueError(f"operation: '{operation}' cannot be None or Empty string")
-        if boro_long is None or boro_long == '':
-            raise ValueError(f"boro_long: '{boro_long}' cannot be None or Empty string")
-        if column_name is None or column_name == '':
-            raise ValueError(f"column_name: '{column_name}' cannot be None or Empty string")
-        if new_value is None or new_value == '':
-            raise ValueError(f"new_value: '{new_value}' cannot be None or Empty string")
-
-        try:
-            test_float = float(new_value)
-        except ValueError as e:
-            raise ValueError(f"new_value: '{new_value}' must be a number")
-        if test_float < 0:
-            raise ValueError(f"new_value: '{new_value}' must be a positve number")
-        if len(new_value.split(".")) > 1 and len(new_value.split(".")[1]) > 2:
-            ## Str is a decimal and contain more than 2 decimal places
-            raise ValueError(f"new_value: '{new_value}' cannot not have more than 2 decimal places")
-
-
-        valid_editable_col = [
-            'Repair Crew Count'
-            ,'Holes Repaired'
-            ,'Daily Crew Count'
-        ]
-
-        if column_name not in valid_editable_col:
-            raise ValueError(f"column_name '{column_name}' is not a valid editable column")
-
-        try:
-            if column_name == 'Repair Crew Count':
-                new_value = float(new_value)
-        except ValueError as e:
-            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
-        except Exception as e:
-            raise
-
-        try:
-            if column_name == 'Holes Repaired':
-                new_value = int(new_value)
-        except ValueError as e:
-            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Int")
-        except Exception as e:
-            raise
-
-        try:
-            if column_name == 'Daily Crew Count':
-                new_value = float(new_value)
-        except ValueError as e:
-            raise ValueError(f"Column '{column_name}' with new_value '{new_value}' cannot be converted into an Decimal")
-        except Exception as e:
-            raise
-
-
-        is_admin = user_is_active_admin(remote_user)
-        if not is_admin:
-            raise ValueError(f"'{remote_user}' is not an admin, and cannot use this API")
-
-        try:
-            pothole_data = get_active_pothole_qryset().get(
-                operation_id__operation__exact=operation,
-                boro_id__boro_long__exact=boro_long,
-                repair_date__exact=repair_date,
-            )
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"Cannot find pothole record with '{date_input}', '{operation_input}' and '{borough_input}'")
-
-        try:
-            user_obj = TblUser.objects.using("DailyPothole").get(
-                username__exact=remote_user,
-            )
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"Cannot find user record with client's name '{remote_user}'")
-
-        timestamp = timezone.now() ## UTC time aware
-
-        if column_name == 'Repair Crew Count':
-            pothole_data.repair_crew_count = new_value
-
-        elif column_name == 'Holes Repaired':
-            pothole_data.holes_repaired = new_value
-
-        elif column_name == 'Daily Crew Count':
-            pothole_data.daily_crew_count = new_value
-
-
-        pothole_data.last_modified_timestamp = timestamp
-        pothole_data.last_modified_by_user_id = user_obj
-        pothole_data.save()
-
-        return JsonResponse({
-            "post_success"  : True,
-            "post_msg"      : None,
-            "post_data"     : {
-                                "repair_date"   : repair_date
-                                ,"operation"    : operation
-                                ,"boro_long"    : boro_long
-                                ,"column_name"  : column_name
-                                ,"new_value"    : new_value
-                                ,"updated_by"   : user_obj.username
-                            },
-        })
-    except Exception as e:
-        return JsonResponse({
-            "post_success"  : False,
-            "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
-        })
-
-
 class ComplaintsInputPageView(generic.ListView):
     template_name = 'DailyPothole.template.complaintsinput.html'
     context_object_name = 'complaints'
@@ -851,55 +911,6 @@ class ComplaintsInputPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: ComplaintsInputPageView(): get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = False
-            return context
-
-
-class ReportsPageView(generic.ListView):
-    template_name = 'DailyPothole.template.reports.html'
-    context_object_name = 'complaints'
-
-    req_success = False
-    err_msg = ""
-
-    client_is_admin = False
-
-    def get_queryset(self):
-        ## Get the core data
-        try:
-            # Check for Active Admins
-            self.client_is_admin = user_is_active_admin(self.request.user)
-
-            if self.client_is_admin:
-                complaints_data = TblComplaint.objects.none()
-            else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
-
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ReportsPageView(): get_queryset(): {}".format(e)
-            return TblComplaint.objects.none()
-
-        self.req_success = True
-        return complaints_data
-
-    def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = self.client_is_admin
-            return context
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1522,87 +1533,53 @@ def GetPDFReport(request):
         })
 
 
-def LookupPotholesAndCrewData(request):
+class ReportsPageView(generic.ListView):
+    template_name = 'DailyPothole.template.reports.html'
+    context_object_name = 'complaints'
 
-    if request.method != "POST":
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
-        })
+    req_success = False
+    err_msg = ""
 
+    client_is_admin = False
 
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: LookupPotholesAndCrewData(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "LookupPotholesAndCrewData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
-        })
-
-
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
-    try:
-        look_up_date    = json_blob['look_up_date']
-        operation       = json_blob['operation']
-        borough         = json_blob['borough']
-
-        client_is_admin = user_is_active_admin(remote_user)
-
-        ##TODO replace all instacne of TblPermission with get_active_user_permissions_qryset()!!!!!!!!!
+    def get_queryset(self):
         ## Get the core data
-        if client_is_admin:
-            pass
-        else:
-            permission_obj = get_active_user_permissions_qryset(remote_user).filter(
-                operation_boro_id__operation_id__operation__exact=operation
-                ,operation_boro_id__boro_id__boro_long__exact=borough
-            )
+        try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
 
-            if permission_obj.count() == 0:
-                raise ValueError(f"'{remote_user}' does not have any permission for '{operation}' and '{borough}'")
+            if self.client_is_admin:
+                complaints_data = TblComplaint.objects.none()
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
-        pothole_and_crew_data = get_active_pothole_qryset().get(
-            repair_date__exact=look_up_date,
-            operation_boro_id__operation_id__operation__exact=operation,
-            operation_boro_id__boro_id__boro_long__exact=borough,
-        )
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: ReportsPageView(): get_queryset(): {}".format(e)
+            return TblComplaint.objects.none()
 
-        repair_crew_count   = pothole_and_crew_data.repair_crew_count
-        holes_repaired      = pothole_and_crew_data.holes_repaired
-        daily_crew_count    = pothole_and_crew_data.daily_crew_count
+        self.req_success = True
+        return complaints_data
 
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
 
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "look_up_date": look_up_date,
-            "repair_crew_count": repair_crew_count,
-            "holes_repaired": holes_repaired,
-            "daily_crew_count": daily_crew_count,
-        })
-    except ObjectDoesNotExist as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. For '{}'".format(e, look_up_date),
-        })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
-        })
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            return context
 
 
 class AdminPanelPageView(generic.ListView):
@@ -1644,55 +1621,6 @@ class AdminPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = False
-            return context
-
-
-class UsersPanelPageView(generic.ListView):
-    template_name = 'DailyPothole.template.userspanel.html'
-    context_object_name = 'users'
-
-    req_success = False
-    err_msg = ""
-
-    client_is_admin = False
-
-    def get_queryset(self):
-        ## Get the core data
-        try:
-            # Check for Active Admins
-            self.client_is_admin = user_is_active_admin(self.request.user)
-
-            if self.client_is_admin:
-                users_data = TblUser.objects.using('DailyPothole').all().order_by('username')
-            else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
-
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
-            return None
-
-        self.req_success = True
-        return users_data
-
-    def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
-
-            context["client_is_admin"] = self.client_is_admin
-            return context
-        except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1936,16 +1864,12 @@ def DeleteUser(request):
         })
 
 
-class UserPermissionsPanelPageView(generic.ListView):
-    template_name = 'DailyPothole.template.userpermissionspanel.html'
-    context_object_name = 'user_permissions'
+class UsersPanelPageView(generic.ListView):
+    template_name = 'DailyPothole.template.userspanel.html'
+    context_object_name = 'users'
 
     req_success = False
     err_msg = ""
-
-    user_list = []
-    operation_list = []
-    boro_list = []
 
     client_is_admin = False
 
@@ -1956,20 +1880,17 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if self.client_is_admin:
-                user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
-                self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
-                self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
-                self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
+                users_data = TblUser.objects.using('DailyPothole').all().order_by('username')
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
             return None
 
         self.req_success = True
-        return user_permissions_data
+        return users_data
 
     def get_context_data(self, **kwargs):
         try:
@@ -1978,23 +1899,15 @@ class UserPermissionsPanelPageView(generic.ListView):
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["user_list"] = self.user_list
-            context["operation_list"] = self.operation_list
-            context["boro_list"] = self.boro_list
-
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
+            self.err_msg = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
-
-            context["operation_list"] = []
-            context["boro_list"] = []
-
 
             context["client_is_admin"] = False
             return context
@@ -2264,15 +2177,18 @@ def DeleteUserPermission(request):
         })
 
 
-class CsvExportPageView(generic.ListView):
-    template_name = 'DailyPothole.template.csvexport.html'
-    context_object_name = 'complaints'
+class UserPermissionsPanelPageView(generic.ListView):
+    template_name = 'DailyPothole.template.userpermissionspanel.html'
+    context_object_name = 'user_permissions'
 
     req_success = False
     err_msg = ""
 
-    client_is_admin = False
+    user_list = []
     operation_list = []
+    boro_list = []
+
+    client_is_admin = False
 
     def get_queryset(self):
         ## Get the core data
@@ -2281,19 +2197,20 @@ class CsvExportPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if self.client_is_admin:
-                complaints_data = TblComplaint.objects.none()
+                user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
+                self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
+                self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
+                self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
-            self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
-
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
-            return TblComplaint.objects.none()
+            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            return None
 
         self.req_success = True
-        return complaints_data
+        return user_permissions_data
 
     def get_context_data(self, **kwargs):
         try:
@@ -2302,19 +2219,25 @@ class CsvExportPageView(generic.ListView):
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["client_is_admin"] = self.client_is_admin
+            context["user_list"] = self.user_list
             context["operation_list"] = self.operation_list
+            context["boro_list"] = self.boro_list
+
+            context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
             self.req_success = False
-            self.err_msg = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
+            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["client_is_admin"] = False
             context["operation_list"] = []
+            context["boro_list"] = []
+
+
+            context["client_is_admin"] = False
             return context
 
 
@@ -2681,4 +2604,56 @@ def GetCsvExport(request):
         })
 
 
+class CsvExportPageView(generic.ListView):
+    template_name = 'DailyPothole.template.csvexport.html'
+    context_object_name = 'complaints'
+
+    req_success = False
+    err_msg = ""
+
+    client_is_admin = False
+    operation_list = []
+
+    def get_queryset(self):
+        ## Get the core data
+        try:
+            # Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+
+            if self.client_is_admin:
+                complaints_data = TblComplaint.objects.none()
+            else:
+                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+
+            self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
+
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
+            return TblComplaint.objects.none()
+
+        self.req_success = True
+        return complaints_data
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = self.client_is_admin
+            context["operation_list"] = self.operation_list
+            return context
+        except Exception as e:
+            self.req_success = False
+            self.err_msg = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
+
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            context["err_msg"] = self.err_msg
+
+            context["client_is_admin"] = False
+            context["operation_list"] = []
+            return context
 
