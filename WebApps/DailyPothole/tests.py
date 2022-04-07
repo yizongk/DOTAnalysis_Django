@@ -45,13 +45,18 @@ class TestViewPageResponses(unittest.TestCase):
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
             username=test_windows_username
-            ,is_admin=False
         )[0]
+        self.user_obj.is_admin=False
+        self.user_obj.save(using='DailyPothole')
 
-        self.views = [
+        self.regular_views = [
             'dailypothole_home_view',
             'dailypothole_about_view',
             'dailypothole_contact_view',
+            'dailypothole_pothole_data_entry_view',
+        ]
+
+        self.admin_views = [
             'dailypothole_pothole_data_grid_view',
             'dailypothole_complaints_input_view',
             'dailypothole_reports_view',
@@ -61,11 +66,40 @@ class TestViewPageResponses(unittest.TestCase):
             'dailypothole_csv_export_view',
         ]
 
+        operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
+            operation_id__operation__exact="Bridge PM"
+            ,boro_id__boro_long__exact="QUEENS"
+            ,is_active=True
+        )
+
+        self.permissions = []
+        self.permissions.append( TblPermission.objects.using('DailyPothole').get_or_create(
+            user_id=self.user_obj
+            ,operation_boro_id=operation_boro
+            ,is_active=True
+        )[0] )
+
+    def tearDown(self):
+        self.user_obj.is_admin=False
+        self.user_obj.save(using='DailyPothole')
+
+        for each in self.permissions:
+            each.delete(using='DailyPothole')
+
     def test_views_response(self):
-        for view in self.views:
+        self.user_obj.is_admin=False
+        self.user_obj.save(using='DailyPothole')
+        for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True\n    {response.context['err_msg']}")
+
+        self.user_obj.is_admin=True
+        self.user_obj.save(using='DailyPothole')
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True\n    {response.context['err_msg']}")
 
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
@@ -107,7 +141,6 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
             username=test_windows_username
-            ,is_admin=False
         )[0]
 
         operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
@@ -116,11 +149,16 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
             ,is_active=True
         )
 
-        TblPermission.objects.using('DailyPothole').get_or_create(
+        self.permissions = []
+        self.permissions.append( TblPermission.objects.using('DailyPothole').get_or_create(
             user_id=self.user_obj
             ,operation_boro_id=operation_boro
             ,is_active=True
-        )[0]
+        )[0] )
+
+    def tearDown(self):
+        for each in self.permissions:
+            each.delete(using='DailyPothole')
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -290,7 +328,6 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
             username=test_windows_username
-            ,is_admin=False
         )[0]
 
         operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
@@ -299,11 +336,16 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
             ,is_active=True
         )
 
-        TblPermission.objects.using('DailyPothole').get_or_create(
+        self.permissions = []
+        self.permissions.append( TblPermission.objects.using('DailyPothole').get_or_create(
             user_id=self.user_obj
             ,operation_boro_id=operation_boro
             ,is_active=True
-        )[0]
+        )[0] )
+
+    def tearDown(self):
+        for each in self.permissions:
+            each.delete(using='DailyPothole')
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -382,5 +424,4 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
-
 
