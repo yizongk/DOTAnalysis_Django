@@ -15,29 +15,60 @@ import copy
 
 test_windows_username = 'test_user'
 
+
+def get_to_api(client, api_name, remote_user):
+    """return the response of the GET api call"""
+    return client.get(
+        reverse(api_name)
+        ,REMOTE_USER=remote_user
+    )
+
+
 def decode_response_byte_for_content(response):
     return json.loads(response.content.decode('utf-8'))
 
 
 def post_to_api(client, api_name, payload, remote_user):
-    """return the response of the POST api call. Will raise exception if status_code is not 200"""
-    response = client.post(
+    """return the response of the POST api call"""
+    return client.post(
         reverse(api_name)
         ,data           = json.dumps(payload)
         ,content_type   = 'application/json'
         ,REMOTE_USER    = remote_user
     )
 
-    if (response.status_code != 200):
-        raise ValueError(f"post_to_api(): '{api_name}' did not return status code 200")
 
-    return response
+class TestViewPageResponses(unittest.TestCase):
+    def setUp(self):
+        self.test_windows_username  = test_windows_username
+        self.client                 = Client()
+
+        self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
+            username=test_windows_username
+            ,is_admin=False
+        )[0]
+
+        self.views = [
+            'dailypothole_home_view',
+            'dailypothole_about_view',
+            'dailypothole_contact_view',
+            'dailypothole_pothole_data_grid_view',
+            'dailypothole_complaints_input_view',
+            'dailypothole_reports_view',
+            'dailypothole_admin_panel_view',
+            'dailypothole_users_panel_view',
+            'dailypothole_user_permissions_panel_view',
+            'dailypothole_csv_export_view',]
+
+    def test_views_response(self):
+        for view in self.views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
 
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
     """methods that starts with name 'test...' are the methods be called by unittest"""
     def setUp(self):
-        # user=User.objects.get_or_create(username='testuser')[0]
         self.test_windows_username          = test_windows_username
         self.client                         = Client()
 
@@ -90,15 +121,37 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
             }
         }
 
-
     def __post_to_update_api(self, payload):
-        """Returns the response after calling the update api, as a dict"""
-        return post_to_api(
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
             client      = self.client,
             api_name    = self.update_api_name,
             payload     = payload,
             remote_user = self.test_windows_username)
 
+        self.assertEqual(response.status_code, 200, f"'{self.update_api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_update_api(payload=payload)
+        content                     = decode_response_byte_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_update_api(payload=payload)
+        content                     = decode_response_byte_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'")
 
     def test_update_with_valid_data(self):
         for payload_type in self.valid_payload:
@@ -135,29 +188,6 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
             self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10 , f"payload_type '{payload_type}': [last_modified_timestamp] didn't save correctly: '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
             self.assertEqual( saved_object.last_modified_by_user_id.user_id  , self.user_obj.user_id , f"payload_type '{payload_type}': [last_modified_by_user_id] didn't save correctly: '{saved_object.last_modified_by_user_id.user_id}' input-->database '{self.user_obj.user_id}'" )
-
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_update_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'")
-
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_update_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'")
-
 
     def test_update_data_validation(self):
         f"""Testing {self.update_api_name} data validation"""
@@ -237,6 +267,5 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
-
 
 
