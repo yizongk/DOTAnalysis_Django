@@ -59,10 +59,30 @@ class HomePageView(TemplateView):
 
 class AboutPageView(TemplateView):
     template_name = 'OrgChartPortal.template.about.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 
 class ContactPageView(TemplateView):
     template_name = 'OrgChartPortal.template.contact.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 
 def get_allowed_list_of_wu(username=None):
@@ -1146,7 +1166,7 @@ class OrgChartPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.orgchart.html'
     context_object_name = 'emp_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1456,7 +1476,7 @@ def GetCommissionerPMS(request):
 class AdminPanelPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.adminpanel.html'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False

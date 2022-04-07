@@ -163,15 +163,35 @@ class HomePageView(TemplateView):
 
 class AboutPageView(TemplateView):
     template_name = 'FleetDataCollection.template.about.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 class ContactPageView(TemplateView):
     template_name = 'FleetDataCollection.template.contact.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.driverandtypeconfirmation.html'
     context_object_name = 'driver_type_assigment_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -229,7 +249,7 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.adminpanel.html'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -528,7 +548,7 @@ class WuPermissionsPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.wupermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -908,7 +928,7 @@ class DomicilePermissionsPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.domicilepermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False

@@ -63,25 +63,49 @@ def get_active_user_permissions_qryset(username):
 class HomePageView(TemplateView):
     template_name = 'DailyPothole.template.home.html'
     client_is_admin = False
+    req_success = True
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)
+            context["req_success"] = self.req_success
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
+            context["req_success"] = False
             context["client_is_admin"] = False
             return context
 
 
 class AboutPageView(TemplateView):
     template_name = 'DailyPothole.template.about.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 
 class ContactPageView(TemplateView):
     template_name = 'DailyPothole.template.contact.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 
 def UpdatePotholesData(request):
@@ -332,7 +356,7 @@ class PotholeDataEntryPageView(generic.ListView):
     template_name = 'DailyPothole.template.datacollection.html'
     context_object_name = 'operation_boro_permissions'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -548,7 +572,7 @@ class PotholeDataGridPageView(generic.ListView):
     template_name           = 'DailyPothole.template.datagrid.html'
     context_object_name     = 'daily_pothole'
 
-    req_success             = False
+    req_success             = True
     err_msg                 = ""
     client_is_admin         = False
 
@@ -869,7 +893,7 @@ class ComplaintsInputPageView(generic.ListView):
     template_name = 'DailyPothole.template.complaintsinput.html'
     context_object_name = 'complaints'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1537,7 +1561,7 @@ class ReportsPageView(generic.ListView):
     template_name = 'DailyPothole.template.reports.html'
     context_object_name = 'complaints'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1585,7 +1609,7 @@ class ReportsPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.adminpanel.html'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1868,7 +1892,7 @@ class UsersPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.userspanel.html'
     context_object_name = 'users'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -2181,7 +2205,7 @@ class UserPermissionsPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.userpermissionspanel.html'
     context_object_name = 'user_permissions'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     user_list = []
@@ -2608,7 +2632,7 @@ class CsvExportPageView(generic.ListView):
     template_name = 'DailyPothole.template.csvexport.html'
     context_object_name = 'complaints'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False

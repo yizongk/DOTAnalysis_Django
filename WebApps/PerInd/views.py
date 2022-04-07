@@ -166,9 +166,29 @@ class HomePageView(TemplateView):
 
 class AboutPageView(TemplateView):
     template_name = 'PerInd.template.about.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 class ContactPageView(TemplateView):
     template_name = 'PerInd.template.contact.html'
+    req_success = True
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["req_success"] = self.req_success
+            return context
+        except Exception as e:
+            context["req_success"] = False
+            return context
 
 ## Method Flowchart (the order of execution) for generic.ListView
 ##     setup()
@@ -184,7 +204,7 @@ class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
 
-    req_success = False
+    req_success = True
     category_permissions = []
     err_msg = ""
 
@@ -912,7 +932,7 @@ class PastDueIndicatorsPageView(generic.ListView):
 
     paginate_by = 24
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     req_sort_dir = ""
@@ -1170,7 +1190,7 @@ class PastDueIndicatorsPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'PerInd.template.adminpanel.html'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1220,7 +1240,7 @@ class UserPermissionsPanelPageView(generic.ListView):
     template_name = 'PerInd.template.userpermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
@@ -1665,7 +1685,7 @@ class UsersPanelPageView(generic.ListView):
     template_name = 'PerInd.template.userspanel.html'
     context_object_name = 'users_data_entries'
 
-    req_success = False
+    req_success = True
     err_msg = ""
 
     client_is_admin = False
