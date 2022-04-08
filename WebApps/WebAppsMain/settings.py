@@ -365,3 +365,6 @@ MAPS_APP_VERSION                = '1.1.2'
 DAILY_POTHOLE_VERSION           = '1.4.5'
 ORG_CHART_PORTAL_VERSION        = '1.15.7'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.3'
+
+
+POST_RESPONSE_REQUIRED_KEYS = ["post_success", "post_msg", "post_data"]
