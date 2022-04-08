@@ -121,8 +121,9 @@ def UpdatePotholesData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -133,9 +134,9 @@ def UpdatePotholesData(request):
     else:
         print('Warning: UpdatePotholesData(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdatePotholesData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdatePotholesData():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -144,8 +145,9 @@ def UpdatePotholesData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdatePotholesData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -262,19 +264,22 @@ def UpdatePotholesData(request):
             pothole_data.save()
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None,
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}. For '{}', '{}' and '{}'".format(e, date_input, operation_input, borough_input),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}. For '{date_input}', '{operation_input}' and '{borough_input}'",
+            "post_data"     : None,
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: UpdatePotholesData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}",
+            "post_data"     : None,
+            # "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
         })
 
 
@@ -282,8 +287,9 @@ def LookupPotholesAndCrewData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : "{} HTTP request not supported".format(request.method),
+            "post_data"     : None
         })
 
 
@@ -294,9 +300,9 @@ def LookupPotholesAndCrewData(request):
     else:
         print('Warning: LookupPotholesAndCrewData(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "LookupPotholesAndCrewData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "LookupPotholesAndCrewData():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -305,8 +311,9 @@ def LookupPotholesAndCrewData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : "DailyPothole: LookupPotholesAndCrewData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_data"     : None
         })
 
     try:
@@ -341,23 +348,26 @@ def LookupPotholesAndCrewData(request):
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "look_up_date": look_up_date,
-            "repair_crew_count": repair_crew_count,
-            "holes_repaired": holes_repaired,
-            "daily_crew_count": daily_crew_count,
+            "post_success"      : True,
+            "post_msg"          : None,
+            "post_data"         : None,
+            "look_up_date"      : look_up_date,
+            "repair_crew_count" : repair_crew_count,
+            "holes_repaired"    : holes_repaired,
+            "daily_crew_count"  : daily_crew_count,
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. For '{}'".format(e, look_up_date),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}. For '{look_up_date}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: LookupPotholesAndCrewData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
