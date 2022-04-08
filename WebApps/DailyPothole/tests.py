@@ -87,19 +87,32 @@ class TestViewPageResponses(unittest.TestCase):
             each.delete(using='DailyPothole')
 
     def test_views_response(self):
+        """Test normal user"""
         self.user_obj.is_admin=False
         self.user_obj.save(using='DailyPothole')
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True\n    {response.context['err_msg']}")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for a non-admin client\n    {response.context['err_msg']}")
 
-        self.user_obj.is_admin=True
-        self.user_obj.save(using='DailyPothole')
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True\n    {response.context['err_msg']}")
+            self.assertFalse(response.context['req_success'], f"'{view}' returned req_success True on an admin view for a non-admin client\n    {response.context['err_msg']}")
+            self.assertTrue("not an Admin" in response.context['err_msg'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['err_msg']}")
+
+        """Test admin user"""
+        self.user_obj.is_admin=True
+        self.user_obj.save(using='DailyPothole')
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for an admin client\n    {response.context['err_msg']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=self.test_windows_username)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on an admin view for an admin client\n    {response.context['err_msg']}")
 
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
