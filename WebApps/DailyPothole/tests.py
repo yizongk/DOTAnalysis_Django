@@ -167,7 +167,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'")
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
 
     def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
@@ -177,7 +177,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'")
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
 
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
@@ -210,7 +210,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
                     saved_object.daily_crew_count,
                     f"payload_type '{payload_type}': [daily_crew_count] didn't save correctly: '{self.valid_planned_crew_count}' input-->database '{saved_object.daily_crew_count}'" )
             else:
-                raise ValueError( f"TestAPIUpdatePotholesData: payload_type not recognized in test case: '{payload_type}'" )
+                raise ValueError( f"TestAPIUpdatePotholesData: test_with_valid_data(): payload_type not recognized in test case: '{payload_type}'" )
 
             self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10,
                 f"payload_type '{payload_type}': [last_modified_timestamp] didn't save correctly: '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
@@ -225,8 +225,8 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         parameters = [
             # Parameter name    # Accepted type
             "request_type"      # str   -> ['PotholeData']
-            ,"operation"        # str   -> [operation_names*]
-            ,"borough"          # str   -> [boro_names*]
+            ,"operation"        # str   -> 'operation_names'
+            ,"borough"          # str   -> 'boro_names'
             ,"date_of_repair"   # str   -> 'YYYY-MM-DD'
             ,"crew_count"       # float -> >= 0
             ,"holes_repaired"   # int   -> >= 0
@@ -265,8 +265,8 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         payload = self.valid_payload['TodayCrewData']
         parameters = [
             "request_type"          # str   -> ['TodayCrewData']
-            ,"operation"            # str   -> [operation_names*]
-            ,"borough"              # str   -> [boro_names*]
+            ,"operation"            # str   -> 'operation_names'
+            ,"borough"              # str   -> 'boro_names'
             ,"planned_date"         # str   -> 'YYYY-MM-DD'
             ,"planned_crew_count"   # float -> >= 0
         ]
@@ -354,7 +354,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'")
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
 
     def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
@@ -364,7 +364,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'")
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
 
     def test_with_valid_data(self):
         payload = self.valid_payload
@@ -389,8 +389,8 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
         parameters = [
             # Parameter name    # Accepted type
             "look_up_date"      # str   -> 'YYYY-MM-DD'
-            ,"operation"        # str   -> [operation_names*]
-            ,"borough"          # str   -> [boro_names*]
+            ,"operation"        # str   -> 'operation_names'
+            ,"borough"          # str   -> 'boro_names'
         ]
         for param_name in parameters:
 
@@ -404,11 +404,251 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
                 valid   = [self.valid_borough]
                 invalid = ['a', 1, 2.3, None, False]
             else:
-                raise ValueError(f"TestAPILookupPotholesAndCrewData: test_data_validation(): PotholeData -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"TestAPILookupPotholesAndCrewData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
+    def setUp(self):
+        self.test_windows_username  = TEST_WINDOWS_USERNAME
+        self.client                 = Client()
+        self.api_name               = 'dailypothole_update_potholes_from_data_grid_api'
+
+        self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
+            username=self.test_windows_username
+        )[0]
+        self.user_obj.is_admin=True
+        self.user_obj.save(using='DailyPothole')
+
+        self.valid_repair_date      = f'{datetime.now().strftime("%Y-%m-%d")}'
+        self.valid_operation        = 'BRIDGE PM'
+        self.valid_boro_long        = 'QUEENS'
+
+        self.valid_payloads = [
+            {
+                'repair_date'   : self.valid_repair_date,
+                'operation'     : self.valid_operation,
+                'boro_long'     : self.valid_boro_long,
+                'column_name'   : 'Repair Crew Count',
+                'new_value'     : '10.2',
+            }
+            ,{
+                'repair_date'   : self.valid_repair_date,
+                'operation'     : self.valid_operation,
+                'boro_long'     : self.valid_boro_long,
+                'column_name'   : 'Holes Repaired',
+                'new_value'     : '20',
+            }
+            ,{
+                'repair_date'   : self.valid_repair_date,
+                'operation'     : self.valid_operation,
+                'boro_long'     : self.valid_boro_long,
+                'column_name'   : 'Daily Crew Count',
+                'new_value'     : '30.2',
+            }
+        ]
+
+        operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
+            operation_id__operation__exact=self.valid_operation
+            ,boro_id__boro_long__exact=self.valid_boro_long
+            ,is_active=True
+        )
+        self.permissions = []
+        self.permissions.append( TblPermission.objects.using('DailyPothole').get_or_create(
+            user_id=self.user_obj
+            ,operation_boro_id=operation_boro
+            ,is_active=True
+        )[0] )
+
+    def tearDown(self):
+        self.user_obj.is_admin=False
+        self.user_obj.save(using='DailyPothole')
+
+        for each in self.permissions:
+            each.delete(using='DailyPothole')
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = self.test_windows_username)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
+
+    def test_api_accept_only_admins(self):
+        self.user_obj.is_admin=False
+        self.user_obj.save(using='DailyPothole')
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail")
+
+        self.user_obj.is_admin=True
+        self.user_obj.save(using='DailyPothole')
+
+    def test_with_valid_data(self):
+        for payload in self.valid_payloads:
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assertTrue('repair_date' in response_content['post_data'],
+                f"'repair_date' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['repair_date'] is not None,
+                f"response['repair_date'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('operation' in response_content['post_data'],
+                f"'operation' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['operation'] is not None,
+                f"response['operation'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('boro_long' in response_content['post_data'],
+                f"'boro_long' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['boro_long'] is not None,
+                f"response['boro_long'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('column_name' in response_content['post_data'],
+                f"'column_name' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['column_name'] is not None,
+                f"response['column_name'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('new_value' in response_content['post_data'],
+                f"'new_value' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['new_value'] is not None,
+                f"response['new_value'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('updated_by' in response_content['post_data'],
+                f"'updated_by' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['updated_by'] is not None,
+                f"response['updated_by'] can't be null: {response_content['post_data']}")
+
+
+            ## Check if data was saved correctly
+            saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
+                repair_date=self.valid_repair_date
+                ,operation_boro_id__operation_id__operation__exact=self.valid_operation
+                ,operation_boro_id__boro_id__boro_long__exact=self.valid_boro_long
+            )
+
+            if payload['column_name'] == 'Repair Crew Count':
+                self.assertEqual(
+                    float(payload['new_value']),
+                    float(saved_object.repair_crew_count),
+                    f"payload['column_name'] '{payload['column_name']}': [repair_crew_count] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.repair_crew_count}'" )
+            elif payload['column_name'] == 'Holes Repaired':
+                self.assertEqual(
+                    float(payload['new_value']),
+                    float(saved_object.holes_repaired),
+                    f"payload['column_name'] '{payload['column_name']}': [holes_repaired] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.holes_repaired}'" )
+            elif payload['column_name'] == 'Daily Crew Count':
+                self.assertEqual(
+                    float(payload['new_value']),
+                    float(saved_object.daily_crew_count),
+                    f"payload['column_name'] '{payload['column_name']}': [daily_crew_count] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.daily_crew_count}'" )
+            else:
+                raise ValueError( f"TestAPIUpdatePotholesFromDataGrid: test_with_valid_data(): payload['column_name'] not recognized in test case: '{payload['column_name']}'" )
+
+            self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10,
+                f"payload['column_name'] '{payload['column_name']}': [last_modified_timestamp] didn't save correctly: '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
+            self.assertEqual( saved_object.last_modified_by_user_id.user_id  , self.user_obj.user_id,
+                f"payload['column_name'] '{payload['column_name']}': [last_modified_by_user_id] didn't save correctly: '{saved_object.last_modified_by_user_id.user_id}' input-->database '{self.user_obj.user_id}'" )
+
+    def test_data_validation(self):
+        crew_count_payload      = self.valid_payloads[0]
+        holes_repaired_payload  = self.valid_payloads[1]
+        parameters = [
+            # Parameter name    # Accepted type
+            "repair_date"       # str   -> 'YYYY-MM-DD'
+            ,"operation"        # str   -> 'operation_names'
+            ,"boro_long"        # str   -> 'boro_names'
+            ,"column_name"      # str   -> ['Repair Crew Count', 'Holes Repaired', 'Daily Crew Count']
+            ,"new_value"        # str   -> string formatted postive int(for holes repaired) or string formatted decimal(no more than 2 decimal places, for crew count).
+        ]
+        for param_name in parameters:
+
+            ## Test the two crew counts which allows positive decimal and int
+            if param_name == 'repair_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False]
+            elif param_name == 'operation':
+                valid   = [self.valid_operation]
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'boro_long':
+                valid   = [self.valid_boro_long]
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'column_name':
+                valid   = ['Repair Crew Count', 'Daily Crew Count']
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'new_value':
+                valid   = ['0', '1', '2.2', '4.45']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', None, False]
+            else:
+                raise ValueError(f"TestAPIUpdatePotholesFromDataGrid: test_data_validation(): Crew Count -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__assert_request_param_good(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__assert_request_param_bad(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
+
+            ## Test the holes repaired which allows only positive int
+            if param_name == 'repair_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False]
+            elif param_name == 'operation':
+                valid   = [self.valid_operation]
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'boro_long':
+                valid   = [self.valid_boro_long]
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'column_name':
+                valid   = ['Holes Repaired']
+                invalid = ['a', 1, 2.3, None, False]
+            elif param_name == 'new_value':
+                valid   = ['0', '1']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            else:
+                raise ValueError(f"TestAPIUpdatePotholesFromDataGrid: test_data_validation(): Holes Repaired -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__assert_request_param_good(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__assert_request_param_bad(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
 
