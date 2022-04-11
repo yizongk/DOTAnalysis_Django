@@ -443,6 +443,7 @@ def UpdatePotholesFromDataGrid(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data": None
         })
 
 
@@ -466,6 +467,7 @@ def UpdatePotholesFromDataGrid(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -486,14 +488,18 @@ def UpdatePotholesFromDataGrid(request):
         if new_value is None or new_value == '':
             raise ValueError(f"new_value: '{new_value}' cannot be None or Empty string")
 
+        if type(new_value) is not str:
+            raise ValueError(f"new_value must be a string type, current type is: {type(new_value)}")
+
         try:
             test_float = float(new_value)
         except ValueError as e:
-            raise ValueError(f"new_value: '{new_value}' must be a number")
+            raise ValueError(f"new_value: '{new_value}' must be a string formatted number")
         if test_float < 0:
-            raise ValueError(f"new_value: '{new_value}' must be a positve number")
+            raise ValueError(f"new_value: '{new_value}' must be a string formatted positve number")
+
+        ## Str is a decimal and contain more than 2 decimal places
         if len(new_value.split(".")) > 1 and len(new_value.split(".")[1]) > 2:
-            ## Str is a decimal and contain more than 2 decimal places
             raise ValueError(f"new_value: '{new_value}' cannot not have more than 2 decimal places")
 
 
@@ -537,8 +543,8 @@ def UpdatePotholesFromDataGrid(request):
 
         try:
             pothole_data = get_active_pothole_qryset().get(
-                operation_id__operation__exact=operation,
-                boro_id__boro_long__exact=boro_long,
+                operation_boro_id__operation_id__operation__exact=operation,
+                operation_boro_id__boro_id__boro_long__exact=boro_long,
                 repair_date__exact=repair_date,
             )
         except ObjectDoesNotExist as e:
@@ -584,6 +590,7 @@ def UpdatePotholesFromDataGrid(request):
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}",
             # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
