@@ -3,48 +3,22 @@ import unittest
 from .models import *
 from django.contrib.auth.models import User
 from datetime import datetime, timedelta
-from django.urls import reverse
-import json
 from django.contrib import auth
 from django.utils import timezone
 import copy
+from WebAppsMain.settings import TEST_WINDOWS_USERNAME
+from WebAppsMain.testing_utils import get_to_api, post_to_api, decode_json_response_for_content
 
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
 # Create your tests here.
-
-test_windows_username = 'test_user'
-
-
-def get_to_api(client, api_name, remote_user):
-    """return the response of the GET api call"""
-    return client.get(
-        reverse(api_name)
-        ,REMOTE_USER=remote_user
-    )
-
-
-def decode_response_byte_for_content(response):
-    return json.loads(response.content.decode('utf-8'))
-
-
-def post_to_api(client, api_name, payload, remote_user):
-    """return the response of the POST api call"""
-    return client.post(
-        reverse(api_name)
-        ,data           = json.dumps(payload)
-        ,content_type   = 'application/json'
-        ,REMOTE_USER    = remote_user
-    )
-
-
 class TestViewPageResponses(unittest.TestCase):
     def setUp(self):
-        self.test_windows_username  = test_windows_username
+        self.test_windows_username  = TEST_WINDOWS_USERNAME
         self.client                 = Client()
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
-            username=test_windows_username
+            username=self.test_windows_username
         )[0]
         self.user_obj.is_admin=False
         self.user_obj.save(using='DailyPothole')
@@ -118,7 +92,7 @@ class TestViewPageResponses(unittest.TestCase):
 class TestAPIUpdatePotholesData(unittest.TestCase):
     """methods that starts with name 'test...' are the methods be called by unittest"""
     def setUp(self):
-        self.test_windows_username      = test_windows_username
+        self.test_windows_username      = TEST_WINDOWS_USERNAME
         self.client                     = Client()
         self.api_name                   = 'dailypothole_update_potholes_data_api'
 
@@ -153,7 +127,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         }
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
-            username=test_windows_username
+            username=self.test_windows_username
         )[0]
 
         operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
@@ -189,7 +163,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
+        content                     = decode_json_response_for_content(response)
 
         self.assertEqual(
             content['post_success'], True,
@@ -199,7 +173,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
+        content                     = decode_json_response_for_content(response)
 
         self.assertEqual(
             content['post_success'], False,
@@ -208,7 +182,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
             payload = self.valid_payload[payload_type]
-            response_content = decode_response_byte_for_content( self.__post_to_api(payload) )
+            response_content = decode_json_response_for_content( self.__post_to_api(payload) )
 
             ## Check that the request was successful
             self.assertEqual(response_content['post_success'], True,
@@ -325,7 +299,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
 class TestAPILookupPotholesAndCrewData(unittest.TestCase):
     def setUp(self):
-        self.test_windows_username  = test_windows_username
+        self.test_windows_username  = TEST_WINDOWS_USERNAME
         self.client                 = Client()
         self.api_name               = 'dailypothole_lookup_potholes_and_crew_data_api'
 
@@ -340,7 +314,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
         }
 
         self.user_obj = TblUser.objects.using('DailyPothole').get_or_create(
-            username=test_windows_username
+            username=self.test_windows_username
         )[0]
 
         operation_boro = TblOperationBoro.objects.using('DailyPothole').get(
@@ -376,7 +350,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
+        content                     = decode_json_response_for_content(response)
 
         self.assertEqual(
             content['post_success'], True,
@@ -386,7 +360,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
-        content                     = decode_response_byte_for_content(response)
+        content                     = decode_json_response_for_content(response)
 
         self.assertEqual(
             content['post_success'], False,
@@ -394,7 +368,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
     def test_with_valid_data(self):
         payload = self.valid_payload
-        response_content = decode_response_byte_for_content( self.__post_to_api(payload) )
+        response_content = decode_json_response_for_content( self.__post_to_api(payload) )
 
         ## Check that the request was successful
         self.assertEqual(response_content['post_success'], True,
