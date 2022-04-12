@@ -1,10 +1,10 @@
 import json
 from django.urls import reverse
-from WebAppsMain.settings import POST_RESPONSE_REQUIRED_KEYS
+from WebAppsMain.settings import POST_RESPONSE_REQUIRED_KEYS, TEST_WINDOWS_USERNAME
 
 
-def get_to_api(client, api_name, remote_user):
-    """return the response of the GET api call"""
+def get_to_api(client, api_name, remote_user=TEST_WINDOWS_USERNAME):
+    """return the response of the GET api call. Defaults to user @TEST_WINDOWS_USERNAME"""
     return client.get(
         reverse(api_name)
         ,REMOTE_USER=remote_user
@@ -45,8 +45,8 @@ def validate_core_post_api_response_content(response_content):
     return True
 
 
-def post_to_api(client, api_name, payload, remote_user):
-    """return the response of the POST api call"""
+def post_to_api(client, api_name, payload, remote_user=TEST_WINDOWS_USERNAME):
+    """return the response of the POST api call. Defaults to user @TEST_WINDOWS_USERNAME"""
     response = client.post(
         reverse(api_name)
         ,data           = json.dumps(payload)
