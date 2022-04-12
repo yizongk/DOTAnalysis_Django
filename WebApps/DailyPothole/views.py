@@ -84,36 +84,42 @@ class HomePageView(TemplateView):
 
 class AboutPageView(TemplateView):
     template_name   = 'DailyPothole.template.about.html'
+    client_is_admin = False
     req_success     = True
     err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["client_is_admin"]  = self.client_is_admin
+            context["req_success"]      = self.req_success
+            context["err_msg"]          = self.err_msg
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["client_is_admin"]  = False
+            context["req_success"]      = False
+            context["err_msg"]          = None
             return context
 
 
 class ContactPageView(TemplateView):
     template_name   = 'DailyPothole.template.contact.html'
+    client_is_admin = False
     req_success     = True
     err_msg         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["client_is_admin"]  = self.client_is_admin
+            context["req_success"]      = self.req_success
+            context["err_msg"]          = self.err_msg
             return context
 
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["client_is_admin"]  = False
+            context["req_success"]      = False
+            context["err_msg"]          = None
             return context
 
 
@@ -548,7 +554,7 @@ def UpdatePotholesFromDataGrid(request):
                 repair_date__exact=repair_date,
             )
         except ObjectDoesNotExist as e:
-            raise ValueError(f"Cannot find pothole record with '{date_input}', '{operation_input}' and '{borough_input}'")
+            raise ValueError(f"Cannot find pothole record with '{repair_date}', '{operation}' and '{boro_long}'")
 
         try:
             user_obj = TblUser.objects.using("DailyPothole").get(
