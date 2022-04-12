@@ -104,7 +104,7 @@ def tear_down(windows_username=TEST_WINDOWS_USERNAME):
 
 
 # Create your tests here.
-class TestViewPageResponses(unittest.TestCase):
+class TestViewPagesResponse(unittest.TestCase):
     def setUp(self):
         tear_down()
         set_up_permissions()
@@ -130,31 +130,76 @@ class TestViewPageResponses(unittest.TestCase):
     def tearDown(self):
         tear_down()
 
-    def test_views_response(self):
+    def test_views_response_status_200(self):
         """Test normal user"""
         remove_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for a non-admin client\n    {response.context['err_msg']}")
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertFalse(response.context['req_success'], f"'{view}' returned req_success True on an admin view for a non-admin client\n    {response.context['err_msg']}")
-            self.assertTrue("not an Admin" in response.context['err_msg'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['err_msg']}")
 
         """Test admin user"""
         grant_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for an admin client\n    {response.context['err_msg']}")
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+
+    def test_views_response_user_admin_restriction(self):
+        """Test normal user, should only have acess to regular views"""
+        remove_admin_status()
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for a non-admin client\n    {response.context['err_msg']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['req_success'], f"'{view}' returned req_success True on an admin view for a non-admin client\n    {response.context['err_msg']}")
+            self.assertTrue("not an Admin" in response.context['err_msg'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['err_msg']}")
+
+        """Test admin user, should have access to all views"""
+        grant_admin_status()
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on a regular view for an admin client\n    {response.context['err_msg']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on an admin view for an admin client\n    {response.context['err_msg']}")
+
+    def __assert_additional_context_data(self):
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if view == 'dailypothole_pothole_data_entry_view':
+                self.assertTrue('today' in response.context_data.keys(), f"dailypothole_pothole_data_entry_view is missing context variable 'today'")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if view == 'dailypothole_pothole_data_grid_view':
+                self.assertTrue('ag_grid_col_def_json'  in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'ag_grid_col_def_json'")
+                self.assertTrue('pothole_data_json'     in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'pothole_data_json'")
+            if view == 'dailypothole_user_permissions_panel_view':
+                self.assertTrue('user_list'             in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'user_list'")
+                self.assertTrue('operation_list'        in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'operation_list'")
+                self.assertTrue('boro_list'             in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'boro_list'")
+            if view == 'dailypothole_csv_export_view':
+                self.assertTrue('operation_list'        in response.context_data.keys(), f"dailypothole_csv_export_view is missing context variable 'operation_list'")
+
+    def test_views_response_data(self):
+        """Some views have additional context data, need to test for those here"""
+        # Test normal user
+        remove_admin_status()
+        self.__assert_additional_context_data()
+
+        # Test admin user
+        grant_admin_status()
+        self.__assert_additional_context_data()
 
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
