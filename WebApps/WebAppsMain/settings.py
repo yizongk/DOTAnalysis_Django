@@ -367,4 +367,5 @@ ORG_CHART_PORTAL_VERSION        = '1.15.7'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.3'
 
 
-POST_RESPONSE_REQUIRED_KEYS = ["post_success", "post_msg", "post_data"]
+POST_RESPONSE_REQUIRED_JSON_KEYS    = ["post_success", "post_msg", "post_data"]
+GET_RESPONSE_REQUIRED_CONTEXT_KEYS  = ["req_success", "err_msg", "client_is_admin"]
