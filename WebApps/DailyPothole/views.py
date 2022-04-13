@@ -1743,8 +1743,9 @@ def AddUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -1766,8 +1767,9 @@ def AddUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -1777,8 +1779,11 @@ def AddUser(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to add a new user")
 
+
+        if type(username_input) is not str:
+            raise ValueError("username_input must be of str type")
 
         if username_input is None:
             raise ValueError("username_input cannot be null")
@@ -1786,11 +1791,14 @@ def AddUser(request):
         if username_input == '':
             raise ValueError("username_input cannot be empty string")
 
+        if type(is_admin_input) is not str:
+            raise ValueError("is_admin_input must be of str type")
+
         if is_admin_input is None:
             raise ValueError("is_admin_input cannot be null")
 
         if is_admin_input not in ['True', 'False']:
-            raise ValueError("Unrecognized is_admin_input value '{}', must be either 'True' or 'False'".format(is_admin_input))
+            raise ValueError(f"Unrecognized is_admin_input value '{is_admin_input}', must be either 'True' or 'False'")
 
 
         try:
@@ -1800,22 +1808,26 @@ def AddUser(request):
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "user_id": new_user.user_id,
-            "username": new_user.username,
-            "is_admin": new_user.is_admin,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "user_id": new_user.user_id,
+                "username": new_user.username,
+                "is_admin": new_user.is_admin,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUser():\n\nError: {}. For '{}'".format(e, username_input),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}. For '{username_input}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUser():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: AddUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
@@ -1857,7 +1869,7 @@ def UpdateUser(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to update a user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to update a user".format(remote_user))
 
 
         if table == 'tblUser' and column == 'IsAdmin':
@@ -1941,7 +1953,7 @@ def DeleteUser(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to delete a user".format(remote_user))
 
 
         try:
@@ -2061,7 +2073,7 @@ def AddUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add user permissions".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to add user permissions".format(remote_user))
 
 
         if username_input is None:
@@ -2157,7 +2169,7 @@ def UpdateUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to update user permissions".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to update user permissions".format(remote_user))
 
 
         if  (
@@ -2254,7 +2266,7 @@ def DeleteUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to delete user permissions".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to delete user permissions".format(remote_user))
 
 
         try:
@@ -2392,7 +2404,7 @@ def GetCsvExport(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the GetCsvExport() api".format(remote_user))
+            raise ValueError("'{}' is not an admin. Only admins can access the GetCsvExport() api".format(remote_user))
 
         from django.db.models import Sum, Max
         from datetime import datetime, timedelta

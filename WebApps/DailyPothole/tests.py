@@ -582,9 +582,8 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail")
 
-        grant_admin_status()
-
     def test_with_valid_data(self):
+        grant_admin_status()
         for payload in self.valid_payloads:
             response = self.__post_to_api(payload)
             response_content = decode_json_response_for_content( response )
@@ -656,6 +655,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 f"payload['column_name'] '{payload['column_name']}': [last_modified_by_user_id] didn't save correctly: '{self.user_obj.user_id}' input-->database '{saved_object.last_modified_by_user_id.user_id}'" )
 
     def test_data_validation(self):
+        grant_admin_status()
         crew_count_payload      = self.valid_payloads[0]
         holes_repaired_payload  = self.valid_payloads[1]
         parameters = [
@@ -797,9 +797,8 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-        grant_admin_status()
-
     def test_with_valid_data(self):
+        grant_admin_status()
         for payload in self.valid_payloads:
             response = self.__post_to_api(payload)
             response_content = decode_json_response_for_content( response )
@@ -871,6 +870,7 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
                 f"[siebel_complaints] didn't save correctly: '{payload['open_siebel']}' input-->database '{saved_object.siebel_complaints}'" )
 
     def test_data_validation(self):
+        grant_admin_status()
         payload = self.valid_payloads[0]
         parameters = [
             # Parameter name        # Accepted type
@@ -884,8 +884,6 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
             ,"open_siebel"          # str -> string formatted positive int
         ]
         for param_name in parameters:
-
-            ## Test the two crew counts which allows positive decimal and int
             if param_name == 'complaint_date':
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
                 invalid = ['a', 1, 2.3, False]
@@ -1026,8 +1024,6 @@ class TestAPILookupComplaintsData(unittest.TestCase):
             "complaint_date"        # str -> 'YYYY-MM-DD'
         ]
         for param_name in parameters:
-
-            ## Test the two crew counts which allows positive decimal and int
             if param_name == 'complaint_date':
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
                 invalid = ['a', 1, 2.3, False, None]
@@ -1128,8 +1124,6 @@ class TestAPIGetPDFReport(unittest.TestCase):
             "report_date"       # str -> 'YYYY-MM-DD'
         ]
         for param_name in parameters:
-
-            ## Test the two crew counts which allows positive decimal and int
             if param_name == 'report_date':
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
                 invalid = ['a', 1, 2.3, False]
@@ -1142,5 +1136,151 @@ class TestAPIGetPDFReport(unittest.TestCase):
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
+
+class TestAPIAddUser(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.user_obj               = grant_admin_status()
+        self.client                 = Client()
+        self.api_name               = 'dailypothole_add_user_api'
+
+        self.valid_username         = 'some_random_name'
+
+        self.valid_payloads = [
+            {
+                'username_input'    : self.valid_username,
+                'is_admin_input'    : 'False',
+            }
+            ,{
+                'username_input'    : self.valid_username,
+                'is_admin_input'    : 'True',
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        try:
+            new_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
+        except:
+            ...#Do nothing
+        else:
+            new_user.delete(using='DailyPothole')
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def __remove_test_user_if_exists(self):
+        try:
+            new_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
+        except:
+            ...#Do nothing
+        else:
+            new_user.delete(using='DailyPothole')
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.__remove_test_user_if_exists()
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assertTrue('user_id' in response_content['post_data'],
+                f"'user_id' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['user_id'] is not None,
+                f"response['post_data']['user_id'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('username' in response_content['post_data'],
+                f"'username' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['username'] is not None,
+                f"response['post_data']['username'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('is_admin' in response_content['post_data'],
+                f"'is_admin' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['is_admin'] is not None,
+                f"response['post_data']['is_admin'] can't be null: {response_content['post_data']}")
+
+            ## Check if data was saved correctly
+            saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
+
+            self.assertEqual(saved_object.username, payload['username_input'],
+                f"[username] didn't save correctly: '{payload['username_input']}' input-->database '{saved_object.username}'" )
+            self.assertEqual(str(saved_object.is_admin), payload['is_admin_input'],
+                f"[is_admin] didn't save correctly: '{payload['is_admin_input']}' input-->database '{str(saved_object.is_admin)}'" )
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "username_input"    # str -> username
+            ,"is_admin_input"   # str -> 'True' or 'False'
+        ]
+        for param_name in parameters:
+            if param_name == 'username_input':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'is_admin_input':
+                valid   = ['False', 'True']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            else:
+                raise ValueError(f"TestAPIAddUser: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__remove_test_user_if_exists()
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__remove_test_user_if_exists()
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
