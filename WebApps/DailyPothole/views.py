@@ -684,8 +684,9 @@ def UpdateComplaintsData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -696,9 +697,9 @@ def UpdateComplaintsData(request):
     else:
         print('Warning: UpdateComplaintsData(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateComplaintsData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateComplaintsData():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -707,8 +708,9 @@ def UpdateComplaintsData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateComplaintsData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -726,8 +728,22 @@ def UpdateComplaintsData(request):
         datetime_obj = datetime.strptime(complaint_date, '%Y-%m-%d')
 
         if datetime_obj.date() > datetime.today().date():
-            raise ValueError("Cannot enter data for dates in the future! (Date - '{}')".format(complaint_date))
+            raise ValueError(f"Cannot enter data for dates in the future! (Date - '{complaint_date}')")
 
+        if type(fits_bronx) is not str:
+            raise ValueError(f"fits_bronx must be of type str")
+        if type(fits_brooklyn) is not str:
+            raise ValueError(f"fits_brooklyn must be of type str")
+        if type(fits_manhattan) is not str:
+            raise ValueError(f"fits_manhattan must be of type str")
+        if type(fits_queens) is not str:
+            raise ValueError(f"fits_queens must be of type str")
+        if type(fits_staten_island) is not str:
+            raise ValueError(f"fits_staten_island must be of type str")
+        if type(fits_unassigned) is not str:
+            raise ValueError(f"fits_unassigned must be of type str")
+        if type(open_siebel) is not str:
+            raise ValueError(f"open_siebel must be of type str")
 
         try:
             if fits_bronx is not None and fits_bronx != "":
@@ -735,9 +751,12 @@ def UpdateComplaintsData(request):
             elif fits_bronx == "":
                 fits_bronx = None
         except ValueError as e:
-            raise ValueError("fits_bronx '{}' cannot be converted into an Int".format(fits_bronx))
+            raise ValueError(f"fits_bronx '{fits_bronx}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_bronx < 0:
+                raise ValueError(f"fits_bronx cannot be a negative number: {fits_bronx}")
 
         try:
             if fits_brooklyn is not None and fits_brooklyn != "":
@@ -745,9 +764,12 @@ def UpdateComplaintsData(request):
             elif fits_brooklyn == "":
                 fits_brooklyn = None
         except ValueError as e:
-            raise ValueError("fits_brooklyn '{}' cannot be converted into an Int".format(fits_brooklyn))
+            raise ValueError(f"fits_brooklyn '{fits_brooklyn}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_brooklyn < 0:
+                raise ValueError(f"fits_brooklyn cannot be a negative number: {fits_brooklyn}")
 
         try:
             if fits_manhattan is not None and fits_manhattan != "":
@@ -755,9 +777,12 @@ def UpdateComplaintsData(request):
             elif fits_manhattan == "":
                 fits_manhattan = None
         except ValueError as e:
-            raise ValueError("fits_manhattan '{}' cannot be converted into an Int".format(fits_manhattan))
+            raise ValueError(f"fits_manhattan '{fits_manhattan}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_manhattan < 0:
+                raise ValueError(f"fits_manhattan cannot be a negative number: {fits_manhattan}")
 
         try:
             if fits_queens is not None and fits_queens != "":
@@ -765,9 +790,12 @@ def UpdateComplaintsData(request):
             elif fits_queens == "":
                 fits_queens = None
         except ValueError as e:
-            raise ValueError("fits_queens '{}' cannot be converted into an Int".format(fits_queens))
+            raise ValueError(f"fits_queens '{fits_queens}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_queens < 0:
+                raise ValueError(f"fits_queens cannot be a negative number: {fits_queens}")
 
         try:
             if fits_staten_island is not None and fits_staten_island != "":
@@ -775,9 +803,12 @@ def UpdateComplaintsData(request):
             elif fits_staten_island == "":
                 fits_staten_island = None
         except ValueError as e:
-            raise ValueError("fits_staten_island '{}' cannot be converted into an Int".format(fits_staten_island))
+            raise ValueError(f"fits_staten_island '{fits_staten_island}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_staten_island < 0:
+                raise ValueError(f"fits_staten_island cannot be a negative number: {fits_staten_island}")
 
         try:
             if fits_unassigned is not None and fits_unassigned != "":
@@ -785,9 +816,12 @@ def UpdateComplaintsData(request):
             elif fits_unassigned == "":
                 fits_unassigned = None
         except ValueError as e:
-            raise ValueError("fits_unassigned '{}' cannot be converted into an Int".format(fits_unassigned))
+            raise ValueError(f"fits_unassigned '{fits_unassigned}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if fits_unassigned < 0:
+                raise ValueError(f"fits_unassigned cannot be a negative number: {fits_unassigned}")
 
         try:
             if open_siebel is not None and open_siebel != "":
@@ -795,14 +829,17 @@ def UpdateComplaintsData(request):
             elif open_siebel == "":
                 open_siebel = None
         except ValueError as e:
-            raise ValueError("open_siebel '{}' cannot be converted into an Int".format(open_siebel))
+            raise ValueError(f"open_siebel '{open_siebel}' cannot be converted into an Int")
         except Exception as e:
             raise
+        finally:
+            if open_siebel < 0:
+                raise ValueError(f"open_siebel cannot be a negative number: {open_siebel}")
 
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to edit complaints data".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to edit complaints data")
 
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
@@ -816,31 +853,35 @@ def UpdateComplaintsData(request):
         complaint_data.fits_staten_island = fits_staten_island
         complaint_data.fits_unassigned    = fits_unassigned
         complaint_data.siebel_complaints  = open_siebel
-        complaint_data.save()
+        complaint_data.save(using='DailyPothole')
 
 
         return JsonResponse({
             "post_success"      : True,
             "post_msg"          : None,
-            "complaint_date"    : complaint_date,
-            "fits_bronx"        : fits_bronx,
-            "fits_brooklyn"     : fits_brooklyn,
-            "fits_manhattan"    : fits_manhattan,
-            "fits_queens"       : fits_queens,
-            "fits_staten_island": fits_staten_island,
-            "fits_unassigned"   : fits_unassigned,
-            "open_siebel"       : open_siebel,
+            "post_data"         : {
+                "complaint_date"    : complaint_date,
+                "fits_bronx"        : fits_bronx,
+                "fits_brooklyn"     : fits_brooklyn,
+                "fits_manhattan"    : fits_manhattan,
+                "fits_queens"       : fits_queens,
+                "fits_staten_island": fits_staten_island,
+                "fits_unassigned"   : fits_unassigned,
+                "open_siebel"       : open_siebel,
+            },
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. For '{complaint_date}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}",
             # "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
@@ -848,8 +889,9 @@ def LookupComplaintsData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -871,8 +913,9 @@ def LookupComplaintsData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: LookupComplaintsData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -880,7 +923,7 @@ def LookupComplaintsData(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the LookupComplaintsData() api".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin. Only admins can access the LookupComplaintsData() api")
 
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
@@ -899,25 +942,29 @@ def LookupComplaintsData(request):
         return JsonResponse({
             "post_success"          : True,
             "post_msg"              : None,
-            "complaint_date"        : complaint_date,
-            "fits_bronx"            : fits_bronx,
-            "fits_brooklyn"         : fits_brooklyn,
-            "fits_manhattan"        : fits_manhattan,
-            "fits_queens"           : fits_queens,
-            "fits_staten_island"    : fits_staten_island,
-            "fits_unassigned"       : fits_unassigned,
-            "open_siebel"           : open_siebel,
+            "post_data"             : {
+                "complaint_date"        : complaint_date,
+                "fits_bronx"            : fits_bronx,
+                "fits_brooklyn"         : fits_brooklyn,
+                "fits_manhattan"        : fits_manhattan,
+                "fits_queens"           : fits_queens,
+                "fits_staten_island"    : fits_staten_island,
+                "fits_unassigned"       : fits_unassigned,
+                "open_siebel"           : open_siebel,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
             "post_success"  : False,
-            "post_msg"      : "DailyPothole: LookupComplaintsData():\n\nError: {}. For '{}'".format(e, complaint_date),
+            "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}. For '{complaint_date}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}",
             # "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 

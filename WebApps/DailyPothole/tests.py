@@ -105,7 +105,8 @@ def tear_down(windows_username=TEST_WINDOWS_USERNAME):
 
 # Create your tests here.
 class TestViewPagesResponse(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         tear_down()
         set_up_permissions()
         self.client                 = Client()
@@ -127,7 +128,8 @@ class TestViewPagesResponse(unittest.TestCase):
             'dailypothole_csv_export_view',
         ]
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         tear_down()
 
     def test_views_response_status_200(self):
@@ -204,7 +206,8 @@ class TestViewPagesResponse(unittest.TestCase):
 
 class TestAPIUpdatePotholesData(unittest.TestCase):
     """methods that starts with name 'test...' are the methods be called by unittest"""
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         tear_down()
         self.user_obj                   = set_up_permissions()
         self.client                     = Client()
@@ -240,7 +243,8 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
             }
         }
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         tear_down()
 
     def __post_to_api(self, payload):
@@ -256,6 +260,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
         return response
 
     def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
@@ -263,9 +268,10 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
@@ -273,7 +279,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
@@ -394,7 +400,8 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
 
 class TestAPILookupPotholesAndCrewData(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         tear_down()
         set_up_permissions()
         self.client                 = Client()
@@ -410,7 +417,8 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
             'borough'       : self.valid_borough,
         }
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         tear_down()
 
     def __post_to_api(self, payload):
@@ -433,7 +441,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
@@ -443,7 +451,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def test_with_valid_data(self):
         payload = self.valid_payload
@@ -493,7 +501,8 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
 
 
 class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.client                 = Client()
@@ -527,7 +536,8 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
             }
         ]
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         tear_down()
 
     def __post_to_api(self, payload):
@@ -550,7 +560,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}'\n{content}")
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
@@ -560,11 +570,10 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
 
         self.assertEqual(
             content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}'\n{content}")
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
     def test_api_accept_only_admins(self):
-        self.user_obj.is_admin=False
-        self.user_obj.save(using='DailyPothole')
+        remove_admin_status()
 
         payload = self.valid_payloads[0]
         res     = self.__post_to_api(payload)
@@ -573,8 +582,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail")
 
-        self.user_obj.is_admin=True
-        self.user_obj.save(using='DailyPothole')
+        grant_admin_status()
 
     def test_with_valid_data(self):
         for payload in self.valid_payloads:
@@ -643,9 +651,9 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 raise ValueError( f"TestAPIUpdatePotholesFromDataGrid: test_with_valid_data(): payload['column_name'] not recognized in test case: '{payload['column_name']}'" )
 
             self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10,
-                f"payload['column_name'] '{payload['column_name']}': [last_modified_timestamp] didn't save correctly: '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
+                f"payload['column_name'] '{payload['column_name']}': [last_modified_timestamp] didn't save correctly: '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
             self.assertEqual( saved_object.last_modified_by_user_id.user_id  , self.user_obj.user_id,
-                f"payload['column_name'] '{payload['column_name']}': [last_modified_by_user_id] didn't save correctly: '{saved_object.last_modified_by_user_id.user_id}' input-->database '{self.user_obj.user_id}'" )
+                f"payload['column_name'] '{payload['column_name']}': [last_modified_by_user_id] didn't save correctly: '{self.user_obj.user_id}' input-->database '{saved_object.last_modified_by_user_id.user_id}'" )
 
     def test_data_validation(self):
         crew_count_payload      = self.valid_payloads[0]
@@ -709,4 +717,328 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
 
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUpdateComplaintsData(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.user_obj               = grant_admin_status()
+        self.client                 = Client()
+        self.api_name               = 'dailypothole_update_complaints_data_api'
+
+        self.valid_complaint_date         = f'{datetime.now().strftime("%Y-%m-%d")}'
+        self.valid_fits_bronx             = '1'
+        self.valid_fits_brooklyn          = '2'
+        self.valid_fits_manhattan         = '3'
+        self.valid_fits_queens            = '4'
+        self.valid_fits_staten_island     = '5'
+        self.valid_fits_unassigned        = '6'
+        self.valid_open_siebel            = '7'
+
+        self.valid_payloads = [
+            {
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+        grant_admin_status()
+
+    def test_with_valid_data(self):
+        for payload in self.valid_payloads:
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assertTrue('complaint_date' in response_content['post_data'],
+                f"'complaint_date' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['complaint_date'] is not None,
+                f"response['complaint_date'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_bronx' in response_content['post_data'],
+                f"'fits_bronx' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_bronx'] is not None,
+                f"response['fits_bronx'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_brooklyn' in response_content['post_data'],
+                f"'fits_brooklyn' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_brooklyn'] is not None,
+                f"response['fits_brooklyn'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_manhattan' in response_content['post_data'],
+                f"'fits_manhattan' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_manhattan'] is not None,
+                f"response['fits_manhattan'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_queens' in response_content['post_data'],
+                f"'fits_queens' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_queens'] is not None,
+                f"response['fits_queens'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_staten_island' in response_content['post_data'],
+                f"'fits_staten_island' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_staten_island'] is not None,
+                f"response['fits_staten_island'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('fits_unassigned' in response_content['post_data'],
+                f"'fits_unassigned' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['fits_unassigned'] is not None,
+                f"response['fits_unassigned'] can't be null: {response_content['post_data']}")
+
+            self.assertTrue('open_siebel' in response_content['post_data'],
+                f"'open_siebel' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['open_siebel'] is not None,
+                f"response['open_siebel'] can't be null: {response_content['post_data']}")
+
+
+            ## Check if data was saved correctly
+            saved_object = TblComplaint.objects.using('DailyPothole').get(
+                complaint_date__exact=payload['complaint_date'],
+            )
+
+            self.assertEqual(saved_object.fits_bronx, int(payload['fits_bronx']),
+                f"[fits_bronx] didn't save correctly: '{payload['fits_bronx']}' input-->database '{saved_object.fits_bronx}'" )
+            self.assertEqual(saved_object.fits_brooklyn, int(payload['fits_brooklyn']),
+                f"[fits_brooklyn] didn't save correctly: '{payload['fits_brooklyn']}' input-->database '{saved_object.fits_brooklyn}'" )
+            self.assertEqual(saved_object.fits_manhattan, int(payload['fits_manhattan']),
+                f"[fits_manhattan] didn't save correctly: '{payload['fits_manhattan']}' input-->database '{saved_object.fits_manhattan}'" )
+            self.assertEqual(saved_object.fits_queens , int(payload['fits_queens']),
+                f"[fits_queens] didn't save correctly: '{payload['fits_queens']}' input-->database '{saved_object.fits_queens}'" )
+            self.assertEqual(saved_object.fits_staten_island , int(payload['fits_staten_island']),
+                f"[fits_staten_island] didn't save correctly: '{payload['fits_staten_island']}' input-->database '{saved_object.fits_staten_island}'" )
+            self.assertEqual(saved_object.fits_unassigned , int(payload['fits_unassigned']),
+                f"[fits_unassigned] didn't save correctly: '{payload['fits_unassigned']}' input-->database '{saved_object.fits_unassigned}'" )
+            self.assertEqual(saved_object.siebel_complaints , int(payload['open_siebel']),
+                f"[siebel_complaints] didn't save correctly: '{payload['open_siebel']}' input-->database '{saved_object.siebel_complaints}'" )
+
+    def test_data_validation(self):
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name        # Accepted type
+            "complaint_date"        # str -> 'YYYY-MM-DD'
+            ,"fits_bronx"           # str -> string formatted positive int
+            ,"fits_brooklyn"        # str -> string formatted positive int
+            ,"fits_manhattan"       # str -> string formatted positive int
+            ,"fits_queens"          # str -> string formatted positive int
+            ,"fits_staten_island"   # str -> string formatted positive int
+            ,"fits_unassigned"      # str -> string formatted positive int
+            ,"open_siebel"          # str -> string formatted positive int
+        ]
+        for param_name in parameters:
+
+            ## Test the two crew counts which allows positive decimal and int
+            if param_name == 'complaint_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False]
+            elif param_name in ['fits_bronx', 'fits_brooklyn', 'fits_manhattan', 'fits_queens', 'fits_staten_island', 'fits_unassigned', 'open_siebel']:
+                valid   = ['0', '1']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            else:
+                raise ValueError(f"TestAPIUpdateComplaintsData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPILookupComplaintsData(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.client                     = Client()
+        self.api_name                   = 'dailypothole_lookup_complaints_data_api'
+
+        self.valid_complaint_date       = f'{datetime.now().strftime("%Y-%m-%d")}'
+
+        self.valid_payloads = [
+            {
+                'complaint_date'    : self.valid_complaint_date,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+        grant_admin_status()
+
+    def __set_up_test_data(self):
+        complaint_data = TblComplaint.objects.using('DailyPothole').get(
+            complaint_date__exact=self.valid_complaint_date,
+        )
+
+        complaint_data.fits_bronx         = 401
+        complaint_data.fits_brooklyn      = 402
+        complaint_data.fits_manhattan     = 403
+        complaint_data.fits_queens        = 404
+        complaint_data.fits_staten_island = 405
+        complaint_data.fits_unassigned    = 406
+        complaint_data.siebel_complaints  = None
+        complaint_data.save(using='DailyPothole')
+
+    def test_with_valid_data(self):
+        self.__set_up_test_data()
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assertTrue('complaint_date' in response_content['post_data'],
+                f"'complaint_date' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_bronx' in response_content['post_data'],
+                f"'fits_bronx' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_brooklyn' in response_content['post_data'],
+                f"'fits_brooklyn' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_manhattan' in response_content['post_data'],
+                f"'fits_manhattan' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_queens' in response_content['post_data'],
+                f"'fits_queens' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_staten_island' in response_content['post_data'],
+                f"'fits_staten_island' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('fits_unassigned' in response_content['post_data'],
+                f"'fits_unassigned' is not in the response: {response_content['post_data']}")
+
+            self.assertTrue('open_siebel' in response_content['post_data'],
+                f"'open_siebel' is not in the response: {response_content['post_data']}")
+
+    def test_data_validation(self):
+        self.__set_up_test_data()
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name        # Accepted type
+            "complaint_date"        # str -> 'YYYY-MM-DD'
+        ]
+        for param_name in parameters:
+
+            ## Test the two crew counts which allows positive decimal and int
+            if param_name == 'complaint_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False, None]
+            else:
+                raise ValueError(f"TestAPILookupComplaintsData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 

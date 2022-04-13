@@ -210,29 +210,29 @@
                     successCallbackFct=function(json_response) {
                         alert(`data saved successfully!`)
 
-                        let fits_bronx          = json_response.fits_bronx == null           ? 'None' : json_response.fits_bronx
-                        let fits_brooklyn       = json_response.fits_brooklyn == null        ? 'None' : json_response.fits_brooklyn
-                        let fits_manhattan      = json_response.fits_manhattan == null       ? 'None' : json_response.fits_manhattan
-                        let fits_queens         = json_response.fits_queens == null          ? 'None' : json_response.fits_queens
-                        let fits_staten_island  = json_response.fits_staten_island == null   ? 'None' : json_response.fits_staten_island
-                        let fits_unassigned     = json_response.fits_unassigned == null      ? 'None' : json_response.fits_unassigned
-                        let open_siebel         = json_response.open_siebel == null          ? 'None' : json_response.open_siebel
+                        let fits_bronx          = json_response.post_data.fits_bronx == null           ? 'None' : json_response.post_data.fits_bronx
+                        let fits_brooklyn       = json_response.post_data.fits_brooklyn == null        ? 'None' : json_response.post_data.fits_brooklyn
+                        let fits_manhattan      = json_response.post_data.fits_manhattan == null       ? 'None' : json_response.post_data.fits_manhattan
+                        let fits_queens         = json_response.post_data.fits_queens == null          ? 'None' : json_response.post_data.fits_queens
+                        let fits_staten_island  = json_response.post_data.fits_staten_island == null   ? 'None' : json_response.post_data.fits_staten_island
+                        let fits_unassigned     = json_response.post_data.fits_unassigned == null      ? 'None' : json_response.post_data.fits_unassigned
+                        let open_siebel         = json_response.post_data.open_siebel == null          ? 'None' : json_response.post_data.open_siebel
 
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).text(        fits_bronx);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).text(     fits_brooklyn);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).text(    fits_manhattan);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).text(       fits_queens);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).text( fits_staten_island);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).text(   fits_unassigned);
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).text( open_siebel);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).text(        fits_bronx);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).text(     fits_brooklyn);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).text(    fits_manhattan);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).text(       fits_queens);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).text( fits_staten_island);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).text(   fits_unassigned);
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).text( open_siebel);
 
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).css(         'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).css(      'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).css(     'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css(        'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css(  'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).css(    'color', 'green').animate( { color: 'black' } );
-                        $(`[data-entryComplaintId="${json_response.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css(  'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSBronx"]`).css(         'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSBrooklyn"]`).css(      'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSManhattan"]`).css(     'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSQueens"]`).css(        'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSStatenIsland"]`).css(  'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="FITSUnassigned"]`).css(    'color', 'green').animate( { color: 'black' } );
+                        $(`[data-entryComplaintId="${json_response.post_data.complaint_date}"][data-table="tblComplaint"][data-column="SiebelComplaints"]`).css(  'color', 'green').animate( { color: 'black' } );
                     },
                     failCallbackFct=function(json_response) {
                         alert(JSON.stringify(json_response, null, 2))
@@ -261,13 +261,13 @@
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
                         successCallbackFct=function(json_response) {
 
-                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx;
-                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn;
-                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan;
-                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens;
-                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island;
-                            let fits_unassigned     = json_response.fits_unassigned == null      ? '' : json_response.fits_unassigned;
-                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel;
+                            let fits_bronx          = json_response.post_data.fits_bronx == null           ? '' : json_response.post_data.fits_bronx;
+                            let fits_brooklyn       = json_response.post_data.fits_brooklyn == null        ? '' : json_response.post_data.fits_brooklyn;
+                            let fits_manhattan      = json_response.post_data.fits_manhattan == null       ? '' : json_response.post_data.fits_manhattan;
+                            let fits_queens         = json_response.post_data.fits_queens == null          ? '' : json_response.post_data.fits_queens;
+                            let fits_staten_island  = json_response.post_data.fits_staten_island == null   ? '' : json_response.post_data.fits_staten_island;
+                            let fits_unassigned     = json_response.post_data.fits_unassigned == null      ? '' : json_response.post_data.fits_unassigned;
+                            let open_siebel         = json_response.post_data.open_siebel == null          ? '' : json_response.post_data.open_siebel;
 
                             $("#modalNewRowFormInputFITSBronx").val(        fits_bronx);
                             $("#modalNewRowFormInputFITSBrooklyn").val(     fits_brooklyn);
