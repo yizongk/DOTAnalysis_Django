@@ -1026,8 +1026,9 @@ class ComplaintsInputPageView(generic.ListView):
 def GetPDFReport(request):
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -1038,9 +1039,9 @@ def GetPDFReport(request):
     else:
         print('Warning: GetPDFReport(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "GetPDFReport():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "GetPDFReport():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1049,8 +1050,9 @@ def GetPDFReport(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetPDFReport():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetPDFReport():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -1058,7 +1060,7 @@ def GetPDFReport(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin. Only admins can access the GetPDFReport() api".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin. Only admins can access the GetPDFReport() api")
 
         from django.db.models import Sum, Count
         from datetime import datetime, timedelta
@@ -1076,7 +1078,7 @@ def GetPDFReport(request):
 
         potholes_data = get_active_pothole_qryset().filter(
             repair_date__range=[start_str, end_str],
-        ).order_by('operation_id', 'boro_id', 'repair_date')
+        ).order_by('operation_boro_id__operation_id', 'operation_boro_id__boro_id', 'repair_date')
 
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
             complaint_date__exact=complaint_date, # Get previous day's data
@@ -1084,10 +1086,10 @@ def GetPDFReport(request):
 
         today_crew_count = get_active_pothole_qryset().filter(
             repair_date__exact=report_date,
-        ).order_by('boro_id__boro_long', 'operation_id__operation')
+        ).order_by('operation_boro_id__boro_id__boro_long', 'operation_boro_id__operation_id__operation')
 
         # Assuming a new FY starts at July 1st
-        fytd_start_str = "{}-07-01".format(report_date_obj.year - 1 if report_date_obj.month < 7 else report_date_obj.year)
+        fytd_start_str = f"{report_date_obj.year - 1 if report_date_obj.month < 7 else report_date_obj.year}-07-01"
         fytd_total_pothole_repair = get_active_pothole_qryset().filter(
             repair_date__range=[fytd_start_str, report_date],
         )
@@ -1096,22 +1098,22 @@ def GetPDFReport(request):
         weekly_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[start_str, end_str],
         ).values(
-            'operation_id__operation'
-            ,'boro_id__boro_long'
+            'operation_boro_id__operation_id__operation'
+            ,'operation_boro_id__boro_id__boro_long'
         ).annotate( ## When combining .values() and .annotate(), it is effectively an aggregation (From .annotate()) with a group by of the columns specified in .values()
             total_repaired=Sum('holes_repaired')
-        ).order_by('operation_id__operation', 'boro_id__boro_long')
+        ).order_by('operation_boro_id__operation_id__operation', 'operation_boro_id__boro_id__boro_long')
 
-        unique_boro = get_active_pothole_qryset().values('boro_id__boro_long').order_by('boro_id__boro_long').distinct()
+        unique_boro = get_active_pothole_qryset().values('operation_boro_id__boro_id__boro_long').order_by('operation_boro_id__boro_id__boro_long').distinct()
 
         fiscal_year_by_boro = TblPotholeMaster.objects.using('DailyPothole').filter(
             repair_date__range=[fytd_start_str, report_date],
         ).values(
-            'operation_id__operation'
-            ,'boro_id__boro_long'
+            'operation_boro_id__operation_id__operation'
+            ,'operation_boro_id__boro_id__boro_long'
         ).annotate(
             total_repaired=Sum('holes_repaired')
-        ).order_by('operation_id__operation', 'boro_id__boro_long')
+        ).order_by('operation_boro_id__operation_id__operation', 'operation_boro_id__boro_id__boro_long')
 
         import io
         buffer = io.BytesIO()
@@ -1160,7 +1162,7 @@ def GetPDFReport(request):
         for each in potholes_data:
             # On first day of the tracking week, append boro operation info
             if day_i == 0:
-                out_row.append("{}\n{}".format(each.boro_id.boro_long, each.operation_id.operation))
+                out_row.append(f"{each.operation_boro_id.boro_id.boro_long}\n{each.operation_boro_id.operation_id.operation}")
                 out_row.append(None)
 
             crew_count_cal      = float(each.repair_crew_count)    if each.repair_crew_count is not None   else None
@@ -1347,7 +1349,7 @@ def GetPDFReport(request):
 
         ## Today Crew Count Grid
         data = [
-            ("Today's Crew Count ({})".format(report_date), "", ""),
+            (f"Today's Crew Count ({report_date})", "", ""),
             ('',) # Empty row
         ]
         total_crew_count = 0
@@ -1357,8 +1359,8 @@ def GetPDFReport(request):
             if dly_crew_ct is not None and dly_crew_ct.is_integer(): ## If crew count is a whole number, cast it as int
                 dly_crew_ct = int(dly_crew_ct)
             row_tuple = (
-                "{}".format(each.boro_id.boro_long)
-                ,"{}".format(each.operation_id.operation)
+                f"{each.operation_boro_id.boro_id.boro_long}"
+                ,f"{each.operation_boro_id.operation_id.operation}"
                 ,dly_crew_ct
             )
             ## Only add row to the table if the daily_crew_count is not null
@@ -1428,7 +1430,7 @@ def GetPDFReport(request):
         # Should results in this: column_header = ('Operation', 'Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island', 'Operation Total')
         column_header = ['Operation']
         for each in unique_boro:
-            column_header.append(each['boro_id__boro_long'])
+            column_header.append(each['operation_boro_id__boro_id__boro_long'])
         column_header.append('Operation Total')
         column_header = (column_header) # Convert to tuple, for immutability
 
@@ -1448,7 +1450,7 @@ def GetPDFReport(request):
         for each in weekly_by_boro:
             # On first day of the tracking week, append boro operation info
             if boro_i == 0:
-                out_row.append("{}".format(each['operation_id__operation']))
+                out_row.append(f"{each['operation_boro_id__operation_id__operation']}")
 
             holes_total += each['total_repaired'] if each['total_repaired'] is not None else 0
             out_row.append(each['total_repaired'] if each['total_repaired'] is not None else '')
@@ -1523,7 +1525,7 @@ def GetPDFReport(request):
         # Should results in this: column_header = ('Operation', 'Bronx', 'Brooklyn', 'Manhattan', 'Queens', 'Staten Island', 'Operation Total')
         column_header = ['Operation']
         for each in unique_boro:
-            column_header.append(each['boro_id__boro_long'])
+            column_header.append(each['operation_boro_id__boro_id__boro_long'])
         column_header.append('Operation Total')
         column_header = (column_header) # Convert to tuple, for immutability
 
@@ -1544,7 +1546,7 @@ def GetPDFReport(request):
         for each in fiscal_year_by_boro:
             # On first day of the tracking week, append boro operation info
             if boro_i == 0:
-                out_row.append("{}".format(each['operation_id__operation']))
+                out_row.append(f"{each['operation_boro_id__operation_id__operation']}")
 
             holes_total += each['total_repaired'] if each['total_repaired'] is not None else 0
             out_row.append(each['total_repaired'] if each['total_repaired'] is not None else '')
@@ -1619,20 +1621,24 @@ def GetPDFReport(request):
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "pdf_bytes": buffer_decoded,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "pdf_bytes"     : buffer_decoded,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. For '{}'".format(e, report_date),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}. For '{report_date}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: GetPDFReport():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 

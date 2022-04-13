@@ -131,7 +131,7 @@
                     successCallbackFct=function(json_response) {
                         //alert(`data saved successfully!`)
 
-                        fun_bytes_str = json_response.pdf_bytes
+                        fun_bytes_str = json_response.post_data.pdf_bytes
                         var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
                         let date_name = `${ ReportDate.substring(5, ReportDate.length) + '-' + ReportDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         date_name = date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
@@ -168,13 +168,13 @@
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
                         successCallbackFct=function(json_response) {
 
-                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx
-                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn
-                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
-                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
-                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
-                            let fits_unassigned     = json_response.fits_unassigned == null      ? '' : json_response.fits_unassigned
-                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
+                            let fits_bronx          = json_response.post_data.fits_bronx == null           ? '' : json_response.post_data.fits_bronx
+                            let fits_brooklyn       = json_response.post_data.fits_brooklyn == null        ? '' : json_response.post_data.fits_brooklyn
+                            let fits_manhattan      = json_response.post_data.fits_manhattan == null       ? '' : json_response.post_data.fits_manhattan
+                            let fits_queens         = json_response.post_data.fits_queens == null          ? '' : json_response.post_data.fits_queens
+                            let fits_staten_island  = json_response.post_data.fits_staten_island == null   ? '' : json_response.post_data.fits_staten_island
+                            let fits_unassigned     = json_response.post_data.fits_unassigned == null      ? '' : json_response.post_data.fits_unassigned
+                            let open_siebel         = json_response.post_data.open_siebel == null          ? '' : json_response.post_data.open_siebel
 
                             $("#reportingFormInputFITSBronx").val(        fits_bronx);
                             $("#reportingFormInputFITSBrooklyn").val(     fits_brooklyn);

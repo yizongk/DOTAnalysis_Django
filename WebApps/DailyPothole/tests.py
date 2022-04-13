@@ -812,42 +812,42 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
             self.assertTrue('complaint_date' in response_content['post_data'],
                 f"'complaint_date' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['complaint_date'] is not None,
-                f"response['complaint_date'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['complaint_date'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_bronx' in response_content['post_data'],
                 f"'fits_bronx' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_bronx'] is not None,
-                f"response['fits_bronx'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_bronx'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_brooklyn' in response_content['post_data'],
                 f"'fits_brooklyn' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_brooklyn'] is not None,
-                f"response['fits_brooklyn'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_brooklyn'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_manhattan' in response_content['post_data'],
                 f"'fits_manhattan' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_manhattan'] is not None,
-                f"response['fits_manhattan'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_manhattan'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_queens' in response_content['post_data'],
                 f"'fits_queens' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_queens'] is not None,
-                f"response['fits_queens'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_queens'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_staten_island' in response_content['post_data'],
                 f"'fits_staten_island' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_staten_island'] is not None,
-                f"response['fits_staten_island'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_staten_island'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('fits_unassigned' in response_content['post_data'],
                 f"'fits_unassigned' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['fits_unassigned'] is not None,
-                f"response['fits_unassigned'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['fits_unassigned'] can't be null: {response_content['post_data']}")
 
             self.assertTrue('open_siebel' in response_content['post_data'],
                 f"'open_siebel' is not in the response: {response_content['post_data']}")
             self.assertTrue(response_content['post_data']['open_siebel'] is not None,
-                f"response['open_siebel'] can't be null: {response_content['post_data']}")
+                f"response['post_data']['open_siebel'] can't be null: {response_content['post_data']}")
 
 
             ## Check if data was saved correctly
@@ -965,8 +965,6 @@ class TestAPILookupComplaintsData(unittest.TestCase):
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-        grant_admin_status()
-
     def __set_up_test_data(self):
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
             complaint_date__exact=self.valid_complaint_date,
@@ -1041,4 +1039,108 @@ class TestAPILookupComplaintsData(unittest.TestCase):
 
             for data in invalid:
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIGetPDFReport(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.client             = Client()
+        self.api_name           = 'dailypothole_get_pdf_report_api'
+
+        self.valid_report_date  = f'{datetime.now().strftime("%Y-%m-%d")}'
+
+        self.valid_payloads = [
+            {
+                'report_date'    : self.valid_report_date,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+        for payload in self.valid_payloads:
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assertTrue('pdf_bytes' in response_content['post_data'],
+                f"'pdf_bytes' is not in the response: {response_content['post_data']}")
+            self.assertTrue(response_content['post_data']['pdf_bytes'] is not None,
+                f"response['post_data']['pdf_bytes'] can't be null: {response_content['post_data']}")
+
+    def test_data_validation(self):
+        grant_admin_status()
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "report_date"       # str -> 'YYYY-MM-DD'
+        ]
+        for param_name in parameters:
+
+            ## Test the two crew counts which allows positive decimal and int
+            if param_name == 'report_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False]
+            else:
+                raise ValueError(f"TestAPIGetPDFReport: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
 
