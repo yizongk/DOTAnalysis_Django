@@ -1835,8 +1835,9 @@ def UpdateUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -1847,9 +1848,9 @@ def UpdateUser(request):
     else:
         print('Warning: UpdateUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1858,62 +1859,74 @@ def UpdateUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
-        table               = json_blob['table']
-        column              = json_blob['column']
+        table       = json_blob['table']
+        column      = json_blob['column']
+        user_id     = json_blob['id']
+        new_value   = json_blob['new_value']
 
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not an admin and does not have the permission to update a user".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to update a user")
 
+        if new_value is None:
+            raise ValueError("new_value cannot be null")
+
+        if type(table) is not str:
+            raise ValueError(f"table must a str type")
+        if type(column) is not str:
+            raise ValueError(f"column must a str type")
+        if type(user_id) is not int:
+            raise ValueError(f"user_id must a int type")
+        if type(new_value) is not str:
+            raise ValueError(f"new_value must a str type")
 
         if table == 'tblUser' and column == 'IsAdmin':
-            user_id             = json_blob['id']
-            is_admin_input      = json_blob['new_value']
+             if new_value not in ['True', 'False']:
+                raise ValueError(f"Unrecognized new_value value '{new_value}', must be either 'True' or 'False'")
         else:
-            raise ValueError("table '{}' and column '{}' is not recognized for this api".format(table, column))
+            raise ValueError(f"table '{table}' and column '{column}' is not recognized for this api")
 
         try:
             user_id = int(user_id)
         except Exception as e:
-            raise ValueError("Cannot convert '{}' to int".format(user_id))
-
-        if is_admin_input is None:
-            raise ValueError("is_admin_input cannot be null")
-
-        if is_admin_input not in ['True', 'False']:
-            raise ValueError("Unrecognized is_admin_input value '{}', must be either 'True' or 'False'".format(is_admin_input))
+            raise ValueError(f"Cannot convert '{user_id}' to int")
 
 
         try:
             user = TblUser.objects.using("DailyPothole").get(user_id=user_id)
-            user.is_admin = is_admin_input
+            user.is_admin = new_value
             user.save(using='DailyPothole')
         except Exception as e:
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "user_id": user.user_id,
-            "username": user.username,
-            "is_admin": user.is_admin,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "user_id": user.user_id,
+                "username": user.username,
+                "is_admin": user.is_admin,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUser():\n\nError: {}. For '{}' and '{}'".format(e, user_id, is_admin_input),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}. For '{user_id}' and '{new_value}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUser():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: UpdateUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
