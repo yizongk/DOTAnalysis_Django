@@ -2046,8 +2046,9 @@ def AddUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -2058,9 +2059,9 @@ def AddUserPermission(request):
     else:
         print('Warning: AddUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "AddUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2069,8 +2070,9 @@ def AddUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -2105,37 +2107,42 @@ def AddUserPermission(request):
 
 
         try:
-            user = TblUser.objects.using("DailyPothole").get(username=username_input)
-            operation = TblOperation.objects.using("DailyPothole").get(operation=operation_input)
-            boro = TblBoro.objects.using("DailyPothole").get(boro_long=boro_input)
+            user            = TblUser.objects.using("DailyPothole").get(username__exact=username_input)
+            operation_boro  = TblOperationBoro.objects.using("DailyPothole").get(
+                operation_id__operation__exact   = operation_input
+                ,boro_id__boro_long__exact       = boro_input
+            )
 
             new_permission = TblPermission(
-                user_id=user
-                ,operation_id=operation
-                ,boro_id=boro
+                user_id             = user
+                ,operation_boro_id  = operation_boro
             )
             new_permission.save(using='DailyPothole')
         except Exception as e:
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "permission_id": new_permission.permission_id,
-            "username": new_permission.user_id.username,
-            "operation": new_permission.operation_id.operation,
-            "boro_long": new_permission.boro_id.boro_long,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "permission_id" : new_permission.permission_id,
+                "username"      : new_permission.user_id.username,
+                "operation"     : new_permission.operation_boro_id.operation_id.operation,
+                "boro_long"     : new_permission.operation_boro_id.boro_id.boro_long,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}. For '{}'".format(e, username_input),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}. For '{username_input}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: AddUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 

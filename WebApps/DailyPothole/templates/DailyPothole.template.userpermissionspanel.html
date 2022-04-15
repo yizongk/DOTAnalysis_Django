@@ -77,9 +77,9 @@
             <tbody>
                 {% for entry in user_permissions %}
                 <tr>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select"     >{{ entry.user_id.username }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" class="editable-select">{{ entry.operation_id.operation }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select"     >{{ entry.boro_id.boro_long }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select" >{{ entry.user_id.username }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" class="editable-select" >{{ entry.operation_boro_id.operation_id.operation }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select" >{{ entry.operation_boro_id.boro_id.boro_long }}</td>
                     <td data-id="{{ entry.permission_id }}" ></td>
                 </tr>
                 {% endfor %}
@@ -255,12 +255,12 @@
                         alert(`Successfully added permission to User Permissions table!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.username, json_response.operation, json_response.boro_long, ] )
+                        var rowNode = table.row.add( [ json_response.post_data.username, json_response.post_data.operation, json_response.post_data.boro_long, ] )
                         .draw()
                         .node();
 
                         // Add permission_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.permission_id);
+                        $(rowNode).children().attr("data-id", json_response.post_data.permission_id);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {

@@ -289,7 +289,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertEqual(response_content['post_success'], True,
-                f"payload_type '{payload_type}': update was not successfully with valid data\n{response_content['post_msg']}")
+                f"payload_type '{payload_type}': api call was not successfully with valid data\n{response_content['post_msg']}")
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -355,7 +355,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
                 valid   = [1]
                 invalid = ['a', -5, 2.4, False]
             else:
-                raise ValueError(f"TestAPIUpdatePotholesData: test_data_validation(): PotholeData -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): PotholeData -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -391,7 +391,7 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
                 valid   = [1, 1.2]
                 invalid = ['a', -5, False]
             else:
-                raise ValueError(f"TestAPIUpdatePotholesData: test_data_validation(): TodayCrewData -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): TodayCrewData -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -492,7 +492,7 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
                 valid   = [self.valid_borough]
                 invalid = ['a', 1, 2.3, None, False]
             else:
-                raise ValueError(f"TestAPILookupPotholesAndCrewData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -591,7 +591,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('repair_date' in response_content['post_data'],
@@ -686,7 +686,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 valid   = ['0', '1', '2.2', '4.45']
                 invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', None, False]
             else:
-                raise ValueError(f"TestAPIUpdatePotholesFromDataGrid: test_data_validation(): Crew Count -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): Crew Count -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
@@ -711,7 +711,7 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 valid   = ['0', '1']
                 invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
             else:
-                raise ValueError(f"TestAPIUpdatePotholesFromDataGrid: test_data_validation(): Holes Repaired -> paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): Holes Repaired -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
@@ -806,7 +806,7 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('complaint_date' in response_content['post_data'],
@@ -892,7 +892,7 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
                 valid   = ['0', '1']
                 invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
             else:
-                raise ValueError(f"TestAPIUpdateComplaintsData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -988,7 +988,7 @@ class TestAPILookupComplaintsData(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('complaint_date' in response_content['post_data'],
@@ -1029,7 +1029,7 @@ class TestAPILookupComplaintsData(unittest.TestCase):
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
                 invalid = ['a', 1, 2.3, False, None]
             else:
-                raise ValueError(f"TestAPILookupComplaintsData: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -1109,7 +1109,7 @@ class TestAPIGetPDFReport(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('pdf_bytes' in response_content['post_data'],
@@ -1129,7 +1129,7 @@ class TestAPIGetPDFReport(unittest.TestCase):
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
                 invalid = ['a', 1, 2.3, False]
             else:
-                raise ValueError(f"TestAPIGetPDFReport: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
@@ -1162,12 +1162,7 @@ class TestAPIAddUser(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         tear_down()
-        try:
-            new_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
-        except:
-            ...#Do nothing
-        else:
-            new_user.delete(using='DailyPothole')
+        self.__remove_test_user_if_exists(self)
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -1231,7 +1226,7 @@ class TestAPIAddUser(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('user_id' in response_content['post_data'],
@@ -1274,7 +1269,7 @@ class TestAPIAddUser(unittest.TestCase):
                 valid   = ['False', 'True']
                 invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
             else:
-                raise ValueError(f"TestAPIAddUser: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__remove_test_user_if_exists()
@@ -1364,7 +1359,7 @@ class TestAPIUpdateUser(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
             self.assertTrue('user_id' in response_content['post_data'],
@@ -1414,7 +1409,7 @@ class TestAPIUpdateUser(unittest.TestCase):
                 valid   = ['False', 'True']
                 invalid = ['a', 1, 2.3, None, False]
             else:
-                raise ValueError(f"TestAPIUpdateUser: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 grant_admin_status()
@@ -1510,7 +1505,7 @@ class TestAPIDeleteUser(unittest.TestCase):
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
-                f"update was not successfully with valid data: {response_content['post_msg']}")
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check if data was deleted correctly
             try:
@@ -1535,7 +1530,7 @@ class TestAPIDeleteUser(unittest.TestCase):
                 valid   = [self.valid_username]
                 invalid = [1, 2.3, False, None]
             else:
-                raise ValueError(f"TestAPIDeleteUser: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
                 self.__add_test_user_if_not_exists()
@@ -1546,3 +1541,152 @@ class TestAPIDeleteUser(unittest.TestCase):
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
+class TestAPIAddUserPermission(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.client                 = Client()
+        self.api_name               = 'dailypothole_add_user_permission_api'
+        self.valid_username         = TEST_WINDOWS_USERNAME
+
+        self.valid_payloads = [
+            {
+                'username_input'    : self.valid_username,
+                'operation_input'   : 'BRIDGE PM',
+                'boro_input'        : 'BRONX'
+            }
+            ,{
+                'username_input'    : self.valid_username,
+                'operation_input'   : 'STREET MAINTENANCE',
+                'boro_input'        : 'BRONX'
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        self.__remove_test_user_permissions_if_exists(self)
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def __remove_test_user_permissions_if_exists(self):
+        try:
+            permissions = TblPermission.objects.using('DailyPothole').filter(
+                user_id__username__exact=self.valid_username
+            )
+        except:
+            raise
+        else:
+            for permission in permissions:
+                permission.delete(using='DailyPothole')
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.__remove_test_user_permissions_if_exists()
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='permission_id')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+
+            ## Check if data was saved correctly
+            saved_object = TblPermission.objects.using('DailyPothole').get(
+                user_id__username__exact                            = payload['username_input']
+                ,operation_boro_id__operation_id__operation__exact  = payload['operation_input']
+                ,operation_boro_id__boro_id__boro_long__exact       = payload['boro_input']
+            )
+
+            self.assertEqual(payload['username_input'], saved_object.user_id.username,
+                f"[username] didn't save correctly: '{payload['username_input']}' input-->database '{saved_object.user_id.username}'" )
+            self.assertEqual(payload['operation_input'], saved_object.operation_boro_id.operation_id.operation,
+                f"[operation] didn't save correctly: '{payload['operation_input']}' input-->database '{saved_object.operation_boro_id.operation_id.operation}'" )
+            self.assertEqual(payload['boro_input'], saved_object.operation_boro_id.boro_id.boro_long,
+                f"[boro_long] didn't save correctly: '{payload['boro_input']}' input-->database '{saved_object.operation_boro_id.boro_id.boro_long}'" )
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'username_input'    # str -> username
+            ,'operation_input'  # str -> operation name
+            ,'boro_input'       # str -> boro name
+        ]
+        for param_name in parameters:
+            if param_name == 'username_input':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'operation_input':
+                valid   = ['BRIDGE PM', 'STREET MAINTENANCE']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            elif param_name == 'boro_input':
+                valid   = ['QUEENS', 'BRONX']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__remove_test_user_permissions_if_exists()
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__remove_test_user_permissions_if_exists()
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
