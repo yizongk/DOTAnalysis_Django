@@ -1865,10 +1865,10 @@ def UpdateUser(request):
         })
 
     try:
-        table       = json_blob['table']
-        column      = json_blob['column']
-        user_id     = json_blob['id']
-        new_value   = json_blob['new_value']
+        table               = json_blob['table']
+        column              = json_blob['column']
+        windows_username    = json_blob['id']
+        new_value           = json_blob['new_value']
 
 
         is_admin = user_is_active_admin(remote_user)
@@ -1882,8 +1882,8 @@ def UpdateUser(request):
             raise ValueError(f"table must a str type")
         if type(column) is not str:
             raise ValueError(f"column must a str type")
-        if type(user_id) is not int:
-            raise ValueError(f"user_id must a int type")
+        if type(windows_username) is not str:
+            raise ValueError(f"windows_username must a str type")
         if type(new_value) is not str:
             raise ValueError(f"new_value must a str type")
 
@@ -1894,13 +1894,7 @@ def UpdateUser(request):
             raise ValueError(f"table '{table}' and column '{column}' is not recognized for this api")
 
         try:
-            user_id = int(user_id)
-        except Exception as e:
-            raise ValueError(f"Cannot convert '{user_id}' to int")
-
-
-        try:
-            user = TblUser.objects.using("DailyPothole").get(user_id=user_id)
+            user = TblUser.objects.using("DailyPothole").get(username__exact=windows_username)
             user.is_admin = new_value
             user.save(using='DailyPothole')
         except Exception as e:

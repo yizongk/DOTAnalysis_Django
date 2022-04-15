@@ -1297,13 +1297,13 @@ class TestAPIUpdateUser(unittest.TestCase):
             {
                 'table'     : 'tblUser',
                 'column'    : 'IsAdmin',
-                'id'        : self.user_obj.user_id,
+                'id'        : self.user_obj.username,
                 'new_value' : 'False'
             }
             ,{
                 'table'     : 'tblUser',
                 'column'    : 'IsAdmin',
-                'id'        : self.user_obj.user_id,
+                'id'        : self.user_obj.username,
                 'new_value' : 'True'
             }
         ]
@@ -1408,8 +1408,8 @@ class TestAPIUpdateUser(unittest.TestCase):
                 valid   = ['IsAdmin']
                 invalid = [1, 2.3, False, None, 'sdfds']
             elif param_name == 'id':
-                valid   = [self.user_obj.user_id]
-                invalid = [2.3, False, None, 'sdfds']
+                valid   = [self.user_obj.username]
+                invalid = [2.3, False, None, 3]
             elif param_name == 'new_value':
                 valid   = ['False', 'True']
                 invalid = ['a', 1, 2.3, None, False]
