@@ -282,6 +282,15 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
             payload = self.valid_payload[payload_type]
@@ -454,6 +463,15 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_with_valid_data(self):
         payload = self.valid_payload
         response_content = decode_json_response_for_content( self.__post_to_api(payload) )
@@ -573,6 +591,15 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
@@ -594,36 +621,12 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('repair_date' in response_content['post_data'],
-                f"'repair_date' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['repair_date'] is not None,
-                f"response['repair_date'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('operation' in response_content['post_data'],
-                f"'operation' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['operation'] is not None,
-                f"response['operation'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('boro_long' in response_content['post_data'],
-                f"'boro_long' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['boro_long'] is not None,
-                f"response['boro_long'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('column_name' in response_content['post_data'],
-                f"'column_name' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['column_name'] is not None,
-                f"response['column_name'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('new_value' in response_content['post_data'],
-                f"'new_value' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['new_value'] is not None,
-                f"response['new_value'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('updated_by' in response_content['post_data'],
-                f"'updated_by' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['updated_by'] is not None,
-                f"response['updated_by'] can't be null: {response_content['post_data']}")
-
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='repair_date')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='column_name')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='new_value')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='updated_by')
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -788,6 +791,15 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
@@ -809,46 +821,14 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('complaint_date' in response_content['post_data'],
-                f"'complaint_date' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['complaint_date'] is not None,
-                f"response['post_data']['complaint_date'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_bronx' in response_content['post_data'],
-                f"'fits_bronx' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_bronx'] is not None,
-                f"response['post_data']['fits_bronx'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_brooklyn' in response_content['post_data'],
-                f"'fits_brooklyn' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_brooklyn'] is not None,
-                f"response['post_data']['fits_brooklyn'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_manhattan' in response_content['post_data'],
-                f"'fits_manhattan' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_manhattan'] is not None,
-                f"response['post_data']['fits_manhattan'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_queens' in response_content['post_data'],
-                f"'fits_queens' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_queens'] is not None,
-                f"response['post_data']['fits_queens'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_staten_island' in response_content['post_data'],
-                f"'fits_staten_island' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_staten_island'] is not None,
-                f"response['post_data']['fits_staten_island'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('fits_unassigned' in response_content['post_data'],
-                f"'fits_unassigned' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['fits_unassigned'] is not None,
-                f"response['post_data']['fits_unassigned'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('open_siebel' in response_content['post_data'],
-                f"'open_siebel' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['open_siebel'] is not None,
-                f"response['post_data']['open_siebel'] can't be null: {response_content['post_data']}")
-
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='open_siebel')
 
             ## Check if data was saved correctly
             saved_object = TblComplaint.objects.using('DailyPothole').get(
@@ -954,6 +934,15 @@ class TestAPILookupComplaintsData(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
@@ -991,29 +980,14 @@ class TestAPILookupComplaintsData(unittest.TestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('complaint_date' in response_content['post_data'],
-                f"'complaint_date' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_bronx' in response_content['post_data'],
-                f"'fits_bronx' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_brooklyn' in response_content['post_data'],
-                f"'fits_brooklyn' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_manhattan' in response_content['post_data'],
-                f"'fits_manhattan' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_queens' in response_content['post_data'],
-                f"'fits_queens' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_staten_island' in response_content['post_data'],
-                f"'fits_staten_island' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('fits_unassigned' in response_content['post_data'],
-                f"'fits_unassigned' is not in the response: {response_content['post_data']}")
-
-            self.assertTrue('open_siebel' in response_content['post_data'],
-                f"'open_siebel' is not in the response: {response_content['post_data']}")
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
+            self.__assert_response_has_param(             response_content=response_content, response_param_name='open_siebel')
 
     def test_data_validation(self):
         self.__set_up_test_data()
@@ -1090,6 +1064,15 @@ class TestAPIGetPDFReport(unittest.TestCase):
         self.assertEqual(
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
 
     def test_api_accept_only_admins(self):
         remove_admin_status()
@@ -1198,6 +1181,15 @@ class TestAPIAddUser(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
@@ -1229,20 +1221,9 @@ class TestAPIAddUser(unittest.TestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('user_id' in response_content['post_data'],
-                f"'user_id' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['user_id'] is not None,
-                f"response['post_data']['user_id'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('username' in response_content['post_data'],
-                f"'username' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['username'] is not None,
-                f"response['post_data']['username'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('is_admin' in response_content['post_data'],
-                f"'is_admin' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['is_admin'] is not None,
-                f"response['post_data']['is_admin'] can't be null: {response_content['post_data']}")
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
@@ -1341,6 +1322,15 @@ class TestAPIUpdateUser(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
@@ -1362,20 +1352,9 @@ class TestAPIUpdateUser(unittest.TestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('user_id' in response_content['post_data'],
-                f"'user_id' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['user_id'] is not None,
-                f"response['post_data']['user_id'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('username' in response_content['post_data'],
-                f"'username' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['username'] is not None,
-                f"response['post_data']['username'] can't be null: {response_content['post_data']}")
-
-            self.assertTrue('is_admin' in response_content['post_data'],
-                f"'is_admin' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['is_admin'] is not None,
-                f"response['post_data']['is_admin'] can't be null: {response_content['post_data']}")
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.user_obj.username)
@@ -1480,6 +1459,15 @@ class TestAPIDeleteUser(unittest.TestCase):
         self.assertEqual(
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
 
     def test_api_accept_only_admins(self):
         remove_admin_status()
@@ -1601,9 +1589,12 @@ class TestAPIAddUserPermission(unittest.TestCase):
             content['post_success'], False,
             f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
 
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+    def __assert_response_has_param(self, response_content, response_param_name):
         self.assertTrue(response_param_name in response_content['post_data'],
             f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
         self.assertTrue(response_content['post_data'][response_param_name] is not None,
             f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
 
