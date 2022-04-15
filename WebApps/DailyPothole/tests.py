@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.utils import timezone
 import copy
+from django.core.exceptions import ObjectDoesNotExist
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME
 from WebAppsMain.testing_utils import get_to_api, post_to_api, decode_json_response_for_content
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
@@ -1421,6 +1422,127 @@ class TestAPIUpdateUser(unittest.TestCase):
 
             for data in invalid:
                 grant_admin_status()
+                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIDeleteUser(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.client                 = Client()
+        self.api_name               = 'dailypothole_delete_user_api'
+
+        self.valid_username         = 'some_random_name'
+
+        self.valid_payloads = [
+            {
+                'windows_username': self.valid_username,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        try:
+            test_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
+        except ObjectDoesNotExist as e:
+            ...#Do nothing
+        except:
+            raise
+        else:
+            test_user.delete(using='DailyPothole')
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        res     = self.__post_to_api(payload)
+        content = decode_json_response_for_content(res)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def __add_test_user_if_not_exists(self):
+        test_user = TblUser.objects.using('DailyPothole').get_or_create(username=self.valid_username)[0]
+        test_user.save(using='DailyPothole')
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.__add_test_user_if_not_exists()
+            response = self.__post_to_api(payload)
+            response_content = decode_json_response_for_content( response )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"update was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check if data was deleted correctly
+            try:
+                saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
+            except ObjectDoesNotExist as e:
+                ... ## Do nothing
+            except Exception as e:
+                raise ValueError(f"TestAPIDeleteUser: test_with_valid_data(): {e}")
+            else:
+                self.assertTrue(False, f"{saved_object.username} still exists in the database, unable to delete user")
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "windows_username"  # str -> username
+        ]
+        for param_name in parameters:
+            if param_name == 'windows_username':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None]
+            else:
+                raise ValueError(f"TestAPIDeleteUser: test_data_validation(): paremter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.__add_test_user_if_not_exists()
+                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.__add_test_user_if_not_exists()
                 self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 

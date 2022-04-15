@@ -1934,8 +1934,9 @@ def DeleteUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -1946,9 +1947,9 @@ def DeleteUser(request):
     else:
         print('Warning: DeleteUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1957,44 +1958,44 @@ def DeleteUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
-        user_id               = json_blob['user_id']
+        windows_username = json_blob['windows_username']
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not an admin and does not have the permission to delete a user".format(remote_user))
 
+        if type(windows_username) is not str:
+            raise ValueError("windows_username must be str type")
 
         try:
-            user_id = int(user_id)
-        except Exception as e:
-            raise ValueError("Cannot convert '{}' to int".format(user_id))
-
-
-        try:
-            user = TblUser.objects.using("DailyPothole").get(user_id=user_id)
-            user.delete()
+            user = TblUser.objects.using("DailyPothole").get(username=windows_username)
+            user.delete(using="DailyPothole")
         except Exception as e:
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUser():\n\nError: {}. For '{}'".format(e, user_id),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}. For '{windows_username}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUser():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: DeleteUser():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
