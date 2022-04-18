@@ -6,64 +6,64 @@ from django.views.generic import TemplateView
 
 class HomePageView(TemplateView):
     template_name   = 'MapsApp.template.home.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context
 
 class AboutPageView(TemplateView):
     template_name   = 'MapsApp.template.about.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context
 
 class ContactPageView(TemplateView):
     template_name   = 'MapsApp.template.contact.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context
 
 class EquityMap(TemplateView):
     template_name = 'MapsApp.template.equity_map.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context

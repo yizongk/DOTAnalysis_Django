@@ -360,12 +360,12 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 # ]
 
 
-PER_IND_VERSION                 = '1.1.4'
-MAPS_APP_VERSION                = '1.1.2'
-DAILY_POTHOLE_VERSION           = '1.5.0'
-ORG_CHART_PORTAL_VERSION        = '1.15.7'
-FLEET_DATA_COLLECTION_VERSION   = '1.1.3'
+PER_IND_VERSION                 = '1.1.5'
+MAPS_APP_VERSION                = '1.1.3'
+DAILY_POTHOLE_VERSION           = '1.5.1'
+ORG_CHART_PORTAL_VERSION        = '1.15.8'
+FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
 
 
 POST_RESPONSE_REQUIRED_JSON_KEYS    = ["post_success", "post_msg", "post_data"]
-GET_RESPONSE_REQUIRED_CONTEXT_KEYS  = ["req_success", "err_msg", "client_is_admin"]
+GET_RESPONSE_REQUIRED_CONTEXT_KEYS  = ["get_success", "get_error", "client_is_admin"]

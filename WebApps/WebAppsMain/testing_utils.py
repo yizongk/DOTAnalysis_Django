@@ -76,8 +76,8 @@ class HttpPostTestCase(unittest.TestCase):
 def validate_core_get_api_response_context(response):
     """
         In this django project, a standard GET response to any of the views should have these context variables
-        "req_success"
-        "err_msg"
+        "get_success"
+        "get_error"
         "client_is_admin"
         additinal variables are optional
     """

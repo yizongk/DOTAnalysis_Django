@@ -8,11 +8,11 @@ function csrfSafeMethod(method) {
 };
 
 
-function setErrorStatus({error_msg = ''}  = {}) {
+function setErrorStatus({error_message = ''}  = {}) {
     // Set status light and error message to red and response error msg
     try {
         $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-        $('.status_info.err_msg').html("Error: " + error_msg);
+        $('.status_info.error_msg').html("Error: " + error_message);
     } catch(e) {
         throw `setErrorStatus(): ${e}`;
     }
@@ -21,16 +21,16 @@ function setErrorStatus({error_msg = ''}  = {}) {
 function clearErrorStatus() {
     try {
         $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
-        $('.status_info.err_msg').html("");
+        $('.status_info.error_msg').html("");
     } catch(e) {
         throw `clearErrorStatus(): ${e}`;
     }
 }
 
-function handleError({set_error=true, error_msg='', clear_error_on_success=true} = {}) {
+function handleError({set_error=true, error_message='', clear_error_on_success=true} = {}) {
     try {
         if (set_error == true) {
-            setErrorStatus({error_msg: error_msg})
+            setErrorStatus({error_message: error_message})
         } else {
             if (clear_error_on_success == true) {
                 clearErrorStatus()

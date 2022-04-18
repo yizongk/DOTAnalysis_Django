@@ -152,8 +152,8 @@ def user_has_permission_to_edit(username, record_id):
 class HomePageView(TemplateView):
     template_name   = 'PerInd.template.home.html'
     client_is_admin = False
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
@@ -161,45 +161,45 @@ class HomePageView(TemplateView):
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)["success"]
             context["client_is_admin"]  = self.client_is_admin
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             return context
         except Exception as e:
             context["client_is_admin"]  = False
-            context["req_success"]      = False
-            context["err_msg"]          = None
+            context["get_success"]      = False
+            context["get_error"]          = None
             return context
 
 class AboutPageView(TemplateView):
     template_name   = 'PerInd.template.about.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context
 
 class ContactPageView(TemplateView):
     template_name = 'PerInd.template.contact.html'
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
-            context["req_success"]  = self.req_success
-            context["err_msg"]      = self.err_msg
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
             return context
         except Exception as e:
-            context["req_success"]  = False
-            context["err_msg"]      = None
+            context["get_success"]  = False
+            context["get_error"]      = None
             return context
 
 ## Method Flowchart (the order of execution) for generic.ListView
@@ -216,9 +216,9 @@ class WebGridPageView(generic.ListView):
     template_name = 'PerInd.template.webgrid.html'
     context_object_name = 'indicator_data_entries'
 
-    req_success = True
+    get_success = True
     category_permissions = []
-    err_msg = ""
+    get_error = ""
 
     paginate_by = 12
 
@@ -278,25 +278,25 @@ class WebGridPageView(generic.ListView):
                  ## If not admin, do standard filter with categories
                 user_cat_permissions = get_user_category_permissions(self.request.user)
             else:
-                self.req_success = False
-                self.err_msg = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
+                self.get_success = False
+                self.get_error = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
                 return None
 
         elif is_active_admin["success"] is None:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
             return None
 
         if user_cat_permissions["success"] == True:
             category_pk_list = user_cat_permissions["pk_list"]
             self.category_permissions = user_cat_permissions["category_names"]
         elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
             return None
         else:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
             return None
 
         ## Default filters on the WebGrid dataset
@@ -317,8 +317,8 @@ class WebGridPageView(generic.ListView):
                 )
             )
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
@@ -331,8 +331,8 @@ class WebGridPageView(generic.ListView):
                     qs = qs | Q(indicator__indicator_title=i)
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
+                self.get_success = False
+                self.get_error = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
                 return None
         ## Filter by YYYYs
         if len(self.req_yr_list_filter) >= 1:
@@ -342,8 +342,8 @@ class WebGridPageView(generic.ListView):
                     qs = qs | Q(year_month__yyyy=i)
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
+                self.get_success = False
+                self.get_error = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
                 return None
         ## Filter by MMs
         if len(self.req_mn_list_filter) >= 1:
@@ -353,8 +353,8 @@ class WebGridPageView(generic.ListView):
                     qs = qs | Q(year_month__mm=i)
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
+                self.get_success = False
+                self.get_error = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
                 return None
         ## Filter by Fiscal Years
         if len(self.req_fy_list_filter) >= 1:
@@ -364,8 +364,8 @@ class WebGridPageView(generic.ListView):
                     qs = qs | Q(year_month__fiscal_year=i)
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
+                self.get_success = False
+                self.get_error = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
                 return None
         ## Filter by Categories
         if self.client_is_admin == True:
@@ -376,8 +376,8 @@ class WebGridPageView(generic.ListView):
                         qs = qs | Q(indicator__category__category_name=i)
                     indicator_data_entries = indicator_data_entries.filter(qs)
                 except Exception as e:
-                    self.req_success = False
-                    self.err_msg = "Exception: WebGridPageView(): get_queryset(): Categories Filtering: {}".format(e)
+                    self.get_success = False
+                    self.get_error = "Exception: WebGridPageView(): get_queryset(): Categories Filtering: {}".format(e)
                     return None
 
         ## Sort dataset from sort direction and sort column
@@ -391,12 +391,12 @@ class WebGridPageView(generic.ListView):
                 elif self.req_sort_dir == "desc":
                     indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
                 else:
-                    self.req_success = False
-                    self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                    self.get_success = False
+                    self.get_error = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
                     return None
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
             return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
@@ -412,11 +412,11 @@ class WebGridPageView(generic.ListView):
             if self.client_is_admin == True:
                 self.uniq_categories = indicator_data_entries.order_by('indicator__category__category_name').values('indicator__category__category_name').distinct()
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
@@ -484,9 +484,9 @@ class WebGridPageView(generic.ListView):
 
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
-            context["req_success"] = self.req_success
+            context["get_success"] = self.get_success
             context["category_permissions"] = self.category_permissions
-            context["err_msg"] = self.err_msg
+            context["get_error"] = self.get_error
 
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
@@ -515,12 +515,12 @@ class WebGridPageView(generic.ListView):
 
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["indicator_data_entries"] = None
 
@@ -944,8 +944,8 @@ class PastDueIndicatorsPageView(generic.ListView):
 
     paginate_by = 24
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     req_sort_dir = ""
     req_sort_by = ""
@@ -977,8 +977,8 @@ class PastDueIndicatorsPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return None
 
         ## Use python to process the queryset to find a list of Indicator_Data.Records_IDs that meet the Past-Due-Criteria
@@ -1008,8 +1008,8 @@ class PastDueIndicatorsPageView(generic.ListView):
                 for each_row in ind_id_related:
                     ## Assumes the ind_id_related doens't contain any records tracking future dates greater than current month and current year, else will return error. Also assumes ind_id_related is sorted by ('indicator_id', '-year_month__yyyy', '-year_month__mm'), but doesn't check nor will return error.
                     if ( each_row.year_month.yyyy > timezone.now().year ) or ( each_row.year_month.yyyy == timezone.now().year and each_row.year_month.mm > timezone.now().month ):
-                        self.req_success = False
-                        self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): ind_id_related queryset contains records tracking dates greater than current month and current year, the record tracks yyyy: '{}' and mm: '{}'".format(each_row.year_month.yyyy, each_row.year_month.mm)
+                        self.get_success = False
+                        self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): ind_id_related queryset contains records tracking dates greater than current month and current year, the record tracks yyyy: '{}' and mm: '{}'".format(each_row.year_month.yyyy, each_row.year_month.mm)
                         return None
 
                     ## Indicator could be up-to-date, current record is for entry for the last three month (Counting current month, last month, and the month before)
@@ -1070,8 +1070,8 @@ class PastDueIndicatorsPageView(generic.ListView):
                 MM DESC
             """
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             return None
 
         ## Requery db to match up with the list of Indicator_Data.Records_IDs to pass to the client
@@ -1080,8 +1080,8 @@ class PastDueIndicatorsPageView(generic.ListView):
                 pk__in=past_due_record_id_list,
             )
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
@@ -1094,8 +1094,8 @@ class PastDueIndicatorsPageView(generic.ListView):
                     qs = qs | Q(indicator__category__category_name=i)
                 indicator_data_entries = indicator_data_entries.filter(qs)
             except Exception as e:
-                self.req_success = False
-                self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Categories Filtering: {}".format(e)
+                self.get_success = False
+                self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): Categories Filtering: {}".format(e)
                 return None
 
         ## Sort dataset from sort direction and sort column
@@ -1110,23 +1110,23 @@ class PastDueIndicatorsPageView(generic.ListView):
                 elif self.req_sort_dir == "desc":
                     indicator_data_entries = indicator_data_entries.order_by('-{}'.format(self.req_sort_by))
                 else:
-                    self.req_success = False
-                    self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
+                    self.get_success = False
+                    self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
                     return None
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
+            self.get_success = False
+            self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
             return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
             self.uniq_categories = indicator_data_entries.order_by('indicator__category__category_name').values('indicator__category__category_name').distinct()
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
@@ -1158,8 +1158,8 @@ class PastDueIndicatorsPageView(generic.ListView):
 
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["sort_dir"] = self.req_sort_dir
             context["sort_by"] = self.req_sort_by
@@ -1176,12 +1176,12 @@ class PastDueIndicatorsPageView(generic.ListView):
 
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["indicator_data_entries"] = None
 
@@ -1202,8 +1202,8 @@ class PastDueIndicatorsPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'PerInd.template.adminpanel.html'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1213,8 +1213,8 @@ class AdminPanelPageView(generic.ListView):
         if is_active_user["success"] == True:
             pass
         else:
-            self.req_success = False
-            self.err_msg = "AdminPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
+            self.get_success = False
+            self.get_error = "AdminPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             return
 
         ## Check for Active Admins
@@ -1222,28 +1222,28 @@ class AdminPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return
 
-        self.req_success = True
+        self.get_success = True
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -1252,8 +1252,8 @@ class UserPermissionsPanelPageView(generic.ListView):
     template_name = 'PerInd.template.userpermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1265,8 +1265,8 @@ class UserPermissionsPanelPageView(generic.ListView):
         if is_active_user["success"] == True:
             pass
         else:
-            self.req_success = False
-            self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
+            self.get_success = False
+            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             return UserPermissions.objects.using('PerInd').none()
 
         ## Check for Active Admins
@@ -1274,16 +1274,16 @@ class UserPermissionsPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return UserPermissions.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
             permission_data_entries = UserPermissions.objects.using('PerInd').all().order_by('user__login')
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return UserPermissions.objects.using('PerInd').none()
 
         # ## EXAMPLE: Get the active users login list in json format
@@ -1296,8 +1296,8 @@ class UserPermissionsPanelPageView(generic.ListView):
         #     json_obj = json.dumps(py_list_obj)
         #     self.user_logins_json = json_obj
         # except Exception as e:
-        #     self.req_success = False
-        #     self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+        #     self.get_success = False
+        #     self.get_error = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
         #     return UserPermissions.objects.using('PerInd').none()
 
 
@@ -1309,8 +1309,8 @@ class UserPermissionsPanelPageView(generic.ListView):
 
             self.users_list = user_objs
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return UserPermissions.objects.using('PerInd').none()
 
         ## Get the category list
@@ -1318,11 +1318,11 @@ class UserPermissionsPanelPageView(generic.ListView):
             category_objs = Category.objects.using('PerInd').all().order_by('category_name')
             self.categories_list = category_objs
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return UserPermissions.objects.using('PerInd').none()
 
-        self.req_success = True
+        self.get_success = True
         return permission_data_entries
 
     def get_context_data(self, **kwargs):
@@ -1332,8 +1332,8 @@ class UserPermissionsPanelPageView(generic.ListView):
 
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
 
@@ -1341,12 +1341,12 @@ class UserPermissionsPanelPageView(generic.ListView):
             context["categories_list"] = self.categories_list
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
 
@@ -1697,8 +1697,8 @@ class UsersPanelPageView(generic.ListView):
     template_name = 'PerInd.template.userspanel.html'
     context_object_name = 'users_data_entries'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1708,8 +1708,8 @@ class UsersPanelPageView(generic.ListView):
         if is_active_user["success"] == True:
             pass
         else:
-            self.req_success = False
-            self.err_msg = "UsersPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
+            self.get_success = False
+            self.get_error = "UsersPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
             return Users.objects.using('PerInd').none()
 
         ## Check for Active Admins
@@ -1717,37 +1717,37 @@ class UsersPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "UsersPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "UsersPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return Users.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
             users_data_entries = Users.objects.using('PerInd').all().order_by('login')
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
             return Users.objects.using('PerInd').none()
 
-        self.req_success = True
+        self.get_success = True
         return users_data_entries
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context

@@ -57,8 +57,8 @@
         </div>
         <!-- / Collapsible element -->
         <div><br>{% if client_is_admin %}(Admin) {% endif %}Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
-        <!-- <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div> -->
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <!-- <div class="status_info led_light">Database Status: {% if get_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div> -->
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     {% comment %}

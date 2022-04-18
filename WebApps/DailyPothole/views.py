@@ -63,21 +63,21 @@ def get_active_user_permissions_qryset(username):
 class HomePageView(TemplateView):
     template_name   = 'DailyPothole.template.home.html'
     client_is_admin = False
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             context["client_is_admin"]  = self.client_is_admin
             return context
         except Exception as e:
-            context["req_success"]      = False
-            context["err_msg"]          = False
+            context["get_success"]      = False
+            context["get_error"]          = False
             context["client_is_admin"]  = False
             return context
 
@@ -85,41 +85,41 @@ class HomePageView(TemplateView):
 class AboutPageView(TemplateView):
     template_name   = 'DailyPothole.template.about.html'
     client_is_admin = False
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
             context["client_is_admin"]  = self.client_is_admin
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             return context
         except Exception as e:
             context["client_is_admin"]  = False
-            context["req_success"]      = False
-            context["err_msg"]          = None
+            context["get_success"]      = False
+            context["get_error"]          = None
             return context
 
 
 class ContactPageView(TemplateView):
     template_name   = 'DailyPothole.template.contact.html'
     client_is_admin = False
-    req_success     = True
-    err_msg         = None
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
             context["client_is_admin"]  = self.client_is_admin
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             return context
 
         except Exception as e:
             context["client_is_admin"]  = False
-            context["req_success"]      = False
-            context["err_msg"]          = None
+            context["get_success"]      = False
+            context["get_error"]          = None
             return context
 
 
@@ -381,8 +381,8 @@ class PotholeDataEntryPageView(generic.ListView):
     template_name = 'DailyPothole.template.datacollection.html'
     context_object_name = 'operation_boro_permissions'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
     today = None
@@ -413,30 +413,30 @@ class PotholeDataEntryPageView(generic.ListView):
 
                     op_boro_combo[each.operation_boro_id.operation_id.operation].append(each.operation_boro_id.boro_id.boro_long)
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DataCollectionPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: DataCollectionPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return op_boro_combo
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             context["today"] = dateformat.format(timezone.localtime(timezone.now()).date(), 'Y-m-d')
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DataCollectionPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: DataCollectionPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             context["today"] = None
@@ -604,8 +604,8 @@ class PotholeDataGridPageView(generic.ListView):
     template_name           = 'DailyPothole.template.datagrid.html'
     context_object_name     = 'daily_pothole'
 
-    req_success             = True
-    err_msg                 = None
+    get_success             = True
+    get_error                 = None
     client_is_admin         = False
 
     ag_grid_col_def_json    = None
@@ -648,31 +648,31 @@ class PotholeDataGridPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success    = False
-            self.err_msg        = f"Exception: PotholeDataGridPageView(): get_queryset(): {e}"
+            self.get_success    = False
+            self.get_error        = f"Exception: PotholeDataGridPageView(): get_queryset(): {e}"
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = self.client_is_admin
 
             context['ag_grid_col_def_json'] = self.ag_grid_col_def_json
             context['pothole_data_json']    = self.pothole_data_json
             return context
         except Exception as e:
-            self.req_success    = False
-            self.err_msg        = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
+            self.get_success    = False
+            self.get_error        = "Exception: PotholeDataGridPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = False
 
             context['ag_grid_col_def_json'] = None
@@ -972,8 +972,8 @@ class ComplaintsInputPageView(generic.ListView):
     template_name = 'DailyPothole.template.complaintsinput.html'
     context_object_name = 'complaints'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -995,29 +995,29 @@ class ComplaintsInputPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ComplaintsInputPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: ComplaintsInputPageView(): get_queryset(): {}".format(e)
             return TblComplaint.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return complaints_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ComplaintsInputPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: ComplaintsInputPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -1646,8 +1646,8 @@ class ReportsPageView(generic.ListView):
     template_name = 'DailyPothole.template.reports.html'
     context_object_name = 'complaints'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1663,29 +1663,29 @@ class ReportsPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ReportsPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: ReportsPageView(): get_queryset(): {}".format(e)
             return TblComplaint.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return complaints_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: ReportsPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -1694,8 +1694,8 @@ class ReportsPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.adminpanel.html'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1711,29 +1711,29 @@ class AdminPanelPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
             return TblComplaint.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return complaints_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -1997,8 +1997,8 @@ class UsersPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.userspanel.html'
     context_object_name = 'users'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -2014,29 +2014,29 @@ class UsersPanelPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return users_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UsersPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -2317,8 +2317,8 @@ class UserPermissionsPanelPageView(generic.ListView):
     template_name = 'DailyPothole.template.userpermissionspanel.html'
     context_object_name = 'user_permissions'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     user_list = []
     operation_list = []
@@ -2341,19 +2341,19 @@ class UserPermissionsPanelPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return user_permissions_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["user_list"] = self.user_list
             context["operation_list"] = self.operation_list
@@ -2362,12 +2362,12 @@ class UserPermissionsPanelPageView(generic.ListView):
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["operation_list"] = []
             context["boro_list"] = []
@@ -2744,8 +2744,8 @@ class CsvExportPageView(generic.ListView):
     template_name = 'DailyPothole.template.csvexport.html'
     context_object_name = 'complaints'
 
-    req_success = True
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
     operation_list = []
@@ -2764,30 +2764,30 @@ class CsvExportPageView(generic.ListView):
             self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
             return TblComplaint.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return complaints_data
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             context["operation_list"] = self.operation_list
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             context["operation_list"] = []

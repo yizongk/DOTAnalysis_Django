@@ -12,11 +12,11 @@
         <h2>
             Daily Pothole Data Entry
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
 
-    {% if req_success %}
+    {% if get_success %}
         <div class="ui one column centered grid">
             <div class="ui modal" id="modalForm">
                 <div class="content center aligned">
@@ -93,7 +93,7 @@
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
-        {% if req_success %}
+        {% if get_success %}
         $(document).ready( function () {
             let select_pothole_data_operation_id    = 'SelectPotholeDataOperation';
             let select_pothole_data_boro_id         = 'SelectPotholeDataBorough';
