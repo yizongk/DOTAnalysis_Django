@@ -81,15 +81,14 @@ def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, operation_boro_pa
 
 
 def tear_down_permissions(windows_username=TEST_WINDOWS_USERNAME):
-    """set all permissions as inactive for an user. If user is admin, the permissions removed will probably mean nothing."""
+    """remove all permissions for an user. If user is admin, the permissions removed will probably mean nothing."""
     try:
         permissions = TblPermission.objects.using('DailyPothole').filter(
             user_id__username__exact=windows_username
         )
 
         for each in permissions:
-            each.is_active = False
-            each.save(using='DailyPothole')
+            each.delete(using='DailyPothole')
     except Exception as e:
             raise ValueError(f"tear_down_permissions_for_user(): {e}")
 
@@ -1145,7 +1144,6 @@ class TestAPIAddUserPermission(HttpPostTestCase):
     @classmethod
     def tearDownClass(self):
         tear_down()
-        self.remove_test_user_permissions_if_exists(self)
 
     def test_api_accept_only_admins(self):
         remove_admin_status()
@@ -1156,22 +1154,11 @@ class TestAPIAddUserPermission(HttpPostTestCase):
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-    def remove_test_user_permissions_if_exists(self):
-        try:
-            permissions = TblPermission.objects.using('DailyPothole').filter(
-                user_id__username__exact=self.valid_username
-            )
-        except:
-            raise
-        else:
-            for permission in permissions:
-                permission.delete(using='DailyPothole')
-
     def test_with_valid_data(self):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            self.remove_test_user_permissions_if_exists()
+            tear_down_permissions(windows_username=self.valid_username)
             response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
@@ -1222,9 +1209,9 @@ class TestAPIAddUserPermission(HttpPostTestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.remove_test_user_permissions_if_exists()
+                tear_down_permissions(windows_username=self.valid_username)
                 self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.remove_test_user_permissions_if_exists()
+                tear_down_permissions(windows_username=self.valid_username)
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
