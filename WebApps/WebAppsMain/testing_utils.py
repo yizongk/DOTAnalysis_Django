@@ -1,6 +1,76 @@
 import json
 from django.urls import reverse
 from WebAppsMain.settings import GET_RESPONSE_REQUIRED_CONTEXT_KEYS, POST_RESPONSE_REQUIRED_JSON_KEYS, TEST_WINDOWS_USERNAME
+import copy
+import unittest
+from django.test import Client
+
+
+class HttpPostTestCase(unittest.TestCase):
+    """
+        This class contains some standard functions that help test any HTTP POST requests in this Django project
+
+        Each test case class must define the self.api_name in the setUpClass(self).
+        Sample usage:
+
+        class TestSomeThing(HttpPostTestCase):
+            @classmethod
+            def setUpClass(self):
+                self.api_name = 'name_of_your_view'     ## This is REQUIRED
+
+            @classmethod
+            def tearDownClass(self):
+                pass                                    ## Optional
+
+    """
+    client     = Client()
+    api_name   = None
+
+    def __post_to_api(self, payload):
+        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
+        response = post_to_api(
+            client      = self.client,
+            api_name    = self.api_name,
+            payload     = payload,
+            remote_user = TEST_WINDOWS_USERNAME)
+
+        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
+
+        return response
+
+    def post_and_get_json_response(self, payload):
+        return decode_json_response_for_content( self.__post_to_api(payload) )
+
+    def assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], True,
+            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
+        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
+        payload[testing_param_name] = testing_data
+        response                    = self.__post_to_api(payload=payload)
+        content                     = decode_json_response_for_content(response)
+
+        self.assertEqual(
+            content['post_success'], False,
+            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+
+    def assert_response_has_param(self, response_content, response_param_name):
+        self.assertTrue(response_param_name in response_content['post_data'],
+            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
+
+    def assert_response_has_param_and_not_null(self, response_content, response_param_name):
+        self.assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
+        self.assertTrue(response_content['post_data'][response_param_name] is not None,
+            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
 
 
 def validate_core_get_api_response_context(response):
