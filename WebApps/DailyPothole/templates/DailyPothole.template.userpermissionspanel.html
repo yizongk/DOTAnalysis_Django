@@ -70,6 +70,7 @@
                     <th>Username</th>
                     <th>Operation</th>
                     <th>Boro</th>
+                    <th>Is Active</th>
                     <th>Delete?</th>
                 </tr>
             </thead>
@@ -77,9 +78,10 @@
             <tbody>
                 {% for entry in user_permissions %}
                 <tr>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  class="editable-select" >{{ entry.user_id.username }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" class="editable-select" >{{ entry.operation_boro_id.operation_id.operation }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  class="editable-select" >{{ entry.operation_boro_id.boro_id.boro_long }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  >{{ entry.user_id.username }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" >{{ entry.operation_boro_id.operation_id.operation }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  >{{ entry.operation_boro_id.boro_id.boro_long }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblPermission"  data-column="IsActive"  class="editable-select" >{{ entry.operation_boro_id.is_active }}</td>
                     <td data-id="{{ entry.permission_id }}" ></td>
                 </tr>
                 {% endfor %}
@@ -137,32 +139,13 @@
 
             // For cell select mode
             $(document).on("dblclick", ".editable-select", function () {
-                if ( $(this).data('table') == 'tblUser' ) {
+                if ( $(this).data('table') == 'tblPermission' ) {
                     select_array = [
-                        {% for each in user_list %}
-                            '{{ each }}',
-                        {% endfor %}
+                        'True',
+                        'False'
                     ]
                 }
 
-                if ( $(this).data('table') == 'tblOperation' ) {
-                    select_array = [
-                        {% for each in operation_list %}
-                            '{{ each }}',
-                        {% endfor %}
-                    ]
-                }
-
-                if ( $(this).data('table') == 'tblBoro' ) {
-                    select_array = [
-                        {% for each in boro_list %}
-                            '{{ each }}',
-                        {% endfor %}
-                    ]
-                }
-
-
-                //select_array = ['True', 'False']
                 // Move current select element to the top of the array
                 var current_value = $(this).text()
                 select_array.sort(function(x, y) {

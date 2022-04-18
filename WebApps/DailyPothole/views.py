@@ -2320,10 +2320,6 @@ class UserPermissionsPanelPageView(generic.ListView):
     get_success = True
     get_error = ""
 
-    user_list = []
-    operation_list = []
-    boro_list = []
-
     client_is_admin = False
 
     def get_queryset(self):
@@ -2334,9 +2330,6 @@ class UserPermissionsPanelPageView(generic.ListView):
 
             if self.client_is_admin:
                 user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
-                self.user_list = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
-                self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
-                self.boro_list = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
@@ -2355,10 +2348,6 @@ class UserPermissionsPanelPageView(generic.ListView):
             context["get_success"] = self.get_success
             context["get_error"] = self.get_error
 
-            context["user_list"] = self.user_list
-            context["operation_list"] = self.operation_list
-            context["boro_list"] = self.boro_list
-
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
@@ -2368,10 +2357,6 @@ class UserPermissionsPanelPageView(generic.ListView):
             context = super().get_context_data(**kwargs)
             context["get_success"] = self.get_success
             context["get_error"] = self.get_error
-
-            context["operation_list"] = []
-            context["boro_list"] = []
-
 
             context["client_is_admin"] = False
             return context
