@@ -7,53 +7,44 @@
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             Domicile Permissions Panel
         </h2>
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     <!-- Add new row button and modal form -->
-    <div>
-        <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header text-center">
-                        <h4 class="modal-title w-100 font-weight-bold">Add new permission</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body mx-3">
-                        <div>Select Login</div>
-                        <div id="modalNewRowFormLoginSelectBorder" class="md-form mb-5">
-                            <input type="text" id="modalNewRowFormLoginInput" class="form-control">
-                        </div>
+    <div class="ui one column centered grid">
+        <div class="ui modal" id="modalNewRowForm">
+            <div class="content center aligned">
 
-                        <div>Select Domicile</div>
-                        <div id="modalNewRowFormDomicileSelectBorder" class="md-form mb-4">
-                            <select id="modalNewRowFormDomicileSelect" class="browser-default custom-select">
-                                <option></option>
+                <div class="ui horizontal divider">Add new permission</div>
 
-                                {% for each in domicile_list %}
-                                <option>{{ each.domicile }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                    </div>
-                    <div class="modal-footer d-flex justify-content-center">
-                        <button id="modalNewRowFormAddButton" class="btn btn-default">Add</button>
-                    </div>
-                    <div id='successMsg'></div>
+                <div>Select Login</div>
+                <div id="modalNewRowFormLoginSelectBorder" class="ui input">
+                    <input type="text" id="modalNewRowFormLoginInput">
                 </div>
+
+                <div>Select Domicile</div>
+                <div id="modalNewRowFormDomicileSelectBorder">
+                    <select id="modalNewRowFormDomicileSelect" class="ui selection dropdown">
+                        <option></option>
+
+                        {% for each in domicile_list %}
+                            <option>{{ each.domicile }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="ui horizontal divider">-</div>
+                <button id="modalNewRowFormAddButton" class="ui teal large button">Add</button>
+
             </div>
+            <div id='successMsg'></div>
         </div>
 
-        <div class="text-center">
-            <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Add a new permission</a>
-        </div>
+        <button id="trigger_input" class="ui teal large button">Add new permission</button>
     </div>
 
     <!--admin access control web grid-->
@@ -87,11 +78,19 @@
     <script>
         $(document).ready( function () {
 
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
+
             var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
                 "columnDefs": [{
                     "targets": -1,
                     "data": null,
-                    "defaultContent": '<a class="deletable"><i class="fas fa-trash-alt"></i></a>'
+                    "defaultContent": '<a class="deletable"><i class="trash alternate icon"></i></a>'
                 }]
             });
 
@@ -120,7 +119,7 @@
                     logins_array.sort(function(x, y) {
                         return x == current_value ? -1 : y == current_value ? 1 : 0;
                     });
-                    enterCellEditSelectMode($(this), logins_array)
+                    enterCellEditSelectMode(td_node=$(this), selections=logins_array)
                 });
 
                 $(document).on("keyup", ".input-data-select", function (e) {

@@ -26,5 +26,6 @@ urlpatterns = [
     path('delete_user_permission', views.DeleteUserPermission, name='dailypothole_delete_user_permission_api'),
     path('csv_export', CsvExportPageView.as_view(), name='dailypothole_csv_export_view'),
     path('get_csv_export', views.GetCsvExport, name='dailypothole_get_csv_export_api'),
+    path('update_potholes_from_data_grid', views.UpdatePotholesFromDataGrid, name='dailypothole_update_potholes_from_data_grid_api'),
 
 ]

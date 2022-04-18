@@ -3,251 +3,559 @@
 {% load static %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
 
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
+    <style>
+        /* This is needed to allow AG Grid's css percentage height to work. Reason being that its parent div must also have a percentage height to contain it correctly, otherwise AG Grid will collapse to nothing */
+        .container-fluid {
+            height: 80%;
+        }
+
+        /* Dimming the columns pinned to the left */
+        .left-pinned {
+            background-color: lightgrey;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             Org Chart Portal
         </h2>
         <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     {% comment %} Side Bar {% endcomment %}
-    {% comment %} <div>
-        <div class="ui secondary labeled icon toggle button" id="left-sidebar-toggle">
-            <i class="left arrow icon"></i>
-            Show my profile (Hide/Show)
-        </div>
-        <div class="ui inverted left vertical sidebar menu">
-            <div id='client_wu_permissions_info'>
-                <p class='active item'>My WU Permissions</p>
-            </div>
-
-            <div id='client_data_entry_team_info'>
-                <p class='active item'>My Data Entry Team</p>
-            </div>
-
-            <p class="active item">*To add someone to your data entry team, please email: <br>** Max Siegel<br>(msiegel@dot.nyc.gov) or <br>** Yi Zong Kuang<br>(ykuang@dot.nyc.gov)</p>
-        </div>
-    </div> {% endcomment %}
-
-    {% comment %} JS Datatable {% endcomment %}
-    <table class="table table-striped table-hover" id="JSDataTable">
-        <thead>
-            <tr>
-                <th>Position ID</th>
-                <th>Reports to Position ID</th>
-                <th>Budgeted BC</th>
-                <th>Position Filled</th>
-                <th>PMS</th>
-                <th>Lv Status</th>
-                <th>Last Name</th>
-                <th>First Name</th>
-                <th>PMS BC</th>
-                <th>T-Code</th>
-                {% comment %}
-                <th>Salary</th>
-                <th>Title</th>
-                <th>WU</th>
-                <th>L-Name</th>
-                <th>F-Name</th>
-                <th>PMS</th>
-                <th>Title</th>
-                <th>Supervisor Name</th>
-                <th>Office Title</th>
-                <th>Work Location</th>
-                <th>Location Floor</th>
-                <th>Site Type</th>
-                <th>ABC Group</th>
-                {% endcomment %}
-            </tr>
-        </thead>
-
-        <body id="JSDataTableBody">
-            {% for entry in emp_entries %}
-            <tr>
-                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="PositionID">{{ entry.position_id }}</td>
-                <td data-positionid="{{ entry.position_id }}" data-table="tblPositions" data-column="ReportsToPositionID">{{ entry.reports_to_position_id }}</td>
-            </tr>
-            {% endfor %}
-
-            {% comment %} {% for entry in emp_entries %}
-            <tr>
-
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="WU">{{ entry.wu.wu }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="L-Name">{{ entry.last_name }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="F-Name">{{ entry.first_name }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="PMS#">{{ entry.pms }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="Title">{{ entry.title }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="SupervisorPMS">
-                    {% if entry.supervisor_pms.last_name and entry.supervisor_pms.first_name %}
-                        {{ entry.supervisor_pms.last_name }}, {{ entry.supervisor_pms.first_name }}
-                    {% else %}
-                    {% endif %}
-                </td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="OfficeTitle">{{ entry.office_title }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteId">{{ entry.actual_site_id.site }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualFloorId">{{ entry.actual_floor_id.floor }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ActualSiteTypeId">{{ entry.actual_site_type_id.site_type }}</td>
-                <td data-entrypms="{{ entry.pms }}" data-table="tblEmployees" data-column="ABCGroup">{{ entry.abc_group }}</td>
-            </tr>
-            {% endfor %} {% endcomment %}
-        </body>
-    </table>
-
-    {% comment %} Footer {% endcomment %}
-    <div>
-        <div>Supervisor Field Complete</div>
-        <div>OfficeTitle Field Complete</div>
-        <div>Refresh button??? or just ask user to refresh page?</div>
-        <div>Last Time List's Been Updated:</div>
-        <div>List Last Updated By:</div>
-        <div>Inactive Supervisor Stuff</div>
-        <div>Empty or Invalid Floor Combination with WorkLocation: Floor needs updating</div>
-        <div>Empty or Invalid SiteType Combination with WorkLocation and Floor: SiteType needs updating</div>
+    <div class="ui secondary labeled icon toggle button" id="left-sidebar-toggle">
+        <i class="left arrow icon"></i>
+        Show my profile (Hide/Show)
     </div>
 
+    <div class="ui inverted left vertical sidebar accordion menu">
+        <div class="item">
+            <a class="active title">
+                My WU Permissions <br> (Click to collapse/uncollapse)
+            </a>
+            <div class="active content memnu">
+                <div id='client_wu_permissions_info'  class="menu">
+                </div>
+            </div>
+        </div>
+
+        <div class="item">
+            <a class="active title">
+                My Data Entry Team <br> (Click to collapse/uncollapse)
+            </a>
+            <div class="active content">
+                <div id='client_data_entry_team_info' class="menu">
+                </div>
+            </div>
+        </div>
+
+        <div class="item">
+            <p>To add someone to your data entry team, please email:</p>
+            <div class="menu">
+                <p class="item">Max Siegel <br> (msiegel@dot.nyc.gov)</P>
+                <p class="item">Yi Zong Kuang <br> (ykuang@dot.nyc.gov)</P>
+            </div>
+        </div>
+    </div>
+
+    <button id="export_csv_btn" class="ui button">
+        <i class="download icon"></i>
+        Export as CSV
+    </button>
+
+    {% comment %} AG Grid {% endcomment %}
+    <div style="height: 40vw; width: auto;">
+        <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+    </div>
+
+    {% comment %} Footer {% endcomment %}
+    <div class="ui segments">
+        <div class="ui segment">
+            <button id="reset_all_filters_btn" class="ui button">
+                <i class="filter icon"></i>
+                Reset All Filters
+            </button>
+        </div>
+
+        <div class="ui segment">
+            <div class="label">List's Last Updated On: <span id="last_updated_time" class="ui medium red text"></span></div>
+            <div class="label">List Last Updated By: <span id="last_updated_by" class="ui medium red text"></div>
+        </div>
+    </div>
+
+
+    <div class="ui segments">
+        <div class="ui horizontal segments">
+            <div class="ui segment">
+                <div id="office_title_percent_complete" class="ui indicating progress">
+                    <div class="bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="label">
+                        Office Title Field Completed
+                    </div>
+                </div>
+
+                <button id="office_title_percent_complete_filter_btn" class="ui button">
+                    <i class="filter icon"></i>
+                    Show staff missing Office Title
+                </button>
+            </div>
+
+            <div class="ui segment">
+                <div id="supervisor_percent_progress_bar" class="ui indicating progress">
+                    <div class="bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="label">
+                        Supervisor Field Completed
+                    </div>
+                </div>
+
+                <button id="supervisor_percent_progress_bar_filter_btn" class="ui button">
+                    <i class="filter icon"></i>
+                    Show staff missing Supervisor
+                </button>
+            </div>
+        </div>
+
+        <div class="ui segment">
+            <div class="ui four column grid">
+                <div class="column">
+                    <div class="ui label inverted grey basic big">
+                        Inactive Supervisors
+                    </div>
+
+                    <button id="inactive_supervisor_list_filter_btn" class="ui button">
+                        <i class="filter icon"></i>
+                        Show staff with inactive Supervisor
+                    </button>
+
+                    <table class="ui compact inverted table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>WU</th>
+                                <th>Supervisor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive_supervisor_list">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock content %}
 
 {% block custom_js %}
-    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/FileSaver.min.js' %}"></script>
 
-    {% comment %} JS Datatable stuff {% endcomment %}
+    {% comment %} AG Grid stuff {% endcomment %}
     <script>
-        $(document).ready( function () {
-            // Reset the default viewport from css class container to container-fluid
-            $(".container").attr('class', 'container-fluid')
+        var emp_col_def             = {{ emp_entry_columns_json|safe }};
+        var emp_data                = {{ emp_entries_json|safe }};
+        var active_sup_dropdown     = {{ supervisor_dropdown_list_json|safe }}; // It's very important that this list is unique by pms!
+        var site_dropdown           = {{ site_dropdown_list_json|safe }};
+        var site_floor_dropdown     = {{ site_floor_dropdown_list_json|safe }};
+        var site_type_dropdown      = {{ site_type_dropdown_list_json|safe }};
 
-            $.ajaxSetup({
-                beforeSend: function (xhr, settings) {
-                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                        // Only send the token to relative URLs i.e. locally.
-                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-                    }
-                }
-            });
+        var emp_not_found_placeholder       = '[Inactive Employee]'
+        var site_not_found_placeholder      = '[Invalid Site]'
+        var floor_not_found_placeholder     = '[Invalid Floor]'
+        var site_type_not_found_placeholder = '[Invalid Site Type]'
 
-            // Add extra row to the HTML table's header for individual column filtering
-            $('#JSDataTable thead tr').clone(true).appendTo( '#JSDataTable thead' );
-            $('#JSDataTable thead tr:eq(1) th').each( function (i) {
-                var title = $(this).text();
-                $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+        var active_sup_pms_and_name = {};
+        for (const i in active_sup_dropdown) { active_sup_pms_and_name[active_sup_dropdown[i].pms] = active_sup_dropdown[i].annotated__full_name }
 
-                $( 'input', this ).on( 'keyup change', function() {
-                    if ( table.column(i).search() !== this.value ) {
-                        table
-                            .column(i)
-                            .search( this.value )
-                            .draw();
-                    }
-                });
-            } );
 
-            var table = $('#JSDataTable').DataTable({
-                dom: 'Blfrtip',  // Look at the documention on the possible options: https://datatables.net/reference/option/dom
-                buttons: [
-                    {
-                        extend: 'csv',
-                        text: 'Download as CSV',
-                    }
-                ],
-                orderCellsTop: true,
-                fixedHeader: true,
-                pageLength: 10,
-                lengthMenu: [ 10, 25, 50, 75, 100 ]
-            });
+        function supervisorNotFound({check_supervisor_pms=null} = {}) {
+            // Check if the provided @sup_pms is a valid pms from the active_sup_pms_and_name lookup
+            if ( typeof(active_sup_pms_and_name[check_supervisor_pms]) == 'undefined' ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
 
-            {% comment %}
-            // For cell select mode
-            $(document).on("dblclick", ".editable-select", function () {
-                if ( $(this).data('column') == 'PMS' ) {
-                    select_list_values = ['None']
-                    select_list_values = select_list_values.concat(select_permitted_pms_list)
-                } else if ( $(this).data('column') == 'Class2' ) {
-                    //select_list_values = ['None', 'Commuter', 'Non-Commuter']
-                    select_list_values = ['Commuter', 'Non-Commuter']
+        function getSupervisorName({check_supervisor_pms=null} = {}) {
+            // Get the full name of a given pms in @check_supervisor_pms from active_sup_pms_and_name lookup
+            // Return null if lookup fails
+            if ( supervisorNotFound({check_supervisor_pms: check_supervisor_pms}) ) {
+                return null
+            } else {
+                return active_sup_pms_and_name[check_supervisor_pms]
+            }
+        }
+
+        function supervisorIsInactive({check_supervisor_pms=null} = {}) {
+            // Check if the provided @sup_pms is an active employee
+            return supervisorNotFound({check_supervisor_pms: check_supervisor_pms});
+        }
+
+        function siteIsInvalid({check_site_id=null} = {}) {
+            // Check if the provided @site_id is a valid site id from the site_dropdown lookup
+            if ( site_dropdown.filter(x => x.site_id == check_site_id).length == 0 ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        function getSiteName({check_site_id=null} = {}) {
+            // Get the name of a given site id in @check_site_id from site_dropdown lookup
+            // Return null if lookup fails
+            if ( siteIsInvalid({check_site_id: check_site_id}) ) {
+                return null
+            } else {
+                return site_dropdown.filter(x => x.site_id == check_site_id)[0].site;
+            }
+        }
+
+        function floorIsInvalid({check_site_id=null, check_floor_id=null} = {}) {
+            // Check if the provided @check_floor_id is a valid floor id from the site_floor_dropdown lookup, AFTER filtering for valid options
+            let sub_floor_array = site_floor_dropdown.filter(
+                x =>
+                    x.site_id       == check_site_id
+                    && x.floor_id   == check_floor_id
+            );
+
+            // If len's zero, then return true cuz that means nothing's found, so floor_id must be invalid
+            return sub_floor_array.length == 0;
+        }
+
+        function getFloorName({check_site_id=null, check_floor_id=null} = {}) {
+            // Get the name of a given floor id in @check_site_id and @check_floor_id from site_floor_dropdown lookup
+            // Return null if lookup fails
+            if ( floorIsInvalid({check_site_id: check_site_id, check_floor_id: check_floor_id}) ) {
+                return null
+            } else {
+                return site_floor_dropdown.filter(
+                    x =>
+                        x.site_id == check_site_id
+                        && x.floor_id == check_floor_id
+                )[0].floor;
+            }
+        }
+
+        function siteTypeIsInvalid({check_site_id=null, check_floor_id=null, check_site_type_id=null} = {}) {
+            // Check if the provided @check_site_type_id is a valid site type id from the site_type_dropdown lookup, AFTER filtering for valid options
+            let sub_site_type_array = site_type_dropdown.filter(
+                x =>
+                    x.floor_id__site_id             == check_site_id
+                    && x.floor_id__floor_id         == check_floor_id
+                    && x.site_type_id__site_type_id == check_site_type_id
+            );
+
+            // If len's zero, then return true cuz that means nothing's found, so site_type_id must be invalid
+            return sub_site_type_array.length == 0;
+        }
+
+        function getSiteTypeName({check_site_id=null, check_floor_id=null, check_site_type_id=null} = {}) {
+            // Get the name of a given floor id in @check_site_id and @check_site_type_id from site_floor_dropdown lookup
+            // Return null if lookup fails
+            if ( siteTypeIsInvalid({check_site_id: check_site_id, check_floor_id: check_floor_id, check_site_type_id: check_site_type_id}) ) {
+                return null
+            } else {
+                return sub_site_type_array = site_type_dropdown.filter(
+                    x =>
+                        x.floor_id__site_id             == check_site_id
+                        && x.floor_id__floor_id         == check_floor_id
+                        && x.site_type_id__site_type_id == check_site_type_id
+                )[0].site_type_id__site_type
+            }
+        }
+
+        class OfficeTitleWithSpellCheckerCellEditor extends BaseAGGridCellEditor {
+            init(ag_cell) {
+                // Create the input div
+                let input = document.createElement('input');
+                input.setAttribute('spellcheck', true);
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    input_element                   : input,
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SupervisorCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let sup_pms         = ag_cell.value;
+                let sup_fullname    = null;
+
+                if ( sup_pms == null ) {
+                    sup_fullname = null;
+                } else if ( supervisorIsInactive({check_supervisor_pms: sup_pms}) ) {
+                    sup_fullname = emp_not_found_placeholder;
                 } else {
-                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    return 0
+                    sup_fullname = getSupervisorName({check_supervisor_pms: sup_pms});
                 }
 
-                // Move current select element to the top of the array
-                var current_value = $(this).text()
-                select_list_values.sort(function(x, y) {
-                    return x == current_value ? -1 : y == current_value ? 1 : 0;
-                });
+                let super_params = {
+                    rendered_text : sup_fullname
+                };
+                this.initBase(super_params);
+            }
+        }
 
+        class SupervisorCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(active_sup_dropdown));
 
-                if ( $(this).data('column') == 'PMS' ) {
-                    enterCellEditSelectMode($(this), select_list_values, true, select_permitted_pms_list_additional_info_json, "display additional first")
-                } else if ( $(this).data('column') == 'Class2' ) {
-                    enterCellEditSelectMode($(this), select_list_values)
+                // Add dummy options for null and not founds
+                if (ag_cell.value == null) {
+                    dropdown.push({'pms': null, 'annotated__full_name': null});
+                } else if ( supervisorIsInactive({check_supervisor_pms: ag_cell.value}) ) {
+                    dropdown.push({'pms': ag_cell.value, 'annotated__full_name': emp_not_found_placeholder});
+                }
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        if (x.pms == null && y.pms == null)   { return 0; }
+                                                        if (x.pms == null)                    { return -1; }
+                                                        if (y.pms == null)                    { return 1; }
+
+                                                        // Sort the elements if element is not null, and is not in the active employee look up list
+                                                        if (x.annotated__full_name == emp_not_found_placeholder && y.annotated__full_name == emp_not_found_placeholder)   { return 0; }
+                                                        if (x.annotated__full_name == emp_not_found_placeholder)                                                         { return -1; }
+                                                        if (y.annotated__full_name == emp_not_found_placeholder)                                                         { return 1; }
+
+                                                        let x_fullname = active_sup_pms_and_name[x.pms].toUpperCase();
+                                                        let y_fullname = active_sup_pms_and_name[y.pms].toUpperCase();
+
+                                                        return x_fullname < y_fullname ? -1 : x_fullname > y_fullname ? 1 : 0;
+                                                    },
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x.pms == ag_cell.value ? -1 : y.pms == ag_cell.value ? 1 : 0; },
+                    select_id                       : 'sup_select',
+                    option_set_val_fct              : (each) => { return (each.pms == null) ? '' : each.pms; },
+                    option_set_txt_fct              : (each) => { return `${each.annotated__full_name} | ${each.pms}`; },
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let cur_site_id = ag_cell.value;
+                let site_name   = null;
+
+                if ( cur_site_id == null ) {
+                    site_name = null;
+                } else if ( siteIsInvalid({check_site_id: cur_site_id}) ) {
+                    site_name = site_not_found_placeholder
                 } else {
-                    console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
-                    return 0
+                    site_name = getSiteName({check_site_id: cur_site_id})
                 }
-            });
-            {% endcomment %}
 
-            {% comment %}
-            $(document).on("keyup", ".input-data-select", function (e) {
-                var key = e.which;
-                if (key === 27) { // 27 is the ESC key
-                    cancelSelectMode(this);
+                let super_params    = {
+                    rendered_text : site_name
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let cur_site_id = ag_cell.value
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(site_dropdown));
+
+                // Add dummy options for null and not founds
+                if (cur_site_id == null) {
+                    dropdown.push({'site_id': null          , 'site': null});
+                } else if ( siteIsInvalid({check_site_id: cur_site_id}) ) {
+                    dropdown.push({'site_id': cur_site_id , 'site': site_not_found_placeholder});
                 }
-            });
-            {% endcomment %}
 
-            {% comment %}
-            $(document).on("change", ".input-data-select", function () {
-                if ( ($(this).parent().data('column') == 'PMS') || ($(this).parent().data('column') == 'Class2') ) {
-                    sendCellToServer(node=this, api_url="update_m5_driver_vehicle_data_confirmations", http_request_method="POST", cell_html_type="select")
-                    .then(function(promised_data) {
-                        td_node = promised_data.td_node
-                        api_json_response = promised_data.api_json_response
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        // Sort the elements if element is not null, and is not in look up list
+                                                        if (x.site == site_not_found_placeholder && y.site == site_not_found_placeholder)   { return 0; }
+                                                        if (x.site == site_not_found_placeholder)                                           { return -1; }
+                                                        if (y.site == site_not_found_placeholder)                                           { return 1; }
 
+                                                        return x.site < y.site ? -1 : x.site > y.site ? 1 : 0;
+                                                    },
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x.site_id == cur_site_id ? -1 : y.site_id == cur_site_id ? 1 : 0; },
+                    select_id                       : 'site_select',
+                    option_set_val_fct              : (each) => { return (each.site_id == null) ? '' : each.site_id; },
+                    option_set_txt_fct              : (each) => { return each.site; },
+                };
+                this.initBase(super_params);
+            }
+        }
 
-                        // On api success, update the emp info cells of the modified row in the JS DataTable
-                        if ( td_node.data('column') == 'PMS' && td_node.text() == 'None' ) {  // To prevent accessing pms_info['None'], which will cause an error because there's no key 'None' in pms_info object
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      '');
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( '');
-                        }
-                        else if ( td_node.data('column') == 'PMS' ) {
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="WU"]').text(          pms_info[td_node.html()]['wu'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="L-Name"]').text(      pms_info[td_node.html()]['last_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblEmployees"][data-column="F-Name"]').text(      pms_info[td_node.html()]['first_name'] );
-                            $('[data-id="' + td_node.data('id') + '"][data-table="tblWorkUnitDivisionJoeSubs"][data-column="SubDivision"]').text( pms_info[td_node.html()]['subdiv'] );
-                        }
-                    }).catch(promise => {
-                        console.log(promise);
-                        alert(`Something went wrong when calling sendCellToServer(): ${promise.message}`);
-                    });
+        class SiteFloorCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let cur_site_id     = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id    = ag_cell.value;
+                let site_floor      = null;
+
+                if ( cur_floor_id == null ) {
+                    site_floor = null;
+                } else if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
+                    site_floor = floor_not_found_placeholder;
                 } else {
-                    console.log(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
-                    alert(`sendCellToServer() doesn't support '${$(this).parent().data('column')}' column for editable-select cells to sent api call`)
-                    return 0
+                    site_floor = getFloorName({check_site_id: cur_site_id, check_floor_id: cur_floor_id});
                 }
-            });
-            {% endcomment %}
 
-        });
-    </script>
+                let super_params = {
+                    rendered_text : site_floor
+                };
+                this.initBase(super_params);
+            }
+        }
 
-    {% comment %} Side Bar Stuff {% endcomment %}
-    {% comment %} <script>
+        class SiteFloorCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let cur_site_id     = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id    = ag_cell.value;
+                let sub_floor_array = site_floor_dropdown.filter(x => x.site_id == cur_site_id);
+
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(sub_floor_array));
+
+                // Add dummy options for null and not founds
+                if ( cur_floor_id == null ) {
+                    dropdown.push({'floor_id': null         , 'site_id': null, 'floor': null})
+                } else if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
+                    dropdown.push({'floor_id': cur_floor_id, 'site_id': null, 'floor': floor_not_found_placeholder})
+                }
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x,y) {
+                                                        /*  If floor is null, set it to null
+                                                            If floor can be float, convert it to float
+                                                            If floor is not float, and has 'SL', replace it with '-' and then convert to float, resulting in a negative float
+                                                            If floor is not float, and has no 'SL', set it to -999 to be on the bottom of the list
+
+                                                            Sort desc by floor number
+                                                        */
+
+                                                        // Sort the elements if element is not null, and is not in the look up list
+                                                        if (x.floor == floor_not_found_placeholder && y.floor == floor_not_found_placeholder)   { return 0; }
+                                                        if (x.floor == floor_not_found_placeholder)                                             { return -1; }
+                                                        if (y.floor == floor_not_found_placeholder)                                             { return 1; }
+
+                                                        let x_float = ( (x.floor == null) ? -999 : !isNaN( parseFloat(x.floor) ) ? parseFloat(x.floor) : (x.floor.includes('SL') ? parseFloat(x.floor.replace('SL', '-')) : 0) );
+                                                        let y_float = ( (y.floor == null) ? -999 : !isNaN( parseFloat(y.floor) ) ? parseFloat(y.floor) : (y.floor.includes('SL') ? parseFloat(y.floor.replace('SL', '-')) : 0) );
+                                                        return x_float < y_float ? 1 : x_float > y_float ? -1 : 0;
+                                                    },
+                    selected_val_bubble_up_sort_fct : function(x, y) {
+                                                        if ( sub_floor_array.filter(x => x.floor_id == cur_floor_id).length > 0 ) {
+                                                            return x.floor_id == cur_floor_id ? -1 : y.floor_id == cur_floor_id ? 1 : 0;
+                                                        } else {
+                                                            // If current floor is not a valid option for the current site, bubble the null option up to the top
+                                                            // It is needed because the top option of the select list doesn't trigger the change event of the AG Grid
+                                                            // And in cases where cur_floor_id is not found in the select array, the resulting select list has a valid option as the top option
+                                                            // Thus when trying to select this top option, AG Grid doesn't register it and doesn't trigger the change event and its associated function calls.
+                                                            // Bubbling a null option to the top in cases like these, fixes this issue.
+                                                            return x.floor_id == null ? -1 : y.floor_id == null ? 1 : 0;
+                                                        }
+                                                    },
+                    select_id                       : 'floor_select',
+                    option_set_val_fct              : (each) => { return (each.floor_id == null) ? '' : each.floor_id; },
+                    option_set_txt_fct              : (each) => { return each.floor; },
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteTypeCellRenderer extends BaseAGGridCellRenderer {
+            init(ag_cell) {
+                let cur_site_id         = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id        = ag_cell.data.actual_floor_id__floor_id;
+                let cur_site_type_id    = ag_cell.value;
+                let site_type           = null;
+
+                if ( cur_site_type_id == null ) {
+                    site_type = null;
+                } else if ( siteTypeIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id}) ) {
+                    site_type = site_type_not_found_placeholder;
+                } else {
+                    site_type = getSiteTypeName({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id});
+                }
+
+                let super_params = {
+                    rendered_text : site_type
+                };
+                this.initBase(super_params);
+            }
+        }
+
+        class SiteTypeCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let cur_site_id         = ag_cell.data.actual_site_id__site_id;
+                let cur_floor_id        = ag_cell.data.actual_floor_id__floor_id;
+                let cur_site_type_id    = ag_cell.value;
+
+                let sub_site_type_array = site_type_dropdown.filter( x => (x.floor_id__floor_id == cur_floor_id && x.floor_id__site_id == cur_site_id) || (x.floor_id__floor_id == null) );
+                if ( floorIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id}) ) {
+                    // Site and Site Floor are invalid combination, and so there isn't a valid list of Site Type to choose from
+                    alert("Site and Site Floor are invalid combination, please fix that first")
+                    // No need to return. Alert() seems to cause the cell to lose focus anyway, so the dropdown list never shows when the alert() is called.
+                }
+
+                // Quick deep copy, only works with basic data type
+                let dropdown = JSON.parse(JSON.stringify(sub_site_type_array));
+
+                // Add dummy options for null and not founds
+                if (cur_site_type_id == null) {
+                    dropdown.push({'site_type_id__site_type_id': null               , 'site_type_id__site_type': null                           , 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                } else if ( siteTypeIsInvalid({check_site_id: cur_site_id, check_floor_id: cur_floor_id, check_site_type_id: cur_site_type_id}) ) {
+                    dropdown.push({'site_type_id__site_type_id': cur_site_type_id   , 'site_type_id__site_type': site_type_not_found_placeholder, 'floor_id__floor_id': null, 'floor_id__site_id': null})
+                }
+
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    select_array_sort_fct           : function(x, y) {
+                                                        // Sort the elements if element is not null, and is not in the look up list
+                                                        if (x.site_type_id__site_type == site_type_not_found_placeholder && y.site_type_id__site_type == site_type_not_found_placeholder)   { return 0; }
+                                                        if (x.site_type_id__site_type == site_type_not_found_placeholder)                                                                   { return -1; }
+                                                        if (y.site_type_id__site_type == site_type_not_found_placeholder)                                                                   { return 1; }
+
+                                                        return x.site_type_id__site_type < y.site_type_id__site_type ? -1 : x.site_type_id__site_type > y.site_type_id__site_type ? 1 : 0;
+                                                    },
+                    selected_val_bubble_up_sort_fct : function(x, y) {
+                                                        if ( sub_site_type_array.filter(x => x.site_type_id__site_type_id == cur_site_type_id).length > 0 ) {
+                                                            return x.site_type_id__site_type_id == cur_site_type_id ? -1 : y.site_type_id__site_type_id == cur_site_type_id ? 1 : 0;
+                                                        } else {
+                                                            // If current site type is not a valid option for the current site floor, bubble the null option up to the top
+                                                            // It is needed because the top option of the select list doesn't trigger the change event of the AG Grid
+                                                            // And in cases where cur_site_type_id is not found in the select array, the resulting select list has a valid option as the top option
+                                                            // Thus when trying to select this top option, AG Grid doesn't register it and doesn't trigger the change event and its associated function calls.
+                                                            // Bubbling a null option to the top in cases like these, fixes this issue.
+                                                            return x.site_type_id__site_type_id == null ? -1 : y.site_type_id__site_type_id == null ? 1 : 0;
+                                                        }
+                                                    },
+                    select_id                       : 'site_type_select',
+                    option_set_val_fct              : (each) => { return (each.site_type_id__site_type_id == null) ? '' : each.site_type_id__site_type_id; },
+                    option_set_txt_fct              : (each) => { return each.site_type_id__site_type; },
+                };
+                this.initBase(super_params);
+            }
+        }
+
         function upperCaseFirstLetter(string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         }
@@ -258,8 +566,449 @@
             });
         }
 
-        $(document).ready( function () {
-             $('.ui.left.sidebar').sidebar({
+        function setGridStats({
+            office_title_completed  =null,
+            supervisor_completed    =null,
+            inactive_supervisor_list=null,
+        } = {}) {
+
+            if (office_title_completed == null) {   alert('setGridStats(): office_title_completed cannot be null');   return false}
+            if (supervisor_completed == null) {     alert('setGridStats(): supervisor_completed cannot be null');     return false}
+            if (inactive_supervisor_list == null) { alert('setGridStats(): inactive_supervisor_list cannot be null'); return false}
+
+            if ( $('#office_title_percent_complete') != null ) {
+                $('#office_title_percent_complete').progress({
+                    percent: office_title_completed
+                });
+            } else {
+                alert(`office_title_percent_complete is not a valid div ID`);
+            }
+
+            if ( $('#supervisor_percent_progress_bar') != null ) {
+                $('#supervisor_percent_progress_bar').progress({
+                    percent: supervisor_completed
+                });
+                //document.getElementById('supervisor_percent_progress_bar').textContent = supervisor_completed+'%';
+            } else {
+                alert(`supervisor_percent_progress_bar is not a valid div ID`);
+            }
+
+            if ( document.getElementById('inactive_supervisor_list') != null ) {
+                let inactive_supervisor_list_div = document.getElementById('inactive_supervisor_list');
+                if ( inactive_supervisor_list_div.hasChildNodes() ) {
+                    inactive_supervisor_list_div.replaceChildren();
+                }
+
+                inactive_supervisor_list.forEach(function (x) {
+                    let tr = document.createElement("tr");
+                    let td_emp = document.createElement("td");
+                    let td_wu  = document.createElement("td");
+                    let td_sup = document.createElement("td");
+
+                    td_emp.textContent = x.Employee;
+                    td_wu.textContent  = x.WU;
+                    td_sup.textContent = x.Inactive_Supervisor;
+
+                    tr.append(td_emp);
+                    tr.append(td_wu);
+                    tr.append(td_sup);
+
+                    inactive_supervisor_list_div.append(tr);
+                });
+            } else {
+                alert(`inactive_supervisor_list is not a valid div ID`);
+            }
+
+            return
+        }
+
+        function calculateGridStats() {
+            /* Client side grid stats calculation
+            let emp_with_inactive_supervisor_list = emp_data.filter( x => x.supervisor_pms__pms != null && supervisorIsInactive({check_supervisor_pms: x.supervisor_pms__pms}) )
+            let inactive_supervisor_list = []
+            emp_with_inactive_supervisor_list.forEach(item => {
+                inactive_supervisor_list.push({
+                    'Employee'              : `${item.last_name}, ${item.first_name}`,
+                    'WU'                    : `${item.wu__wu}`,
+                    'Inactive_Supervisor'   : `${item.supervisor_pms__pms}`
+                })
+            });
+
+            let office_title_completed      = (emp_data.filter( x => x.office_title != null ).length / emp_data.length) * 100
+            let supervisor_completed        = (emp_data.filter( x => x.supervisor_pms__pms != null ).length / emp_data.length) * 100
+
+            setGridStats({
+                office_title_completed  : office_title_completed,
+                supervisor_completed    : supervisor_completed,
+                inactive_supervisor_list: inactive_supervisor_list,
+            });
+            */
+
+            // Get emp grid stats
+            let emp_grid_stats_api_url = '/OrgChartPortal/get_emp_grid_stats';
+            teammates_response = sentJsonBlobToApi({
+                api_url             : emp_grid_stats_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_emp_grid_stats_response) {
+                    let supervisor_completed                    = Math.floor(json_emp_grid_stats_response["post_data"]["supervisor_completed"]);
+                    let office_title_completed                  = Math.floor(json_emp_grid_stats_response["post_data"]["office_title_completed"]);
+                    let list_last_updated_on_est                = json_emp_grid_stats_response["post_data"]["list_last_updated_on_est"];
+                    let list_last_updated_by                    = json_emp_grid_stats_response["post_data"]["list_last_updated_by"];
+                    let inactive_supervisor_list                = json_emp_grid_stats_response["post_data"]["inactive_supervisor_list"];
+                    let empty_or_invalid_floor_combo_list       = json_emp_grid_stats_response["post_data"]["empty_or_invalid_floor_combo_list"];
+                    let empty_or_invalid_site_type_combo_list   = json_emp_grid_stats_response["post_data"]["empty_or_invalid_site_type_combo_list"];
+
+
+                    setGridStats({
+                        office_title_completed  : office_title_completed,
+                        supervisor_completed    : supervisor_completed,
+                        inactive_supervisor_list: inactive_supervisor_list,
+                    });
+
+                    if ( document.getElementById('last_updated_time') != null ) {
+                        if (list_last_updated_on_est != null) {
+                            document.getElementById('last_updated_time').textContent = list_last_updated_on_est;
+                        } else {
+                            document.getElementById('last_updated_time').textContent = 'NULL'
+                        }
+                    } else {
+                        alert(`last_updated_time is not a valid div ID`);
+                    }
+
+                    if ( document.getElementById('last_updated_by') != null ) {
+                        if (list_last_updated_by !=  null) {
+                            document.getElementById('last_updated_by').textContent = list_last_updated_by;
+                        } else {
+                            document.getElementById('last_updated_by').textContent = 'NULL';
+                        }
+                    } else {
+                        alert(`last_updated_by is not a valid div ID`);
+                    }
+
+                },
+                clear_existing_err_on_success: false,
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+            // Reset the default viewport from css class container to container-fluid
+            nodes = document.getElementsByClassName('container')
+            for (i=0; i<nodes.length; ++i) {
+                nodes[i].setAttribute('class', 'container-fluid')
+            }
+
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+            function cellValueSetter(ag_node) {
+                let post_params = null;
+
+                if (ag_node.newValue == null || ag_node.newValue.toString().trim() === '') {
+                    if      ( ag_node.colDef.headerName == 'Office Title' ) { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Supervisor' )   { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Site' )         { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Floor' )        { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Site Type' )    { alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else                                                    { alert(`${ag_node.colDef.headerName} not recognized as a valid column name`); return false; }
+                }
+
+                if (ag_node.colDef.headerName == 'Site') {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_response, props) {
+                            let ag_node = props.ag_node;
+
+                            // Null the Actual Site Floor and Actual Site Type on Actual Site changes. The API has already made this change on a successfuly API call.
+                            ag_node.data['actual_floor_id__floor_id']           = null;
+                            ag_node.data['actual_site_type_id__site_type_id']   = null;
+
+                            ag_node.api.refreshCells({
+                                rowNodes: [ag_node.node],
+                                columns: [
+                                    'actual_floor_id__floor_id',
+                                    'actual_site_type_id__site_type_id'
+                                ],
+                            });
+
+                            calculateGridStats();
+                        },
+                    }
+                } else if (ag_node.colDef.headerName == 'Floor') {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_res, props) {
+                            let ag_node = props.ag_node;
+
+                            // If there is only one valid Site Type option for the newly selected floor, auto populate the Site Type with that option. The api does this on the backend as well.
+                            let valid_site_type_options = site_type_dropdown.filter(
+                                x =>
+                                    x.floor_id__site_id     == ag_node.data.actual_site_id__site_id
+                                    && x.floor_id__floor_id == ag_node.newValue
+                            );
+
+                            if (valid_site_type_options.length == 1 && valid_site_type_options[0].site_type_id__site_type_id != ag_node.data.actual_site_type_id__site_type_id) {
+                                // If only 1 valid option and is different from existing data, do the Site Type change and refresh
+                                ag_node.data['actual_site_type_id__site_type_id'] = valid_site_type_options[0].site_type_id__site_type_id;
+                                // Refresh Site Type. Force refresh to skip change detection
+                                ag_node.api.refreshCells({
+                                    rowNodes: [ag_node.node],
+                                    columns: [
+                                        'actual_site_type_id__site_type_id'
+                                    ],
+                                    force: true,
+                                });
+                            }
+
+                            calculateGridStats();
+                        },
+                    }
+                } else {
+                    post_params = {
+                        api_json_blob   : {
+                            'to_pms'        : ag_node.data.pms,
+                            'column_name'   : ag_node.colDef.headerName,
+                            'new_value'     : ag_node.newValue,
+                        },
+                        ag_node             : ag_node,
+                        post_url            : "update_employee_data",
+                        on_success_callback : function(json_res, props) {
+                            calculateGridStats();
+                        }
+                    }
+                }
+
+                return BaseAGGridCellValueSetter.setAndPOST(post_params);
+            }
+
+            function onFirstDataRendered(params) {
+                params.api.sizeColumnsToFit();
+            }
+
+            // Specify the columns that is editable here
+            var editable_column_names = [
+                'Supervisor',       // Select
+                'Office Title',     // Input
+                'Site',             // Select
+                'Floor',            // Select
+                'Site Type',        // Select
+            ]
+
+            var isNullFilterOption = {
+                displayKey: 'isNull',
+                displayName: 'Is Null',
+                predicate: (filterValue, cellValue) => {return cellValue === null;},
+                numberOfInputs: 0,
+            }
+
+            var isEmptyStringFilterOption = {
+                displayKey: 'isEmptyString',
+                displayName: 'Is Empty String',
+                predicate: (filterValue, cellValue) => {return (cellValue === null) ? false : cellValue.toString().trim() === '';},
+                numberOfInputs: 0,
+            }
+
+            var isNullOrEmptyStringFilterOption = {
+                displayKey: 'isNullOrEmptyString',
+                displayName: 'Is Null or Empty String',
+                predicate: (filterValue, cellValue) => {return cellValue === null || cellValue.toString().trim() === '';},
+                numberOfInputs: 0,
+            }
+
+            var isInactiveEmployee = {
+                displayKey: 'isInactiveEmployee',
+                displayName: 'Is Inactive Employee',
+                predicate: (filterValue, cellValue) => {return cellValue != null && cellValue.toString().trim() != '' && supervisorIsInactive({check_supervisor_pms: cellValue});},
+                numberOfInputs: 0,
+            }
+
+            // Add a generic cell edit function to all editable cells
+            for (col_i in emp_col_def) {
+                ag_column = emp_col_def[col_i]
+
+                // Editable cell def
+                if ( editable_column_names.includes(ag_column.headerName) ) {
+                    ag_column['editable']       = true;
+                    ag_column['valueSetter']    = cellValueSetter;
+
+                    // Attached a class for creating a select dropdown list for any columns that contains values from a dropdown list
+                    if (ag_column.headerName == 'Supervisor') {
+                        ag_column['cellRenderer']   = 'supervisorCellRenderer';
+                        ag_column['cellEditor']     = 'supervisorCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                            isInactiveEmployee,
+                                                        ]
+                                                    };
+                    }
+
+                    if (ag_column.headerName == 'Office Title') {
+                        ag_column['cellEditor']     = 'officeTitleWithSpellCheckerCellEditor'
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
+                    }
+
+                    if (ag_column.headerName == 'Site') {
+                        ag_column['cellRenderer']   = 'siteCellRenderer';
+                        ag_column['cellEditor']     = 'siteCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
+                    }
+
+                    if (ag_column.headerName == 'Floor') {
+                        ag_column['cellRenderer']   = 'siteFloorCellRenderer';
+                        ag_column['cellEditor']     = 'siteFloorCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
+                    }
+
+                    if (ag_column.headerName == 'Site Type') {
+                        ag_column['cellRenderer']   = 'siteTypeCellRenderer';
+                        ag_column['cellEditor']     = 'siteTypeCellEditor';
+                        ag_column['filterParams']   = {
+                                                        filterOptions: [
+                                                            'equals',
+                                                            'notEquals',
+                                                            'contains',
+                                                            'notContains',
+                                                            'startsWith',
+                                                            'endsWith',
+                                                            isNullOrEmptyStringFilterOption,
+                                                            isNullFilterOption,
+                                                            isEmptyStringFilterOption,
+                                                        ]
+                                                    };
+                    }
+                }
+
+                // General cell def
+                if (ag_column.headerName == 'Last Name') {
+                    ag_column['cellStyle'] = {fontWeight: 'bold'};
+                }
+
+                if (ag_column.headerName == 'First Name') {
+                    ag_column['cellStyle'] = {fontWeight: 'bold'};
+                }
+            }
+
+            var gridOptions = {
+                // PROPERTIES
+                // Objects like myRowData and myColDefs would be created in your application
+                getRowNodeId: (data) => data.pms,
+                columnDefs: emp_col_def,
+                rowData: emp_data,
+                domLayout: 'normal',
+
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                },
+
+                onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
+
+                stopEditingWhenCellsLoseFocus: true,
+                components: {
+                    officeTitleWithSpellCheckerCellEditor   : OfficeTitleWithSpellCheckerCellEditor,
+                    supervisorCellRenderer                  : SupervisorCellRenderer,
+                    supervisorCellEditor                    : SupervisorCellEditor,
+                    siteCellRenderer                        : SiteCellRenderer,
+                    siteCellEditor                          : SiteCellEditor,
+                    siteFloorCellRenderer                   : SiteFloorCellRenderer,
+                    siteFloorCellEditor                     : SiteFloorCellEditor,
+                    siteTypeCellRenderer                    : SiteTypeCellRenderer,
+                    siteTypeCellEditor                      : SiteTypeCellEditor,
+                },
+            }
+
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+
+
+            // Side Bar and Footer Stuff
+            $("#export_csv_btn").click(function() {
+                sentJsonBlobToApi({
+                    json_blob           : null,
+                    api_url             : "{% url 'orgchartportal_emp_grid_get_csv_export' %}",
+                    http_request_method : "POST",
+                    successCallbackFct  : function(json_response) {
+                                            csv_bytes_str = json_response.post_csv_bytes
+                                            var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
+                                            var fileName = `Employees.csv`;
+                                            saveAs(blob, fileName);
+
+                                        },
+                    failCallbackFct     : function(json_response) {
+                                            alert(JSON.stringify(json_response, null, 2))
+                                        },
+                });
+            });
+
+            $('.ui.accordion').accordion({
+                exclusive: false,
+            });
+
+            $('.ui.left.sidebar').sidebar({
                 dimPage: false,
                 transition: 'push',
                 exclusive: false,
@@ -270,87 +1019,102 @@
             .sidebar('attach events', '#left-sidebar-toggle');
 
             // Get permitted WU permissions info
-            $.ajax({
-                url: "/OrgChartPortal/get_client_wu_permissions_list",
-                type: "POST",
-            })
-            .done(function(json_response) {
-                if (json_response["post_success"] == false) {
-                    console.log(`Error: Ajax calling GetClientWUPermissions: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong while trying to get list WU permissions for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_client_wu_permissions_list: Server Response: ${json_response["post_msg"]}`);
-                } else { // Api call successful
-                    list_of_json_client_wu_permissions_response = json_response["post_data"]
+            let wu_perms_api_url = '/OrgChartPortal/get_client_wu_permissions_list';
+            let wu_perms_response = sentJsonBlobToApi({
+                api_url             : wu_perms_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_wu_perms_response) {
+                    if (json_wu_perms_response["post_success"] == true && json_wu_perms_response["post_msg"] != null) {
+                        // User is admin
+                        $('#client_wu_permissions_info').append(`<p class='item'>${json_wu_perms_response["post_msg"]}</p>`);
+                        return
+                    }
+
+                    list_of_json_client_wu_permissions_wu_perms_response = json_wu_perms_response["post_data"];
 
                     // Populate side bar
-                    list_of_json_client_wu_permissions_response.map(function(each) {
-                        $('#client_wu_permissions_info').append(`<p class='item'>WU - ${each.wu__wu}<br>${each.wu__wu_desc}<br>${each.wu__subdiv}</p>`)
+                    list_of_json_client_wu_permissions_wu_perms_response.map(function(each) {
+                        $('#client_wu_permissions_info').append(`<p class='item'>WU - ${each.wu__wu}<br>${each.wu__wu_desc}<br>${each.wu__subdiv}</p>`);
                     })
-
-                }
-                return true;
-            })
-            .fail(function(json_response) {
-                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                return false;
+                },
+                failCallbackFct     : function(json_wu_perms_response) {
+                    $('#client_wu_permissions_info').append(`<p class='item'>Error getting data</p>`)
+                },
+                ajaxFailCallbackFct : function(jqXHR) {
+                    console.log(`API ${wu_perms_api_url}(): fail ajax call`)
+                },
+                clear_existing_err_on_success: false,
             });
+
 
             // Get teammates info
-            $.ajax({
-                url: "/OrgChartPortal/get_client_teammates_list",
-                type: "POST",
-            })
-            .done(function(json_response) {
-                if (json_response["post_success"] == false) {
-                    console.log(`Error: Ajax calling GetClientTeammates: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong while trying to get list teammates for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_client_teammates_list: Server Response: ${json_response["post_msg"]}`);
-                } else { // Api call successful
-                    list_of_json_client_teammates_response = json_response["post_data"]
+            let teammates_api_url = '/OrgChartPortal/get_client_teammates_list';
+            teammates_response = sentJsonBlobToApi({
+                api_url             : teammates_api_url,
+                http_request_method : "POST",
+                successCallbackFct  : function(json_teammates_response) {
+                    if (json_teammates_response["post_success"] == true && json_teammates_response["post_msg"] != null) {
+                        // User is admin
+                        $('#client_data_entry_team_info').append(`<p class='item'>${json_teammates_response["post_msg"]}</p>`);
+                        return
+                    }
+
+                    list_of_json_client_teammates_teammates_response = json_teammates_response["post_data"];
 
                     // Populate side bar
-                    list_of_json_client_teammates_response.map(function(each) {
-                        let first_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.pms__first_name))
-                        let last_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.pms__last_name))
-                        $('#client_data_entry_team_info').append(`<p class='item'>${first_name}, ${last_name}</p>`)
+                    list_of_json_client_teammates_teammates_response.map(function(each) {
+                        let first_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.user_id__pms__first_name));
+                        let last_name = upperCaseFirstLetter(lowerCaseAllWordsExceptFirstLetters(each.user_id__pms__last_name));
+                        $('#client_data_entry_team_info').append(`<p class='item'>${first_name}, ${last_name}</p>`);
                     })
-
-                }
-                return true;
-            })
-            .fail(function(json_response) {
-                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                return false;
+                },
+                failCallbackFct     : function(json_teammates_response) {
+                    $('#client_data_entry_team_info').append(`<p class='item'>Error getting data</p>`)
+                },
+                ajaxFailCallbackFct : function(jqXHR) {
+                    console.log(`API ${teammates_api_url}(): fail ajax call`)
+                },
+                clear_existing_err_on_success: false,
             });
+
 
             // Get emp grid stats
-            $.ajax({
-                url: "/OrgChartPortal/get_emp_grid_stats",
-                type: "POST",
-            })
-            .done(function(json_response) {
-                if (json_response["post_success"] == false) {
-                    console.log(`Error: Ajax calling GetEmpGridStats: Server Response: ${json_response["post_msg"]}`);
-                    alert(`Something went wrong while trying to get emp grid stats for client.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_emp_grid_stats: Server Response: ${json_response["post_msg"]}`);
-                } else { // Api call successful
-                    list_of_json_client_emp_grid_stats_response = json_response["post_data"]
+            calculateGridStats()
 
-                    console.log('Dev purpose: GetEmpGridStats: ')
-                    console.log(list_of_json_client_emp_grid_stats_response)
-                }
-                return true;
-            })
-            .fail(function(json_response) {
-                var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                return false;
+
+            // Set up the clickable filter
+            $('#reset_all_filters_btn').click(function() {
+                gridOptions.api.setFilterModel(null);
             });
-        });
-    </script> {% endcomment %}
 
-    {% comment %} Footer Stuff {% endcomment %}
+            $('#office_title_percent_complete_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    office_title: {
+                        filterType: 'text',
+                        type: 'isNull',
+                    },
+                });
+            })
+
+            $('#supervisor_percent_progress_bar_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    supervisor_pms__pms: {
+                        filterType: 'text',
+                        type: 'isNull',
+                    },
+                });
+            })
+
+            $('#inactive_supervisor_list_filter_btn').click(function() {
+                gridOptions.api.setFilterModel({
+                    supervisor_pms__pms: {
+                        filterType: 'text',
+                        type: 'isInactiveEmployee',
+                    },
+                });
+            })
+
+        });
+    </script>
 
 {% endblock custom_js %}

@@ -1,0 +1,307 @@
+{% extends 'OrgChartPortal.template.base.html' %}
+
+{% load static %}
+
+{% block custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
+
+    <style>
+        /* Dimming the notEditableColorCode column */
+        .notEditableColorCode {
+            background-color: lightgrey;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="ui floating big message">
+        <h2>
+            Manage Users
+        </h2>
+        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+    {% if client_is_admin %}
+        <!-- Add new row button and modal form -->
+        <div class="ui one column centered grid">
+            <div class="ui modal" id="modalNewRowForm">
+                <div class="content center aligned">
+
+                    <div class="ui horizontal divider">Add new user</div>
+
+                    <div>PMS</div>
+                    <div id="modalNewRowFormPMSInputBorder" class="ui input">
+                        <input id="modalNewRowFormPMSInput">
+                    </div>
+
+                    <div>Windows Username</div>
+                    <div id="modalNewRowFormUsernameInputBorder" class="ui input">
+                        <input id="modalNewRowFormUsernameInput">
+                    </div>
+
+                    <div>Is Admin</div>
+                    <div id="modalNewRowFormSelectIsAdminInputBorder">
+                        <select id="modalNewRowFormSelectIsAdminInput" class="ui selection dropdown">
+                            <option value="False">False</option>
+                            <option value="True">True</option>
+                        </select>
+                    </div>
+
+                    <div class="ui horizontal divider">-</div>
+                    <button id="modalNewRowFormAddButton" class="ui teal large button">Add new user</button>
+
+                </div>
+                <div id='successMsg'></div>
+            </div>
+
+            <button id="trigger_input" class="ui teal large button">Add new user</button>
+        </div>
+
+
+        <!--admin access control web grid-->
+        <div style="height: 40vw; width: auto;">
+            <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+        </div>
+        <!--End admin access control web grid-->
+    {% endif %}
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}" type=""></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+
+    <script>
+        $(document).ready( function () {
+            // Initializing the existing select divs into a dropdown menu for Formantic UI
+            $('#modalNewRowFormSelectIsAdminInput').dropdown();
+
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
+
+
+            var col_def = {{ ag_grid_col_def_json|safe }};
+            var data    = {{ users_data_json|safe }};
+
+            function stringContainsOnlyDigits({str=null} = {}) { return /^\d+$/.test(str); }
+
+            function grid_has_pms({pms=null} = {}) {
+                let found = false;
+                gridOptions.api.forEachNode((rowNode, index) => {
+                    if (rowNode.data.pms === pms) {found = true}
+                });
+                return found
+            }
+
+            function grid_has_windows_username({windows_username=null} = {}) {
+                let found = false;
+                gridOptions.api.forEachNode((rowNode, index) => {
+                    if (rowNode.data.windows_username === windows_username) {found = true}
+                });
+                return found
+            }
+
+            function cellValueSetter(ag_node) {
+                let post_params = null;
+
+                // Check Columns that cannot be blank
+                if ( ag_node.newValue == null || ag_node.newValue.toString().trim() === '' ) {
+                    alert(`${ag_node.colDef.headerName} cannot be null or empty`);
+                    return false;
+                }
+
+                if ( ag_node.colDef.headerName == 'Is Admin' || ag_node.colDef.headerName == 'Active' ) {
+                    if ( ag_node.newValue !== 'true' && ag_node.newValue !== 'false' ) {
+                        // Check Columns that can only be boolean
+                        alert(`${ag_node.colDef.headerName} must be 'true' or 'false'`);
+                        return false;
+                    }
+                }
+
+
+                post_params = {
+                    api_json_blob   : {
+                        'to_windows_username'   : ag_node.data.windows_username,
+                        'column_name'           : ag_node.colDef.headerName,
+                        'new_value'             : ag_node.newValue,
+                    },
+                    ag_node             : ag_node,
+                    post_url            : "{% url 'orgchartportal_update_user' %}",
+                }
+
+                return BaseAGGridCellValueSetter.setAndPOST(post_params);
+            }
+
+            function onFirstDataRendered(params) {
+                params.api.sizeColumnsToFit();
+            }
+
+            class BooleanCellEditor extends BaseAGGridCellSelectEditor {
+                init(ag_cell) {
+                    // Quick deep copy, only works with basic data type
+                    let dropdown = ['true', 'false'];
+
+                    let super_params = {
+                        ag_cell                         : ag_cell,
+                        select_array                    : dropdown,
+                        selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                        select_id                       : 'user_active_select',
+                    };
+                    this.initBase(super_params);
+                }
+            }
+
+            var editable_col = [
+                'Is Admin'
+                ,'Active'
+            ]
+
+            for (col_i in col_def) {
+                ag_column = col_def[col_i];
+
+                // Editable cell def
+                if ( editable_col.includes(ag_column.headerName) ) {
+                    ag_column['editable']       = true;
+                    ag_column['valueSetter']    = cellValueSetter;
+                }
+
+                if (ag_column.headerName == 'Delete?') {
+                    ag_column['cellRenderer']   = 'deleteCellRenderer';
+                }
+
+                if (ag_column.headerName == 'Active' || ag_column.headerName == 'Is Admin') {
+                    ag_column['cellEditor']     = 'booleanCellEditor'
+                }
+            }
+
+            var gridOptions = {
+                // PROPERTIES
+                // Objects like myRowData and myColDefs would be created in your application
+                getRowNodeId: (data) => data.windows_username,
+                columnDefs: col_def,
+                rowData: data,
+                domLayout: 'normal',
+
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                },
+
+                onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
+                rowSelection: 'single',
+
+                stopEditingWhenCellsLoseFocus: true,
+                components: {
+                    deleteCellRenderer  : DeleteCellRenderer,
+                    booleanCellEditor   : BooleanCellEditor,
+                },
+            }
+
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+
+            //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
+            $('#AGGrid').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
+                // only 1 row is returned due to rowSelection: 'single' in gridOptions
+                const selected_row = gridOptions.api.getSelectedRows()[0];
+
+                if (confirm(`Are you sure you want to delete '${selected_row.windows_username}'?`)) {
+                    json_blob = {
+                        'windows_username': selected_row.windows_username
+                    }
+
+                    sentJsonBlobToApi({
+                        json_blob           : json_blob,
+                        api_url             : "{% url 'orgchartportal_delete_user' %}",
+                        http_request_method : "POST",
+                        successCallbackFct  : function(json_response) {
+                                                alert(`'${json_response.windows_username}' removed successfully!`);
+                                                gridOptions.api.applyTransaction({ remove: [selected_row] });
+                                                return;
+                                            }
+                    })
+                }
+
+            });
+
+            // For row add, with support for only JS Datatable
+            $('#modalNewRowFormAddButton').on("click", function() {
+
+                let pms                 = $("#modalNewRowFormPMSInput").val();
+                let windows_username    = $("#modalNewRowFormUsernameInput").val();
+                let is_admin            = $("#modalNewRowFormSelectIsAdminInput").val();
+
+                $('#modalNewRowFormUsernameInputBorder').css("border", "");
+                $('#modalNewRowFormPMSInputBorder').css("border", "");
+                $('#modalNewRowFormSelectIsAdminInputBorder').css("border", "");
+
+
+                if (pms == '') {
+                    alert(`pms cannot be empty`);
+                    $('#modalNewRowFormPMSInputBorder').css("border", "2px solid red");
+                    return;
+                } else if ( !stringContainsOnlyDigits({str: pms}) || pms.length != 7 ) {
+                    alert(`pms '${pms}' is not a 7 digit number`);
+                    $('#modalNewRowFormPMSInputBorder').css("border", "2px solid red");
+                    return;
+                } else if ( grid_has_pms({pms: pms}) ) {
+                    alert(`pms '${pms}' already exists!`);
+                    $('#modalNewRowFormPMSInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (windows_username == '') {
+                    alert(`windows_username cannot be empty`);
+                    $('#modalNewRowFormUsernameInputBorder').css("border", "2px solid red");
+                    return;
+                } else if( grid_has_windows_username({windows_username: windows_username}) ) {
+                    alert(`windows_username '${windows_username}' already exists!`);
+                    $('#modalNewRowFormUsernameInputBorder').css("border", "2px solid red");
+                    return;
+                } else if( windows_username.includes(' ') ) {
+                    alert(`windows_username '${windows_username}' cannot contain whitespace`);
+                    $('#modalNewRowFormUsernameInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (is_admin == '') {
+                    alert(`is_admin cannot be empty`);
+                    $('#modalNewRowFormSelectIsAdminInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                json_blob = {
+                    "pms"               : pms,
+                    "windows_username"  : windows_username,
+                    "is_admin"          : is_admin,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${json_response.windows_username}' added successfully!`);
+                        gridOptions.api.applyTransaction({
+                            add     : [{
+                                        pms             : json_response.pms,
+                                        windows_username: json_response.windows_username,
+                                        is_admin        : json_response.is_admin.toLowerCase(),
+                                        active          : 'true'
+                                    }],
+                            addIndex: 0
+                        });
+                        return;
+                    }
+                )
+            })
+
+        });
+    </script>
+{% endblock custom_js %}

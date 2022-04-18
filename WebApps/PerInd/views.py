@@ -13,7 +13,7 @@ import json
 
 def get_admin_category_permissions():
     try:
-        user_permissions_list = Category.objects.all()
+        user_permissions_list = Category.objects.using('PerInd').all()
         return {
             "success": True,
             "pk_list": [x.category_id for x in user_permissions_list],
@@ -21,7 +21,6 @@ def get_admin_category_permissions():
             "category_names": [x.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        print("Exception: get_user_category_permissions(): {}".format(e))
         return {
             "success": False,
             "err": "Exception: get_user_category_permissions(): {}".format(e),
@@ -31,7 +30,7 @@ def get_admin_category_permissions():
 
 def get_user_category_permissions(username):
     try:
-        user_permissions_list = UserPermissions.objects.filter(user__login=username)
+        user_permissions_list = UserPermissions.objects.using('PerInd').filter(user__login=username)
         return {
             "success": True,
             "pk_list": [x.category.category_id for x in user_permissions_list],
@@ -39,7 +38,6 @@ def get_user_category_permissions(username):
             "category_names": [x.category.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        print("Exception: get_user_category_permissions(): {}".format(e))
         return {
             "success": False,
             "err": "Exception: get_user_category_permissions(): {}".format(e),
@@ -50,7 +48,7 @@ def get_user_category_permissions(username):
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
-        admin_query = Admins.objects.filter(
+        admin_query = Admins.objects.using('PerInd').filter(
             user__login=username,
             active=True, ## Filters for active Admins
         )
@@ -64,7 +62,6 @@ def user_is_active_admin(username):
             "err": '{} is not an active Admin'.format(username),
         }
     except Exception as e:
-        print("Exception: user_is_active_admin(): {}".format(e))
         return {
             "success": None,
             "err": 'Exception: user_is_active_admin(): {}'.format(e),
@@ -72,7 +69,7 @@ def user_is_active_admin(username):
 
 def user_is_active_user(username):
     try:
-        user_query = Users.objects.filter(
+        user_query = Users.objects.using('PerInd').filter(
             login=username,
             active_user=True, ## Filters for active users
         )
@@ -86,7 +83,6 @@ def user_is_active_user(username):
             "err": '{} is not an active User or is not registered'.format(username),
         }
     except Exception as e:
-        print("Exception: user_is_active_user(): {}".format(e))
         return {
             "success": None,
             "err": 'Exception: user_is_active_user(): {}'.format(e),
@@ -121,7 +117,7 @@ def user_has_permission_to_edit(username, record_id):
             }
 
         category_id_permission_list = category_info["pk_list"]
-        record_category_info = IndicatorData.objects.values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_info = IndicatorData.objects.using('PerInd').values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
         record_category_id = record_category_info["indicator__category__category_id"]
         record_category_name = record_category_info["indicator__category__category_name"]
         if len(category_id_permission_list) != 0:
@@ -131,7 +127,6 @@ def user_has_permission_to_edit(username, record_id):
                     "err": "",
                 }
             else:
-                print( "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name) )
                 return {
                     "success": False,
                     "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
@@ -149,7 +144,6 @@ def user_has_permission_to_edit(username, record_id):
             "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
         }
     except Exception as e:
-        print("Exception: user_has_permission_to_edit(): {}".format(e))
         return {
             "success": None,
             "err": 'Exception: user_has_permission_to_edit(): {}'.format(e),
@@ -254,14 +248,12 @@ class WebGridPageView(generic.ListView):
             else:
                 self.req_success = False
                 self.err_msg = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
 
         elif is_active_admin["success"] is None:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         if user_cat_permissions["success"] == True:
             category_pk_list = user_cat_permissions["pk_list"]
@@ -269,17 +261,15 @@ class WebGridPageView(generic.ListView):
         elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
         else:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Default filters on the WebGrid dataset
         try:
-            indicator_data_entries = IndicatorData.objects.filter(
+            indicator_data_entries = IndicatorData.objects.using('PerInd').filter(
                 indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
                 indicator__active=True, ## Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
@@ -297,8 +287,7 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         ## Filter dataset from Dropdown list
@@ -312,8 +301,7 @@ class WebGridPageView(generic.ListView):
             except Exception as e:
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Titles Filtering: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by YYYYs
         if len(self.req_yr_list_filter) >= 1:
             try:
@@ -324,8 +312,7 @@ class WebGridPageView(generic.ListView):
             except Exception as e:
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Years Filtering: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by MMs
         if len(self.req_mn_list_filter) >= 1:
             try:
@@ -336,8 +323,7 @@ class WebGridPageView(generic.ListView):
             except Exception as e:
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Months Filtering: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by Fiscal Years
         if len(self.req_fy_list_filter) >= 1:
             try:
@@ -348,8 +334,7 @@ class WebGridPageView(generic.ListView):
             except Exception as e:
                 self.req_success = False
                 self.err_msg = "Exception: WebGridPageView(): get_queryset(): Fiscal Years Filtering: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
         ## Filter by Categories
         if self.client_is_admin == True:
             if len(self.req_cat_list_filter) >= 1:
@@ -361,8 +346,7 @@ class WebGridPageView(generic.ListView):
                 except Exception as e:
                     self.req_success = False
                     self.err_msg = "Exception: WebGridPageView(): get_queryset(): Categories Filtering: {}".format(e)
-                    print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
 
         ## Sort dataset from sort direction and sort column
         try:
@@ -377,13 +361,11 @@ class WebGridPageView(generic.ListView):
                 else:
                     self.req_success = False
                     self.err_msg = "Exception: WebGridPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
-                    print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
@@ -400,8 +382,7 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: WebGridPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         self.req_success = True
         return indicator_data_entries
@@ -504,13 +485,12 @@ class WebGridPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["indicator_data_entries"] = IndicatorData.objects.none()
+            context["indicator_data_entries"] = None
 
             context["category_permissions"] = ""
 
@@ -602,7 +582,6 @@ def PerIndApiUpdateData(request):
     ## Make sure User is an Active User
     is_active_user = user_is_active_user(request.user)
     if is_active_user["success"] != True:
-        print("Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user))
         return JsonResponse({
             "post_success": False,
             "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user),
@@ -611,7 +590,6 @@ def PerIndApiUpdateData(request):
     ## Authenticate permission for user
     user_perm_chk = user_has_permission_to_edit(remote_user, id)
     if user_perm_chk["success"] == False:
-        print("Warning: PerIndApiUpdateData(): USER '{}' has no permission to edit record #{}!".format(remote_user, id))
         return JsonResponse({
             "post_success": False,
             "post_msg": "PerIndApiUpdateData():\n\nUSER '{}' has no permission to edit record #{}: PerIndApiUpdateData(): {}".format(remote_user, id, user_perm_chk["err"]),
@@ -622,21 +600,20 @@ def PerIndApiUpdateData(request):
     try:
         new_value = float(new_value)
     except Exception as e:
-        print("Error: PerIndApiUpdateData(): Unable to convert new_value '{}' to float type, did not save the value".format(new_value))
         return JsonResponse({
             "post_success": False,
             "post_msg": "Error: PerIndApiUpdateData():\n\nUnable to convert new_value '{}' to float type, did not save the value".format(new_value),
         })
 
     if table == "IndicatorData":
-        row = IndicatorData.objects.get(record_id=id)
+        row = IndicatorData.objects.using('PerInd').get(record_id=id)
 
         if column=="val":
             try:
                 row.val = new_value
 
                 ## Update [last updated by] to current remote user, also make sure it's active user
-                user_obj = Users.objects.get(login=remote_user, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                user_obj = Users.objects.using('PerInd').get(login=remote_user, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                 row.update_user = user_obj
 
                 ## Update [updated date] to current time
@@ -648,7 +625,6 @@ def PerIndApiUpdateData(request):
 
                 row.save()
 
-                print("Api Log: PerIndApiUpdateData(): User '{}' has successfully update '{}' to [{}].[{}] for record id '{}'".format(remote_user, new_value, table, column, id))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
@@ -657,25 +633,21 @@ def PerIndApiUpdateData(request):
                     "updated_by": remote_user,
                 })
             except Exception as e:
-                print("Error: PerIndApiUpdateData(): While trying to save to the database: {}".format(e))
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Error: PerIndApiUpdateData():\n\nWhile trying to save to the database: {}".format(e),
                 })
         else:
-            print("Error: PerIndApiUpdateData(): The api does not support operation with this column: '{}'".format(column))
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this column: '{}'".format(column),
             })
     else:
-        print("Error: PerIndApiUpdateData(): The api does not support operation with this table: '{}'".format(table))
         return JsonResponse({
             "post_success": False,
             "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this table: '{}'".format(table),
         })
 
-    print("Warning: PerIndApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
         "post_msg": "Warning: PerIndApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
@@ -712,14 +684,6 @@ def PerIndApiGetCsv(request):
     req_fy_list_filter = request.POST.getlist('FiscalYearListFilter[]')
     req_cat_list_filter = request.POST.getlist('CategoriesListFilter[]')
 
-    ## print("req_sort_dir: {}".format(req_sort_dir))
-    ## print("req_sort_by: {}".format(req_sort_by))
-    ## print("req_title_list_filter: {}".format(req_title_list_filter))
-    ## print("req_yr_list_filter: {}".format(req_yr_list_filter))
-    ## print("req_mn_list_filter: {}".format(req_mn_list_filter))
-    ## print("req_fy_list_filter: {}".format(req_fy_list_filter))
-    ## print("req_cat_list_filter: {}".format(req_cat_list_filter))
-
     ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
@@ -745,7 +709,6 @@ def PerIndApiGetCsv(request):
             ## If not admin, do standard filter with categories
             user_cat_permissions = get_user_category_permissions(request.user)
         else:
-            print("PerIndApiGetCsv(): {}".format(is_active_user["err"]))
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "PerIndApiGetCsv(): {}".format(is_active_user["err"]),
@@ -777,7 +740,7 @@ def PerIndApiGetCsv(request):
 
     ## Default filters on the WebGrid dataset
     try:
-        csv_queryset = IndicatorData.objects.filter(
+        csv_queryset = IndicatorData.objects.using('PerInd').filter(
             indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
             indicator__active=True, ## Filters for active Indicator titles
             year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
@@ -984,13 +947,12 @@ class PastDueIndicatorsPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Use python to process the queryset to find a list of Indicator_Data.Records_IDs that meet the Past-Due-Criteria
         ## Criteria for past due, last month entered is at least three months in the past (Updated_Date = '1899-12-30', means no data was entered, it is also our default 'NULL/Empty' date)
         try:
-            base_data_qs = IndicatorData.objects.filter(
+            base_data_qs = IndicatorData.objects.using('PerInd').filter(
                 indicator__active=True, ## Filters for active Indicator titles
                 year_month__yyyy__gt=timezone.now().year-4, ## Filter for only last four year, "yyyy_gt" is "yyyy greater than"
             )
@@ -1016,8 +978,7 @@ class PastDueIndicatorsPageView(generic.ListView):
                     if ( each_row.year_month.yyyy > timezone.now().year ) or ( each_row.year_month.yyyy == timezone.now().year and each_row.year_month.mm > timezone.now().month ):
                         self.req_success = False
                         self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): ind_id_related queryset contains records tracking dates greater than current month and current year, the record tracks yyyy: '{}' and mm: '{}'".format(each_row.year_month.yyyy, each_row.year_month.mm)
-                        print(self.err_msg)
-                        return IndicatorData.objects.none()
+                        return None
 
                     ## Indicator could be up-to-date, current record is for entry for the last three month (Counting current month, last month, and the month before)
                     if (
@@ -1079,19 +1040,17 @@ class PastDueIndicatorsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Requery db to match up with the list of Indicator_Data.Records_IDs to pass to the client
         try:
-            indicator_data_entries = IndicatorData.objects.filter(
+            indicator_data_entries = IndicatorData.objects.using('PerInd').filter(
                 pk__in=past_due_record_id_list,
             )
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## refrencee: https://stackoverflow.com/questions/5956391/django-objects-filter-with-list
         ## Filter dataset from Dropdown list
@@ -1105,8 +1064,7 @@ class PastDueIndicatorsPageView(generic.ListView):
             except Exception as e:
                 self.req_success = False
                 self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Categories Filtering: {}".format(e)
-                print(self.err_msg)
-                return IndicatorData.objects.none()
+                return None
 
         ## Sort dataset from sort direction and sort column
         try:
@@ -1122,13 +1080,11 @@ class PastDueIndicatorsPageView(generic.ListView):
                 else:
                     self.req_success = False
                     self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Unrecognized option for self.req_sort_dir: {}".format(self.req_sort_dir)
-                    print(self.err_msg)
-                    return IndicatorData.objects.none()
+                    return None
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): Sorting by {}, {}: {}".format(self.req_sort_by, self.req_sort_dir, e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         ## Get dropdown list values (Don't move this function, needs to be after the filtered and sorted dataset, to pull unique title, years and months base on current context)
         try:
@@ -1136,8 +1092,7 @@ class PastDueIndicatorsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: PastDueIndicatorsPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return IndicatorData.objects.none()
+            return None
 
         self.req_success = True
         return indicator_data_entries
@@ -1191,13 +1146,12 @@ class PastDueIndicatorsPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
             context["err_msg"] = self.err_msg
 
-            context["indicator_data_entries"] = IndicatorData.objects.none()
+            context["indicator_data_entries"] = None
 
             context["sort_dir"] = ""
             context["sort_by"] = ""
@@ -1229,7 +1183,6 @@ class AdminPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "AdminPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            print(self.err_msg)
             return
 
         ## Check for Active Admins
@@ -1239,7 +1192,6 @@ class AdminPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
             return
 
         self.req_success = True
@@ -1256,7 +1208,6 @@ class AdminPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1284,8 +1235,7 @@ class UserPermissionsPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
@@ -1294,21 +1244,19 @@ class UserPermissionsPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
-            permission_data_entries = UserPermissions.objects.all().order_by('user__login')
+            permission_data_entries = UserPermissions.objects.using('PerInd').all().order_by('user__login')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         # ## EXAMPLE: Get the active users login list in json format
         # try:
-        #     user_objs = Users.objects.filter(
+        #     user_objs = Users.objects.using('PerInd').filter(
         #         active_user=True
         #     ).order_by('login')
 
@@ -1318,13 +1266,12 @@ class UserPermissionsPanelPageView(generic.ListView):
         # except Exception as e:
         #     self.req_success = False
         #     self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-        #     print(self.err_msg)
-        #     return UserPermissions.objects.none()
+        #     return UserPermissions.objects.using('PerInd').none()
 
 
         ## Get the active users login list
         try:
-            user_objs = Users.objects.filter(
+            user_objs = Users.objects.using('PerInd').filter(
                 active_user=True
             ).order_by('login')
 
@@ -1332,18 +1279,16 @@ class UserPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         ## Get the category list
         try:
-            category_objs = Category.objects.all().order_by('category_name')
+            category_objs = Category.objects.using('PerInd').all().order_by('category_name')
             self.categories_list = category_objs
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return UserPermissions.objects.none()
+            return UserPermissions.objects.using('PerInd').none()
 
         self.req_success = True
         return permission_data_entries
@@ -1366,7 +1311,6 @@ class UserPermissionsPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1417,7 +1361,6 @@ def UserPermissionsPanelApiUpdateData(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UserPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UserPermissionsPanelApiUpdateData(): {}".format(is_active_user["err"]),
@@ -1443,7 +1386,6 @@ def UserPermissionsPanelApiUpdateData(request):
             try:
                 new_value = bool(new_value)
             except Exception as e:
-                print("Error: UserPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
@@ -1452,7 +1394,6 @@ def UserPermissionsPanelApiUpdateData(request):
             try:
                 new_value = str(new_value)
             except Exception as e:
-                print("Error: UserPermissionsPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value".format(new_value),
@@ -1460,10 +1401,10 @@ def UserPermissionsPanelApiUpdateData(request):
 
         ## Save the value
         try:
-            row = UserPermissions.objects.get(user_permission_id=id)
+            row = UserPermissions.objects.using('PerInd').get(user_permission_id=id)
             if column == "Login":
                 try:
-                    user_obj = Users.objects.get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
+                    user_obj = Users.objects.using('PerInd').get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                     row.user = user_obj
 
                     row.save()
@@ -1474,19 +1415,16 @@ def UserPermissionsPanelApiUpdateData(request):
                     #     "post_msg": "trying to save: '{}'".format(new_value),
                     # })
 
-                    print("Api Log: UserPermissionsPanelApiUpdateData(): Client '{}' has successfully updated User_Permissions. For User_Permission_ID '{}' updated the User to '{}'".format(remote_user, id, new_value))
                     return JsonResponse({
                         "post_success": True,
                         "post_msg": "",
                     })
                 except Exception as e:
-                    print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
                     return JsonResponse({
                         "post_success": False,
                         "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
                     })
         except Exception as e:
-            print("Error: UserPermissionsPanelApiUpdateData(): While trying to update a User Permission record to login '{}': {}".format(new_value, e))
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "Error: UserPermissionsPanelApiUpdateData():\n\nWhile trying to a User Permission record to login '{}': {}".format(new_value, e),
@@ -1496,7 +1434,6 @@ def UserPermissionsPanelApiUpdateData(request):
     #     pass
 
 
-    print("Warning: UserPermissionsPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
         "post_msg": "Warning: UserPermissionsPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
@@ -1529,7 +1466,6 @@ def UserPermissionsPanelApiAddRow(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UserPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]),
@@ -1578,7 +1514,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check that the login_selection and category_selection exists
     try:
-        if not Users.objects.filter(login__exact=login_selection, active_user__exact=True).exists():
+        if not Users.objects.using('PerInd').filter(login__exact=login_selection, active_user__exact=True).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' doesn't exists or it's not an active user".format(login_selection),
@@ -1590,7 +1526,7 @@ def UserPermissionsPanelApiAddRow(request):
         })
 
     try:
-         if not Category.objects.filter(category_name__exact=category_selection).exists():
+         if not Category.objects.using('PerInd').filter(category_name__exact=category_selection).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' doesn't exists as a Category".format(category_selection),
@@ -1603,7 +1539,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check for duplication of login and category
     try:
-        if UserPermissions.objects.filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
+        if UserPermissions.objects.using('PerInd').filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' already has access to '{}'".format(login_selection, category_selection),
@@ -1616,8 +1552,8 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Create the row!
     try:
-        user_obj = Users.objects.get(login=login_selection, active_user=True)
-        category_obj = Category.objects.get(category_name=category_selection)
+        user_obj = Users.objects.using('PerInd').get(login=login_selection, active_user=True)
+        category_obj = Category.objects.using('PerInd').get(category_name=category_selection)
         new_permission = UserPermissions(user=user_obj, category=category_obj)
         new_permission.save()
     except Exception as e:
@@ -1663,7 +1599,6 @@ def UserPermissionsPanelApiDeleteRow(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UserPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UserPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]),
@@ -1713,7 +1648,7 @@ def UserPermissionsPanelApiDeleteRow(request):
 
     ## Remove the permission row
     try:
-        permission_row = UserPermissions.objects.get(user_permission_id=user_permission_id)
+        permission_row = UserPermissions.objects.using('PerInd').get(user_permission_id=user_permission_id)
         permission_row.delete()
     except Exception as e:
         return JsonResponse({
@@ -1743,8 +1678,7 @@ class UsersPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "UsersPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
@@ -1753,17 +1687,15 @@ class UsersPanelPageView(generic.ListView):
         else:
             self.req_success = False
             self.err_msg = "UsersPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         ## Get the permissions data
         try:
-            users_data_entries = Users.objects.all().order_by('login')
+            users_data_entries = Users.objects.using('PerInd').all().order_by('login')
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: UsersPanelPageView(): get_queryset(): {}".format(e)
-            print(self.err_msg)
-            return Users.objects.none()
+            return Users.objects.using('PerInd').none()
 
         self.req_success = True
         return users_data_entries
@@ -1780,7 +1712,6 @@ class UsersPanelPageView(generic.ListView):
         except Exception as e:
             self.req_success = False
             self.err_msg = "Exception: get_context_data(): {}".format(e)
-            print(self.err_msg)
 
             context = super().get_context_data(**kwargs)
             context["req_success"] = self.req_success
@@ -1816,7 +1747,6 @@ def UsersPanelApiAddRow(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UsersPanelApiAddRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UsersPanelApiAddRow(): {}".format(is_active_user["err"]),
@@ -1872,7 +1802,7 @@ def UsersPanelApiAddRow(request):
 
     ## Check for duplication of login
     try:
-        if Users.objects.filter(login__exact=login_input).exists():
+        if Users.objects.using('PerInd').filter(login__exact=login_input).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "'{}' already exists in the Users table".format(login_input),
@@ -1930,7 +1860,6 @@ def UsersPanelApiDeleteRow(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UsersPanelApiDeleteRow(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UsersPanelApiDeleteRow(): {}".format(is_active_user["err"]),
@@ -1980,7 +1909,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Get user row reference
     try:
-        user_row = Users.objects.get(user_id=user_id)
+        user_row = Users.objects.using('PerInd').get(user_id=user_id)
     except Exception as e:
         return JsonResponse({
             "post_success": False,
@@ -1989,7 +1918,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Check that there is no UserPermissions rows associated with given user_id
     try:
-        if UserPermissions.objects.filter(user__user_id__exact=user_id).exists():
+        if UserPermissions.objects.using('PerInd').filter(user__user_id__exact=user_id).exists():
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)".format(user_row.login),
@@ -2052,7 +1981,6 @@ def UsersPanelApiUpdateData(request):
     if is_active_user["success"] == True:
         pass
     else:
-        print("UsersPanelApiUpdateData(): {}".format(is_active_user["err"]))
         return JsonResponse({
             "post_success": False,
             "post_msg": "UsersPanelApiUpdateData(): {}".format(is_active_user["err"]),
@@ -2080,7 +2008,6 @@ def UsersPanelApiUpdateData(request):
             elif new_value == "False":
                 new_value = False
             else:
-                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to bool type, did not save the value".format(new_value))
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
@@ -2090,13 +2017,11 @@ def UsersPanelApiUpdateData(request):
                 new_value = str(new_value)
                 new_value = new_value.strip()
                 if new_value == "":
-                    print("Error: UsersPanelApiUpdateData(): new_value cannot be a empty string")
                     return JsonResponse({
                         "post_success": False,
                         "post_msg": "Error: UsersPanelApiUpdateData():\n\nnew_value cannot be a empty string",
                     })
             except Exception as e:
-                print("Error: UsersPanelApiUpdateData(): Unable to convert new_value '{}' to str type, did not save the value: {}".format(new_value), e)
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value: {}".format(new_value, e),
@@ -2104,11 +2029,10 @@ def UsersPanelApiUpdateData(request):
 
         ## Save the value
         try:
-            row = Users.objects.get(user_id=id)
+            row = Users.objects.using('PerInd').get(user_id=id)
             if column == "Active_User":
                 row.active_user = new_value
                 row.save()
-                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
@@ -2116,7 +2040,6 @@ def UsersPanelApiUpdateData(request):
             if column == "First_Name":
                 row.first_name = new_value
                 row.save()
-                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
@@ -2124,25 +2047,21 @@ def UsersPanelApiUpdateData(request):
             if column == "Last_Name":
                 row.last_name = new_value
                 row.save()
-                print("Api Log: UsersPanelApiUpdateData(): Client '{}' has successfully updated Users. For User_ID '{}' updated the {}.{} to '{}'".format(remote_user, id, table, column, new_value))
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                 })
             else:
-                print("Warning: UsersPanelApiUpdateData(): Updating to column '{}' for table '{}' not supported\n".format(column, table))
                 return JsonResponse({
                     "post_success": False,
                     "post_msg": "Warning: UsersPanelApiUpdateData():\n\nUpdating to column '{}' for table '{}' not supported\n".format(column, table),
                 })
         except Exception as e:
-            print("Error: UsersPanelApiUpdateData(): While trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e))
             return JsonResponse({
                 "post_success": False,
                 "post_msg": "Error: UsersPanelApiUpdateData():\n\nWhile trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e),
             })
 
-    print("Warning: UsersPanelApiUpdateData(): Did not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value))
     return JsonResponse({
         "post_success": False,
         "post_msg": "Warning: UsersPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),

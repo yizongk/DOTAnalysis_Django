@@ -1,0 +1,6 @@
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.8/dist/semantic.min.js"></script>
+
+Download the files from github instead of jsdelivr, cuz it's easier (Use the "Download Directory" option in https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo):
+https://github.com/fomantic/Fomantic-UI/tree/2.8.8/dist
