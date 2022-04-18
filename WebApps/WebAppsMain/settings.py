@@ -275,7 +275,6 @@ else:
     }
 
 
-# Abrar- connection to my local database
 if LookupTableManager_UseWinAuth:
     DATABASES['LookupTableManager'] = {
         'ENGINE':       'sql_server.pyodbc',
