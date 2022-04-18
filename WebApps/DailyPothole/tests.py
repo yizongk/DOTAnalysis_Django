@@ -5,10 +5,9 @@ from django.contrib.auth.models import User
 from datetime import datetime, timedelta
 from django.contrib import auth
 from django.utils import timezone
-import copy
 from django.core.exceptions import ObjectDoesNotExist
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME
-from WebAppsMain.testing_utils import get_to_api, post_to_api, decode_json_response_for_content
+from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
 
@@ -176,7 +175,7 @@ class TestViewPagesResponse(unittest.TestCase):
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['req_success'], f"'{view}' did not return req_success True on an admin view for an admin client\n    {response.context['err_msg']}")
 
-    def __assert_additional_context_data(self):
+    def assert_additional_context_data(self):
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             if view == 'dailypothole_pothole_data_entry_view':
@@ -198,20 +197,19 @@ class TestViewPagesResponse(unittest.TestCase):
         """Some views have additional context data, need to test for those here"""
         # Test normal user
         remove_admin_status()
-        self.__assert_additional_context_data()
+        self.assert_additional_context_data()
 
         # Test admin user
         grant_admin_status()
-        self.__assert_additional_context_data()
+        self.assert_additional_context_data()
 
 
-class TestAPIUpdatePotholesData(unittest.TestCase):
+class TestAPIUpdatePotholesData(HttpPostTestCase):
     """methods that starts with name 'test...' are the methods be called by unittest"""
     @classmethod
     def setUpClass(self):
         tear_down()
         self.user_obj                   = set_up_permissions()
-        self.client                     = Client()
         self.api_name                   = 'dailypothole_update_potholes_data_api'
 
         self.valid_operation            = DEFAULT_OPERATION
@@ -248,53 +246,10 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
             payload = self.valid_payload[payload_type]
-            response_content = decode_json_response_for_content( self.__post_to_api(payload) )
+            response_content = self.post_and_get_json_response(payload)
 
             ## Check that the request was successful
             self.assertEqual(response_content['post_success'], True,
@@ -367,10 +322,10 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): PotholeData -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
         ## For TodayCrewData
@@ -403,18 +358,17 @@ class TestAPIUpdatePotholesData(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): TodayCrewData -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPILookupPotholesAndCrewData(unittest.TestCase):
+class TestAPILookupPotholesAndCrewData(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         set_up_permissions()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_lookup_potholes_and_crew_data_api'
 
         self.valid_look_up_date     = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -431,50 +385,9 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_with_valid_data(self):
         payload = self.valid_payload
-        response_content = decode_json_response_for_content( self.__post_to_api(payload) )
+        response_content = self.post_and_get_json_response( payload )
 
         ## Check that the request was successful
         self.assertEqual(response_content['post_success'], True,
@@ -513,18 +426,17 @@ class TestAPILookupPotholesAndCrewData(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
+class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         self.user_obj               = grant_admin_status()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_update_potholes_from_data_grid_api'
 
         self.valid_repair_date      = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -559,53 +471,11 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail")
@@ -613,20 +483,19 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='repair_date')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='column_name')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='new_value')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='updated_by')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='repair_date')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='column_name')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='new_value')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='updated_by')
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -692,10 +561,10 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): Crew Count -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=crew_count_payload, testing_param_name=param_name, testing_data=data)
 
             ## Test the holes repaired which allows only positive int
             if param_name == 'repair_date':
@@ -717,18 +586,17 @@ class TestAPIUpdatePotholesFromDataGrid(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): Holes Repaired -> parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=holes_repaired_payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIUpdateComplaintsData(unittest.TestCase):
+class TestAPIUpdateComplaintsData(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         self.user_obj               = grant_admin_status()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_update_complaints_data_api'
 
         self.valid_complaint_date         = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -757,55 +625,11 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
@@ -813,22 +637,21 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='open_siebel')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='open_siebel')
 
             ## Check if data was saved correctly
             saved_object = TblComplaint.objects.using('DailyPothole').get(
@@ -875,17 +698,16 @@ class TestAPIUpdateComplaintsData(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPILookupComplaintsData(unittest.TestCase):
+class TestAPILookupComplaintsData(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
-        self.client                     = Client()
         self.api_name                   = 'dailypothole_lookup_complaints_data_api'
 
         self.valid_complaint_date       = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -900,60 +722,16 @@ class TestAPILookupComplaintsData(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-    def __set_up_test_data(self):
+    def set_up_test_data(self):
         complaint_data = TblComplaint.objects.using('DailyPothole').get(
             complaint_date__exact=self.valid_complaint_date,
         )
@@ -968,29 +746,28 @@ class TestAPILookupComplaintsData(unittest.TestCase):
         complaint_data.save(using='DailyPothole')
 
     def test_with_valid_data(self):
-        self.__set_up_test_data()
+        self.set_up_test_data()
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
-            self.__assert_response_has_param(             response_content=response_content, response_param_name='open_siebel')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
+            self.assert_response_has_param(             response_content=response_content, response_param_name='open_siebel')
 
     def test_data_validation(self):
-        self.__set_up_test_data()
+        self.set_up_test_data()
         grant_admin_status()
 
         payload = self.valid_payloads[0]
@@ -1006,17 +783,16 @@ class TestAPILookupComplaintsData(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIGetPDFReport(unittest.TestCase):
+class TestAPIGetPDFReport(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
-        self.client             = Client()
         self.api_name           = 'dailypothole_get_pdf_report_api'
 
         self.valid_report_date  = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -1031,55 +807,11 @@ class TestAPIGetPDFReport(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
@@ -1087,8 +819,7 @@ class TestAPIGetPDFReport(unittest.TestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
@@ -1115,18 +846,17 @@ class TestAPIGetPDFReport(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIAddUser(unittest.TestCase):
+class TestAPIAddUser(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         self.user_obj               = grant_admin_status()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_add_user_api'
 
         self.valid_username         = 'some_random_name'
@@ -1145,62 +875,18 @@ class TestAPIAddUser(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         tear_down()
-        self.__remove_test_user_if_exists(self)
-
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+        self.remove_test_user_if_exists(self)
 
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-    def __remove_test_user_if_exists(self):
+    def remove_test_user_if_exists(self):
         try:
             new_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
         except:
@@ -1212,18 +898,17 @@ class TestAPIAddUser(unittest.TestCase):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            self.__remove_test_user_if_exists()
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            self.remove_test_user_if_exists()
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
@@ -1253,20 +938,19 @@ class TestAPIAddUser(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__remove_test_user_if_exists()
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.remove_test_user_if_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__remove_test_user_if_exists()
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.remove_test_user_if_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIUpdateUser(unittest.TestCase):
+class TestAPIUpdateUser(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         self.user_obj               = grant_admin_status()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_update_user_api'
 
         self.valid_payloads = [
@@ -1288,55 +972,11 @@ class TestAPIUpdateUser(unittest.TestCase):
     def tearDownClass(self):
         tear_down()
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
@@ -1344,17 +984,16 @@ class TestAPIUpdateUser(unittest.TestCase):
     def test_with_valid_data(self):
         for payload in self.valid_payloads:
             grant_admin_status()
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.user_obj.username)
@@ -1392,18 +1031,17 @@ class TestAPIUpdateUser(unittest.TestCase):
 
             for data in valid:
                 grant_admin_status()
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
                 grant_admin_status()
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIDeleteUser(unittest.TestCase):
+class TestAPIDeleteUser(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_delete_user_api'
 
         self.valid_username         = 'some_random_name'
@@ -1426,60 +1064,16 @@ class TestAPIDeleteUser(unittest.TestCase):
         else:
             test_user.delete(using='DailyPothole')
 
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
-
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-    def __add_test_user_if_not_exists(self):
+    def add_test_user_if_not_exists(self):
         test_user = TblUser.objects.using('DailyPothole').get_or_create(username=self.valid_username)[0]
         test_user.save(using='DailyPothole')
 
@@ -1487,9 +1081,8 @@ class TestAPIDeleteUser(unittest.TestCase):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            self.__add_test_user_if_not_exists()
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            self.add_test_user_if_not_exists()
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
@@ -1521,19 +1114,18 @@ class TestAPIDeleteUser(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__add_test_user_if_not_exists()
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.add_test_user_if_not_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__add_test_user_if_not_exists()
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.add_test_user_if_not_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
 
-class TestAPIAddUserPermission(unittest.TestCase):
+class TestAPIAddUserPermission(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
-        self.client                 = Client()
         self.api_name               = 'dailypothole_add_user_permission_api'
         self.valid_username         = TEST_WINDOWS_USERNAME
 
@@ -1553,62 +1145,18 @@ class TestAPIAddUserPermission(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         tear_down()
-        self.__remove_test_user_permissions_if_exists(self)
-
-    def __post_to_api(self, payload):
-        """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
-        response = post_to_api(
-            client      = self.client,
-            api_name    = self.api_name,
-            payload     = payload,
-            remote_user = TEST_WINDOWS_USERNAME)
-
-        self.assertEqual(response.status_code, 200, f"'{self.api_name}' did not return status code 200")
-
-        return response
-
-    def __assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
-        payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
-        payload[testing_param_name] = testing_data
-        response                    = self.__post_to_api(payload=payload)
-        content                     = decode_json_response_for_content(response)
-
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
-
-    def __assert_response_has_param(self, response_content, response_param_name):
-        self.assertTrue(response_param_name in response_content['post_data'],
-            f"'{response_param_name}' is not in the response: {response_content['post_data']}")
-
-    def __assert_response_has_param_and_not_null(self, response_content, response_param_name):
-        self.__assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
-        self.assertTrue(response_content['post_data'][response_param_name] is not None,
-            f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+        self.remove_test_user_permissions_if_exists(self)
 
     def test_api_accept_only_admins(self):
         remove_admin_status()
 
         payload = self.valid_payloads[0]
-        res     = self.__post_to_api(payload)
-        content = decode_json_response_for_content(res)
+        content = self.post_and_get_json_response(payload)
 
         self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
             f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
 
-    def __remove_test_user_permissions_if_exists(self):
+    def remove_test_user_permissions_if_exists(self):
         try:
             permissions = TblPermission.objects.using('DailyPothole').filter(
                 user_id__username__exact=self.valid_username
@@ -1623,19 +1171,18 @@ class TestAPIAddUserPermission(unittest.TestCase):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            self.__remove_test_user_permissions_if_exists()
-            response = self.__post_to_api(payload)
-            response_content = decode_json_response_for_content( response )
+            self.remove_test_user_permissions_if_exists()
+            response_content = self.post_and_get_json_response( payload )
 
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='permission_id')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
-            self.__assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='permission_id')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
@@ -1675,9 +1222,9 @@ class TestAPIAddUserPermission(unittest.TestCase):
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
 
             for data in valid:
-                self.__remove_test_user_permissions_if_exists()
-                self.__assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.remove_test_user_permissions_if_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
             for data in invalid:
-                self.__remove_test_user_permissions_if_exists()
-                self.__assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+                self.remove_test_user_permissions_if_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
