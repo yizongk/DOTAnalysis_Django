@@ -20,7 +20,7 @@
         <h2>
             Daily Pothole Data Grid
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
 
@@ -121,8 +121,8 @@
                 post_params = {
                     api_json_blob       : {
                                             'repair_date'   : ag_node.data.repair_date,
-                                            'operation'     : ag_node.data.operation_id__operation,
-                                            'boro_long'     : ag_node.data.boro_id__boro_long,
+                                            'operation'     : ag_node.data.operation_boro_id__operation_id__operation,
+                                            'boro_long'     : ag_node.data.operation_boro_id__boro_id__boro_long,
                                             'column_name'   : ag_node.colDef.headerName,
                                             'new_value'     : ag_node.newValue,
                                         },

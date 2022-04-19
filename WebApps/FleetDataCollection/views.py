@@ -147,32 +147,63 @@ def get_allowed_list_of_unit_numbers(username):
 
 # Create your views here.
 class HomePageView(TemplateView):
-    template_name = 'FleetDataCollection.template.home.html'
+    template_name   = 'FleetDataCollection.template.home.html'
     client_is_admin = False
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)["success"]
-            context["client_is_admin"] = self.client_is_admin
+            context["client_is_admin"]  = self.client_is_admin
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             return context
         except Exception as e:
-            context["client_is_admin"] = False
+            context["client_is_admin"]  = False
+            context["get_success"]      = False
+            context["get_error"]          = None
             return context
 
 class AboutPageView(TemplateView):
-    template_name = 'FleetDataCollection.template.about.html'
+    template_name   = 'FleetDataCollection.template.about.html'
+    get_success     = True
+    get_error         = None
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
+            return context
+        except Exception as e:
+            context["get_success"]  = False
+            context["get_error"]      = None
+            return context
 
 class ContactPageView(TemplateView):
-    template_name = 'FleetDataCollection.template.contact.html'
+    template_name   = 'FleetDataCollection.template.contact.html'
+    get_success     = True
+    get_error         = None
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
+            return context
+        except Exception as e:
+            context["get_success"]  = False
+            context["get_error"]      = None
+            return context
 
 class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.driverandtypeconfirmation.html'
     context_object_name = 'driver_type_assigment_entries'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -199,29 +230,29 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
                     unit_number__in=allowed_unit_number_list,
                 ).order_by('unit_number')
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DriverAndTypeAssignmentConfirmationPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: DriverAndTypeAssignmentConfirmationPageView(): get_queryset(): {}".format(e)
             return M5DriverVehicleDataConfirmations.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return driver_type_assigment_entries
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -229,8 +260,8 @@ class DriverAndTypeAssignmentConfirmationPageView(generic.ListView):
 class AdminPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.adminpanel.html'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -240,28 +271,28 @@ class AdminPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return
 
-        self.req_success = True
+        self.get_success = True
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -321,10 +352,10 @@ def GetPermittedEmpDataList(request):
             "post_data": pms_list_json_str,
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: GetPermittedEmpDataList(): {}".format(e)
+        get_error = "Exception: FleetDataCollection: GetPermittedEmpDataList(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 ## Returns a list of json objects, each json object is a row in the NYC_DOTR_UNIT_MAIN, containing make, model, unit_no, class1, and domicile
@@ -362,10 +393,10 @@ def GetEmpLookUpDataList(request):
             "post_data": pms_list_json_str,
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: GetEmpLookUpDataList(): {}".format(e)
+        get_error = "Exception: FleetDataCollection: GetEmpLookUpDataList(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -395,10 +426,10 @@ def GetM5LookUpDataList(request):
             "post_data": m5_list_json_str,
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: GetPermittedM5DataList(): {}".format(e)
+        get_error = "Exception: FleetDataCollection: GetPermittedM5DataList(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 ## Update the PMS for a record
@@ -508,10 +539,10 @@ def UpdateM5DriverVehicleDataConfirmations(request):
             "post_msg": ""
         })
     except Exception as e:
-        err_msg = "Exception: FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): {}".format(e)
+        get_error = "Exception: FleetDataCollection: UpdateM5DriverVehicleDataConfirmations(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -528,8 +559,8 @@ class WuPermissionsPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.wupermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -541,27 +572,27 @@ class WuPermissionsPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "WuPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "WuPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return WUPermissions.objects.none()
 
         ## Get the permissions data
         try:
             permission_data_entries = WUPermissions.objects.using('FleetDataCollection').all().order_by('window_username')
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return WUPermissions.objects.none()
 
         ## Get the existing wu permission data from tblEmployees
         try:
             self.division_list = TblWorkUnitDivisionJoeSubs.objects.using('OrgChartRead').exclude(div_group__isnull=True).values('div_group').distinct()
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: WuPermissionsPanelPageView(): get_queryset(): {}".format(e)
             return WUPermissions.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return permission_data_entries
 
     def get_context_data(self, **kwargs):
@@ -571,8 +602,8 @@ class WuPermissionsPanelPageView(generic.ListView):
 
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["division_list"] = self.division_list
 
@@ -580,12 +611,12 @@ class WuPermissionsPanelPageView(generic.ListView):
 
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["division_list"] = []
 
@@ -908,8 +939,8 @@ class DomicilePermissionsPanelPageView(generic.ListView):
     template_name = 'FleetDataCollection.template.domicilepermissionspanel.html'
     context_object_name = 'permission_data_entries'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -921,27 +952,27 @@ class DomicilePermissionsPanelPageView(generic.ListView):
         if is_active_admin["success"] == True:
             self.client_is_admin = True
         else:
-            self.req_success = False
-            self.err_msg = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_success = False
+            self.get_error = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
             return WUPermissions.objects.none()
 
         ## Get the permissions data
         try:
             permission_data_entries = DomicilePermissions.objects.using('FleetDataCollection').all().order_by('window_username')
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
             return DomicilePermissions.objects.none()
 
         ## Get the existing domicile permission data from tblEmployees
         try:
             self.domicile_list = NYC_DOTR_UNIT_MAIN.objects.using('M5').filter(status__in=['A', 'R']).values('domicile').distinct()
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: DomicilePermissionsPanelPageView(): get_queryset(): {}".format(e)
             return DomicilePermissions.objects.none()
 
-        self.req_success = True
+        self.get_success = True
         return permission_data_entries
 
     def get_context_data(self, **kwargs):
@@ -951,8 +982,8 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 
             ## Finally, setting the context variables
             ## Add my own variables to the context for the front end to shows
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["domicile_list"] = self.domicile_list
 
@@ -960,12 +991,12 @@ class DomicilePermissionsPanelPageView(generic.ListView):
 
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["domicile_list"] = []
 

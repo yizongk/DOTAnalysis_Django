@@ -35,7 +35,7 @@ class TblOperation(models.Model):
 class TblUser(models.Model):
     user_id = models.AutoField(db_column='UserId', primary_key=True)
     username = models.CharField(db_column='Username', max_length=50, unique=True)
-    is_admin = models.BooleanField(db_column='IsAdmin')
+    is_admin = models.BooleanField(db_column='IsAdmin', blank=False, null=False, default=False)
 
     class Meta:
         managed = False
@@ -45,18 +45,32 @@ class TblUser(models.Model):
         return self.username
 
 
+class TblOperationBoro(models.Model):
+    operation_boro_id = models.AutoField(db_column='OperationBoroId', primary_key=True)
+    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING, null=True)
+    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING, null=True)
+    is_active = models.BooleanField(db_column='IsActive', blank=False, null=False, default=True)
+
+    class Meta:
+        managed = False
+        db_table = 'tblOperationBoro'
+
+    def __str__(self):
+        return self.operation_boro_id
+
+
 class TblPermission(models.Model):
     permission_id = models.AutoField(db_column='PermissionId', primary_key=True)
     user_id = models.ForeignKey(to=TblUser, to_field='user_id', db_column='UserId', on_delete=models.DO_NOTHING)
-    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING)
-    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING)
+    operation_boro_id = models.ForeignKey(to=TblOperationBoro, to_field='operation_boro_id', db_column='OperationBoroId', on_delete=models.DO_NOTHING)
+    is_active = models.BooleanField(db_column='IsActive', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
         db_table = 'tblPermission'
 
     def __str__(self):
-        return self.user_id
+        return f"{self.permission_id}"
 
 
 class TblPotholeMaster(models.Model):
@@ -66,8 +80,7 @@ class TblPotholeMaster(models.Model):
     '''
     pothole_master_id = models.AutoField(db_column='PotholeMasterId', primary_key=True)
     repair_date = models.DateField(db_column='RepairDate')
-    operation_id = models.ForeignKey(to=TblOperation, to_field='operation_id', db_column='OperationId', on_delete=models.DO_NOTHING, null=True)
-    boro_id = models.ForeignKey(to=TblBoro, to_field='boro_id', db_column='BoroId', on_delete=models.DO_NOTHING, null=True)
+    operation_boro_id = models.ForeignKey(to=TblOperationBoro, to_field='operation_boro_id', db_column='OperationBoroId', on_delete=models.DO_NOTHING)
     daily_crew_count = models.DecimalField(db_column='PlannedCrewCount', max_digits=11, decimal_places=2)
     repair_crew_count = models.DecimalField(db_column='ActualCrewCount', max_digits=11, decimal_places=2)
     holes_repaired = models.IntegerField(db_column='ActualPotholesRepaired')

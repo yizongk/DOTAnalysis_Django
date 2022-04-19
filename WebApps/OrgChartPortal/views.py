@@ -44,25 +44,57 @@ def user_is_active_admin(username=None):
 class HomePageView(TemplateView):
     template_name = 'OrgChartPortal.template.home.html'
     client_is_admin = False
+    get_success     = True
+    get_error         = None
 
     def get_context_data(self, **kwargs):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
             self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-            context["client_is_admin"] = self.client_is_admin
+            context["client_is_admin"]  = self.client_is_admin
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             return context
         except Exception as e:
-            context["client_is_admin"] = False
+            context["client_is_admin"]  = False
+            context["get_success"]      = False
+            context["get_error"]          = None
             return context
 
 
 class AboutPageView(TemplateView):
-    template_name = 'OrgChartPortal.template.about.html'
+    template_name   = 'OrgChartPortal.template.about.html'
+    get_success     = True
+    get_error         = None
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
+            return context
+        except Exception as e:
+            context["get_success"]  = False
+            context["get_error"]      = None
+            return context
 
 
 class ContactPageView(TemplateView):
     template_name = 'OrgChartPortal.template.contact.html'
+    get_success = True
+    get_error         = None
+
+    def get_context_data(self, **kwargs):
+        try:
+            context = super().get_context_data(**kwargs)
+            context["get_success"]  = self.get_success
+            context["get_error"]      = self.get_error
+            return context
+        except Exception as e:
+            context["get_success"]  = False
+            context["get_error"]      = None
+            return context
 
 
 def get_allowed_list_of_wu(username=None):
@@ -574,10 +606,10 @@ def GetClientWUPermissions(request):
 
 
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
+        get_error = "Exception: OrgChartPortal: GetClientWUPermissions(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -623,10 +655,10 @@ def GetClientTeammates(request):
                 "post_data": teammates_list_json,
             })
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
+        get_error = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -896,10 +928,10 @@ def GetEmpGridStats(request):
             "post_data": emp_grid_stats_json,
         })
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetEmpGridStats(): {}".format(e)
+        get_error = "Exception: OrgChartPortal: GetEmpGridStats(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -1005,8 +1037,8 @@ class EmpGridPageView(generic.ListView):
     template_name                   = 'OrgChartPortal.template.empgrid.html'
     context_object_name             = 'emp_entries'
 
-    req_success                     = False
-    err_msg                         = ""
+    get_success                     = False
+    get_error                         = ""
 
     client_is_admin                 = False
 
@@ -1093,19 +1125,19 @@ class EmpGridPageView(generic.ListView):
             self.site_type_dropdown_list_json   = json.dumps(list(site_type_dropdown_list)  , cls=DjangoJSONEncoder)
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"]                      = self.req_success
-            context["err_msg"]                          = self.err_msg
+            context["get_success"]                      = self.get_success
+            context["get_error"]                          = self.get_error
 
             context["client_is_admin"]                  = self.client_is_admin
 
@@ -1117,12 +1149,12 @@ class EmpGridPageView(generic.ListView):
             context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
             return context
         except Exception as e:
-            self.req_success                            = False
-            self.err_msg                                = "Exception: get_context_data(): {}".format(e)
+            self.get_success                            = False
+            self.get_error                                = "Exception: get_context_data(): {}".format(e)
 
             context                                     = super().get_context_data(**kwargs)
-            context["req_success"]                      = self.req_success
-            context["err_msg"]                          = self.err_msg
+            context["get_success"]                      = self.get_success
+            context["get_error"]                          = self.get_error
 
             context["client_is_admin"]                  = False
 
@@ -1139,8 +1171,8 @@ class OrgChartPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.orgchart.html'
     context_object_name = 'emp_entries'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1157,29 +1189,29 @@ class OrgChartPageView(generic.ListView):
             if self.client_is_admin == False:
                 return None
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: OrgChartPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: OrgChartPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["req_success"] = self.req_success
-            context["err_msg"] = self.err_msg
+            context["get_success"] = self.get_success
+            context["get_error"] = self.get_error
 
             context["client_is_admin"] = False
             return context
@@ -1384,10 +1416,10 @@ def OrgChartGetEmpCsv(request):
             "post_data": dummy_in_mem_file.getvalue(),
         })
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
+        get_error = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
@@ -1439,18 +1471,18 @@ def GetCommissionerPMS(request):
             "post_data": dot_commissioner.pms,
         })
     except Exception as e:
-        err_msg = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
+        get_error = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
         return JsonResponse({
             "post_success": False,
-            "post_msg": err_msg
+            "post_msg": get_error
         })
 
 
 class AdminPanelPageView(generic.ListView):
     template_name = 'OrgChartPortal.template.adminpanel.html'
 
-    req_success = False
-    err_msg = ""
+    get_success = True
+    get_error = ""
 
     client_is_admin = False
 
@@ -1464,27 +1496,27 @@ class AdminPanelPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context                     = super().get_context_data(**kwargs)
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             context["client_is_admin"]  = self.client_is_admin
             return context
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
+            self.get_success = False
+            self.get_error = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
 
             context                     = super().get_context_data(**kwargs)
-            context["req_success"]      = self.req_success
-            context["err_msg"]          = self.err_msg
+            context["get_success"]      = self.get_success
+            context["get_error"]          = self.get_error
             context["client_is_admin"]  = False
             return context
 
@@ -1493,8 +1525,8 @@ class ManageUsersPageView(generic.ListView):
     template_name           = 'OrgChartPortal.template.manageusers.html'
     context_object_name     = 'users'
 
-    req_success             = False
-    err_msg                 = ""
+    get_success             = False
+    get_error                 = ""
     client_is_admin         = False
 
     ag_grid_col_def_json    = None
@@ -1524,29 +1556,29 @@ class ManageUsersPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success    = False
-            self.err_msg        = "Exception: ManageUsersPageView(): get_queryset(): {}".format(e)
+            self.get_success    = False
+            self.get_error        = "Exception: ManageUsersPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context                         = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = self.client_is_admin
             context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
             context["users_data_json"]      = self.users_data_json
             return context
         except Exception as e:
-            self.req_success                = False
-            self.err_msg                    = "Exception: ManageUsersPageView(): get_context_data(): {}".format(e)
+            self.get_success                = False
+            self.get_error                    = "Exception: ManageUsersPageView(): get_context_data(): {}".format(e)
 
             context                         = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = False
             context["ag_grid_col_def_json"] = None
             context["users_data_json"]      = None
@@ -1814,8 +1846,8 @@ class ManagePermissionsPageView(generic.ListView):
     template_name       = 'OrgChartPortal.template.managepermissions.html'
     context_object_name = 'user_permissions'
 
-    req_success         = False
-    err_msg             = ""
+    get_success         = False
+    get_error             = ""
     client_is_admin     = False
 
     ag_grid_col_def_json= None
@@ -1850,18 +1882,18 @@ class ManagePermissionsPageView(generic.ListView):
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
-            self.req_success    = False
-            self.err_msg        = "Exception: ManagePermissionsPageView(): get_queryset(): {}".format(e)
+            self.get_success    = False
+            self.get_error        = "Exception: ManagePermissionsPageView(): get_queryset(): {}".format(e)
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self, **kwargs):
         try:
             context                         = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = self.client_is_admin
             context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
             context["permissions_json"]     = self.permissions_json
@@ -1870,12 +1902,12 @@ class ManagePermissionsPageView(generic.ListView):
             context["wu_desc_list"]         = self.wu_desc_list
             return context
         except Exception as e:
-            self.req_success                = False
-            self.err_msg                    = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
+            self.get_success                = False
+            self.get_error                    = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
 
             context                         = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
+            context["get_success"]          = self.get_success
+            context["get_error"]              = self.get_error
             context["client_is_admin"]      = False
             context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
             context["permissions_json"]     = self.permissions_json

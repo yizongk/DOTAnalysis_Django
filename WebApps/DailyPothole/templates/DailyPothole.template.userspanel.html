@@ -11,7 +11,7 @@
         <h2>
             Users Panel
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     {% if client_is_admin %}
@@ -59,9 +59,9 @@
             <tbody>
                 {% for entry in users %}
                 <tr>
-                    <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="Username">{{ entry.username }}</td>
-                    <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
-                    <td data-id="{{ entry.user_id }}" ></td>
+                    <td data-id="{{ entry.username }}" data-table="tblUser" data-column="Username">{{ entry.username }}</td>
+                    <td data-id="{{ entry.username }}" data-table="tblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
+                    <td data-id="{{ entry.username }}" ></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -140,9 +140,9 @@
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
                 if (confirm(`Are you sure you want to delete User with Username: '${$(this).parent().parent().find(`[data-column='Username']`).html()}'?`)) {
-                    user_id = $(this).parent().attr('data-id')
+                    windows_username = $(this).parent().attr('data-id')
                     json_blob = {
-                        'user_id': user_id
+                        'windows_username': windows_username
                     }
 
                     props = {
@@ -198,15 +198,15 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.username}' added to Users table successfully!`)
+                        alert(`'${json_response.post_data.username}' added to Users table successfully!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.username, json_response.is_admin, ] )
+                        var rowNode = table.row.add( [ json_response.post_data.username, json_response.post_data.is_admin, ] )
                         .draw()
                         .node();
 
                         // Add user_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.user_id);
+                        $(rowNode).children().attr("data-id", json_response.post_data.user_id);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {

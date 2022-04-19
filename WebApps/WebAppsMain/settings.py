@@ -360,8 +360,15 @@ STATIC_URL = '/static/' # Where Django template looks for static files, whouls b
 # ]
 
 
-PER_IND_VERSION = '1.1.2'
-MAPS_APP_VERSION = '1.1.0'
-DAILY_POTHOLE_VERSION = '1.4.3'
-ORG_CHART_PORTAL_VERSION = '1.15.7'
-FLEET_DATA_COLLECTION_VERSION = '1.1.1'
+# Silence warnings in unittest
+SILENCED_SYSTEM_CHECKS = ['fields.W342'] ## For WARNINGS: OrgChartPortal.TblUsers.pms: (fields.W342) Setting unique=True on a ForeignKey has the same effect as using a OneToOneField. HINT: ForeignKey(unique=True) is usually better served by a OneToOneField.
+
+PER_IND_VERSION                 = '1.1.5'
+MAPS_APP_VERSION                = '1.1.3'
+DAILY_POTHOLE_VERSION           = '1.5.2'
+ORG_CHART_PORTAL_VERSION        = '1.15.8'
+FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
+
+
+POST_RESPONSE_REQUIRED_JSON_KEYS    = ["post_success", "post_msg", "post_data"]
+GET_RESPONSE_REQUIRED_CONTEXT_KEYS  = ["get_success", "get_error", "client_is_admin"]
