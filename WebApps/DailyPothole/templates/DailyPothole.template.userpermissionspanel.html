@@ -81,7 +81,7 @@
                     <td data-id="{{ entry.permission_id }}" data-table="tblUser"        data-column="Username"  >{{ entry.user_id.username }}</td>
                     <td data-id="{{ entry.permission_id }}" data-table="tblOperation"   data-column="Operation" >{{ entry.operation_boro_id.operation_id.operation }}</td>
                     <td data-id="{{ entry.permission_id }}" data-table="tblBoro"        data-column="BoroLong"  >{{ entry.operation_boro_id.boro_id.boro_long }}</td>
-                    <td data-id="{{ entry.permission_id }}" data-table="tblPermission"  data-column="IsActive"  class="editable-select" >{{ entry.operation_boro_id.is_active }}</td>
+                    <td data-id="{{ entry.permission_id }}" data-table="tblPermission"  data-column="IsActive"  class="editable-select" >{{ entry.is_active }}</td>
                     <td data-id="{{ entry.permission_id }}" ></td>
                 </tr>
                 {% endfor %}

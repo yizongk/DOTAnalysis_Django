@@ -2150,8 +2150,9 @@ def UpdateUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -2162,9 +2163,9 @@ def UpdateUserPermission(request):
     else:
         print('Warning: UpdateUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2173,75 +2174,74 @@ def UpdateUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
-        table               = json_blob['table']
-        column              = json_blob['column']
+        table           = json_blob['table']
+        column          = json_blob['column']
+        permission_id   = json_blob['id']
+        new_value       = json_blob['new_value']
 
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not an admin and does not have the permission to update user permissions".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to update user permissions")
 
 
-        if  (
-                ( table == 'tblUser' and column == 'Username' )
-                or ( table == 'tblOperation' and column == 'Operation' )
-                or ( table == 'tblBoro' and column == 'BoroLong' )
-            ):
-            permission_id   = json_blob['id']
-            new_value       = json_blob['new_value']
+        if table not in ['tblPermission']:
+            raise ValueError(f"table '{table}' is not recognized for as a valid table for this api")
         else:
-            raise ValueError("table '{}' and column '{}' is not recognized for this api".format(table, column))
+            if table == 'tblPermission':
+                if column not in ['IsActive']:
+                    raise ValueError(f"column '{column}' is not recognized as a valid column for table '{table}' in this api")
 
-        try:
-            permission_id = int(permission_id)
-        except Exception as e:
-            raise ValueError("Cannot convert '{}' to int".format(permission_id))
+        if type(permission_id) is not str and type(permission_id) is not int:
+            raise ValueError(f"permission_id is not str type or an int type")
+        else:
+            try:
+                permission_id = int(permission_id)
+            except Exception as e:
+                raise ValueError(f"Cannot convert '{permission_id}' to int")
 
         if new_value is None:
             raise ValueError("new_value cannot be null")
-
-        if new_value == '':
+        elif new_value == '':
             raise ValueError("new_value cannot be empty string")
+        elif type(new_value) is not str:
+            raise ValueError(f"new_value is not str type")
 
 
         try:
             permission = TblPermission.objects.using("DailyPothole").get(permission_id=permission_id)
-            if table == 'tblUser' and column == 'Username':
-                user = TblUser.objects.using("DailyPothole").get(username=new_value)
-                permission.user_id = user
-            if table == 'tblOperation' and column == 'Operation':
-                operation = TblOperation.objects.using("DailyPothole").get(operation=new_value)
-                permission.operation_id = operation
-            if table == 'tblBoro' and column == 'BoroLong':
-                boro = TblBoro.objects.using("DailyPothole").get(boro_long=new_value)
-                permission.boro_id = boro
-
+            permission.is_active = new_value
             permission.save(using='DailyPothole')
         except Exception as e:
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "username": permission.user_id.username,
-            "operation": permission.operation_id.operation,
-            "boro_long": permission.boro_id.boro_long,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "username": permission.user_id.username,
+                "operation": permission.operation_boro_id.operation_id.operation,
+                "boro_long": permission.operation_boro_id.boro_id.boro_long,
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}. For '{}' and '{}'".format(e, permission_id, new_value),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}. For '{permission_id}' and '{new_value}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: UpdateUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
@@ -2329,7 +2329,7 @@ class UserPermissionsPanelPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if self.client_is_admin:
-                user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id')
+                user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id__username', 'operation_boro_id__operation_id__operation', 'operation_boro_id__boro_id__boro_long')
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 

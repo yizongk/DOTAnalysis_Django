@@ -75,7 +75,6 @@ def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, operation_boro_pa
             permission.is_active = True
             permission.save(using="DailyPothole")
 
-            return user
     except Exception as e:
         raise ValueError(f"set_up_permissions(): {e}")
 
@@ -185,10 +184,6 @@ class TestViewPagesResponse(unittest.TestCase):
             if view == 'dailypothole_pothole_data_grid_view':
                 self.assertTrue('ag_grid_col_def_json'  in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'ag_grid_col_def_json'")
                 self.assertTrue('pothole_data_json'     in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'pothole_data_json'")
-            if view == 'dailypothole_user_permissions_panel_view':
-                self.assertTrue('user_list'             in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'user_list'")
-                self.assertTrue('operation_list'        in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'operation_list'")
-                self.assertTrue('boro_list'             in response.context_data.keys(), f"dailypothole_user_permissions_panel_view is missing context variable 'boro_list'")
             if view == 'dailypothole_csv_export_view':
                 self.assertTrue('operation_list'        in response.context_data.keys(), f"dailypothole_csv_export_view is missing context variable 'operation_list'")
 
@@ -208,7 +203,8 @@ class TestAPIUpdatePotholesData(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
-        self.user_obj                   = set_up_permissions()
+        set_up_permissions()
+        self.user_obj                   = get_or_create_user()
         self.api_name                   = 'dailypothole_update_potholes_data_api'
 
         self.valid_operation            = DEFAULT_OPERATION
@@ -1214,4 +1210,104 @@ class TestAPIAddUserPermission(HttpPostTestCase):
 
             for data in invalid:
                 tear_down_permissions(windows_username=self.valid_username)
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUpdateUserPermission(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
+        self.api_name               = 'dailypothole_update_user_permission_api'
+        self.valid_username         = TEST_WINDOWS_USERNAME
+        self.valid_operation        = DEFAULT_OPERATION
+        self.valid_boro             = DEFAULT_BORO
+        self.valid_permission_id    = TblPermission.objects.using('DailyPothole').get(
+                                        user_id__username__exact=self.valid_username
+                                        ,operation_boro_id__operation_id__operation__exact=self.valid_operation
+                                        ,operation_boro_id__boro_id__boro_long__exact=self.valid_boro
+                                    ).permission_id
+
+        self.valid_payloads = [
+            {
+                'table'     : 'tblPermission',
+                'column'    : 'IsActive',
+                'id'        : f'{self.valid_permission_id}',
+                'new_value' : 'True'
+            }
+            ,{
+                'table'     : 'tblPermission',
+                'column'    : 'IsActive',
+                'id'        : self.valid_permission_id,
+                'new_value' : 'False'
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            response_content = self.post_and_get_json_response( payload )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+
+            ## Check if data was saved correctly
+            saved_object = TblPermission.objects.using('DailyPothole').get(
+                permission_id=self.valid_permission_id
+            )
+
+            self.assertEqual(payload['new_value'], str(saved_object.is_active),
+                f"[{payload['column']}] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.is_active}'" )
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'table'             # str - > Table name
+            ,'column'           # str - > Column name of the table
+            ,'id'               # str - > string formatted int: primary key of a row in the Permission table
+            ,'new_value'        # str - > the new value to be saved
+        ]
+        for param_name in parameters:
+            if param_name == 'table':
+                valid   = ['tblPermission']
+                invalid = [1, 2.3, False, None, 'sdf', '']
+            elif param_name == 'column':
+                valid   = ['IsActive']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, True, '']
+            elif param_name == 'id':
+                valid   = [f'{self.valid_permission_id}', self.valid_permission_id]
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 5.46, -1, None, False, True, '']
+            elif param_name == 'new_value':
+                valid   = ['True', 'False']
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 1000, -1, None, False, True, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
