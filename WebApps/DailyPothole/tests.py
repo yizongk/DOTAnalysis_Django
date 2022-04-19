@@ -433,6 +433,14 @@ class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_potholes_from_data_grid_api'
+        self.response_param_specifications = [
+            {'name': 'repair_date'  , 'null': False}
+            ,{'name': 'operation'   , 'null': False}
+            ,{'name': 'boro_long'   , 'null': False}
+            ,{'name': 'column_name' , 'null': False}
+            ,{'name': 'new_value'   , 'null': False}
+            ,{'name': 'updated_by'  , 'null': False}
+        ]
 
         self.valid_repair_date      = f'{datetime.now().strftime("%Y-%m-%d")}'
         self.valid_operation        = DEFAULT_OPERATION
@@ -485,12 +493,7 @@ class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='repair_date')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='column_name')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='new_value')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='updated_by')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -593,6 +596,16 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_complaints_data_api'
+        self.response_param_specifications = [
+            {'name': 'complaint_date'       , 'null': False}
+            ,{'name': 'fits_bronx'          , 'null': False}
+            ,{'name': 'fits_brooklyn'       , 'null': False}
+            ,{'name': 'fits_manhattan'      , 'null': False}
+            ,{'name': 'fits_queens'         , 'null': False}
+            ,{'name': 'fits_staten_island'  , 'null': False}
+            ,{'name': 'fits_unassigned'     , 'null': False}
+            ,{'name': 'open_siebel'         , 'null': False}
+        ]
 
         self.valid_complaint_date         = f'{datetime.now().strftime("%Y-%m-%d")}'
         self.valid_fits_bronx             = '1'
@@ -639,14 +652,8 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='open_siebel')
+
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblComplaint.objects.using('DailyPothole').get(
@@ -704,6 +711,16 @@ class TestAPILookupComplaintsData(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name                   = 'dailypothole_lookup_complaints_data_api'
+        self.response_param_specifications = [
+            {'name': 'complaint_date'       , 'null': False}
+            ,{'name': 'fits_bronx'          , 'null': False}
+            ,{'name': 'fits_brooklyn'       , 'null': False}
+            ,{'name': 'fits_manhattan'      , 'null': False}
+            ,{'name': 'fits_queens'         , 'null': False}
+            ,{'name': 'fits_staten_island'  , 'null': False}
+            ,{'name': 'fits_unassigned'     , 'null': False}
+            ,{'name': 'open_siebel'         , 'null': True}
+        ]
 
         self.valid_complaint_date       = f'{datetime.now().strftime("%Y-%m-%d")}'
 
@@ -752,14 +769,7 @@ class TestAPILookupComplaintsData(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='complaint_date')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_bronx')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_brooklyn')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_manhattan')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_queens')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_staten_island')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='fits_unassigned')
-            self.assert_response_has_param(             response_content=response_content, response_param_name='open_siebel')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
     def test_data_validation(self):
         self.set_up_test_data()
@@ -789,6 +799,9 @@ class TestAPIGetPDFReport(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name           = 'dailypothole_get_pdf_report_api'
+        self.response_param_specifications = [
+            {'name': 'pdf_bytes'       , 'null': False}
+        ]
 
         self.valid_report_date  = f'{datetime.now().strftime("%Y-%m-%d")}'
 
@@ -821,7 +834,7 @@ class TestAPIGetPDFReport(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='pdf_bytes')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -850,6 +863,11 @@ class TestAPIAddUser(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_add_user_api'
+        self.response_param_specifications = [
+            {'name': 'user_id'  , 'null': False}
+            ,{'name': 'username' , 'null': False}
+            ,{'name': 'is_admin' , 'null': False}
+        ]
 
         self.valid_username         = 'some_random_name'
 
@@ -898,9 +916,7 @@ class TestAPIAddUser(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
@@ -944,6 +960,11 @@ class TestAPIUpdateUser(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_user_api'
+        self.response_param_specifications = [
+            {'name': 'user_id'  , 'null': False}
+            ,{'name': 'username' , 'null': False}
+            ,{'name': 'is_admin' , 'null': False}
+        ]
 
         self.valid_payloads = [
             {
@@ -983,9 +1004,7 @@ class TestAPIUpdateUser(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='user_id')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_admin')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.user_obj.username)
@@ -1120,6 +1139,13 @@ class TestAPIAddUserPermission(HttpPostTestCase):
         tear_down()
         self.api_name               = 'dailypothole_add_user_permission_api'
         self.valid_username         = TEST_WINDOWS_USERNAME
+        self.response_param_specifications = [
+            {'name': 'permission_id', 'null': False}
+            ,{'name': 'username'    , 'null': False}
+            ,{'name': 'operation'   , 'null': False}
+            ,{'name': 'boro_long'   , 'null': False}
+            ,{'name': 'is_active'   , 'null': False}
+        ]
 
         self.valid_payloads = [
             {
@@ -1159,11 +1185,7 @@ class TestAPIAddUserPermission(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='permission_id')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_active')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
@@ -1217,6 +1239,12 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
         tear_down()
         set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
         self.api_name               = 'dailypothole_update_user_permission_api'
+        self.response_param_specifications = [
+            {'name': 'username'  , 'null': False}
+            ,{'name': 'operation' , 'null': False}
+            ,{'name': 'boro_long' , 'null': False}
+        ]
+
         self.valid_permission_id    = TblPermission.objects.using('DailyPothole').get(
                                         user_id__username__exact=TEST_WINDOWS_USERNAME
                                         ,operation_boro_id__operation_id__operation__exact=DEFAULT_OPERATION
@@ -1262,9 +1290,7 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
@@ -1394,6 +1420,9 @@ class TestAPIGetCsvExport(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name                   = 'dailypothole_get_csv_export_api'
+        self.response_param_specifications = [
+            {'name': 'post_csv_bytes'  , 'null': False}
+        ]
 
         self.valid_start_report_date    = f'{( datetime.now() - timedelta(days=7) ).strftime("%Y-%m-%d")}'
         self.valid_end_report_date      = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -1442,7 +1471,7 @@ class TestAPIGetCsvExport(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='post_csv_bytes')
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
     def test_data_validation(self):
         grant_admin_status()
