@@ -206,7 +206,7 @@
                         .node();
 
                         // Add user_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.post_data.user_id);
+                        $(rowNode).children().attr("data-id", json_response.post_data.username);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
