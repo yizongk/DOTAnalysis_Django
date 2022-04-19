@@ -2303,13 +2303,16 @@ def DeleteUserPermission(request):
 
 
 class UserPermissionsPanelPageView(generic.ListView):
-    template_name = 'DailyPothole.template.userpermissionspanel.html'
+    template_name       = 'DailyPothole.template.userpermissionspanel.html'
     context_object_name = 'user_permissions'
 
-    get_success = True
-    get_error = ""
+    get_success         = True
+    get_error           = ""
+    client_is_admin     = False
 
-    client_is_admin = False
+    user_list           = []
+    operation_list      = []
+    boro_list           = []
 
     def get_queryset(self):
         ## Get the core data
@@ -2319,6 +2322,10 @@ class UserPermissionsPanelPageView(generic.ListView):
 
             if self.client_is_admin:
                 user_permissions_data = TblPermission.objects.using('DailyPothole').all().order_by('user_id__username', 'operation_boro_id__operation_id__operation', 'operation_boro_id__boro_id__boro_long')
+
+                self.user_list      = [each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username')]
+                self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
+                self.boro_list      = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
@@ -2334,20 +2341,28 @@ class UserPermissionsPanelPageView(generic.ListView):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["get_success"] = self.get_success
-            context["get_error"] = self.get_error
+            context["get_success"]      = self.get_success
+            context["get_error"]        = self.get_error
+            context["client_is_admin"]  = self.client_is_admin
 
-            context["client_is_admin"] = self.client_is_admin
+            context['user_list']        = self.user_list
+            context['operation_list']   = self.operation_list
+            context['boro_list']        = self.boro_list
+
             return context
         except Exception as e:
             self.get_success = False
             self.get_error = "Exception: UserPermissionsPanelPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["get_success"] = self.get_success
-            context["get_error"] = self.get_error
+            context["get_success"]      = self.get_success
+            context["get_error"]        = self.get_error
+            context["client_is_admin"]  = False
 
-            context["client_is_admin"] = False
+            context['user_list']        = self.user_list
+            context['operation_list']   = self.operation_list
+            context['boro_list']        = self.boro_list
+
             return context
 
 
