@@ -2117,6 +2117,7 @@ def AddUserPermission(request):
                 "username"      : new_permission.user_id.username,
                 "operation"     : new_permission.operation_boro_id.operation_id.operation,
                 "boro_long"     : new_permission.operation_boro_id.boro_id.boro_long,
+                "is_active"     : new_permission.is_active,
             }
         })
     except ObjectDoesNotExist as e:

@@ -203,9 +203,9 @@
             // For row add, with support for only JS Datatable
             $('#modalNewRowFormAddButton').on("click", function() {
 
-                let usernameInput = $("#modalNewRowFormSelectUsernameInput").val()
-                let operationInput = $("#modalNewRowFormSelectOperationInput").val()
-                let boroInput = $("#modalNewRowFormSelectBoroInput").val()
+                let usernameInput   = $("#modalNewRowFormSelectUsernameInput").val()
+                let operationInput  = $("#modalNewRowFormSelectOperationInput").val()
+                let boroInput       = $("#modalNewRowFormSelectBoroInput").val()
 
                 $('#modalNewRowFormSelectUsernameInputBorder').css("border", "")
                 $('#modalNewRowFormSelectOperationInputBorder').css("border", "")
@@ -228,9 +228,9 @@
                 }
 
                 json_blob = {
-                    "username_input": usernameInput,
-                    "operation_input": operationInput,
-                    "boro_input": boroInput,
+                    "username_input"    : usernameInput,
+                    "operation_input"   : operationInput,
+                    "boro_input"        : boroInput,
                 }
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_permission_api' %}", http_request_method="POST",
@@ -238,7 +238,7 @@
                         alert(`Successfully added permission to User Permissions table!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.post_data.username, json_response.post_data.operation, json_response.post_data.boro_long, ] )
+                        var rowNode = table.row.add( [ json_response.post_data.username, json_response.post_data.operation, json_response.post_data.boro_long, json_response.post_data.is_active ] )
                         .draw()
                         .node();
 
@@ -249,16 +249,17 @@
                             if (index == 0) {
                                 $(childNode).attr("data-table", "tblUser")
                                 $(childNode).attr("data-column", "Username")
-                                $(childNode).attr("class", "editable-select")
                             } else if (index == 1) {
                                 $(childNode).attr("data-table", "tblOperation")
                                 $(childNode).attr("data-column", "Operation")
-                                $(childNode).attr("class", "editable-select")
                             } else if (index == 2) {
                                 $(childNode).attr("data-table", "tblBoro")
                                 $(childNode).attr("data-column", "BoroLong")
-                                $(childNode).attr("class", "editable-select")
                             } else if (index == 3) {
+                                $(childNode).attr("data-table", "tblPermission")
+                                $(childNode).attr("data-column", "IsActive")
+                                $(childNode).attr("class", "editable-select")
+                            } else if (index == 4) {
                                 // Nothing to add for the Delete icon
                             } else {
                                 alert(`After adding a new row: Not sure what to do with child: ${childNode}`)

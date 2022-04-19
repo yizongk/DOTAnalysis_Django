@@ -1163,6 +1163,7 @@ class TestAPIAddUserPermission(HttpPostTestCase):
             self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='username')
             self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='operation')
             self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='boro_long')
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='is_active')
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
