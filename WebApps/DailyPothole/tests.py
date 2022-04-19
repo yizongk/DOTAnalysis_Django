@@ -1053,7 +1053,7 @@ class TestAPIDeleteUser(HttpPostTestCase):
         try:
             test_user = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
         except ObjectDoesNotExist as e:
-            ...#Do nothing
+            ... ## Good, do nothing
         except:
             raise
         else:
@@ -1087,7 +1087,7 @@ class TestAPIDeleteUser(HttpPostTestCase):
             try:
                 saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
             except ObjectDoesNotExist as e:
-                ... ## Do nothing
+                ... ## Good, do nothing
             except Exception as e:
                 raise ValueError(f"TestAPIDeleteUser: test_with_valid_data(): {e}")
             else:
@@ -1219,13 +1219,10 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
         tear_down()
         set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
         self.api_name               = 'dailypothole_update_user_permission_api'
-        self.valid_username         = TEST_WINDOWS_USERNAME
-        self.valid_operation        = DEFAULT_OPERATION
-        self.valid_boro             = DEFAULT_BORO
         self.valid_permission_id    = TblPermission.objects.using('DailyPothole').get(
-                                        user_id__username__exact=self.valid_username
-                                        ,operation_boro_id__operation_id__operation__exact=self.valid_operation
-                                        ,operation_boro_id__boro_id__boro_long__exact=self.valid_boro
+                                        user_id__username__exact=TEST_WINDOWS_USERNAME
+                                        ,operation_boro_id__operation_id__operation__exact=DEFAULT_OPERATION
+                                        ,operation_boro_id__boro_id__boro_long__exact=DEFAULT_BORO
                                     ).permission_id
 
         self.valid_payloads = [
@@ -1285,10 +1282,10 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
         payload = self.valid_payloads[0]
         parameters = [
             # Parameter name    # Accepted type
-            'table'             # str - > Table name
-            ,'column'           # str - > Column name of the table
-            ,'id'               # str - > string formatted int: primary key of a row in the Permission table
-            ,'new_value'        # str - > the new value to be saved
+            'table'             # str -> Table name
+            ,'column'           # str -> Column name of the table
+            ,'id'               # str/int -> string formatted int or int: primary key of a row in the Permission table
+            ,'new_value'        # str -> the new value to be saved
         ]
         for param_name in parameters:
             if param_name == 'table':
@@ -1311,3 +1308,86 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
 
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIDeleteUserPermission(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name               = 'dailypothole_delete_user_permission_api'
+
+        self.valid_payloads = [
+            {
+                'permission_id': None,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
+            self.valid_permission_id = TblPermission.objects.using('DailyPothole').get(
+                                        user_id__username__exact=TEST_WINDOWS_USERNAME
+                                        ,operation_boro_id__operation_id__operation__exact=DEFAULT_OPERATION
+                                        ,operation_boro_id__boro_id__boro_long__exact=DEFAULT_BORO
+                                    ).permission_id
+            payload['permission_id'] = self.valid_permission_id
+            response_content = self.post_and_get_json_response( payload )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check if data was deleted correctly
+            try:
+                saved_object = TblPermission.objects.using('DailyPothole').get(permission_id=self.valid_permission_id)
+            except ObjectDoesNotExist as e:
+                ... ## Good, do nothing
+            except Exception as e:
+                raise ValueError(f"TestAPIDeleteUser: test_with_valid_data(): {e}")
+            else:
+                self.assertTrue(False, f"permission_id {saved_object.permission_id} still exists in the database, unable to delete permission")
+
+    def test_data_validation(self):
+        grant_admin_status()
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'permission_id'     # int -> primary key of a row in the Permission table
+        ]
+        for param_name in parameters:
+            set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
+            self.valid_permission_id = TblPermission.objects.using('DailyPothole').get(
+                                        user_id__username__exact=TEST_WINDOWS_USERNAME
+                                        ,operation_boro_id__operation_id__operation__exact=DEFAULT_OPERATION
+                                        ,operation_boro_id__boro_id__boro_long__exact=DEFAULT_BORO
+                                    ).permission_id
+            payload['permission_id'] = self.valid_permission_id
+
+            if param_name == 'permission_id':
+                valid   = [self.valid_permission_id]
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 5.46, -1, None, False, True, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+

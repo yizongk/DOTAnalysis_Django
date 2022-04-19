@@ -2249,8 +2249,9 @@ def DeleteUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -2261,9 +2262,9 @@ def DeleteUserPermission(request):
     else:
         print('Warning: DeleteUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2272,8 +2273,9 @@ def DeleteUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -2281,14 +2283,10 @@ def DeleteUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not an admin and does not have the permission to delete user permissions".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to delete user permissions")
 
-
-        try:
-            permission_id = int(permission_id)
-        except Exception as e:
-            raise ValueError("Cannot convert '{}' to int".format(permission_id))
-
+        if type(permission_id) is not int:
+            raise ValueError(f"permission_id is not type int")
 
         try:
             permission = TblPermission.objects.using("DailyPothole").get(permission_id=permission_id)
@@ -2297,19 +2295,22 @@ def DeleteUserPermission(request):
             raise e
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}. For '{}'".format(e, permission_id),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}. For '{permission_id}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: DeleteUserPermission():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
