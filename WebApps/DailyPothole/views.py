@@ -2273,8 +2273,13 @@ def DeleteUserPermission(request):
         if not is_admin:
             raise ValueError(f"'{remote_user}' is not an admin and does not have the permission to delete user permissions")
 
-        if type(permission_id) is not int:
-            raise ValueError(f"permission_id is not type int")
+        if ( type(permission_id) is not int ) and ( type(permission_id) is not str ):
+            raise ValueError(f"permission_id must be of type int or of type str")
+        else:
+            try:
+                permission_id = int(permission_id)
+            except Exception as e:
+                raise ValueError("Cannot convert '{}' to int".format(permission_id))
 
         try:
             permission = TblPermission.objects.using("DailyPothole").get(permission_id=permission_id)
