@@ -16,15 +16,23 @@ class HttpPostTestCase(unittest.TestCase):
         class TestSomeThing(HttpPostTestCase):
             @classmethod
             def setUpClass(self):
-                self.api_name = 'name_of_your_view'     ## This is REQUIRED
+                self.api_name                       = 'name_of_your_view'   ## This is REQUIRED
+                self.response_param_specifications  = []                    ## This is REQUIRED, set it to empty list if is has none. Expects the format to be like this:
+                                                                                [
+                                                                                    {name: '...', null: False}   ## if null = True, the param is allowed to be None
+                                                                                    ,{name: '...', null: True}
+                                                                                    ,{name: '...', null: ...}
+                                                                                    ,...
+                                                                                ]
 
             @classmethod
             def tearDownClass(self):
                 pass                                    ## Optional
 
     """
-    client     = Client()
-    api_name   = None
+    client                          = Client()
+    api_name                        = None
+    response_param_specifications   = None
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -71,6 +79,46 @@ class HttpPostTestCase(unittest.TestCase):
         self.assert_response_has_param(response_content=response_content, response_param_name=response_param_name)
         self.assertTrue(response_content['post_data'][response_param_name] is not None,
             f"response['post_data']['{response_param_name}'] can't be null: {response_content['post_data']}")
+
+    def assert_response_satisfy_param_requirements(self, response_content):
+        """
+        Checks that the response param names in "post_data" match the criteria set by @self.response_param_specifications
+        If response got extra param names in "post_data" that isn't in the @self.response_param_specifications, this will raise an error.
+
+        Expects @self.response_param_specifications to be of this format:
+            [
+                {name: '...', null: False}   ## if null = True, the param is allowed to be None
+                ,{name: '...', null: True}
+                ,{name: '...', null: ...}
+                ,...
+            ]
+        """
+        if type(self.response_param_specifications) is not list:
+            raise ValueError(f"assert_response_satisfy_param_requirements(): self.response_param_specifications is not a list: {type(self.response_param_specifications)}")
+
+        required_propeties = ['name', 'null']
+        for param_specification in self.response_param_specifications:
+            ## Make sure the self.response_param_specifications follows the correct format
+            for each_required_property in required_propeties:
+                if each_required_property not in param_specification:
+                    raise ValueError(f"assert_response_satisfy_param_requirements(): param_specification is missing this property: '{each_required_property}'")
+
+            if type(param_specification['name']) is not str:
+                raise ValueError(f"assert_response_satisfy_param_requirements(): param_specification['name'] must be a str.")
+            if type(param_specification['null']) is not bool:
+                raise ValueError(f"assert_response_satisfy_param_requirements(): param_specification['null'] must be a bool.")
+
+            ## Check the response param to the given param specification
+            if param_specification['null']:
+                self.assert_response_has_param(response_content=response_content, response_param_name=param_specification['name'])
+            else:
+                self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name=param_specification['name'])
+
+        ## Make sure that the response don't got any extra param names that was specified by the caller
+        specified_required_names = [each['name'] for each in self.response_param_specifications]
+        for actual_response_param_name in response_content['post_data']:
+            if actual_response_param_name not in specified_required_names:
+                raise ValueError(f"assert_response_satisfy_param_requirements(): response got a param name '{actual_response_param_name}' that is not specified in the @self.response_param_specifications. Please add it to the test suite")
 
 
 def validate_core_get_api_response_context(response):
