@@ -167,7 +167,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
                         let start_date_name = `${ start_date.substring(5, start_date.length) + '-' + start_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         start_date_name = start_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
@@ -211,7 +211,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
                         let yyyy = end_date.substring(0, 4)
                         let mm = end_date.substring(5, 7)
@@ -286,7 +286,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
 
                         var fileName = `FYTDAndLastWeekNoArtMaintSummary_${getDateStringFromDate(end_date)}.csv`;

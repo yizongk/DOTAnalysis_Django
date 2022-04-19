@@ -821,10 +821,7 @@ class TestAPIGetPDFReport(HttpPostTestCase):
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
             ## Check that the returned JSON Response got all the data it required
-            self.assertTrue('pdf_bytes' in response_content['post_data'],
-                f"'pdf_bytes' is not in the response: {response_content['post_data']}")
-            self.assertTrue(response_content['post_data']['pdf_bytes'] is not None,
-                f"response['post_data']['pdf_bytes'] can't be null: {response_content['post_data']}")
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='pdf_bytes')
 
     def test_data_validation(self):
         grant_admin_status()
@@ -1390,4 +1387,91 @@ class TestAPIDeleteUserPermission(HttpPostTestCase):
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
+
+class TestAPIGetCsvExport(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name                   = 'dailypothole_get_csv_export_api'
+
+        self.valid_start_report_date    = f'{( datetime.now() - timedelta(days=7) ).strftime("%Y-%m-%d")}'
+        self.valid_end_report_date      = f'{datetime.now().strftime("%Y-%m-%d")}'
+
+        self.valid_payloads = [
+            {
+                'start_date'    : self.valid_start_report_date,
+                'end_date'      : self.valid_end_report_date,
+                'operation_list': [DEFAULT_OPERATION, 'STREET MAINTENANCE', 'JETS/NIGHT EMERGENCY'],
+                'type_of_query' : 'date_range_summary',
+            }
+            ,{
+                'start_date'    : self.valid_start_report_date,
+                'end_date'      : self.valid_end_report_date,
+                'operation_list': [DEFAULT_OPERATION, 'STREET MAINTENANCE', 'JETS/NIGHT EMERGENCY'],
+                'type_of_query' : 'ytd_range_last_five_years_summary',
+            }
+            ,{
+                'start_date'    : self.valid_start_report_date,
+                'end_date'      : self.valid_end_report_date,
+                'operation_list': [DEFAULT_OPERATION, 'STREET MAINTENANCE', 'JETS/NIGHT EMERGENCY'],
+                'type_of_query' : 'fytd_n_last_week_wo_art_maint',
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+        for payload in self.valid_payloads:
+            response_content = self.post_and_get_json_response( payload )
+
+            ## Check that the request was successful
+            self.assertTrue(response_content['post_success'],
+                f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name='post_csv_bytes')
+
+    def test_data_validation(self):
+        grant_admin_status()
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'start_date'        # str -> 'YYYY-MM-DD'
+            ,'end_date'         # str -> 'YYYY-MM-DD'
+            ,'operation_list'   # list of str -> ['BRIDGE PM', 'STREET MAINTENANCE', ...]. This can be null if 'type_of_query' == 'fytd_n_last_week_wo_art_maint'
+            ,'type_of_query'    # str -> one of the values in ('date_range_summary', 'ytd_range_last_five_years_summary', 'fytd_n_last_week_wo_art_maint')
+        ]
+        for param_name in parameters:
+            if param_name == 'start_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False, True, '', None]
+            elif param_name == 'end_date':
+                valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
+                invalid = ['a', 1, 2.3, False, True, '', None]
+            elif param_name == 'operation_list':
+                valid   = [['BRIDGE PM', 'STREET MAINTENANCE'], ['JETS/NIGHT EMERGENCY']]
+                invalid = ['a', 1, 2.3, False, True, '', None, ['a'], [1], [2.3], [False], [True], [''], [None]]
+            elif param_name == 'type_of_query':
+                valid   = ['date_range_summary', 'ytd_range_last_five_years_summary', 'fytd_n_last_week_wo_art_maint']
+                invalid = ['a', 1, 2.3, False, True, '', None]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 

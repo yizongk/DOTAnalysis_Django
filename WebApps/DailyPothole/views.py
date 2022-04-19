@@ -15,18 +15,6 @@ def get_active_pothole_qryset():
     return TblPotholeMaster.objects.using('DailyPothole').filter(operation_boro_id__is_active__exact=True)
 
 
-## Used by raw sql: Special case due to bad data design. Need to take care of CW_RESURFACING 1, 2 and 3 operation in special filter.
-def get_excluded_operation_boro_as_where_cond():
-    return """
-        (
-            tblOperation.[Operation] NOT IN ( 'CW_RESURFACING 1', 'CW_RESURFACING 2', 'CW_RESURFACING 3' )
-            OR ( tblOperation.[Operation] = 'CW_RESURFACING 1' AND tblBoro.[BoroLong] = 'QUEENS' )
-            OR ( tblOperation.[Operation] = 'CW_RESURFACING 2' AND tblBoro.[BoroLong] = 'BROOKLYN' )
-            OR ( tblOperation.[Operation] = 'CW_RESURFACING 3' AND tblBoro.[BoroLong] = 'STATEN ISLAND' )
-        )
-    """
-
-
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
     try:
@@ -2366,8 +2354,9 @@ class UserPermissionsPanelPageView(generic.ListView):
 def GetCsvExport(request):
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
 
@@ -2378,9 +2367,9 @@ def GetCsvExport(request):
     else:
         print('Warning: GetCsvExport(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "GetCsvExport():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "GetCsvExport():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2389,8 +2378,9 @@ def GetCsvExport(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetCsvExport():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetCsvExport():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -2405,7 +2395,17 @@ def GetCsvExport(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not an admin. Only admins can access the GetCsvExport() api".format(remote_user))
+            raise ValueError(f"'{remote_user}' is not an admin. Only admins can access the GetCsvExport() api")
+
+        if type_of_query != 'fytd_n_last_week_wo_art_maint':
+            if type(operation_list) is not list:
+                raise ValueError(f"operation_list is not type list")
+            else:
+                for operation in operation_list:
+                    try:
+                        TblOperation.objects.using('DailyPothole').get(operation__exact=operation)
+                    except ObjectDoesNotExist as e:
+                        raise ValueError(f"This operation in the operation_list does not exists: '{operation}'")
 
         from django.db.models import Sum, Max
         from datetime import datetime, timedelta
@@ -2421,16 +2421,16 @@ def GetCsvExport(request):
             potholes_data = get_active_pothole_qryset()
             if len(operation_list) != 0:
                 potholes_data = potholes_data.filter(
-                    operation_id__operation__in=operation_list,
+                    operation_boro_id__operation_id__operation__in=operation_list,
                 )
             potholes_data = potholes_data.filter(
                 repair_date__range=[start_date, end_date],
             ).values(
-                'boro_id__boro_code'
+                'operation_boro_id__boro_id__boro_code'
             ).annotate(
                 total_crew_count=Sum('repair_crew_count')
                 ,total_repaired=Sum('holes_repaired')
-            ).order_by('boro_id__boro_order')
+            ).order_by('operation_boro_id__boro_id__boro_order')
 
             ## Post calculation
             crew_count_sum = 0
@@ -2441,12 +2441,12 @@ def GetCsvExport(request):
 
             ## Create the csv
             writer = csv.writer(dummy_in_mem_file)
-            writer.writerow(['Date Range: {} to {}'.format(start_date, end_date)])
+            writer.writerow([f'Date Range: {start_date} to {end_date}'])
             writer.writerow(['BORO_CODE', 'SumOfREPAIR_CREW_COUNT', 'SumOfTOTAL_POTHOLES'])
 
             for each in potholes_data:
                 eachrow = [
-                    each['boro_id__boro_code']
+                    each['operation_boro_id__boro_id__boro_code']
                     ,each['total_crew_count']
                     ,each['total_repaired']
                 ]
@@ -2483,7 +2483,7 @@ def GetCsvExport(request):
             )
             if len(operation_list) != 0:
                 potholes_data = potholes_data.filter(
-                    operation_id__operation__in=operation_list,
+                    operation_boro_id__operation_id__operation__in=operation_list,
                 )
 
 
@@ -2509,22 +2509,22 @@ def GetCsvExport(request):
 
             by_year_boro_sum = potholes_data.values(
                 'repair_date__year'
-                ,'boro_id__boro_long'
+                ,'operation_boro_id__boro_id__boro_long'
             ).annotate(
                 total_repaired=Sum('holes_repaired')
             ).order_by(
-                'boro_id__boro_long'
+                'operation_boro_id__boro_id__boro_long'
                 ,'repair_date__year'
             )
 
 
             writer.writerow(['Potholes'])
-            ordered_boro_long_list = list(by_year_boro_sum.order_by('boro_id__boro_long').values_list('boro_id__boro_long', flat=True).distinct())
+            ordered_boro_long_list = list(by_year_boro_sum.order_by('operation_boro_id__boro_id__boro_long').values_list('operation_boro_id__boro_id__boro_long', flat=True).distinct())
             for each in ordered_boro_long_list:
                 pothole_fixed_row_list = []
                 pothole_fixed_row_list.append(each)
 
-                for each_row in by_year_boro_sum.filter(boro_id__boro_long=each):
+                for each_row in by_year_boro_sum.filter(operation_boro_id__boro_id__boro_long=each):
                     pothole_fixed_row_list.append(each_row['total_repaired'])
 
                 writer.writerow(pothole_fixed_row_list)
@@ -2545,7 +2545,7 @@ def GetCsvExport(request):
                 raise ValueError(f"EndDate { end_date } is in the future. Please give a date before or equal to { today.strftime('%Y-%m-%d') }")
 
             ## Assuming a new FY starts at July 1st
-            fytd_start_str = "{}-07-01".format(end_date_obj.year - 1 if end_date_obj.month < 7 else end_date_obj.year)
+            fytd_start_str = f"{end_date_obj.year - 1 if end_date_obj.month < 7 else end_date_obj.year}-07-01"
 
             ## Get the previous week's Sunday from a given date
             def prior_week_end(d):
@@ -2577,12 +2577,14 @@ def GetCsvExport(request):
                             ,tblBoro.[BoroOrder]
                             ,tblBoro.[BoroLong]
                         FROM tblPotholeMaster
+                        LEFT JOIN tblOperationBoro
+                        ON tblPotholeMaster.OperationBoroId = tblOperationBoro.OperationBoroId
                         LEFT JOIN tblOperation
-                        ON tblPotholeMaster.[OperationId] = tblOperation.[OperationId]
+                        ON tblOperationBoro.[OperationId] = tblOperation.[OperationId]
                         LEFT JOIN tblBoro
-                        ON tblPotholeMaster.[BoroId] = tblBoro.[BoroId]
+                        ON tblOperationBoro.[BoroId] = tblBoro.[BoroId]
                         WHERE (
-                            {get_excluded_operation_boro_as_where_cond()}
+                            tblOperationBoro.[IsActive] = 1
                             AND tblOperation.[Operation] <> 'ARTERIAL MAINTENANCE'
                         )
                     )
@@ -2705,24 +2707,28 @@ def GetCsvExport(request):
             writer.writerow(['Crews:', no_art_maint_total[0]['sum_crew_count_fytd'], no_art_maint_total[0]['sum_crew_count_lwk']])
 
         else:
-            raise ValueError("Unknown value for type_of_query: '{}'".format(type_of_query))
+            raise ValueError(f"Unknown value for type_of_query: '{type_of_query}'")
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_csv_bytes": dummy_in_mem_file.getvalue(),
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "post_csv_bytes": dummy_in_mem_file.getvalue(),
+            }
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}. For '{}'".format(e, start_date),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}. For '{start_date}' -> '{end_date}'",
+            "post_data"     : None
         })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}".format(e),
-            # "post_msg": "DailyPothole: GetCsvExport():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}",
+            # "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
