@@ -370,5 +370,7 @@ ORG_CHART_PORTAL_VERSION        = '1.15.8'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
 
 
-POST_RESPONSE_REQUIRED_JSON_KEYS    = ["post_success", "post_msg", "post_data"]
-GET_RESPONSE_REQUIRED_CONTEXT_KEYS  = ["get_success", "get_error", "client_is_admin"]
+APP_DEFINED_HTTP_POST_JSON_KEYS     = ["post_success", "post_msg", "post_data"]
+APP_DEFINED_HTTP_GET_CONTEXT_KEYS   = ["get_success", "get_error", "client_is_admin"]
+DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS   = ["object_list", "is_paginated", "paginator", "page_obj", "view"]
+DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS = ["object", "context_object_name"]

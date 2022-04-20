@@ -1,6 +1,6 @@
 import json
 from django.urls import reverse
-from WebAppsMain.settings import GET_RESPONSE_REQUIRED_CONTEXT_KEYS, POST_RESPONSE_REQUIRED_JSON_KEYS, TEST_WINDOWS_USERNAME
+from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_HTTP_POST_JSON_KEYS, TEST_WINDOWS_USERNAME
 import copy
 import unittest
 from django.test import Client
@@ -129,9 +129,9 @@ def validate_core_get_api_response_context(response):
         "client_is_admin"
         additinal variables are optional
     """
-    for key in GET_RESPONSE_REQUIRED_CONTEXT_KEYS:
+    for key in APP_DEFINED_HTTP_GET_CONTEXT_KEYS:
         if key not in response.context_data:
-            raise ValueError(f"validate_core_get_api_response_context(): Invalid GET response. Requires {GET_RESPONSE_REQUIRED_CONTEXT_KEYS} but there is missing keys from: {response.context_data.keys()}")
+            raise ValueError(f"validate_core_get_api_response_context(): Invalid GET response. Requires {APP_DEFINED_HTTP_GET_CONTEXT_KEYS} but there is missing keys from: {response.context_data.keys()}")
 
     return True
 
@@ -159,9 +159,9 @@ def validate_core_post_api_response_content(response):
     """
     response_content = decode_json_response_for_content(response=response)
 
-    for key in POST_RESPONSE_REQUIRED_JSON_KEYS:
+    for key in APP_DEFINED_HTTP_POST_JSON_KEYS:
         if key not in response_content:
-            raise ValueError(f"validate_core_post_api_response_content(): Invalid POST JSON response. Requires {POST_RESPONSE_REQUIRED_JSON_KEYS} but there is missing keys from: {response_content.keys()}")
+            raise ValueError(f"validate_core_post_api_response_content(): Invalid POST JSON response. Requires {APP_DEFINED_HTTP_POST_JSON_KEYS} but there is missing keys from: {response_content.keys()}")
 
     return True
 

@@ -53,8 +53,6 @@ def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, operation_boro_pa
 
         @windows_username is self explanatory, just one name
         @operation_boro_pairs should be a list of 2-item tuple like this: (str_operation, str_boro)
-
-        returns the user object associated for the permissions
     """
     try:
         for each in operation_boro_pairs:
