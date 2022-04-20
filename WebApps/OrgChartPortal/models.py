@@ -118,6 +118,7 @@ class TblWorkUnits(models.Model):
     wu_desc = models.CharField(db_column='Work Unit Description', max_length=255)
     div_group = models.CharField(db_column='Division Group', max_length=255)
     subdiv = models.CharField(db_column='SubDivision', max_length=255)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
@@ -144,6 +145,7 @@ class TblPermissionsWorkUnit(models.Model):
     permission_id = models.AutoField(db_column='PermissionId', primary_key=True)
     user_id = models.ForeignKey(db_column='UserId', to='TblUsers', to_field='user_id', blank=False, null=False, on_delete=models.DO_NOTHING)
     wu = models.ForeignKey(db_column='WU', to='TblWorkUnits', to_field='wu', blank=False, null=False, on_delete=models.DO_NOTHING, max_length=4)
+    is_active = models.BooleanField(db_column='IsActive', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
