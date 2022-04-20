@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-from WebAppsMain.settings import TEST_WINDOWS_USERNAME
+from WebAppsMain.settings import TEST_WINDOWS_USERNAME, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
 from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
@@ -171,29 +171,51 @@ class TestViewPagesResponse(unittest.TestCase):
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin client\n    {response.context['get_error']}")
 
-    def assert_additional_context_data(self):
+    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None):
+        django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
+        response_context_keys = response.context_data.keys()
+
+        for response_context_key in response_context_keys:
+            self.assertTrue( (response_context_key in (view_defined_additional_context_keys + APP_DEFINED_HTTP_GET_CONTEXT_KEYS + django_default_context_keys) ),
+                f"{view} response got back a context key that shouldn't exist. Please add this new key to the test suite or change the view: '{response_context_key}'")
+
+        for additional_context_key in view_defined_additional_context_keys:
+            self.assertTrue(additional_context_key in response_context_keys,
+                f"{view} response is missing this view defined context key '{additional_context_key}'")
+
+    def __assert_additional_context_data(self):
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             if view == 'dailypothole_pothole_data_entry_view':
-                self.assertTrue('today' in response.context_data.keys(), f"dailypothole_pothole_data_entry_view is missing context variable 'today'")
+                view_defined_additional_context_keys = [
+                    'today'
+                    ,'operation_boro_permissions'
+                ]
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             if view == 'dailypothole_pothole_data_grid_view':
-                self.assertTrue('ag_grid_col_def_json'  in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'ag_grid_col_def_json'")
-                self.assertTrue('pothole_data_json'     in response.context_data.keys(), f"dailypothole_pothole_data_grid_view is missing context variable 'pothole_data_json'")
+                view_defined_additional_context_keys = [
+                    'ag_grid_col_def_json'
+                    ,'pothole_data_json'
+                ]
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
             if view == 'dailypothole_csv_export_view':
-                self.assertTrue('operation_list'        in response.context_data.keys(), f"dailypothole_csv_export_view is missing context variable 'operation_list'")
+                view_defined_additional_context_keys = [
+                    'operation_list'
+                ]
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
 
     def test_views_response_data(self):
         """Some views have additional context data, need to test for those here"""
         # Test normal user
         remove_admin_status()
-        self.assert_additional_context_data()
+        self.__assert_additional_context_data()
 
         # Test admin user
         grant_admin_status()
-        self.assert_additional_context_data()
+        self.__assert_additional_context_data()
 
 
 class TestAPIUpdatePotholesData(HttpPostTestCase):

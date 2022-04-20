@@ -590,10 +590,9 @@ def UpdatePotholesFromDataGrid(request):
 
 class PotholeDataGridPageView(generic.ListView):
     template_name           = 'DailyPothole.template.datagrid.html'
-    context_object_name     = 'daily_pothole'
 
     get_success             = True
-    get_error                 = None
+    get_error               = None
     client_is_admin         = False
 
     ag_grid_col_def_json    = None
@@ -648,7 +647,7 @@ class PotholeDataGridPageView(generic.ListView):
             context = super().get_context_data(**kwargs)
 
             context["get_success"]          = self.get_success
-            context["get_error"]              = self.get_error
+            context["get_error"]            = self.get_error
             context["client_is_admin"]      = self.client_is_admin
 
             context['ag_grid_col_def_json'] = self.ag_grid_col_def_json
@@ -660,7 +659,7 @@ class PotholeDataGridPageView(generic.ListView):
 
             context = super().get_context_data(**kwargs)
             context["get_success"]          = self.get_success
-            context["get_error"]              = self.get_error
+            context["get_error"]            = self.get_error
             context["client_is_admin"]      = False
 
             context['ag_grid_col_def_json'] = None
@@ -2754,14 +2753,13 @@ def GetCsvExport(request):
 
 
 class CsvExportPageView(generic.ListView):
-    template_name = 'DailyPothole.template.csvexport.html'
-    context_object_name = 'complaints'
+    template_name   = 'DailyPothole.template.csvexport.html'
 
-    get_success = True
-    get_error = ""
-
+    get_success     = True
+    get_error       = ""
     client_is_admin = False
-    operation_list = []
+
+    operation_list  = []
 
     def get_queryset(self):
         ## Get the core data
@@ -2769,9 +2767,7 @@ class CsvExportPageView(generic.ListView):
             # Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
 
-            if self.client_is_admin:
-                complaints_data = TblComplaint.objects.none()
-            else:
+            if not self.client_is_admin:
                 raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
 
             self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
@@ -2779,30 +2775,30 @@ class CsvExportPageView(generic.ListView):
         except Exception as e:
             self.get_success = False
             self.get_error = "Exception: CsvExportPageView(): get_queryset(): {}".format(e)
-            return TblComplaint.objects.none()
+            return None
 
         self.get_success = True
-        return complaints_data
+        return None
 
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
 
-            context["get_success"] = self.get_success
-            context["get_error"] = self.get_error
+            context["get_success"]      = self.get_success
+            context["get_error"]        = self.get_error
+            context["client_is_admin"]  = self.client_is_admin
 
-            context["client_is_admin"] = self.client_is_admin
-            context["operation_list"] = self.operation_list
+            context["operation_list"]   = self.operation_list
             return context
         except Exception as e:
             self.get_success = False
             self.get_error = "Exception: CsvExportPageView(): get_context_data(): {}".format(e)
 
             context = super().get_context_data(**kwargs)
-            context["get_success"] = self.get_success
-            context["get_error"] = self.get_error
+            context["get_success"]      = self.get_success
+            context["get_error"]        = self.get_error
+            context["client_is_admin"]  = False
 
-            context["client_is_admin"] = False
-            context["operation_list"] = []
+            context["operation_list"]   = []
             return context
 
