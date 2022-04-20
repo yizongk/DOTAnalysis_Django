@@ -226,6 +226,7 @@ class TestAPIUpdatePotholesData(HttpPostTestCase):
         set_up_permissions()
         self.user_obj                   = get_or_create_user()
         self.api_name                   = 'dailypothole_update_potholes_data_api'
+        self.post_response_json_key_specifications = []
 
         self.valid_operation            = DEFAULT_OPERATION
         self.valid_borough              = DEFAULT_BORO
@@ -270,6 +271,9 @@ class TestAPIUpdatePotholesData(HttpPostTestCase):
             self.assertEqual(response_content['post_success'], True,
                 f"payload_type '{payload_type}': api call was not successfully with valid data\n{response_content['post_msg']}")
 
+            ## Check that the returned JSON Response got all the data it required
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
+
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
                 repair_date=self.valid_date
@@ -278,26 +282,16 @@ class TestAPIUpdatePotholesData(HttpPostTestCase):
             )
 
             if payload_type == 'PotholeData':
-                self.assertEqual(
-                    self.valid_crew_count,
-                    saved_object.repair_crew_count,
-                    f"payload_type '{payload_type}': [repair_crew_count] didn't save correctly: '{self.valid_crew_count}' input-->database '{saved_object.repair_crew_count}'" )
-                self.assertEqual(
-                    self.valid_holes_repaired,
-                    saved_object.holes_repaired,
-                    f"payload_type '{payload_type}': [holes_repaired] didn't save correctly: '{self.valid_holes_repaired}' input-->database '{saved_object.holes_repaired}'" )
+                self.assert_post_key_update_equivalence(key_name=f'{payload_type}: [repair_crew_count]', key_value=float(self.valid_crew_count)    , db_value=float(saved_object.repair_crew_count))
+                self.assert_post_key_update_equivalence(key_name=f'{payload_type}: [repair_crew_count]', key_value=float(self.valid_holes_repaired), db_value=float(saved_object.holes_repaired))
             elif payload_type == 'TodayCrewData':
-                self.assertEqual(
-                    self.valid_planned_crew_count,
-                    saved_object.daily_crew_count,
-                    f"payload_type '{payload_type}': [daily_crew_count] didn't save correctly: '{self.valid_planned_crew_count}' input-->database '{saved_object.daily_crew_count}'" )
+                self.assert_post_key_update_equivalence(key_name=f'{payload_type}: [daily_crew_count]', key_value=float(self.valid_planned_crew_count), db_value=float(saved_object.daily_crew_count))
             else:
                 raise ValueError( f"TestAPIUpdatePotholesData: test_with_valid_data(): payload_type not recognized in test case: '{payload_type}'" )
 
             self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10,
                 f"payload_type '{payload_type}': [last_modified_timestamp] didn't save correctly: '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
-            self.assertEqual( saved_object.last_modified_by_user_id.user_id  , self.user_obj.user_id,
-                f"payload_type '{payload_type}': [last_modified_by_user_id] didn't save correctly: '{saved_object.last_modified_by_user_id.user_id}' input-->database '{self.user_obj.user_id}'" )
+            self.assert_post_key_update_equivalence(key_name=f"{payload_type}: [last_modified_by_user_id]", key_value=self.user_obj.user_id, db_value=saved_object.last_modified_by_user_id.user_id)
 
     def test_data_validation(self):
         f"""Testing {self.api_name} data validation"""
@@ -385,6 +379,12 @@ class TestAPILookupPotholesAndCrewData(HttpPostTestCase):
         tear_down()
         set_up_permissions()
         self.api_name               = 'dailypothole_lookup_potholes_and_crew_data_api'
+        self.post_response_json_key_specifications = [
+            {'name': 'look_up_date'         , 'null': False}
+            ,{'name': 'repair_crew_count'   , 'null': True}
+            ,{'name': 'holes_repaired'      , 'null': True}
+            ,{'name': 'daily_crew_count'    , 'null': True}
+        ]
 
         self.valid_look_up_date     = f'{datetime.now().strftime("%Y-%m-%d")}'
         self.valid_operation        = DEFAULT_OPERATION
@@ -407,16 +407,20 @@ class TestAPILookupPotholesAndCrewData(HttpPostTestCase):
         ## Check that the request was successful
         self.assertEqual(response_content['post_success'], True,
             f"api call was not successfully with valid data")
-        self.assertTrue('look_up_date' in response_content,
-            f"'look_up_date' is not in the response")
-        self.assertTrue(response_content['look_up_date'] is not None,
-            f"response['look_up_date'] can't be null")
-        self.assertTrue('repair_crew_count' in response_content,
-            f"'repair_crew_count' is not in the response")
-        self.assertTrue('holes_repaired' in response_content,
-            f"'holes_repaired' is not in the response")
-        self.assertTrue('daily_crew_count' in response_content,
-            f"'daily_crew_count' is not in the response")
+
+        ## Check that the returned JSON Response got all the data it required
+        self.assert_response_satisfy_param_requirements(response_content=response_content)
+
+        ## Check if data was queried correctly
+        lookup_object = TblPotholeMaster.objects.using('DailyPothole').get(
+            repair_date__exact=payload['look_up_date']
+            ,operation_boro_id__operation_id__operation__exact=payload['operation']
+            ,operation_boro_id__boro_id__boro_long__exact=payload['borough']
+        )
+        self.assert_post_key_lookup_equivalence(key_name='look_up_date'     , key_value=response_content['post_data']['look_up_date']        , db_value=lookup_object.repair_date)
+        self.assert_post_key_lookup_equivalence(key_name='repair_crew_count', key_value=response_content['post_data']['repair_crew_count']   , db_value=lookup_object.repair_crew_count)
+        self.assert_post_key_lookup_equivalence(key_name='holes_repaired'   , key_value=response_content['post_data']['holes_repaired']      , db_value=lookup_object.holes_repaired)
+        self.assert_post_key_lookup_equivalence(key_name='daily_crew_count' , key_value=response_content['post_data']['daily_crew_count']    , db_value=lookup_object.daily_crew_count)
 
     def test_data_validation(self):
         payload = self.valid_payload
@@ -453,7 +457,7 @@ class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_potholes_from_data_grid_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'repair_date'  , 'null': False}
             ,{'name': 'operation'   , 'null': False}
             ,{'name': 'boro_long'   , 'null': False}
@@ -523,27 +527,17 @@ class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
             )
 
             if payload['column_name'] == 'Repair Crew Count':
-                self.assertEqual(
-                    float(payload['new_value']),
-                    float(saved_object.repair_crew_count),
-                    f"payload['column_name'] '{payload['column_name']}': [repair_crew_count] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.repair_crew_count}'" )
+                self.assert_post_key_update_equivalence(key_name=f"{payload['column_name']}: [repair_crew_count]", key_value=float(payload['new_value']), db_value=float(saved_object.repair_crew_count))
             elif payload['column_name'] == 'Holes Repaired':
-                self.assertEqual(
-                    float(payload['new_value']),
-                    float(saved_object.holes_repaired),
-                    f"payload['column_name'] '{payload['column_name']}': [holes_repaired] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.holes_repaired}'" )
+                self.assert_post_key_update_equivalence(key_name=f"{payload['column_name']}: [holes_repaired]", key_value=float(payload['new_value']), db_value=float(saved_object.holes_repaired))
             elif payload['column_name'] == 'Daily Crew Count':
-                self.assertEqual(
-                    float(payload['new_value']),
-                    float(saved_object.daily_crew_count),
-                    f"payload['column_name'] '{payload['column_name']}': [daily_crew_count] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.daily_crew_count}'" )
+                self.assert_post_key_update_equivalence(key_name=f"{payload['column_name']}: [daily_crew_count]", key_value=float(payload['new_value']), db_value=float(saved_object.daily_crew_count))
             else:
                 raise ValueError( f"TestAPIUpdatePotholesFromDataGrid: test_with_valid_data(): payload['column_name'] not recognized in test case: '{payload['column_name']}'" )
 
             self.assertTrue(  (timezone.now() - saved_object.last_modified_timestamp).total_seconds() < 10,
                 f"payload['column_name'] '{payload['column_name']}': [last_modified_timestamp] didn't save correctly: '{timezone.now().strftime('%Y-%m-%d %H:%M:%S')}' input-->database '{saved_object.last_modified_timestamp.strftime('%Y-%m-%d %H:%M:%S')}'. Cannot exceed more than 10 seconds difference" )
-            self.assertEqual( saved_object.last_modified_by_user_id.user_id  , self.user_obj.user_id,
-                f"payload['column_name'] '{payload['column_name']}': [last_modified_by_user_id] didn't save correctly: '{self.user_obj.user_id}' input-->database '{saved_object.last_modified_by_user_id.user_id}'" )
+            self.assert_post_key_update_equivalence(key_name=f"{payload['column_name']}: [last_modified_by_user_id]", key_value=self.user_obj.user_id, db_value=saved_object.last_modified_by_user_id.user_id)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -616,7 +610,7 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_complaints_data_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'complaint_date'       , 'null': False}
             ,{'name': 'fits_bronx'          , 'null': False}
             ,{'name': 'fits_brooklyn'       , 'null': False}
@@ -680,20 +674,13 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
                 complaint_date__exact=payload['complaint_date'],
             )
 
-            self.assertEqual(saved_object.fits_bronx, int(payload['fits_bronx']),
-                f"[fits_bronx] didn't save correctly: '{payload['fits_bronx']}' input-->database '{saved_object.fits_bronx}'" )
-            self.assertEqual(saved_object.fits_brooklyn, int(payload['fits_brooklyn']),
-                f"[fits_brooklyn] didn't save correctly: '{payload['fits_brooklyn']}' input-->database '{saved_object.fits_brooklyn}'" )
-            self.assertEqual(saved_object.fits_manhattan, int(payload['fits_manhattan']),
-                f"[fits_manhattan] didn't save correctly: '{payload['fits_manhattan']}' input-->database '{saved_object.fits_manhattan}'" )
-            self.assertEqual(saved_object.fits_queens , int(payload['fits_queens']),
-                f"[fits_queens] didn't save correctly: '{payload['fits_queens']}' input-->database '{saved_object.fits_queens}'" )
-            self.assertEqual(saved_object.fits_staten_island , int(payload['fits_staten_island']),
-                f"[fits_staten_island] didn't save correctly: '{payload['fits_staten_island']}' input-->database '{saved_object.fits_staten_island}'" )
-            self.assertEqual(saved_object.fits_unassigned , int(payload['fits_unassigned']),
-                f"[fits_unassigned] didn't save correctly: '{payload['fits_unassigned']}' input-->database '{saved_object.fits_unassigned}'" )
-            self.assertEqual(saved_object.siebel_complaints , int(payload['open_siebel']),
-                f"[siebel_complaints] didn't save correctly: '{payload['open_siebel']}' input-->database '{saved_object.siebel_complaints}'" )
+            self.assert_post_key_update_equivalence(key_name='fits_bronx'           , key_value=int(payload['fits_bronx'])         , db_value=saved_object.fits_bronx)
+            self.assert_post_key_update_equivalence(key_name='fits_brooklyn'        , key_value=int(payload['fits_brooklyn'])      , db_value=saved_object.fits_brooklyn)
+            self.assert_post_key_update_equivalence(key_name='fits_manhattan'       , key_value=int(payload['fits_manhattan'])     , db_value=saved_object.fits_manhattan)
+            self.assert_post_key_update_equivalence(key_name='fits_queens'          , key_value=int(payload['fits_queens'])        , db_value=saved_object.fits_queens)
+            self.assert_post_key_update_equivalence(key_name='fits_staten_island'   , key_value=int(payload['fits_staten_island']) , db_value=saved_object.fits_staten_island)
+            self.assert_post_key_update_equivalence(key_name='fits_unassigned'      , key_value=int(payload['fits_unassigned'])    , db_value=saved_object.fits_unassigned)
+            self.assert_post_key_update_equivalence(key_name='siebel_complaints'    , key_value=int(payload['open_siebel'])        , db_value=saved_object.siebel_complaints)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -731,7 +718,7 @@ class TestAPILookupComplaintsData(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name                   = 'dailypothole_lookup_complaints_data_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'complaint_date'       , 'null': False}
             ,{'name': 'fits_bronx'          , 'null': False}
             ,{'name': 'fits_brooklyn'       , 'null': False}
@@ -791,6 +778,19 @@ class TestAPILookupComplaintsData(HttpPostTestCase):
             ## Check that the returned JSON Response got all the data it required
             self.assert_response_satisfy_param_requirements(response_content=response_content)
 
+            ## Check if data was queried correctly
+            lookup_object = TblComplaint.objects.using('DailyPothole').get(
+                complaint_date__exact=payload['complaint_date']
+            )
+            self.assert_post_key_lookup_equivalence(key_name='complaint_date'       , key_value=response_content['post_data']['complaint_date']     , db_value=lookup_object.complaint_date)
+            self.assert_post_key_lookup_equivalence(key_name='fits_bronx'           , key_value=response_content['post_data']['fits_bronx']         , db_value=lookup_object.fits_bronx)
+            self.assert_post_key_lookup_equivalence(key_name='fits_brooklyn'        , key_value=response_content['post_data']['fits_brooklyn']      , db_value=lookup_object.fits_brooklyn)
+            self.assert_post_key_lookup_equivalence(key_name='fits_manhattan'       , key_value=response_content['post_data']['fits_manhattan']     , db_value=lookup_object.fits_manhattan)
+            self.assert_post_key_lookup_equivalence(key_name='fits_queens'          , key_value=response_content['post_data']['fits_queens']        , db_value=lookup_object.fits_queens)
+            self.assert_post_key_lookup_equivalence(key_name='fits_staten_island'   , key_value=response_content['post_data']['fits_staten_island'] , db_value=lookup_object.fits_staten_island)
+            self.assert_post_key_lookup_equivalence(key_name='fits_unassigned'      , key_value=response_content['post_data']['fits_unassigned']    , db_value=lookup_object.fits_unassigned)
+            self.assert_post_key_lookup_equivalence(key_name='open_siebel'          , key_value=response_content['post_data']['open_siebel']        , db_value=lookup_object.siebel_complaints)
+
     def test_data_validation(self):
         self.set_up_test_data()
         grant_admin_status()
@@ -819,7 +819,7 @@ class TestAPIGetPDFReport(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name           = 'dailypothole_get_pdf_report_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'pdf_bytes'       , 'null': False}
         ]
 
@@ -883,7 +883,7 @@ class TestAPIAddUser(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_add_user_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'user_id'  , 'null': False}
             ,{'name': 'username' , 'null': False}
             ,{'name': 'is_admin' , 'null': False}
@@ -941,10 +941,8 @@ class TestAPIAddUser(HttpPostTestCase):
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
 
-            self.assertEqual(saved_object.username, payload['username_input'],
-                f"[username] didn't save correctly: '{payload['username_input']}' input-->database '{saved_object.username}'" )
-            self.assertEqual(str(saved_object.is_admin), payload['is_admin_input'],
-                f"[is_admin] didn't save correctly: '{payload['is_admin_input']}' input-->database '{str(saved_object.is_admin)}'" )
+            self.assert_post_key_update_equivalence(key_name='username', key_value=payload['username_input'], db_value=saved_object.username)
+            self.assert_post_key_update_equivalence(key_name='is_admin', key_value=payload['is_admin_input'], db_value=str(saved_object.is_admin))
 
     def test_data_validation(self):
         grant_admin_status()
@@ -980,7 +978,7 @@ class TestAPIUpdateUser(HttpPostTestCase):
         tear_down()
         self.user_obj               = grant_admin_status()
         self.api_name               = 'dailypothole_update_user_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'user_id'  , 'null': False}
             ,{'name': 'username' , 'null': False}
             ,{'name': 'is_admin' , 'null': False}
@@ -1030,8 +1028,7 @@ class TestAPIUpdateUser(HttpPostTestCase):
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.user_obj.username)
 
             if payload['column'] == 'IsAdmin':
-                self.assertEqual(str(saved_object.is_admin), payload['new_value'],
-                    f"[{payload['column']}] didn't save correctly: '{payload['new_value']}' input-->database '{str(saved_object.is_admin)}'" )
+                self.assert_post_key_update_equivalence(key_name=payload['column'], key_value=payload['new_value'], db_value=str(saved_object.is_admin))
             else:
                 raise ValueError(f"{payload['column']} is not recognized as a valid column value in the payload")
 
@@ -1074,6 +1071,7 @@ class TestAPIDeleteUser(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name               = 'dailypothole_delete_user_api'
+        self.post_response_json_key_specifications = []
 
         self.valid_username         = 'some_random_name'
 
@@ -1119,6 +1117,9 @@ class TestAPIDeleteUser(HttpPostTestCase):
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
 
+            ## Check that the returned JSON Response got all the data it required
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
+
             ## Check if data was deleted correctly
             try:
                 saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
@@ -1159,7 +1160,7 @@ class TestAPIAddUserPermission(HttpPostTestCase):
         tear_down()
         self.api_name               = 'dailypothole_add_user_permission_api'
         self.valid_username         = TEST_WINDOWS_USERNAME
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'permission_id', 'null': False}
             ,{'name': 'username'    , 'null': False}
             ,{'name': 'operation'   , 'null': False}
@@ -1214,12 +1215,9 @@ class TestAPIAddUserPermission(HttpPostTestCase):
                 ,operation_boro_id__boro_id__boro_long__exact       = payload['boro_input']
             )
 
-            self.assertEqual(payload['username_input'], saved_object.user_id.username,
-                f"[username] didn't save correctly: '{payload['username_input']}' input-->database '{saved_object.user_id.username}'" )
-            self.assertEqual(payload['operation_input'], saved_object.operation_boro_id.operation_id.operation,
-                f"[operation] didn't save correctly: '{payload['operation_input']}' input-->database '{saved_object.operation_boro_id.operation_id.operation}'" )
-            self.assertEqual(payload['boro_input'], saved_object.operation_boro_id.boro_id.boro_long,
-                f"[boro_long] didn't save correctly: '{payload['boro_input']}' input-->database '{saved_object.operation_boro_id.boro_id.boro_long}'" )
+            self.assert_post_key_update_equivalence(key_name='username' , key_value=payload['username_input']  , db_value=saved_object.user_id.username)
+            self.assert_post_key_update_equivalence(key_name='operation', key_value=payload['operation_input'] , db_value=saved_object.operation_boro_id.operation_id.operation)
+            self.assert_post_key_update_equivalence(key_name='boro_long', key_value=payload['boro_input']      , db_value=saved_object.operation_boro_id.boro_id.boro_long)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -1259,7 +1257,7 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
         tear_down()
         set_up_permissions(operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)])
         self.api_name               = 'dailypothole_update_user_permission_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'username'  , 'null': False}
             ,{'name': 'operation' , 'null': False}
             ,{'name': 'boro_long' , 'null': False}
@@ -1317,8 +1315,7 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
                 permission_id=self.valid_permission_id
             )
 
-            self.assertEqual(payload['new_value'], str(saved_object.is_active),
-                f"[{payload['column']}] didn't save correctly: '{payload['new_value']}' input-->database '{saved_object.is_active}'" )
+            self.assert_post_key_update_equivalence(key_name=payload['column'], key_value=payload['new_value'], db_value=str(saved_object.is_active))
 
     def test_data_validation(self):
         grant_admin_status()
@@ -1359,6 +1356,7 @@ class TestAPIDeleteUserPermission(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name               = 'dailypothole_delete_user_permission_api'
+        self.post_response_json_key_specifications = []
 
         self.valid_payloads = [
             {
@@ -1395,6 +1393,9 @@ class TestAPIDeleteUserPermission(HttpPostTestCase):
             ## Check that the request was successful
             self.assertTrue(response_content['post_success'],
                 f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+            ## Check that the returned JSON Response got all the data it required
+            self.assert_response_satisfy_param_requirements(response_content=response_content)
 
             ## Check if data was deleted correctly
             try:
@@ -1440,7 +1441,7 @@ class TestAPIGetCsvExport(HttpPostTestCase):
     def setUpClass(self):
         tear_down()
         self.api_name                   = 'dailypothole_get_csv_export_api'
-        self.response_param_specifications = [
+        self.post_response_json_key_specifications = [
             {'name': 'post_csv_bytes'  , 'null': False}
         ]
 
