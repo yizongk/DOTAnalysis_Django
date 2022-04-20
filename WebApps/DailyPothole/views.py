@@ -344,11 +344,12 @@ def LookupPotholesAndCrewData(request):
         return JsonResponse({
             "post_success"      : True,
             "post_msg"          : None,
-            "post_data"         : None,
-            "look_up_date"      : look_up_date,
-            "repair_crew_count" : repair_crew_count,
-            "holes_repaired"    : holes_repaired,
-            "daily_crew_count"  : daily_crew_count,
+            "post_data"         : {
+                "look_up_date"      : look_up_date,
+                "repair_crew_count" : repair_crew_count,
+                "holes_repaired"    : holes_repaired,
+                "daily_crew_count"  : daily_crew_count,
+            },
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({

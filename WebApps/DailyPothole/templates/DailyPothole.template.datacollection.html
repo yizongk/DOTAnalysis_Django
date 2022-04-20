@@ -176,8 +176,8 @@
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
 
-                        let repair_crew_count   = json_response.repair_crew_count == null   ? '' : json_response.repair_crew_count
-                        let holes_repaired      = json_response.holes_repaired == null      ? '' : json_response.holes_repaired
+                        let repair_crew_count   = json_response.post_data.repair_crew_count == null   ? '' : json_response.post_data.repair_crew_count
+                        let holes_repaired      = json_response.post_data.holes_repaired == null      ? '' : json_response.post_data.holes_repaired
 
                         $("#PotholeCrewCountInput").val(repair_crew_count);
                         $("#RegularHolesRepaired").val(holes_repaired);
@@ -331,7 +331,7 @@
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_potholes_and_crew_data_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
 
-                        let daily_crew_count   = json_response.daily_crew_count == null   ? '' : json_response.daily_crew_count
+                        let daily_crew_count   = json_response.post_data.daily_crew_count == null   ? '' : json_response.post_data.daily_crew_count
 
                         $("#TodayPotholeCrewCount").val(daily_crew_count);
 
