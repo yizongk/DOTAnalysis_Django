@@ -273,7 +273,7 @@ def UpdatePotholesData(request):
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}",
             "post_data"     : None,
-            # "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: UpdatePotholesData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
@@ -361,7 +361,7 @@ def LookupPotholesAndCrewData(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: LookupPotholesAndCrewData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -584,7 +584,7 @@ def UpdatePotholesFromDataGrid(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: UpdatePotholesFromDataGrid():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -868,7 +868,7 @@ def UpdateComplaintsData(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: UpdateComplaintsData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -951,7 +951,7 @@ def LookupComplaintsData(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: LookupComplaintsData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -1625,7 +1625,7 @@ def GetPDFReport(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: GetPDFReport():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -1814,7 +1814,7 @@ def AddUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: AddUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -1907,7 +1907,7 @@ def UpdateUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: UpdateUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -1976,7 +1976,7 @@ def DeleteUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: DeleteUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -2130,7 +2130,7 @@ def AddUserPermission(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: AddUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -2229,7 +2229,7 @@ def UpdateUserPermission(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: UpdateUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -2303,7 +2303,7 @@ def DeleteUserPermission(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: DeleteUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
@@ -2748,7 +2748,7 @@ def GetCsvExport(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}",
-            # "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"DailyPothole: GetCsvExport():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
             "post_data"     : None
         })
 
