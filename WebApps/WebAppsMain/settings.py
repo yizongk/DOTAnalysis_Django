@@ -372,5 +372,5 @@ FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
 
 APP_DEFINED_HTTP_POST_JSON_KEYS     = ["post_success", "post_msg", "post_data"]
 APP_DEFINED_HTTP_GET_CONTEXT_KEYS   = ["get_success", "get_error", "client_is_admin"]
-DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS   = ["object_list", "is_paginated", "paginator", "page_obj", "view"]
+DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS   = ["object_list", "is_paginated", "paginator", "page_obj", "view"]  ## "view" is not in the official Django doc but for some reason it does get returned by list views: https://docs.djangoproject.com/en/4.0/ref/class-based-views/mixins-multiple-object/#django.views.generic.list.MultipleObjectMixin.get_context_data
 DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS = ["object", "context_object_name"]
