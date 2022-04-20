@@ -16,8 +16,8 @@ class HttpPostTestCase(unittest.TestCase):
         class TestSomeThing(HttpPostTestCase):
             @classmethod
             def setUpClass(self):
-                self.api_name                       = 'name_of_your_view'   ## This is REQUIRED
-                self.response_param_specifications  = []                    ## This is REQUIRED, set it to empty list if is has none. Expects the format to be like this:
+                self.api_name                               = 'name_of_your_view'   ## This is REQUIRED
+                self.post_response_json_key_specifications  = []                    ## This is REQUIRED, set it to empty list if is has none. Expects the format to be like this:
                                                                                 [
                                                                                     {name: '...', null: False}   ## if null = True, the param is allowed to be None
                                                                                     ,{name: '...', null: True}
@@ -30,9 +30,9 @@ class HttpPostTestCase(unittest.TestCase):
                 pass                                    ## Optional
 
     """
-    client                          = Client()
-    api_name                        = None
-    response_param_specifications   = None
+    client                                  = Client()
+    api_name                                = None
+    post_response_json_key_specifications   = None
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -82,10 +82,10 @@ class HttpPostTestCase(unittest.TestCase):
 
     def assert_response_satisfy_param_requirements(self, response_content):
         """
-        Checks that the response param names in "post_data" match the criteria set by @self.response_param_specifications
-        If response got extra param names in "post_data" that isn't in the @self.response_param_specifications, this will raise an error.
+        Checks that the response param names in "post_data" match the criteria set by @self.post_response_json_key_specifications
+        If response got extra param names in "post_data" that isn't in the @self.post_response_json_key_specifications, this will raise an error.
 
-        Expects @self.response_param_specifications to be of this format:
+        Expects @self.post_response_json_key_specifications to be of this format:
             [
                 {name: '...', null: False}   ## if null = True, the param is allowed to be None
                 ,{name: '...', null: True}
@@ -93,12 +93,18 @@ class HttpPostTestCase(unittest.TestCase):
                 ,...
             ]
         """
-        if type(self.response_param_specifications) is not list:
-            raise ValueError(f"assert_response_satisfy_param_requirements(): self.response_param_specifications is not a list: {type(self.response_param_specifications)}")
+        if type(self.post_response_json_key_specifications) is not list:
+            raise ValueError(f"assert_response_satisfy_param_requirements(): self.post_response_json_key_specifications is not a list: {type(self.post_response_json_key_specifications)}")
+        elif len(self.post_response_json_key_specifications) == 0 and response_content['post_data'] is None:
+            ## Nothing to check, specification didn't specify any, and response got nothing in "post_data".
+            return
+        elif len(self.post_response_json_key_specifications) != 0 and response_content['post_data'] is None:
+            ## specification is set, but there's no "post_data" in the response
+            raise ValueError(f"response_content['post_data'] returned None even though it is expected to have JSON keys specified by the @self.post_response_json_key_specifications")
 
         required_propeties = ['name', 'null']
-        for param_specification in self.response_param_specifications:
-            ## Make sure the self.response_param_specifications follows the correct format
+        for param_specification in self.post_response_json_key_specifications:
+            ## Make sure the self.post_response_json_key_specifications follows the correct format
             for each_required_property in required_propeties:
                 if each_required_property not in param_specification:
                     raise ValueError(f"assert_response_satisfy_param_requirements(): param_specification is missing this property: '{each_required_property}'")
@@ -115,10 +121,18 @@ class HttpPostTestCase(unittest.TestCase):
                 self.assert_response_has_param_and_not_null(response_content=response_content, response_param_name=param_specification['name'])
 
         ## Make sure that the response don't got any extra param names that was specified by the caller
-        specified_required_names = [each['name'] for each in self.response_param_specifications]
+        specified_required_names = [each['name'] for each in self.post_response_json_key_specifications]
         for actual_response_param_name in response_content['post_data']:
             if actual_response_param_name not in specified_required_names:
-                raise ValueError(f"assert_response_satisfy_param_requirements(): response got a param name '{actual_response_param_name}' that is not specified in the @self.response_param_specifications. Please add it to the test suite")
+                raise ValueError(f"assert_response_satisfy_param_requirements(): response got a param name '{actual_response_param_name}' that is not specified in the @self.post_response_json_key_specifications. Please add it to the test suite")
+
+    def assert_post_key_update_equivalence(self, key_name, key_value, db_value):
+        self.assertEqual(str(key_value), str(db_value),
+            f"POST post_data key '{key_name}' didn't save correctly: '{key_value}' input-->database '{db_value}'" )
+
+    def assert_post_key_lookup_equivalence(self, key_name, key_value, db_value):
+        self.assertEqual(str(key_value), str(db_value),
+            f"POST post_data key '{key_name}' didn't look up correctly: '{db_value}' database-->response '{key_value}'" )
 
 
 def validate_core_get_api_response_context(response):
