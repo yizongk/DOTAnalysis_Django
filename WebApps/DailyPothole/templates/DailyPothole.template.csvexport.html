@@ -5,18 +5,14 @@
 {% load extra_tags %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             CSV Export
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
 
@@ -42,11 +38,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="dtRgSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="dtRgSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
 
@@ -68,11 +62,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="ytdRgL5YrSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="ytdRgL5YrSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
 
@@ -85,11 +77,9 @@
                 </div>
 
 
-
-                <div class="d-flex justify-content-center">
-                    <button id="fytdAndLWkNoArtMaintSumm_Submit" class="btn btn-default">Get CSV</button>
-                </div>
-
+                <div class="ui horizontal divider"></div>
+                <button id="fytdAndLWkNoArtMaintSumm_Submit" class="ui teal large button">Get CSV</button>
+                <div class="ui horizontal divider"></div>
             </div>
         </div>
     {% endif %}
@@ -99,7 +89,7 @@
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/DataTables/datatables.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/CellEditSave.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
-    <script type="text/javascript" charset="utf8" src={% static 'WebAppsMain/js/FileSaver.min.js' %}></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/FileSaver.min.js' %}"></script>
 
     {% comment %} JS Datatable stuff {% endcomment %}
     <script>
@@ -177,7 +167,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
                         let start_date_name = `${ start_date.substring(5, start_date.length) + '-' + start_date.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         start_date_name = start_date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
@@ -221,7 +211,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
                         let yyyy = end_date.substring(0, 4)
                         let mm = end_date.substring(5, 7)
@@ -296,7 +286,7 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_get_csv_export_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        csv_bytes_str = json_response.post_csv_bytes
+                        csv_bytes_str = json_response.post_data.post_csv_bytes
                         var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
 
                         var fileName = `FYTDAndLastWeekNoArtMaintSummary_${getDateStringFromDate(end_date)}.csv`;

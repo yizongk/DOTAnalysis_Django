@@ -1,0 +1,16 @@
+{% extends 'OrgChartPortal.template.base.html' %}
+
+{% load static %}
+
+{% block content %}
+    <div id="howtouse" class="ui embed" data-url="{% static 'OrgChartPortal/PDFs/OrgChartPortalWebApplication_HowToUse_March2022.pdf' %}">
+    </div>
+{% endblock %}
+
+{% block custom_js %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            $('#howtouse').embed();
+        });
+    </script>
+{% endblock custom_js %}

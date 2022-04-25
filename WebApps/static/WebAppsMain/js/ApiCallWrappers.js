@@ -1,19 +1,45 @@
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
-    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-};
-
-
-function setDatabaseStatus(good, msg) {
-    // Set status light and error message to red and response error msg
-    if (good == true) {
-        $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
-        $('.status_info.err_msg').html("");
-    } else {
-        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
-        $('.status_info.err_msg').html("Error: " + msg);
+    try {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    } catch(e) {
+        throw `csrfSafeMethod(): ${e}`;
     }
 };
+
+
+function setErrorStatus({error_message = ''}  = {}) {
+    // Set status light and error message to red and response error msg
+    try {
+        $('.status_info.led_light').html("Database Status: <div class='led_red'></div>");
+        $('.status_info.error_msg').html("Error: " + error_message);
+    } catch(e) {
+        throw `setErrorStatus(): ${e}`;
+    }
+};
+
+function clearErrorStatus() {
+    try {
+        $('.status_info.led_light').html("Database Status: <div class='led_green'></div>");
+        $('.status_info.error_msg').html("");
+    } catch(e) {
+        throw `clearErrorStatus(): ${e}`;
+    }
+}
+
+function handleError({set_error=true, error_message='', clear_error_on_success=true} = {}) {
+    try {
+        if (set_error == true) {
+            setErrorStatus({error_message: error_message})
+        } else {
+            if (clear_error_on_success == true) {
+                clearErrorStatus()
+            }
+        }
+    } catch(e) {
+        throw `handleError(): ${e}`;
+    }
+}
 
 
 // Sends a json blob to the api end point. Assumes the api end will know how to handle the json blob
@@ -26,46 +52,63 @@ function setDatabaseStatus(good, msg) {
 // ajaxFailCallbackFct stores calling parent data that can be pass to the various callback function
 // Returns a promise containing the POST call response data if call was successful.
 // Note: Cookies.get() comes from https://github.com/js-cookie/js-cookie/, so be sure to include this script in your html doc \<head\> tag like
-async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                // Only send the token to relative URLs i.e. locally.
-                xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+// @clear_existing_err_on_success, set this to False for api calls that's meant to be called once per refresh of the page, so it doens't erase any previous error messages caused by other modules.
+async function sentJsonBlobToApi(
+        {
+            json_blob                       = null,
+            api_url                         = null,
+            http_request_method             = "POST",
+            successCallbackFct              = function() { return; },
+            failCallbackFct                 = function() { return; },
+            ajaxFailCallbackFct             = function() { return; },
+            props                           = {},
+            clear_existing_err_on_success   = true,
+        } = {}
+    ) {
+
+    try {
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    // Only send the token to relative URLs i.e. locally.
+                    xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                }
             }
-        }
-    });
+        });
 
-    return await $.ajax({
-        url: api_url,
-        type: http_request_method,
-        data: JSON.stringify(json_blob),
-        contentType: "application/json",
-    })
-    .done(function (json_response) {
-        if (json_response["post_success"] == false) {
-            console.log(`Error: Ajax calling '${api_url}'\nServer Response: ${json_response["post_msg"]}`);
-            alert(`Something went wrong while trying to send form data to server.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling api endpoint: '${api_url}'\nServer Response:\n\n${json_response["post_msg"]}`);
+        return await $.ajax({
+            url: api_url,
+            type: http_request_method,
+            data: JSON.stringify(json_blob),
+            contentType: "application/json",
+        })
+        .done(function (json_response) {
+            if (json_response["post_success"] == false) {
+                console.log(`Error: Ajax calling '${api_url}'\nServer Response: ${json_response["post_msg"]}`);
+                alert(`Something went wrong while trying to send form data to server.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling api endpoint: '${api_url}'\nServer Response:\n\n${json_response["post_msg"]}`);
 
-            failCallbackFct(json_response, props)
-            // Set status light and error message to red and response error msg
-            setDatabaseStatus(good=false, msg=json_response["post_msg"]);
-        } else { // Api call successful
-            successCallbackFct(json_response, props);
-            setDatabaseStatus(good=true, msg="");
-        }
+                failCallbackFct(json_response, props)
+                // Set status light and error message to red and response error msg
+                handleError({set_error: true, error_msg: json_response["post_msg"]});
+            } else { // Api call successful
+                successCallbackFct(json_response, props);
+                handleError({set_error: false, error_msg: "", clear_error_on_success: clear_existing_err_on_success});
+            }
 
-        return json_response['post_data'];
-    })
-    .fail(function (jqXHR) {
-        var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-        ajaxFailCallbackFct(jqXHR, props)
-        setDatabaseStatus(good=false, msg=errorMessage);
+            return json_response['post_data'];
+        })
+        .fail(function (jqXHR) {
+            var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
+            ajaxFailCallbackFct(jqXHR, props)
+            handleError({set_error: true, error_msg: errorMessage});
 
-        console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-        alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-        return false;
-    });
+            console.log(`Ajax Post: Error Occured: ${errorMessage}`);
+            alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
+            return false;
+        });
+    } catch(e) {
+        throw `sentJsonBlobToApi(): ${e}`;
+    }
 }
 
 
@@ -74,75 +117,108 @@ async function sentJsonBlobToApi( json_blob, api_url, http_request_method="POST"
 // Return a promise returned by sentJsonBlobToApi(), which should contain the POST response data if the api call was successful, and also returns the calling td_node, not the node it self, since the node it self is the select list and it's temporary, and it's a child of the td_node, and the td_node is the cell of the table
 // sql: INSERT
 async function sendCellToServer( node, api_url, http_request_method="POST", cell_html_type ) {
-    // console.log(id, new_value, table, column, td_node, old_val);
-    var old_val = $(node).attr("old_value")
-    var new_value = $(node).val().trim();
-    var td_node = $(node).parent("td");
-    $(node).remove();
+    try {
+        // console.log(id, new_value, table, column, td_node, old_val);
+        var old_val = $(node).attr("old_value")
+        var new_value = $(node).val().trim();
+        var td_node = $(node).parent("td");
+        $(node).remove();
 
-    id = td_node.data("id")
-    table = td_node.data("table")
-    column = td_node.data("column")
+        id = td_node.data("id")
+        table = td_node.data("table")
+        column = td_node.data("column")
 
-    json_obj_to_server = {
-        "id": id,
-        "new_value": new_value,
-        "table": table,
-        "column": column
+        json_obj_to_server = {
+            "id": id,
+            "new_value": new_value,
+            "table": table,
+            "column": column
+        }
+
+        props = {
+            'td_node': td_node,
+            'old_val': old_val,
+            'new_value': new_value,
+            'cell_html_type': cell_html_type,
+        }
+
+        api_json_response = await sentJsonBlobToApi({
+            json_blob           : json_obj_to_server,
+            api_url             : api_url,
+            http_request_method : http_request_method,
+            successCallbackFct : function(json_response, props) {
+                // successful api call call-back fct
+                td_node = props['td_node']
+                new_value = props['new_value']
+                cell_html_type = props['cell_html_type']
+
+                td_node.html(new_value);
+                finishEditMode(td_node, cell_html_type)
+            },
+            failCallbackFct : function(json_response, props) {
+                // bad api call call-back fct
+                td_node = props['td_node']
+                old_val = props['old_val']
+                cell_html_type = props['cell_html_type']
+
+                td_node.html(old_val);
+                finishEditMode(td_node, cell_html_type)
+            },
+            ajaxFailCallbackFct : function(jqXHR, props) {
+                // bad ajax call
+                td_node = props['td_node']
+                old_val = props['old_val']
+                cell_html_type = props['cell_html_type']
+
+                td_node.html(old_val);
+                finishEditMode(td_node, cell_html_type)
+            },
+            props               : props,
+        });
+
+        result = {
+            'td_node': td_node,
+            'api_json_response': api_json_response
+        }
+
+        return result
+    } catch(e) {
+        throw `sendCellToServer(): ${e}`;
     }
-
-    props = {
-        'td_node': td_node,
-        'old_val': old_val,
-        'new_value': new_value,
-        'cell_html_type': cell_html_type,
-    }
-
-    api_json_response = await sentJsonBlobToApi( json_blob=json_obj_to_server, api_url=api_url, http_request_method=http_request_method,
-        successCallbackFct=function(json_response, props) {
-            // successful api call call-back fct
-            td_node = props['td_node']
-            new_value = props['new_value']
-            cell_html_type = props['cell_html_type']
-
-            td_node.html(new_value);
-            finishEditMode(td_node, cell_html_type)
-        }, failCallbackFct=function(json_response, props) {
-            // bad api call call-back fct
-            td_node = props['td_node']
-            old_val = props['old_val']
-            cell_html_type = props['cell_html_type']
-
-            td_node.html(old_val);
-            finishEditMode(td_node, cell_html_type)
-        }, ajaxFailCallbackFct=function(jqXHR, props) {
-            // bad ajax call
-            td_node = props['td_node']
-            old_val = props['old_val']
-            cell_html_type = props['cell_html_type']
-
-            td_node.html(old_val);
-            finishEditMode(td_node, cell_html_type)
-        },
-        props
-    );
-    result = {
-        'td_node': td_node,
-        'api_json_response': api_json_response
-    }
-
-    return result
-
 };
 
 
 // sql: UPDATE
 async function sendModalFormDataToServer( json_blob, api_url, http_request_method="PUT", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
+    try {
+        await sentJsonBlobToApi({
+            json_blob           : json_blob,
+            api_url             : api_url,
+            http_request_method : http_request_method,
+            successCallbackFct  : successCallbackFct,
+            failCallbackFct     : failCallbackFct,
+            ajaxFailCallbackFct : ajaxFailCallbackFct,
+            props               : props,
+        });
+    } catch(e) {
+        throw `sendModalFormDataToServer(): ${e}`;
+    }
 };
 
 
 // sql: DELETE
 async function deleteRecordToServer( json_blob, api_url, http_request_method="DELETE", successCallbackFct=function() { return; }, failCallbackFct=function() { return; }, ajaxFailCallbackFct=function() { return; }, props={} ) {
-    await sentJsonBlobToApi(json_blob=json_blob, api_url=api_url, http_request_method=http_request_method, successCallbackFct=successCallbackFct, failCallbackFct=failCallbackFct, ajaxFailCallbackFct=ajaxFailCallbackFct, props);
+    try {
+        await sentJsonBlobToApi({
+            json_blob           : json_blob,
+            api_url             : api_url,
+            http_request_method : http_request_method,
+            successCallbackFct  : successCallbackFct,
+            failCallbackFct     : failCallbackFct,
+            ajaxFailCallbackFct : ajaxFailCallbackFct,
+            props               : props,
+        });
+    } catch(e) {
+        throw `deleteRecordToServer(): ${e}`;
+    }
 }

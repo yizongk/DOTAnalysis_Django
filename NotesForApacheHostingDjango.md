@@ -258,3 +258,18 @@ WAMP by default set up a service in Windows Services that started up apache. The
 * Install WAMP using installer from Bitnami web download
 * Make sure the "wampstackApache" service in Windows Services is using the correct service account.
     * Double click on the service, and go to the "Log On" tab, then select "This account". Input the username and password, and you should be good now.
+
+
+## Instruction for configuring Apache to use a venv installation of python when serving Django
+After installing mod_wsgi, put the following in the apache config:
+```
+LoadModule wsgi_module "${DJANGO_ROOT}/env/lib/site-packages/mod_wsgi/server/mod_wsgi.cp38-win_amd64.pyd"
+## Set WSGIPythonHome to this your python executable.
+WSGIPythonHome "C:/..../Python38"
+## Set WSGIPythonPath to where your env packages are installed.
+WSGIPythonPath "${DJANGO_ROOT}/env/Lib/site-packages"
+
+<VirtualHost *:443>
+...
+</VirtualHost>
+```

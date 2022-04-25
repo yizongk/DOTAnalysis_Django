@@ -7,11 +7,11 @@
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             Driver Assignment and Type Assignment Confirmation
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     <!--m5 vehicle driver and type assignment confirmation web grid-->
@@ -236,9 +236,25 @@
 
 
                 if ( $(this).data('column') == 'PMS' ) {
-                    enterCellEditSelectMode($(this), select_list_values, true, select_permitted_pms_list_additional_info_json, "display additional first")
+                    function custom_display(param) {
+                        // "display additional first"
+                        var selections          = param.selections
+                        var custom_data_json    = param.custom_data_json
+                        var options             = selections.map(function (each_select) {
+                            return `<option value='${each_select}'>${custom_data_json[each_select]} | ${each_select}</option>`
+                        }).join('')
+
+                        return options
+                    }
+                    enterCellEditSelectMode(
+                        td_node             = $(this),
+                        selections          = select_list_values,
+                        use_custom_display  = true,
+                        custom_data_json    = select_permitted_pms_list_additional_info_json,
+                        custom_display_fct  = custom_display
+                    )
                 } else if ( $(this).data('column') == 'Class2' ) {
-                    enterCellEditSelectMode($(this), select_list_values)
+                    enterCellEditSelectMode(td_node=$(this), selections=select_list_values)
                 } else {
                     console.log(`'${$(this).data('column')}' column not supported for editable-select cells edit`)
                     alert(`'${$(this).data('column')}' column not supported for editable-select cells edit`)

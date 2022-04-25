@@ -3,57 +3,46 @@
 {% load static %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
     <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             Users Panel
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     {% if client_is_admin %}
         <!-- Add new row button and modal form -->
-        <div>
-            <div class="modal fade" id="modalNewRowForm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
+        <div class="ui one column centered grid">
+            <div class="ui modal" id="modalNewRowForm">
+                <div class="content center aligned">
 
-                        <div class="modal-body mx-3">
-                            <div class="ui horizontal divider">Add new user</div>
+                    <div class="ui horizontal divider">Add new user</div>
 
-                            <div>Username</div>
-                            <div id="modalNewRowFormUsernameInputBorder" class="ui input">
-                                <input id="modalNewRowFormUsernameInput">
-                            </div>
-
-                            <div>Is Admin</div>
-                            <div id="modalNewRowFormSelectIsAdminInputBorder">
-                                <select id="modalNewRowFormSelectIsAdminInput" class="ui selection dropdown">
-                                    <option value="False">False</option>
-                                    <option value="True">True</option>
-                                </select>
-                            </div>
-
-                            <div class="d-flex justify-content-center">
-                                <button id="modalNewRowFormAddButton" class="btn btn-default">Add new user</button>
-                            </div>
-                        </div>
-                        <div id='successMsg'></div>
+                    <div>Username</div>
+                    <div id="modalNewRowFormUsernameInputBorder" class="ui input">
+                        <input id="modalNewRowFormUsernameInput">
                     </div>
+
+                    <div>Is Admin</div>
+                    <div id="modalNewRowFormSelectIsAdminInputBorder">
+                        <select id="modalNewRowFormSelectIsAdminInput" class="ui selection dropdown">
+                            <option value="False">False</option>
+                            <option value="True">True</option>
+                        </select>
+                    </div>
+
+                    <div class="ui horizontal divider">-</div>
+                    <button id="modalNewRowFormAddButton" class="ui teal large button">Add new user</button>
+
                 </div>
+                <div id='successMsg'></div>
             </div>
 
-            <div class="text-center">
-                <a href="" class="btn btn-default btn-rounded mb-4" data-toggle="modal" data-target="#modalNewRowForm">Add new user</a>
-            </div>
+            <button id="trigger_input" class="ui teal large button">Add new user</button>
         </div>
 
 
@@ -70,9 +59,9 @@
             <tbody>
                 {% for entry in users %}
                 <tr>
-                    <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="Username">{{ entry.username }}</td>
-                    <td data-id="{{ entry.user_id }}" data-table="tblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
-                    <td data-id="{{ entry.user_id }}" ></td>
+                    <td data-id="{{ entry.username }}" data-table="tblUser" data-column="Username">{{ entry.username }}</td>
+                    <td data-id="{{ entry.username }}" data-table="tblUser" data-column="IsAdmin" class="editable-select">{{ entry.is_admin }}</td>
+                    <td data-id="{{ entry.username }}" ></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -91,11 +80,19 @@
             // Initializing the existing select divs into a dropdown menu for Formantic UI
             $('#modalNewRowFormSelectIsAdminInput').dropdown();
 
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
+
             var table = $('#WebGridTable').DataTable({ // Set the default column content for the last column on the right side of the html table defined above
                 "columnDefs": [{
                     "targets": -1,
                     "data": null,
-                    "defaultContent": '<a class="deletable"><i class="fas fa-trash-alt"></i></a>'
+                    "defaultContent": '<a class="deletable"><i class="trash alternate icon"></i></a>'
                 }]
             });
 
@@ -125,7 +122,7 @@
                 select_array.sort(function(x, y) {
                     return x == current_value ? -1 : y == current_value ? 1 : 0;
                 });
-                enterCellEditSelectMode($(this), select_array)
+                enterCellEditSelectMode(td_node=$(this), selections=select_array)
             });
 
             $(document).on("keyup", ".input-data-select", function (e) {
@@ -143,9 +140,9 @@
             //$('.deletable').on("click", function() { // This doesn't seem to work, because the delegation is left to $(".deletable") selector, which haven't been created yet at this point when this code is reached by the compiler
             $('#WebGridTable').on("click", ".deletable", function() { // This seems to work because eh delegation is left to $("#WebGridTable") selector, which has been created at this point. Ref: https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
                 if (confirm(`Are you sure you want to delete User with Username: '${$(this).parent().parent().find(`[data-column='Username']`).html()}'?`)) {
-                    user_id = $(this).parent().attr('data-id')
+                    windows_username = $(this).parent().attr('data-id')
                     json_blob = {
-                        'user_id': user_id
+                        'windows_username': windows_username
                     }
 
                     props = {
@@ -201,15 +198,15 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_add_user_api' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.username}' added to Users table successfully!`)
+                        alert(`'${json_response.post_data.username}' added to Users table successfully!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.username, json_response.is_admin, ] )
+                        var rowNode = table.row.add( [ json_response.post_data.username, json_response.post_data.is_admin, ] )
                         .draw()
                         .node();
 
                         // Add user_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.user_id);
+                        $(rowNode).children().attr("data-id", json_response.post_data.username);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {

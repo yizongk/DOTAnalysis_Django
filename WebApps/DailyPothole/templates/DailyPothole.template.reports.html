@@ -5,20 +5,14 @@
 {% load extra_tags %}
 
 {% block custom_css %}
-    <!-- You MUST include jQuery before Fomantic -->
-    <script src="{% static 'WebAppsMain/js/jquery/3.3.1/jquery.min.js' %}"></script>
-    <script src="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.js' %}"></script>
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/fomantic-ui/2.8.7/semantic.min.css' %}">
-
-    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/DataTables/datatables.css' %}" />
 {% endblock %}
 
 {% block content %}
-    <div class="navbar navbar-expand-lg">
-        <h2 class="mt-3">
+    <div class="ui floating big message">
+        <h2>
             PDF Reports generation
         </h2>
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
 
@@ -55,14 +49,20 @@
                         <input id="reportingFormInputFITSStatenIsland"  readonly>
                     </div>
                     <div class="disabled field">
+                        <div>FITS Unassigned</div>
+                        <input id="reportingFormInputFITSUnassigned"    readonly>
+                    </div>
+                </div>
+
+                <div class="fields">
+                    <div class="disabled field">
                         <div>Open Siebel Reports</div>
                         <input id="reportingFormInputOpenSiebel"        readonly>
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-center">
-                    <button id="reportingFormSubmit" class="btn btn-default">Generate PDF</button>
-                </div>
+                <div class="ui horizontal divider"></div>
+                <button id="reportingFormSubmit" class="ui teal large button">Generate PDF</button>
 
             </div>
         </div>
@@ -131,7 +131,7 @@
                     successCallbackFct=function(json_response) {
                         //alert(`data saved successfully!`)
 
-                        fun_bytes_str = json_response.pdf_bytes
+                        fun_bytes_str = json_response.post_data.pdf_bytes
                         var blob = new Blob([fun_bytes_str], {type: "application/octet-stream"});
                         let date_name = `${ ReportDate.substring(5, ReportDate.length) + '-' + ReportDate.substring(0, 4) }`  // Should be MM-DD-YYYY now
                         date_name = date_name.replace(/-/g, '.')  // Replace all instance of '-' with '.'
@@ -153,6 +153,7 @@
                     $("#reportingFormInputFITSManhattan").val(    '')
                     $("#reportingFormInputFITSQueens").val(       '')
                     $("#reportingFormInputFITSStatenIsland").val( '')
+                    $("#reportingFormInputFITSUnassigned").val(   '')
                     $("#reportingFormInputOpenSiebel").val(       '')
                     return
                 } else {
@@ -167,18 +168,20 @@
                     sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'dailypothole_lookup_complaints_data_api' %}", http_request_method="POST",
                         successCallbackFct=function(json_response) {
 
-                            let fits_bronx          = json_response.fits_bronx == null           ? '' : json_response.fits_bronx
-                            let fits_brooklyn       = json_response.fits_brooklyn == null        ? '' : json_response.fits_brooklyn
-                            let fits_manhattan      = json_response.fits_manhattan == null       ? '' : json_response.fits_manhattan
-                            let fits_queens         = json_response.fits_queens == null          ? '' : json_response.fits_queens
-                            let fits_staten_island  = json_response.fits_staten_island == null   ? '' : json_response.fits_staten_island
-                            let open_siebel         = json_response.open_siebel == null          ? '' : json_response.open_siebel
+                            let fits_bronx          = json_response.post_data.fits_bronx == null           ? '' : json_response.post_data.fits_bronx
+                            let fits_brooklyn       = json_response.post_data.fits_brooklyn == null        ? '' : json_response.post_data.fits_brooklyn
+                            let fits_manhattan      = json_response.post_data.fits_manhattan == null       ? '' : json_response.post_data.fits_manhattan
+                            let fits_queens         = json_response.post_data.fits_queens == null          ? '' : json_response.post_data.fits_queens
+                            let fits_staten_island  = json_response.post_data.fits_staten_island == null   ? '' : json_response.post_data.fits_staten_island
+                            let fits_unassigned     = json_response.post_data.fits_unassigned == null      ? '' : json_response.post_data.fits_unassigned
+                            let open_siebel         = json_response.post_data.open_siebel == null          ? '' : json_response.post_data.open_siebel
 
                             $("#reportingFormInputFITSBronx").val(        fits_bronx);
                             $("#reportingFormInputFITSBrooklyn").val(     fits_brooklyn);
                             $("#reportingFormInputFITSManhattan").val(    fits_manhattan);
                             $("#reportingFormInputFITSQueens").val(       fits_queens);
                             $("#reportingFormInputFITSStatenIsland").val( fits_staten_island);
+                            $("#reportingFormInputFITSUnassigned").val(   fits_unassigned);
                             $("#reportingFormInputOpenSiebel").val(       open_siebel);
 
                         },

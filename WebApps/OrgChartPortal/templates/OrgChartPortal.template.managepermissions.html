@@ -1,0 +1,283 @@
+{% extends 'OrgChartPortal.template.base.html' %}
+
+{% load static %}
+
+{% block custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-theme-alpine.css' %}">
+
+    <style>
+        /* Dimming the notEditableColorCode column */
+        .notEditableColorCode {
+            background-color: lightgrey;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="ui floating big message">
+        <h2>
+            Manage Permissions
+        </h2>
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    </div>
+
+    {% if client_is_admin %}
+        <!-- Add new row button and modal form -->
+        <div class="ui one column centered grid">
+            <div class="ui modal" id="modalNewRowForm">
+                <div class="content center aligned">
+
+                    <div class="ui horizontal divider">Add new user permission by Work Unit Desc</div>
+                    <div>User</div>
+                    <div id="modalNewRowFormSelectUserByWUDescInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectUserByWUDescInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in user_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>Work Unit Desc</div>
+                    <div id="modalNewRowFormSelectWUDescInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectWUDescInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in wu_desc_list %}
+                                <option value="{{ each.wu }}">{{ each.wu }} - {{ each.wu_desc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ui horizontal divider">
+                        <button id="modalNewRowFormAddByWUDescButton" class="ui teal large button">Add new user permission by Work Unit Desc</button>
+                    </div>
+
+
+                    <div class="ui horizontal divider">Add new user permission by Division</div>
+                    <div>User</div>
+                    <div id="modalNewRowFormSelectUserByDivisionInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectUserByDivisionInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in user_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>Division</div>
+                    <div id="modalNewRowFormSelectDivisionInputBorder" class="ui input">
+                        <select id="modalNewRowFormSelectDivisionInput" class="ui selection dropdown">
+                            <option value=""></option>
+                            {% for each in division_list %}
+                                <option value="{{ each }}">{{ each }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ui horizontal divider">
+                        <button id="modalNewRowFormAddByDivisionButton" class="ui teal large button">Add new user permission by Division</button>
+                    </div>
+
+                </div>
+                <div id='successMsg'></div>
+            </div>
+
+            <button id="trigger_input" class="ui teal large button">Add new user permission</button>
+        </div>
+
+
+        <!--admin access control web grid-->
+        <div style="height: 40vw; width: auto;">
+            <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"></div>
+        </div>
+        <!--End admin access control web grid-->
+    {% endif %}
+{% endblock content %}
+
+{% block custom_js %}
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/AGGrid/v26.2.1/ag-grid-community.min.noStyle.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}" type=""></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/ApiCallWrappers.js' %}"></script>
+
+    <script>
+        $(document).ready( function () {
+            // Initializing the existing select divs into a dropdown menu for Formantic UI
+            $('#modalNewRowFormSelectUserByDivisionInput').dropdown();
+            $('#modalNewRowFormSelectDivisionInput').dropdown();
+            $('#modalNewRowFormSelectUserByWUDescInput').dropdown();
+            $('#modalNewRowFormSelectWUDescInput').dropdown();
+
+            if ( document.getElementById('trigger_input') != null ) {
+                document.getElementById('trigger_input').addEventListener("click", function() {
+                    $('#modalNewRowForm').modal('show')
+                });
+            } else {
+                alert(`Cannot find a div with the ID 'trigger_input'`)
+            }
+
+            function onFirstDataRendered(params) {
+                params.api.sizeColumnsToFit();
+            }
+
+            var col_def = {{ ag_grid_col_def_json|safe }};
+            var data    = {{ permissions_json|safe }};
+
+            for (col_i in col_def) {
+                ag_column = col_def[col_i];
+
+                if (ag_column.headerName == 'Delete?') {
+                    ag_column['cellRenderer']   = 'deleteCellRenderer';
+                }
+            }
+
+            var gridOptions = {
+                // PROPERTIES
+                // Objects like myRowData and myColDefs would be created in your application
+                //getRowNodeId: (data) => data.windows_username,
+                columnDefs: col_def,
+                rowData: data,
+                domLayout: 'normal',
+
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                    resizable: true,
+                },
+
+                onFirstDataRendered: onFirstDataRendered,
+                enableCellChangeFlash: true,
+                rowSelection: 'single',
+
+                stopEditingWhenCellsLoseFocus: true,
+                components: {
+                    deleteCellRenderer  : DeleteCellRenderer,
+                },
+            }
+
+            const gridDiv = document.getElementById('AGGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+
+
+            $('#AGGrid').on("click", ".deletable", function() {
+                // only 1 row is returned due to rowSelection: 'single' in gridOptions
+                const selected_row = gridOptions.api.getSelectedRows()[0];
+
+                if (confirm(`Are you sure you want to delete ('${selected_row.user_id__windows_username}' - '${selected_row.wu__wu}')?`)) {
+                    json_blob = {
+                        'windows_username'  : selected_row.user_id__windows_username,
+                        'perm_delete_by'    : 'wu',
+                        'perm_identifier'   : selected_row.wu__wu
+                    }
+
+                    sentJsonBlobToApi({
+                        json_blob           : json_blob,
+                        api_url             : "{% url 'orgchartportal_delete_user_permission' %}",
+                        http_request_method : "POST",
+                        successCallbackFct  : function(json_response) {
+                                                alert(`('${json_response.windows_username}' - '${json_response.perm_identifier}') removed successfully!`);
+                                                gridOptions.api.applyTransaction({ remove: [selected_row] });
+                                                return;
+                                            }
+                    })
+                }
+
+            });
+
+
+            $('#modalNewRowFormAddByWUDescButton').on("click", function() {
+                let user    = $("#modalNewRowFormSelectUserByWUDescInput").val();
+                let wu      = $("#modalNewRowFormSelectWUDescInput").val();
+
+                $('#modalNewRowFormSelectUserByWUDescInputBorder').css("border", "");
+                $('#modalNewRowFormSelectWUDescInputBorder').css("border", "");
+
+
+                if (user == '') {
+                    alert(`User cannot be empty`);
+                    $('#modalNewRowFormSelectUserByWUDescInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (wu == '') {
+                    alert(`WUDesc cannot be empty`);
+                    $('#modalNewRowFormSelectWUDescInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                json_blob = {
+                    "windows_username"  : user,
+                    "perm_add_by"       : 'wu',
+                    "perm_identifier"   : wu,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
+
+                        let new_wu_perms = json_response.wu_added_list;
+                        new_wu_perms.forEach(x => {
+                            gridOptions.api.applyTransaction({
+                                add     : [{
+                                            user_id__windows_username   : json_response.windows_username,
+                                            wu__wu                      : x.wu,
+                                            wu__subdiv                  : x.subdiv,
+                                            wu__wu_desc                 : x.wu_desc
+                                        }],
+                                addIndex: 0
+                            });
+                        });
+
+                        return;
+                    }
+                )
+            })
+
+
+            $('#modalNewRowFormAddByDivisionButton').on("click", function() {
+                let user    = $("#modalNewRowFormSelectUserByDivisionInput").val();
+                let subdiv  = $("#modalNewRowFormSelectDivisionInput").val();
+
+                $('#modalNewRowFormSelectUserByDivisionInputBorder').css("border", "");
+                $('#modalNewRowFormSelectDivisionInputBorder').css("border", "");
+
+
+                if (user == '') {
+                    alert(`User cannot be empty`);
+                    $('#modalNewRowFormSelectUserByDivisionInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                if (subdiv == '') {
+                    alert(`Division cannot be empty`);
+                    $('#modalNewRowFormSelectDivisionInputBorder').css("border", "2px solid red");
+                    return;
+                }
+
+                json_blob = {
+                    "windows_username"  : user,
+                    "perm_add_by"       : 'division',
+                    "perm_identifier"   : subdiv,
+                }
+
+                sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
+                    successCallbackFct=function(json_response) {
+                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
+
+                        let new_wu_perms = json_response.wu_added_list;
+                        new_wu_perms.forEach(x => {
+                            gridOptions.api.applyTransaction({
+                                add     : [{
+                                            user_id__windows_username   : json_response.windows_username,
+                                            wu__wu                      : x.wu,
+                                            wu__subdiv                  : x.subdiv,
+                                            wu__wu_desc                 : x.wu_desc
+                                        }],
+                                addIndex: 0
+                            });
+                        });
+
+                        return;
+                    }
+                )
+            })
+
+        });
+    </script>
+{% endblock custom_js %}

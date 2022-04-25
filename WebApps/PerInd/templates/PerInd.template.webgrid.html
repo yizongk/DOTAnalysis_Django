@@ -1,6 +1,23 @@
 {% extends 'PerInd.template.base.html' %}
 
 {% load static %}
+{% block custom_css %}
+    <!-- Popper.js is for Purple dropdowns (@TODO Replace with Fomantic UI) -->
+    <!-- Popper.js, and Vanilla jQuery -->
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/jquery/3.5.1/jquery.min.js' %}"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/popper/1.16.1/popper.min.js' %}"></script>
+
+    <!-- BootStrap JS and CSS -->
+    <script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'WebAppsMain/bootstrap/4.5.1/bootstrap.min.css' %}"/>
+
+    <!-- For the sort arrow css class -->
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+
+    <!-- Material Design Bootstrap (@TODO Replace with Fomantic UI) -->
+    <script type="text/javascript" src="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'WebAppsMain/mdbootstrap/4.19.1/mdb.min.css' %}"/>
+{% endblock %}
 <!-- Will contain the template for the WebGrid html -->
 {% block content %}
     <style>
@@ -14,17 +31,17 @@
         }
     </style>
 
-    <div class="navbar navbar-expand-lg">
+    <div>
         <!-- Collapse buttons -->
         <div>
-            <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+            <a class="ui primary button" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
                 Instructions: (Expand/Collapse)
             </a>
         </div>
         <!-- / Collapse buttons -->
         <!-- Collapsible element -->
         <div class="collapse" id="collapseExample">
-            <div class="mt-3">
+            <div>
                 Instructions<br>
                 1. Dataview: You will see all of your division's indicator until you have filtered for a smaller subset.<br><br>
                 2. Editing: The column in blue is editable!<br><br>
@@ -40,8 +57,8 @@
         </div>
         <!-- / Collapsible element -->
         <div><br>{% if client_is_admin %}(Admin) {% endif %}Permission: {% for each in category_permissions %}{{each}}, {% endfor %}</div>
-        <!-- <div class="status_info led_light">Database Status: {% if req_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div> -->
-        <div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+        <!-- <div class="status_info led_light">Database Status: {% if get_success %}<div class='led_green'></div>{% else %}<div class='led_red'></div>{% endif %}</div> -->
+        <div class="status_info error_msg">{% if not get_success %} Error: '{{ get_error }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
     </div>
 
     {% comment %}

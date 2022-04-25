@@ -1,3 +1,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css">
 https://github.com/fomantic/Fomantic-UI/tree/2.8.7/dist
+
+Download the files from github instead of jsdelivr, cuz it's easier (Use the "Download Directory" option in https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo):
+https://github.com/fomantic/Fomantic-UI/tree/2.8.7/dist
