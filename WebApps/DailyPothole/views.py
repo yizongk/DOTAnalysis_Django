@@ -743,7 +743,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_bronx < 0:
+            if fits_bronx is not None and fits_bronx < 0:
                 raise ValueError(f"fits_bronx cannot be a negative number: {fits_bronx}")
 
         try:
@@ -756,7 +756,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_brooklyn < 0:
+            if fits_brooklyn is not None and fits_brooklyn < 0:
                 raise ValueError(f"fits_brooklyn cannot be a negative number: {fits_brooklyn}")
 
         try:
@@ -769,7 +769,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_manhattan < 0:
+            if fits_manhattan is not None and fits_manhattan < 0:
                 raise ValueError(f"fits_manhattan cannot be a negative number: {fits_manhattan}")
 
         try:
@@ -782,7 +782,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_queens < 0:
+            if fits_queens is not None and fits_queens < 0:
                 raise ValueError(f"fits_queens cannot be a negative number: {fits_queens}")
 
         try:
@@ -795,7 +795,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_staten_island < 0:
+            if fits_staten_island is not None and fits_staten_island < 0:
                 raise ValueError(f"fits_staten_island cannot be a negative number: {fits_staten_island}")
 
         try:
@@ -808,7 +808,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if fits_unassigned < 0:
+            if fits_unassigned is not None and fits_unassigned < 0:
                 raise ValueError(f"fits_unassigned cannot be a negative number: {fits_unassigned}")
 
         try:
@@ -821,7 +821,7 @@ def UpdateComplaintsData(request):
         except Exception as e:
             raise
         finally:
-            if open_siebel < 0:
+            if open_siebel is not None and open_siebel < 0:
                 raise ValueError(f"open_siebel cannot be a negative number: {open_siebel}")
 
 

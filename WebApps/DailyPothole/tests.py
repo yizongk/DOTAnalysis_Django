@@ -612,13 +612,13 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
         self.api_name               = 'dailypothole_update_complaints_data_api'
         self.post_response_json_key_specifications = [
             {'name': 'complaint_date'       , 'null': False}
-            ,{'name': 'fits_bronx'          , 'null': False}
-            ,{'name': 'fits_brooklyn'       , 'null': False}
-            ,{'name': 'fits_manhattan'      , 'null': False}
-            ,{'name': 'fits_queens'         , 'null': False}
-            ,{'name': 'fits_staten_island'  , 'null': False}
-            ,{'name': 'fits_unassigned'     , 'null': False}
-            ,{'name': 'open_siebel'         , 'null': False}
+            ,{'name': 'fits_bronx'          , 'null': True}
+            ,{'name': 'fits_brooklyn'       , 'null': True}
+            ,{'name': 'fits_manhattan'      , 'null': True}
+            ,{'name': 'fits_queens'         , 'null': True}
+            ,{'name': 'fits_staten_island'  , 'null': True}
+            ,{'name': 'fits_unassigned'     , 'null': True}
+            ,{'name': 'open_siebel'         , 'null': True}
         ]
 
         self.valid_complaint_date         = f'{datetime.now().strftime("%Y-%m-%d")}'
@@ -634,6 +634,76 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
             {
                 'complaint_date'    : self.valid_complaint_date,
                 'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : ''
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : '',
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': '',
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : '',
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : self.valid_fits_brooklyn,
+                'fits_manhattan'    : '',
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : self.valid_fits_bronx,
+                'fits_brooklyn'     : '',
+                'fits_manhattan'    : self.valid_fits_manhattan,
+                'fits_queens'       : self.valid_fits_queens,
+                'fits_staten_island': self.valid_fits_staten_island,
+                'fits_unassigned'   : self.valid_fits_unassigned,
+                'open_siebel'       : self.valid_open_siebel
+            }
+            ,{
+                'complaint_date'    : self.valid_complaint_date,
+                'fits_bronx'        : '',
                 'fits_brooklyn'     : self.valid_fits_brooklyn,
                 'fits_manhattan'    : self.valid_fits_manhattan,
                 'fits_queens'       : self.valid_fits_queens,
@@ -674,13 +744,13 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
                 complaint_date__exact=payload['complaint_date'],
             )
 
-            self.assert_post_key_update_equivalence(key_name='fits_bronx'           , key_value=int(payload['fits_bronx'])         , db_value=saved_object.fits_bronx)
-            self.assert_post_key_update_equivalence(key_name='fits_brooklyn'        , key_value=int(payload['fits_brooklyn'])      , db_value=saved_object.fits_brooklyn)
-            self.assert_post_key_update_equivalence(key_name='fits_manhattan'       , key_value=int(payload['fits_manhattan'])     , db_value=saved_object.fits_manhattan)
-            self.assert_post_key_update_equivalence(key_name='fits_queens'          , key_value=int(payload['fits_queens'])        , db_value=saved_object.fits_queens)
-            self.assert_post_key_update_equivalence(key_name='fits_staten_island'   , key_value=int(payload['fits_staten_island']) , db_value=saved_object.fits_staten_island)
-            self.assert_post_key_update_equivalence(key_name='fits_unassigned'      , key_value=int(payload['fits_unassigned'])    , db_value=saved_object.fits_unassigned)
-            self.assert_post_key_update_equivalence(key_name='siebel_complaints'    , key_value=int(payload['open_siebel'])        , db_value=saved_object.siebel_complaints)
+            self.assert_post_key_update_equivalence(key_name='fits_bronx'           , key_value=int(payload['fits_bronx']) if payload['fits_bronx'] != '' else None                 , db_value=saved_object.fits_bronx)
+            self.assert_post_key_update_equivalence(key_name='fits_brooklyn'        , key_value=int(payload['fits_brooklyn']) if payload['fits_brooklyn'] != '' else None           , db_value=saved_object.fits_brooklyn)
+            self.assert_post_key_update_equivalence(key_name='fits_manhattan'       , key_value=int(payload['fits_manhattan']) if payload['fits_manhattan'] != '' else None         , db_value=saved_object.fits_manhattan)
+            self.assert_post_key_update_equivalence(key_name='fits_queens'          , key_value=int(payload['fits_queens']) if payload['fits_queens'] != '' else None               , db_value=saved_object.fits_queens)
+            self.assert_post_key_update_equivalence(key_name='fits_staten_island'   , key_value=int(payload['fits_staten_island']) if payload['fits_staten_island'] != '' else None , db_value=saved_object.fits_staten_island)
+            self.assert_post_key_update_equivalence(key_name='fits_unassigned'      , key_value=int(payload['fits_unassigned']) if payload['fits_unassigned'] != '' else None       , db_value=saved_object.fits_unassigned)
+            self.assert_post_key_update_equivalence(key_name='siebel_complaints'    , key_value=int(payload['open_siebel']) if payload['open_siebel'] != '' else None               , db_value=saved_object.siebel_complaints)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -699,7 +769,7 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
         for param_name in parameters:
             if param_name == 'complaint_date':
                 valid   = [f'{datetime.now().strftime("%Y-%m-%d")}']
-                invalid = ['a', 1, 2.3, False]
+                invalid = ['a', 1, 2.3, False, None]
             elif param_name in ['fits_bronx', 'fits_brooklyn', 'fits_manhattan', 'fits_queens', 'fits_staten_island', 'fits_unassigned', 'open_siebel']:
                 valid   = ['0', '1']
                 invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
