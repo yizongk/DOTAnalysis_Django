@@ -4,6 +4,8 @@
 {% block custom_css %}
 <link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
 <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+<script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+<script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}"></script>
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
 {% endblock %}
@@ -45,41 +47,9 @@
                 }) 
                 return false;
             }; 
-            
             var col_def = {{ columnDefs|safe}};
             var data_display = {{ datadisplay|safe}};
-
-            var editable_col = [                                            // @TODO
-                'DIV'
-                ,'WorkUnitDescription'
-                , 'DivisionGroup'
-                , 'SubDivision'
-                , 'Active'
-            ];
-
-            for (i in col_def) {
-                ag_col = col_def[i];
-
-                // If column was specified to be editable
-                if ( editable_col.includes(ag_col.headerName) ) {
-                    ag_col['editable']      = true;
-                    ag_col['valueSetter']   = cellValueSetter;    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
-                }
-            };
             
-            var gridOptions = {
-                columnDefs: col_def,
-                rowData: data_display,
-                defaultColDef: {
-                    sortable: true,
-                    filter: true,
-                },
-                enableCellChangeFlash: true,
-            };
-            const eGridDiv = document.getElementById('AGGrid');
-            // // create the grid passing in the div to use together with the columns & data we want to use
-            new agGrid.Grid(eGridDiv, gridOptions);
-
             function cellValueSetter(ag_node) { 
                 // console.log('got here')
                 // Link to doc: https://www.ag-grid.com/javascript-data-grid/value-setters/#value-setter
@@ -112,6 +82,55 @@
                 };
                 console.log(ajaxCall({post_params: post_params, success_callback: success_callback})); //returns false
             };
+            
+            class ActiveCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                // Quick deep copy, only works with basic data type
+                let dropdown = ['True', 'False']
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                    select_id                       : 'user_active_select',
+                };
+                this.initBase(super_params);
+            }};
+
+            var editable_col = [                                            // @TODO
+                'DIV'
+                ,'WorkUnitDescription'
+                , 'DivisionGroup'
+                , 'SubDivision'
+                , 'Active'
+                , 'Is Admin'
+            ];
+            for (i in col_def) {
+                ag_col = col_def[i];
+
+                // If column was specified to be editable
+                if (editable_col.includes(ag_col.headerName) ) {
+                    ag_col['editable']      = true;
+                    ag_col['valueSetter']   = cellValueSetter;    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
+                }
+                if (ag_col.headerName == 'Active') {
+                    ag_col['cellEditor']   = 'ActiveCellEditor';    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
+                }
+            };
+            var gridOptions = {
+                columnDefs: col_def,
+                rowData: data_display,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                },
+                enableCellChangeFlash: true,
+                components: {
+                    ActiveCellEditor                    : ActiveCellEditor,
+                },
+            };
+            const eGridDiv = document.getElementById('AGGrid');
+            // // create the grid passing in the div to use together with the columns & data we want to use
+            new agGrid.Grid(eGridDiv, gridOptions);
         });
     </script>
 {% endblock custom_js %}

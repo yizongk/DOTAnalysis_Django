@@ -59,6 +59,7 @@ def get_active_emp_qryset(
         ,'wu_desc'
         ,'div_group'
         ,'subdiv'
+        , 'active'
         ]):
         qryset = TblWorkUnits.objects.using('LookupTableManager').all()
         return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
@@ -75,20 +76,6 @@ class LookUpView(ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        # columnDefs = [
-        # {'headerName': 'WU', 'field': 'wu'}
-        # ,{'headerName': 'DIV', 'field': 'div'}
-        # ,{'headerName': 'WorkUnitDescription', 'field': 'wu_desc'}
-        # ,{'headerName': 'DivisionGroup', 'field': 'div_group'}
-        # ,{'headerName': 'SubDivision', 'field': 'subdiv'}
-        # ]
-        # fields_list = [each['field'] for each in columnDefs]
-        # Workunit = get_active_emp_qryset(fields_list= fields_list)
-        # self.Workunit = json.dumps(list(Workunit), cls=DjangoJSONEncoder)
-
-        # Check for Approved Admins
-        # Implement here- user_is_active_admin
-        # STILL NEEDS WORK WITH USER AUTHENTICATION
         self.client_is_admin = user_is_active_admin(self.request.user)
         try:
             if not self.client_is_admin:
@@ -123,7 +110,6 @@ class LookUpView(ListView):
                 ,{'headerName': 'SubDivision', 'field': 'subdiv'}
                 ,{'headerName': 'Active', 'field': 'active'}
             ]
-
             context                         = super().get_context_data(**kwargs)
             context["req_success"]          = self.req_success
             context["err_msg"]              = self.err_msg
