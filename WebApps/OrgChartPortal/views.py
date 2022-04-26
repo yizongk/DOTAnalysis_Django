@@ -376,6 +376,8 @@ class EmpUpdateAndTrack:
                 if employee_row.actual_floor_id is not None and employee_row.actual_floor_id.floor_id == new_floor_obj.floor_id:
                     ## Return False because new value is same as old value
                     return False
+                elif employee_row.actual_site_id is None:
+                    raise ValueError(f"Cannot set the floor for employee when their site is null")
                 elif employee_row.actual_site_id.site_id != new_floor_obj.site_id.site_id:
                     ## Floor_Id must be associated with employee's current Site_Id
                     raise ValueError(f"Floor ({new_floor_obj.floor}-{self.new_value}) is not a valid floor for ({employee_row.actual_site_id.site}-{employee_row.actual_site_id.site_id})")
