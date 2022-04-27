@@ -49,27 +49,50 @@ class HttpPostTestCase(unittest.TestCase):
     def post_and_get_json_response(self, payload):
         return decode_json_response_for_content( self.__post_to_api(payload) )
 
-    def assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+    def assert_request_param_good(self, valid_payload, testing_param_name, testing_data, param_is_good_fct=None):
+        """
+            Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully
+
+            if @param_is_good_fct is not None, it will assert @param_is_good_fct is True instead of assert post_success == True
+                @param_is_good_fct is a function that will take in the response content as its only argument, and should return True if response content is good or False otherwise.
+        """
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
         content                     = decode_json_response_for_content(response)
 
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+        assert_failed_msg = f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}"
 
-    def assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        if param_is_good_fct is not None:
+            self.assertTrue(
+                param_is_good_fct(content),
+                assert_failed_msg)
+        else:
+            self.assertEqual(
+                content['post_success'], True,
+                assert_failed_msg)
+
+    def assert_request_param_bad(self, valid_payload, testing_param_name, testing_data, param_is_good_fct=None):
+        """
+            Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully
+
+            if @param_is_good_fct is not None, it will assert post_msg == @param_is_good_fct instead of assert post_success == True
+        """
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
         content                     = decode_json_response_for_content(response)
 
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+        assert_failed_msg = f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}"
+
+        if param_is_good_fct is not None:
+            self.assertTrue(
+                param_is_good_fct(content),
+                assert_failed_msg)
+        else:
+            self.assertEqual(
+                content['post_success'], False,
+                assert_failed_msg)
 
     def assert_response_has_param(self, response_content, response_param_name):
         self.assertTrue(response_param_name in response_content['post_data'],
@@ -133,6 +156,22 @@ class HttpPostTestCase(unittest.TestCase):
     def assert_post_key_lookup_equivalence(self, key_name, key_value, db_value):
         self.assertEqual(str(key_value), str(db_value),
             f"POST post_data key '{key_name}' didn't look up correctly: '{db_value}' database-->response '{key_value}'" )
+
+    def assert_post_with_valid_payload_is_success(self, payload):
+        """
+            POST the payload, assert post_success is True, and assert that the response got back all the required post_data keys and only those keys and nothing else
+            return the response content
+        """
+        response_content = self.post_and_get_json_response(payload)
+
+        ## Check that the request was successful
+        self.assertTrue(response_content['post_success'],
+            f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+        ## Check that the returned JSON Response got all the data it required
+        self.assert_response_satisfy_param_requirements(response_content=response_content)
+
+        return response_content
 
 
 def validate_core_get_api_response_context(response):
