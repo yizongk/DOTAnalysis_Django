@@ -108,6 +108,7 @@ def get_allowed_list_of_wu(username=None):
         wu_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
             user_id__windows_username=username
             ,user_id__active=True
+            ,is_active=True
         ).order_by('wu__wu')
 
         if wu_query.count() > 0:
@@ -127,7 +128,7 @@ def get_active_tblemployee_qryset(read_only=True):
         Lv status 'L' is usually Inactive, but when it is due to 'B10' Leave Status Reason (Look up from payroll history), that employee is actually Active
     """
     try:
-        latest_pay_date = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
+        latest_pay_date     = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
         active_L_pms_qryset = TblPayrollHistory.objects.using('HRReportingRead').filter(
             lv__exact='L'
             ,lv_reason_code__exact='B10'
@@ -609,6 +610,7 @@ def GetClientWUPermissions(request):
             wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
                     user_id__windows_username=remote_user
                     ,user_id__active=True
+                    ,is_active=True
                 ).order_by('wu__wu')
 
             wu_permissions_list_json = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
@@ -660,6 +662,7 @@ def GetClientTeammates(request):
             teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
                 wu__wu__in=wu_permissions_list
                 ,user_id__active=True
+                ,is_active=True
             ).order_by('user_id__pms')
 
             teammates_list_json = list(teammates_query.values('user_id__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))

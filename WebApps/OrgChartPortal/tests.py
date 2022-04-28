@@ -6,8 +6,10 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
+import json
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
 from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase
+from django.db.models import Max, Q
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
 
@@ -106,6 +108,32 @@ def tear_down(windows_username=TEST_WINDOWS_USERNAME):
         raise ValueError(f"tear_down(): {e}")
 
 
+def get_active_lv_list():
+    return ['B', 'C', 'K', 'M', 'N', 'Q', 'R', 'S']
+
+
+def get_active_tblemployee_qryset():
+    """
+        Return a queryset filtered to contain only records with active lv status plus a subset of 'L' leave status
+        Lv status 'L' is usually Inactive, but when it is due to 'B10' Leave Status Reason (Look up from payroll history), that employee is actually Active
+    """
+    try:
+        latest_pay_date     = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
+        active_L_pms_qryset = TblPayrollHistory.objects.using('HRReportingRead').filter(
+            lv__exact='L'
+            ,lv_reason_code__exact='B10'
+            ,paydate__exact=latest_pay_date
+        )
+        active_L_pms_list = [each['pms'] for each in list(active_L_pms_qryset.values('pms', 'lname', 'fname'))]
+
+        return TblEmployees.objects.using('OrgChartRead').filter(
+            Q( lv__in=get_active_lv_list() )
+            | Q( pms__in=active_L_pms_list )
+        )
+    except Exception as e:
+        raise ValueError(f"get_active_tblemployee_qryset(): {e}")
+
+
 # Create your tests here.
 class TestViewPagesResponse(unittest.TestCase):
     @classmethod
@@ -188,7 +216,81 @@ class TestViewPagesResponse(unittest.TestCase):
             self.assertTrue(additional_context_key in response_context_keys,
                 f"{view} response is missing this view defined context key '{additional_context_key}'")
 
+    def __assert_empgrid_additional_context_data_quality(self, response):
+        ## Make sure the emp_entry_columns_json got all the required fields
+        emp_entry_columns_dict  = json.loads(response.context_data['emp_entry_columns_json'])
+        fields_api              = set(each['field'] for each in emp_entry_columns_dict)
+        fields_base             = set([
+            'pms'
+            ,'last_name'
+            ,'first_name'
+            ,'lv'
+            ,'wu__wu'
+            ,'civil_title'
+            ,'office_title'
+            ,'supervisor_pms__pms'
+            ,'actual_site_id__site_id'
+            ,'actual_floor_id__floor_id'
+            ,'actual_site_type_id__site_type_id'])
+        if len(fields_api) > len(fields_base):
+            raise ValueError(f"orgchartportal_empgrid_view: context variable emp_entry_columns_json got back more fields than expected. These are the unexpected fields: {fields_api - fields_base}")
+        self.assertTrue(fields_api == fields_base
+            ,f'orgchartportal_empgrid_view: context variable emp_entry_columns_json is missing some fields: {fields_base -  fields_api}')
+
+        ## Make sure emp_entries_json has only WUs that client has permission to
+        emp_entries_dict    = json.loads(response.context_data['emp_entries_json'])
+        distinct_wu         = set(each['wu__wu'] for each in emp_entries_dict)
+        user = get_or_create_user(windows_username=TEST_WINDOWS_USERNAME)
+        if user.is_admin:
+            permissions_wu  = set(each.wu for each in TblWorkUnits.objects.using('OrgChartRead').all())
+        else:
+            permissions_wu  = set(each.wu.wu for each in TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(user_id__windows_username__exact=TEST_WINDOWS_USERNAME, is_active=True))
+        if len(permissions_wu) > len(distinct_wu):
+            missing_wus = permissions_wu - distinct_wu
+            if get_active_tblemployee_qryset().filter(wu__wu__in=missing_wus).count() == 0:
+                ## the missing_wus actually doesn't exists in the active list of employees, no error here, remove it from list and moving on.
+                permissions_wu = permissions_wu - missing_wus
+            else:
+                raise ValueError(f"orgchartportal_empgrid_view: Did not get back any emp with these Work Units even though permission allows it: {missing_wus}")
+        self.assertTrue(distinct_wu == permissions_wu
+            ,f'orgchartportal_empgrid_view: Got back an entry with work unit that "{TEST_WINDOWS_USERNAME}" does not have permission to. Here are the Work Units that it got, but should not have {distinct_wu - permissions_wu}"')
+
+        ## Make sure a list of all active employees is returned in supervisor dropdown
+        supervisor_dropdown_dict    = json.loads(response.context_data['supervisor_dropdown_list_json'])
+        count_of_all_api            = len([each for each in supervisor_dropdown_dict])
+        count_of_all_base           = len([each for each in get_active_tblemployee_qryset()])
+        self.assertTrue(count_of_all_base == count_of_all_api
+            ,f'orgchartportal_empgrid_view: Did not get back a list of ALL active employees in the supervisor_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
+
+        ## Make sure a list of all sites is returned in site dropdown
+        site_dropdown_dict  = json.loads(response.context_data['site_dropdown_list_json'])
+        count_of_all_api    = len([each for each in site_dropdown_dict])
+        count_of_all_base   = len([each for each in TblDOTSites.objects.using('OrgChartRead').all()])
+        self.assertTrue(count_of_all_base == count_of_all_api
+            ,f'orgchartportal_empgrid_view: Did not get back a list of ALL sites in the site_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
+
+        ## Make sure a list of all site floors is returned in site floor dropdown
+        site_floor_dropdown_dict    = json.loads(response.context_data['site_floor_dropdown_list_json'])
+        count_of_all_api            = len([each for each in site_floor_dropdown_dict])
+        count_of_all_base           = len([each for each in TblDOTSiteFloors.objects.using('OrgChartRead').all()])
+        self.assertTrue(count_of_all_base == count_of_all_api
+            ,f'orgchartportal_empgrid_view: Did not get back a list of ALL site floors in the site_floor_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
+
+        ## Make sure a list of all site type site floors is returned in site type dropdown
+        site_type_dropdown_dict     = json.loads(response.context_data['site_type_dropdown_list_json'])
+        count_of_all_api            = len([each for each in site_type_dropdown_dict])
+        count_of_all_base           = len([each for each in TblDOTSiteFloorSiteTypes.objects.using('OrgChartRead').values(
+                                        'site_type_id__site_type_id'
+                                        ,'site_type_id__site_type'
+                                        ,'floor_id__floor_id'
+                                        ,'floor_id__site_id'
+                                    ).all()])
+        self.assertTrue(count_of_all_base == count_of_all_api
+            ,f'orgchartportal_empgrid_view: Did not get back a list of ALL site floor + site types in the site_type_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
+
     def __assert_additional_context_data(self):
+        """Test normal user"""
+        remove_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             if view == 'orgchartportal_empgrid_view':
@@ -201,6 +303,23 @@ class TestViewPagesResponse(unittest.TestCase):
                     ,'site_type_dropdown_list_json'
                 ]
                 self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
+                self.__assert_empgrid_additional_context_data_quality(response=response)
+
+        """Test admin user"""
+        grant_admin_status()
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if view == 'orgchartportal_empgrid_view':
+                view_defined_additional_context_keys = [
+                    'emp_entry_columns_json'
+                    ,'emp_entries_json'
+                    ,'supervisor_dropdown_list_json'
+                    ,'site_dropdown_list_json'
+                    ,'site_floor_dropdown_list_json'
+                    ,'site_type_dropdown_list_json'
+                ]
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
+                self.__assert_empgrid_additional_context_data_quality(response=response)
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
