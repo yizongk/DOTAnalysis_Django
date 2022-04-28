@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
+from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
 from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
@@ -17,9 +17,16 @@ DEFAULT_WORK_UNIT = '1600'
 def get_or_create_user(windows_username=TEST_WINDOWS_USERNAME):
     """create or get an user and return the user object. Defaults to TEST_WINDOWS_USERNAME as the user"""
     try:
+        wu = TblWorkUnits.objects.using('OrgChartWrite').get(
+            wu__exact=DEFAULT_WORK_UNIT
+        )
+
         pms = TblEmployees.objects.using('OrgChartWrite').get_or_create(
             pms=TEST_PMS
         )[0]
+        pms.lv='B'
+        pms.wu=wu
+        pms.save(using='OrgChartWrite')
 
         return TblUsers.objects.using('OrgChartWrite').get_or_create(
             windows_username=windows_username
@@ -222,3 +229,315 @@ class TestViewPagesResponse(unittest.TestCase):
         # Test admin user
         grant_admin_status()
         self.__assert_additional_context_data()
+
+
+class TestAPIUpdateEmployeeData(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_update_employee_data'
+        self.post_response_json_key_specifications = []
+
+
+        tear_down()
+        set_up_permissions()
+        get_or_create_user()
+        self.test_pms   = TEST_PMS
+
+        self.__null_out_test_pms_obj(self)
+
+        ## Sequence 0, should work anytime
+        self.valid_payload0 = [
+            {
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Supervisor'
+                ,'new_value'    : TEST_SUPERVISOR_PMS
+            }
+            ,{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Office Title'
+                ,'new_value'    : 'Hello World!'
+            }
+            ,{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site'
+                ,'new_value'    : 'BK.H'
+            }
+            ,{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Floor'
+                ,'new_value'    : 'BK.H.1'
+            }
+            ,{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site Type'
+                ,'new_value'    : '13'
+            }
+        ]
+        ## Sequence 1: Test auto null out of site floor and site type when site is changed
+        self.valid_payload1 = [
+            {
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site'
+                ,'new_value'    : 'MN.H'
+            }
+        ]
+        ## Sequence 2: Test null out of site type when site floor is changed, must use a floor id that has multiple possible site type to it, so it doesn't trigger the API's auto populate of site type id if there's only one possible site type id
+        self.valid_payload2 = [
+            {
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site'
+                ,'new_value'    : 'BK.D'
+            },{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Floor'
+                ,'new_value'    : 'BK.D.2'
+            }
+        ]
+        ## Sequence 3: Test auto set site type when site floor has only one site type, like 'MN.H.9'
+        self.valid_payload3 = [
+            {
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site'
+                ,'new_value'    : 'MN.H'
+            },{ ## Floor change to MN.H.9 should also set the actual stie type since there's only one valid floor site for that site floor. Make sure to check it in the '## Check if data was saved correctly and if tblChanges was updated correctly' section
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Floor'
+                ,'new_value'    : 'MN.H.9'
+            }
+        ]
+        ## Sequence 4: Test site type direct update, but first will need to reset site floor to another site floor with multiple site types
+        self.valid_payload4 = [
+            {
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site'
+                ,'new_value'    : 'BK.B'
+            },{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Floor'
+                ,'new_value'    : 'BK.B.1'  ## Should accept 7 or 3 for site type
+            },{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site Type'
+                ,'new_value'    : '3'
+            }
+            ,{
+                'to_pms'        : self.test_pms
+                ,'column_name'  : 'Site Type'
+                ,'new_value'    : '7'
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        self.__null_out_test_pms_obj(self)
+        tear_down()
+
+    def test_with_valid_data(self):
+        ## Sequence 0
+        self.__null_out_test_pms_obj()
+        for payload in self.valid_payload0:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly and if tblChanges was updated correctly
+            saved_object = TblEmployees.objects.using('OrgChartRead').get(
+                pms=self.test_pms
+            )
+
+            if payload['column_name'] == 'Supervisor':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.supervisor_pms.pms)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='SupervisorPMS', proposed_new_value=payload['new_value'])
+            elif payload['column_name'] == 'Office Title':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.office_title)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='OfficeTitle', proposed_new_value=payload['new_value'])
+            elif payload['column_name'] == 'Site':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_site_id.site_id)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteId', proposed_new_value=payload['new_value'])
+            elif payload['column_name'] == 'Floor':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_floor_id.floor_id)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualFloorId', proposed_new_value=payload['new_value'])
+            elif payload['column_name'] == 'Site Type':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_site_type_id.site_type_id)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteTypeId', proposed_new_value=payload['new_value'])
+            else:
+                raise ValueError(f"uncaught payload param value in test case (Remove it, or add a test case for it): '{payload['column_name']}'")
+
+        ## Sequence 1 - Test auto null out of site floor and site type when site is changed
+        self.__null_out_test_pms_obj()
+        ### Random value set to floor and site type to test the null out
+        test_emp = TblEmployees.objects.using('OrgChartWrite').get(
+            pms=self.test_pms
+        )
+        test_emp.actual_floor_id        = TblDOTSiteFloors.objects.using('OrgChartWrite').get(floor_id__exact='BK.E.16')
+        test_emp.actual_site_type_id    = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact='3')
+        test_emp.save(using='OrgChartWrite')
+        for payload in self.valid_payload1:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly and if tblChanges was updated correctly
+            saved_object = TblEmployees.objects.using('OrgChartRead').get(
+                pms=self.test_pms
+            )
+
+            if payload['column_name'] == 'Site':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_site_id.site_id)
+                self.assert_post_key_update_equivalence(key_name='Change Site -> Auto Null out of Site Floor', key_value=None, db_value=saved_object.actual_floor_id)
+                self.assert_post_key_update_equivalence(key_name='Change Site -> Auto Null out of Site Type', key_value=None, db_value=saved_object.actual_site_type_id)
+
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteId', proposed_new_value=payload['new_value'])
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualFloorId', proposed_new_value=None)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteTypeId', proposed_new_value=None)
+            else:
+                raise ValueError(f"uncaught payload param value in test case (Remove it, or add a test case for it): '{payload['column_name']}'")
+
+        ## Sequence 2 - Test null out of site type when site floor is changed
+        self.__null_out_test_pms_obj()
+        ### Random value set to site type to test the null out
+        test_emp = TblEmployees.objects.using('OrgChartWrite').get(
+            pms=self.test_pms
+        )
+        test_emp.actual_site_type_id    = TblDOTSiteTypes.objects.using('OrgChartWrite').get(site_type_id__exact='3')
+        test_emp.save(using='OrgChartWrite')
+        for payload in self.valid_payload2:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly and if tblChanges was updated correctly
+            saved_object = TblEmployees.objects.using('OrgChartRead').get(
+                pms=self.test_pms
+            )
+
+            if payload['column_name'] == 'Site':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_site_id.site_id)
+
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteId', proposed_new_value=payload['new_value'])
+            elif payload['column_name'] == 'Floor':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=saved_object.actual_floor_id.floor_id)
+                self.assert_post_key_update_equivalence(key_name='Change Floor -> Auto Null out of Site Type', key_value=None, db_value=saved_object.actual_site_type_id)
+
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualFloorId', proposed_new_value=payload['new_value'])
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteTypeId', proposed_new_value=None)
+            else:
+                raise ValueError(f"uncaught payload param value in test case (Remove it, or add a test case for it): '{payload['column_name']}'")
+
+        ## Sequence 3 - Test auto set site type when site floor has only one site type, like 'MN.H.9'
+        self.__null_out_test_pms_obj()
+        for payload in self.valid_payload3:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly and if tblChanges was updated correctly
+            saved_object = TblEmployees.objects.using('OrgChartRead').get(
+                pms=self.test_pms
+            )
+
+            if payload['column_name'] == 'Site':
+                ## A change of Site should also null out site floor and site type. Check if data saved, and tracked in tblChanges
+                self.assert_post_key_update_equivalence(key_name=payload['column_name']                     , key_value=payload['new_value'], db_value=saved_object.actual_site_id.site_id)
+                self.assert_post_key_update_equivalence(key_name='Change Site -> Auto Null out of Floor'    , key_value=None                , db_value=saved_object.actual_floor_id)
+                self.assert_post_key_update_equivalence(key_name='Change Site -> Auto Null out of Site Type', key_value=None                , db_value=saved_object.actual_site_type_id)
+
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteId'     , proposed_new_value=payload['new_value'])
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualFloorId'    , proposed_new_value=None)
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteTypeId' , proposed_new_value=None)
+            elif payload['column_name'] == 'Floor':
+                ## 'MN.H.9' should also have set site type id to 7
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'] , db_value=saved_object.actual_floor_id.floor_id)
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value='7'                  , db_value=saved_object.actual_site_type_id.site_type_id)
+
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualFloorId'    , proposed_new_value=payload['new_value'])
+                self.__assert_delta_tracked_in_tblChanges(proposed_by_pms=self.test_pms, proposed_to_pms=payload['to_pms'], proposed_column_name='ActualSiteTypeId' , proposed_new_value='7')
+            else:
+                raise ValueError(f"uncaught payload param value in test case (Remove it, or add a test case for it): '{payload['column_name']}'")
+
+    def test_data_validation(self):
+        f"""Testing {self.api_name} data validation"""
+
+        payloads = self.valid_payload0
+        parameters = [
+            # Parameter name    # Accepted type
+            "to_pms"            # str   -> int formatted str of len 7
+            ,"column_name"      # str   -> must be one of the follow ['Supervisor', 'Office Title', 'Site', 'Floor', 'Site Type']
+            ,"new_value"        # str   -> depends on the @column_name that was given
+        ]
+        for payload in payloads:
+            for param_name in parameters:
+
+                if param_name == 'to_pms':
+                    valid   = [self.test_pms]
+                    invalid = ['a', 1, 2.3, None, True, 'a123456', '12345678']
+                elif param_name == 'column_name':
+                    valid   = ['Supervisor', 'Office Title', 'Site', 'Floor', 'Site Type']
+                    invalid = ['a', 1, 2.3, None, True]
+                elif param_name == 'new_value':
+                    if payload['column_name'] == 'Supervisor':
+                        valid   = [TEST_SUPERVISOR_PMS]
+                        invalid = ['a', 1, 2.3, None, True, 'a123456', '12345678']
+                    elif payload['column_name'] == 'Office Title':
+                        valid   = ['Test Office Title Input']
+                        invalid = [1, 2.3, None, True]
+                    elif payload['column_name'] == 'Site':
+                        valid   = ['BK.H']
+                        invalid = ['a', 1, 2.3, None, True]
+                    elif payload['column_name'] == 'Floor':
+                        valid   = ['BK.H.1']
+                        invalid = ['a', 1, 2.3, None, True]
+                    elif payload['column_name'] == 'Site Type':
+                        valid   = ['13']
+                        invalid = ['a', 1, 2.3, None, True]
+                else:
+                    raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+                def special_param_good_cond(res_content):
+                    if (
+                        (res_content['post_success'] == True)
+                        or (
+                            res_content['post_success'] == False
+                            and any([
+                                'No change in data, no update needed.' in res_content['post_msg']       ## this error message in save() only gets called when it all pass data validation
+                                ]))):
+                        return True
+                    else:
+                        return False
+
+                def special_param_good_cond_for_column_name(res_content):
+                    if (
+                        (res_content['post_success'] == True)
+                        or (
+                            res_content['post_success'] == False
+                            and any([
+                                'is not an editable column' not in res_content['post_msg']      ## for column_names, it will only fail data validation if error message is a specific one
+                                ]))):
+                        return True
+                    else:
+                        return False
+
+                for data in valid:
+                    if param_name == 'column_name':
+                        self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data, param_is_good_fct=special_param_good_cond_for_column_name)
+                    else:
+                        self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data, param_is_good_fct=special_param_good_cond)
+
+                for data in invalid:
+                    self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+    def __null_out_test_pms_obj(self):
+        test_pms_obj = TblEmployees.objects.using('OrgChartWrite').get(pms=self.test_pms)
+        test_pms_obj.supervisor_pms         = None
+        test_pms_obj.office_title           = None
+        test_pms_obj.actual_site_id         = None
+        test_pms_obj.actual_floor_id        = None
+        test_pms_obj.actual_site_type_id    = None
+        test_pms_obj.save(using='OrgChartWrite')
+
+    def __get_latest_changes_obj_by(self, by_pms, to_pms, column_name):
+        try:
+            return TblChanges.objects.using('OrgChartRead').filter(
+                updated_by_pms__exact=by_pms
+                ,updated_to_pms__exact=to_pms
+                ,column_name__exact=column_name
+            ).order_by('-updated_on').first()
+        except:
+            raise
+
+    def __assert_delta_tracked_in_tblChanges(self, proposed_by_pms, proposed_to_pms, proposed_column_name, proposed_new_value):
+        saved_change_obj = self.__get_latest_changes_obj_by(by_pms=proposed_by_pms, to_pms=proposed_to_pms, column_name=proposed_column_name)
+        self.assert_post_key_update_equivalence(key_name=f"tblChanges: track change of '{proposed_column_name}' failed", key_value=proposed_new_value, db_value=saved_change_obj.new_value)
+

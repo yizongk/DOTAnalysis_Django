@@ -478,8 +478,9 @@ def UpdateEmployeeData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData(): {} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData(): {request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
     ## Authenticate User
@@ -489,9 +490,9 @@ def UpdateEmployeeData(request):
     else:
         print('Warning: UpdateEmployeeData(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateEmployeeData():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
     ## Read the json request body
@@ -499,8 +500,9 @@ def UpdateEmployeeData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -527,8 +529,12 @@ def UpdateEmployeeData(request):
         if column_name not in list(valid_editable_column_names_mapping.keys()):
             raise ValueError(f"{column_name} is not an editable column")
 
-        if new_value == '':
-            raise ValueError(f"new_value for {column_name} cannot be None or empty text")
+        if new_value is None:
+            raise ValueError(f"new_value for {column_name} cannot be None")
+        elif new_value == '':
+            raise ValueError(f"new_value for {column_name} cannot be empty text")
+        elif type(new_value) is not str:
+            raise ValueError(f"new_value for {column_name} is not {type('')} type, the current type is {type(new_value)}")
 
         # Check for permission to edit the target employee row
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
@@ -559,18 +565,19 @@ def UpdateEmployeeData(request):
         if not atomic_update.save():
             raise ValueError(f"No change in data, no update needed.")
 
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None
+        })
 
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nError: {}".format(e),
-            # "post_msg": "UpdateEmployeeData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData():\n\nError: {e}",
+            # "post_msg"      : f"UpdateEmployeeData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": None,
-    })
 
 
 def GetClientWUPermissions(request):
@@ -1673,7 +1680,7 @@ def AddUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
@@ -1769,7 +1776,7 @@ def UpdateUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
@@ -1839,7 +1846,7 @@ def DeleteUser(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
@@ -2034,7 +2041,7 @@ def AddUserPermission(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
@@ -2121,7 +2128,7 @@ def DeleteUserPermission(request):
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
         })
 
 
