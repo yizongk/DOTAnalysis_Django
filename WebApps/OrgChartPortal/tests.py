@@ -155,7 +155,7 @@ class TestViewPagesResponse(HttpGetTestCase):
             'orgchartportal_manage_permissions_view',
         ]
 
-        self.additional_context_req = [
+        self.additional_context_requirements = [
             {
                 'view'                      : 'orgchartportal_empgrid_view'
                 ,'additional_context_keys'  : [
@@ -290,11 +290,11 @@ class TestViewPagesResponse(HttpGetTestCase):
         """
         # Test normal user
         remove_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_req)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
         # Test admin user
         grant_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_req)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
 
 
