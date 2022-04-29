@@ -1,9 +1,125 @@
 import json
 from django.urls import reverse
-from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_HTTP_POST_JSON_KEYS, TEST_WINDOWS_USERNAME
+from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_HTTP_POST_JSON_KEYS, TEST_WINDOWS_USERNAME, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
 import copy
 import unittest
 from django.test import Client
+
+
+class HttpGetTestCase(unittest.TestCase):
+    client                  = Client()
+    regular_views           = []        ## Required by sub class. Set it in def setUpClass()
+    admin_views             = []        ## Required by sub class. Set it in def setUpClass()
+    additional_context_req  = []        ## Required by sub class. Set it in def setUpClass()
+
+    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None, additional_context_keys_data_qa_fct=None):
+        """
+            @view is view name
+            @response is the GET response
+            @view_defined_additional_context_keys is the list of additional context keys that needs to be in the response
+            @additional_context_keys_data_qa_fct will be called if @view_defined_additional_context_keys and itself is not null.
+                This is where you can add additional customized assert tests to this function
+                Assumes the function is a class function in class SomeTestSuite(unittest.TestCase)
+                Will pass self and @response to this fct as the only arguments
+                Use it like so:
+
+                    class SomeTestSuite(unittest.TestCase): ## Or another child of unittest.TestCase
+                        @classMethod
+                        def setUpClass(self):
+                            ...
+                            self.additional_context_req =   [
+                                                                {
+                                                                    'view': 'some_view_name'
+                                                                    ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                                                                    ,'qa_fct': self.__more_qa_asserts      ## Assumes this fct has a reference to self.assertTrue() etc
+                                                                }
+                                                            ]
+
+                        def __more_qa_asserts(self, response):
+                            self.assertTrue(response[...]=True, '...')
+                            ...
+
+                        self.test_views_response_data()             ## Implicitly will decode @self.additional_context_req and use it.
+        """
+        django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
+        response_context_keys = response.context_data.keys()
+
+        for response_context_key in response_context_keys:
+            self.assertTrue( (response_context_key in (view_defined_additional_context_keys + APP_DEFINED_HTTP_GET_CONTEXT_KEYS + django_default_context_keys) ),
+                f"{view} response got back a context key that shouldn't exist. Please add this new key to the test suite or change the view: '{response_context_key}'")
+
+        for additional_context_key in view_defined_additional_context_keys:
+            self.assertTrue(additional_context_key in response_context_keys,
+                f"{view} response is missing this view defined context key '{additional_context_key}'")
+
+        if view_defined_additional_context_keys is not None and additional_context_keys_data_qa_fct is not None:
+            additional_context_keys_data_qa_fct(self, response)
+
+    def assert_response_status_200(self):
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+
+    def assert_user_access_on_normal_and_admin_view(self):
+        """Pass if normal user get access to normal view, and denied access to admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin client\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for a non-admin client\n    {response.context['get_error']}")
+            self.assertTrue("not an Admin" in response.context['get_error'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['get_error']}")
+
+    def assert_admin_access_on_normal_and_admin_view(self):
+        """Pass if admin user get access to normal view, and access to admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin client\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin client\n    {response.context['get_error']}")
+
+    def assert_additional_context_data(self, additional_requirements=None):
+        """
+            @additional_requirements : required, specifies the additional context data for each view and optional its qa assert function.
+                It's in this format:
+                    [
+                        {
+                            'view': 'some_view_name'
+                            ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                            ,'qa_fct': some_unittest_class_fct      ## Assumes this fct has a reference to self.assertTrue() etc
+                        }
+                    ]
+        """
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if view in [each['view'] for each in additional_requirements]:
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
+
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if view in [each['view'] for each in additional_requirements]:
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
+
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
 
 
 class HttpPostTestCase(unittest.TestCase):
@@ -31,8 +147,8 @@ class HttpPostTestCase(unittest.TestCase):
 
     """
     client                                  = Client()
-    api_name                                = None
-    post_response_json_key_specifications   = None
+    api_name                                = None      ## Required by sub class. Set it in def setUpClass()
+    post_response_json_key_specifications   = None      ## Required by sub class. Set it in def setUpClass()
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
