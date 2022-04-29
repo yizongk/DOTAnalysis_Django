@@ -265,14 +265,7 @@ class TestAPIUpdatePotholesData(HttpPostTestCase):
     def test_with_valid_data(self):
         for payload_type in self.valid_payload:
             payload = self.valid_payload[payload_type]
-            response_content = self.post_and_get_json_response(payload)
-
-            ## Check that the request was successful
-            self.assertEqual(response_content['post_success'], True,
-                f"payload_type '{payload_type}': api call was not successfully with valid data\n{response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -401,15 +394,8 @@ class TestAPILookupPotholesAndCrewData(HttpPostTestCase):
         tear_down()
 
     def test_with_valid_data(self):
-        payload = self.valid_payload
-        response_content = self.post_and_get_json_response( payload )
-
-        ## Check that the request was successful
-        self.assertEqual(response_content['post_success'], True,
-            f"api call was not successfully with valid data")
-
-        ## Check that the returned JSON Response got all the data it required
-        self.assert_response_satisfy_param_requirements(response_content=response_content)
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
 
         ## Check if data was queried correctly
         lookup_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -510,14 +496,7 @@ class TestAPIUpdatePotholesFromDataGrid(HttpPostTestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblPotholeMaster.objects.using('DailyPothole').get(
@@ -729,15 +708,7 @@ class TestAPIUpdateComplaintsData(HttpPostTestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblComplaint.objects.using('DailyPothole').get(
@@ -839,14 +810,7 @@ class TestAPILookupComplaintsData(HttpPostTestCase):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            response_content = self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was queried correctly
             lookup_object = TblComplaint.objects.using('DailyPothole').get(
@@ -917,14 +881,7 @@ class TestAPIGetPDFReport(HttpPostTestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
     def test_data_validation(self):
         grant_admin_status()
@@ -999,14 +956,7 @@ class TestAPIAddUser(HttpPostTestCase):
 
         for payload in self.valid_payloads:
             self.remove_test_user_if_exists()
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.valid_username)
@@ -1085,14 +1035,7 @@ class TestAPIUpdateUser(HttpPostTestCase):
     def test_with_valid_data(self):
         for payload in self.valid_payloads:
             grant_admin_status()
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblUser.objects.using('DailyPothole').get(username__exact=self.user_obj.username)
@@ -1181,14 +1124,7 @@ class TestAPIDeleteUser(HttpPostTestCase):
 
         for payload in self.valid_payloads:
             self.add_test_user_if_not_exists()
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was deleted correctly
             try:
@@ -1269,14 +1205,7 @@ class TestAPIAddUserPermission(HttpPostTestCase):
 
         for payload in self.valid_payloads:
             tear_down_permissions(windows_username=self.valid_username)
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
@@ -1371,14 +1300,7 @@ class TestAPIUpdateUserPermission(HttpPostTestCase):
         grant_admin_status()
 
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was saved correctly
             saved_object = TblPermission.objects.using('DailyPothole').get(
@@ -1458,14 +1380,7 @@ class TestAPIDeleteUserPermission(HttpPostTestCase):
                                         ,operation_boro_id__boro_id__boro_long__exact=DEFAULT_BORO
                                     ).permission_id
             payload['permission_id'] = self.valid_permission_id
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
             ## Check if data was deleted correctly
             try:
@@ -1555,14 +1470,7 @@ class TestAPIGetCsvExport(HttpPostTestCase):
     def test_with_valid_data(self):
         grant_admin_status()
         for payload in self.valid_payloads:
-            response_content = self.post_and_get_json_response( payload )
-
-            ## Check that the request was successful
-            self.assertTrue(response_content['post_success'],
-                f"api call was not successfully with valid data: {response_content['post_msg']}")
-
-            ## Check that the returned JSON Response got all the data it required
-            self.assert_response_satisfy_param_requirements(response_content=response_content)
+            self.assert_post_with_valid_payload_is_success(payload=payload)
 
     def test_data_validation(self):
         grant_admin_status()
