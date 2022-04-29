@@ -365,7 +365,7 @@ SILENCED_SYSTEM_CHECKS = ['fields.W342'] ## For WARNINGS: OrgChartPortal.TblUser
 
 PER_IND_VERSION                 = '1.1.5'
 MAPS_APP_VERSION                = '1.1.3'
-DAILY_POTHOLE_VERSION           = '1.5.9'
+DAILY_POTHOLE_VERSION           = '1.5.10'
 ORG_CHART_PORTAL_VERSION        = '1.15.8'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
 
