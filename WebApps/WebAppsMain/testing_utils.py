@@ -27,7 +27,7 @@ class HttpGetTestCase(unittest.TestCase):
                         @classMethod
                         def setUpClass(self):
                             ...
-                            self.additional_context_req =   [
+                            self.additional_context_requirements =   [
                                                                 {
                                                                     'view': 'some_view_name'
                                                                     ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
@@ -39,7 +39,7 @@ class HttpGetTestCase(unittest.TestCase):
                             self.assertTrue(response[...]=True, '...')
                             ...
 
-                        self.test_views_response_data()             ## Implicitly will decode @self.additional_context_req and use it.
+                        self.test_views_response_data()             ## Implicitly will decode @self.additional_context_requirements and use it.
         """
         django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
         response_context_keys = response.context_data.keys()
@@ -50,7 +50,7 @@ class HttpGetTestCase(unittest.TestCase):
 
         for additional_context_key in view_defined_additional_context_keys:
             self.assertTrue(additional_context_key in response_context_keys,
-                f"{view} response is missing this view defined context key '{additional_context_key}'")
+                f"{view} response is missing this view defined required context key '{additional_context_key}'")
 
         if view_defined_additional_context_keys is not None and additional_context_keys_data_qa_fct is not None:
             additional_context_keys_data_qa_fct(self, response)
@@ -99,7 +99,11 @@ class HttpGetTestCase(unittest.TestCase):
         """
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view in [each['view'] for each in additional_requirements]:
+            if additional_requirements is not None and view in [each['view'] for each in additional_requirements]:
+                len_of_fouund_requirements = len([x for x in additional_requirements if view == x['view']])
+                if (len_of_fouund_requirements != 1):
+                    raise ValueError(f"HttpGetTestCase: assert_additional_context_data(): argument @additional_requirements got back more than 1 requirement with view name: '{view}' (found {len_of_fouund_requirements}). Should only have one requirement per view name")
+
                 view_additional_req     = next(x for x in additional_requirements if view == x['view'])
                 additional_context_keys = view_additional_req['additional_context_keys']
                 qa_test                 = view_additional_req['qa_fct']
@@ -111,7 +115,11 @@ class HttpGetTestCase(unittest.TestCase):
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view in [each['view'] for each in additional_requirements]:
+            if additional_requirements is not None and view in [each['view'] for each in additional_requirements]:
+                len_of_fouund_requirements = len([x for x in additional_requirements if view == x['view']])
+                if (len_of_fouund_requirements != 1):
+                    raise ValueError(f"HttpGetTestCase: assert_additional_context_data(): argument @additional_requirements got back more than 1 requirement with view name: '{view}' (found {len_of_fouund_requirements}). Should only have one requirement per view name")
+
                 view_additional_req     = next(x for x in additional_requirements if view == x['view'])
                 additional_context_keys = view_additional_req['additional_context_keys']
                 qa_test                 = view_additional_req['qa_fct']
