@@ -38,7 +38,7 @@ def get_or_create_user(windows_username=TEST_WINDOWS_USERNAME):
         raise ValueError(f"get_or_create_user(): {e}")
 
 
-def grant_admin_status(windows_username=TEST_WINDOWS_USERNAME):
+def grant_admin_status(cls=None, windows_username=TEST_WINDOWS_USERNAME):
     """create or get an user and set it up with admin status and return the user object. Defaults to TEST_WINDOWS_USERNAME as the user"""
     try:
         user = get_or_create_user(windows_username=windows_username)
@@ -49,7 +49,7 @@ def grant_admin_status(windows_username=TEST_WINDOWS_USERNAME):
             raise ValueError(f"grant_admin_status(): {e}")
 
 
-def remove_admin_status(windows_username=TEST_WINDOWS_USERNAME):
+def remove_admin_status(cls=None, windows_username=TEST_WINDOWS_USERNAME):
     """removes the admin status of an user"""
     try:
         user = get_or_create_user(windows_username=windows_username)
@@ -140,9 +140,12 @@ class TestViewPagesResponse(unittest.TestCase):
     def setUpClass(self):
         tear_down()
         set_up_permissions()
-        self.client                 = Client()
+        self.client                 = Client()  ## Required by sub class
 
-        self.regular_views = [
+        self.remove_admin_status    = remove_admin_status   ## Required by sub class
+        self.grant_admin_status     = grant_admin_status    ## Required by sub class
+
+        self.regular_views = [                  ## Required by sub class
             'orgchartportal_home_view',
             'orgchartportal_about_view',
             'orgchartportal_contact_view',
@@ -151,10 +154,44 @@ class TestViewPagesResponse(unittest.TestCase):
             'orgchartportal_how_to_use_view',
         ]
 
-        self.admin_views = [
+        self.admin_views = [                    ## Required by sub class
             'orgchartportal_admin_panel_view',
             'orgchartportal_manage_users_view',
             'orgchartportal_manage_permissions_view',
+        ]
+
+        self.additional_context_req = [         ## Required by sub class
+            {
+                'view'                      : 'orgchartportal_empgrid_view'
+                ,'additional_context_keys'  : [
+                                                'emp_entry_columns_json'
+                                                ,'emp_entries_json'
+                                                ,'supervisor_dropdown_list_json'
+                                                ,'site_dropdown_list_json'
+                                                ,'site_floor_dropdown_list_json'
+                                                ,'site_type_dropdown_list_json'
+                                            ]
+                ,'qa_fct'                   : self.__assert_empgrid_additional_context_data_quality
+            }
+            ,{
+                'view'                      : 'orgchartportal_manage_users_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'users_data_json'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+            ,{
+                'view'                      : 'orgchartportal_manage_permissions_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'permissions_json'
+                                                ,'user_list'
+                                                ,'division_list'
+                                                ,'wu_desc_list'
+                                            ]
+                ,'qa_fct'                   : None
+            }
         ]
 
     @classmethod
@@ -163,7 +200,7 @@ class TestViewPagesResponse(unittest.TestCase):
 
     def test_views_response_status_200(self):
         """Test normal user"""
-        remove_admin_status()
+        self.remove_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
@@ -173,7 +210,7 @@ class TestViewPagesResponse(unittest.TestCase):
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
 
         """Test admin user"""
-        grant_admin_status()
+        self.grant_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
@@ -184,7 +221,7 @@ class TestViewPagesResponse(unittest.TestCase):
 
     def test_views_response_user_admin_restriction(self):
         """Test normal user, should only have acess to regular views"""
-        remove_admin_status()
+        self.remove_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin client\n    {response.context['get_error']}")
@@ -195,7 +232,7 @@ class TestViewPagesResponse(unittest.TestCase):
             self.assertTrue("not an Admin" in response.context['get_error'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['get_error']}")
 
         """Test admin user, should have access to all views"""
-        grant_admin_status()
+        self.grant_admin_status()
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin client\n    {response.context['get_error']}")
@@ -204,7 +241,35 @@ class TestViewPagesResponse(unittest.TestCase):
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
             self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin client\n    {response.context['get_error']}")
 
-    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None):
+    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None, additional_context_keys_data_qa_fct=None):
+        """
+            @view is view name
+            @response is the GET response
+            @view_defined_additional_context_keys is the list of additional context keys that needs to be in the response
+            @additional_context_keys_data_qa_fct will be called if @view_defined_additional_context_keys and itself is not null.
+                This is where you can add additional customized assert tests to this function
+                Assumes the function is a class function in class SomeTestSuite(unittest.TestCase)
+                Will pass self and @response to this fct as the only arguments
+                Use it like so:
+
+                    class SomeTestSuite(unittest.TestCase): ## Or another child of unittest.TestCase
+                        @classMethod
+                        def setUpClass(self):
+                            ...
+                            self.additional_context_req =   [
+                                                                {
+                                                                    'view': 'some_view_name'
+                                                                    ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                                                                    ,'qa_fct': self.__more_qa_asserts      ## Assumes this fct has a reference to self.assertTrue() etc
+                                                                }
+                                                            ]
+
+                        def __more_qa_asserts(self, response):
+                            self.assertTrue(response[...]=True, '...')
+                            ...
+
+                        self.test_views_response_data()             ## Implicitly will decode @self.additional_context_req and use it.
+        """
         django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
         response_context_keys = response.context_data.keys()
 
@@ -215,6 +280,9 @@ class TestViewPagesResponse(unittest.TestCase):
         for additional_context_key in view_defined_additional_context_keys:
             self.assertTrue(additional_context_key in response_context_keys,
                 f"{view} response is missing this view defined context key '{additional_context_key}'")
+
+        if view_defined_additional_context_keys is not None and additional_context_keys_data_qa_fct is not None:
+            additional_context_keys_data_qa_fct(self, response)
 
     def __assert_empgrid_additional_context_data_quality(self, response):
         ## Make sure the emp_entry_columns_json got all the required fields
@@ -288,66 +356,54 @@ class TestViewPagesResponse(unittest.TestCase):
         self.assertTrue(count_of_all_base == count_of_all_api
             ,f'orgchartportal_empgrid_view: Did not get back a list of ALL site floor + site types in the site_type_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
 
-    def __assert_additional_context_data(self):
-        """Test normal user"""
-        remove_admin_status()
+    def __assert_additional_context_data(self, additional_requirements=None):
+        """
+            @additional_requirements : required, specifies the additional context data for each view and optional its qa assert function.
+                It's in this format:
+                    [
+                        {
+                            'view': 'some_view_name'
+                            ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                            ,'qa_fct': some_unittest_class_fct      ## Assumes this fct has a reference to self.assertTrue() etc
+                        }
+                    ]
+        """
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view == 'orgchartportal_empgrid_view':
-                view_defined_additional_context_keys = [
-                    'emp_entry_columns_json'
-                    ,'emp_entries_json'
-                    ,'supervisor_dropdown_list_json'
-                    ,'site_dropdown_list_json'
-                    ,'site_floor_dropdown_list_json'
-                    ,'site_type_dropdown_list_json'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
-                self.__assert_empgrid_additional_context_data_quality(response=response)
+            if view in [each['view'] for each in additional_requirements]:
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
 
-        """Test admin user"""
-        grant_admin_status()
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view == 'orgchartportal_empgrid_view':
-                view_defined_additional_context_keys = [
-                    'emp_entry_columns_json'
-                    ,'emp_entries_json'
-                    ,'supervisor_dropdown_list_json'
-                    ,'site_dropdown_list_json'
-                    ,'site_floor_dropdown_list_json'
-                    ,'site_type_dropdown_list_json'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
-                self.__assert_empgrid_additional_context_data_quality(response=response)
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view =='orgchartportal_manage_users_view':
-                view_defined_additional_context_keys = [
-                    'ag_grid_col_def_json'
-                    ,'users_data_json'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
-            if view =='orgchartportal_manage_permissions_view':
-                view_defined_additional_context_keys = [
-                    'ag_grid_col_def_json'
-                    ,'permissions_json'
-                    ,'user_list'
-                    ,'division_list'
-                    ,'wu_desc_list'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
+            if view in [each['view'] for each in additional_requirements]:
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
+
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
 
     def test_views_response_data(self):
-        """Some views have additional context data, need to test for those here"""
+        """
+            Test views to have the required GET request context data
+            Some views have additional context data, need to test for those here
+        """
         # Test normal user
-        remove_admin_status()
-        self.__assert_additional_context_data()
+        self.remove_admin_status()
+        self.__assert_additional_context_data(additional_requirements=self.additional_context_req)
 
         # Test admin user
-        grant_admin_status()
-        self.__assert_additional_context_data()
+        self.grant_admin_status()
+        self.__assert_additional_context_data(additional_requirements=self.additional_context_req)
 
 
 class TestAPIUpdateEmployeeData(HttpPostTestCase):
