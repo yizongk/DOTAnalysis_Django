@@ -155,7 +155,7 @@ class TestViewPagesResponse(HttpGetTestCase):
             'orgchartportal_manage_permissions_view',
         ]
 
-        self.additional_context_requirements = [
+        self.additional_context_requirements_normal = [
             {
                 'view'                      : 'orgchartportal_empgrid_view'
                 ,'additional_context_keys'  : [
@@ -166,8 +166,9 @@ class TestViewPagesResponse(HttpGetTestCase):
                                                 ,'site_floor_dropdown_list_json'
                                                 ,'site_type_dropdown_list_json'
                                             ]
-                ,'qa_fct'                   : self.__assert_empgrid_additional_context_data_quality
+                ,'qa_fct'                   : self.__assert_additional_context_qa_empgrid
             }
+            ## Rest qa_fct are left None because those are admin views and aren't meant to return data
             ,{
                 'view'                      : 'orgchartportal_manage_users_view'
                 ,'additional_context_keys'  : [
@@ -189,15 +190,49 @@ class TestViewPagesResponse(HttpGetTestCase):
             }
         ]
 
+        self.additional_context_requirements_admin = [
+            {
+                'view'                      : 'orgchartportal_empgrid_view'
+                ,'additional_context_keys'  : [
+                                                'emp_entry_columns_json'
+                                                ,'emp_entries_json'
+                                                ,'supervisor_dropdown_list_json'
+                                                ,'site_dropdown_list_json'
+                                                ,'site_floor_dropdown_list_json'
+                                                ,'site_type_dropdown_list_json'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_empgrid
+            }
+            ,{
+                'view'                      : 'orgchartportal_manage_users_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'users_data_json'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_manage_users
+            }
+            ,{
+                'view'                      : 'orgchartportal_manage_permissions_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'permissions_json'
+                                                ,'user_list'
+                                                ,'division_list'
+                                                ,'wu_desc_list'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_manage_permissions
+            }
+        ]
+
     @classmethod
     def tearDownClass(self):
         tear_down()
 
-    def __assert_empgrid_additional_context_data_quality(self, response):
+    def __assert_additional_context_qa_empgrid(self, response):
         ## Make sure the emp_entry_columns_json got all the required fields
         emp_entry_columns_dict  = json.loads(response.context_data['emp_entry_columns_json'])
-        fields_api              = set(each['field'] for each in emp_entry_columns_dict)
-        fields_base             = set([
+        from_api_fields         = set(each['field'] for each in emp_entry_columns_dict)
+        required_fields             = set([
             'pms'
             ,'last_name'
             ,'first_name'
@@ -209,10 +244,10 @@ class TestViewPagesResponse(HttpGetTestCase):
             ,'actual_site_id__site_id'
             ,'actual_floor_id__floor_id'
             ,'actual_site_type_id__site_type_id'])
-        if len(fields_api) > len(fields_base):
-            raise ValueError(f"orgchartportal_empgrid_view: context variable emp_entry_columns_json got back more fields than expected. These are the unexpected fields: {fields_api - fields_base}")
-        self.assertTrue(fields_api == fields_base
-            ,f'orgchartportal_empgrid_view: context variable emp_entry_columns_json is missing some fields: {fields_base -  fields_api}')
+        if len(from_api_fields) > len(required_fields):
+            raise ValueError(f"orgchartportal_empgrid_view: context variable emp_entry_columns_json got back more fields than expected. These are the unexpected fields: {from_api_fields - required_fields}")
+        self.assertTrue(from_api_fields == required_fields
+            ,f'orgchartportal_empgrid_view: context variable emp_entry_columns_json is missing some fields: {required_fields -  from_api_fields}')
 
         ## Make sure emp_entries_json has only WUs that client has permission to
         emp_entries_dict    = json.loads(response.context_data['emp_entries_json'])
@@ -265,6 +300,67 @@ class TestViewPagesResponse(HttpGetTestCase):
         self.assertTrue(count_of_all_base == count_of_all_api
             ,f'orgchartportal_empgrid_view: Did not get back a list of ALL site floor + site types in the site_type_dropdown_list_json context variable. base {count_of_all_base} vs api {count_of_all_api}')
 
+    def __assert_additional_context_qa_manage_users(self, response):
+        ## Make sure the ag_grid_col_def_json got all the required fields
+        ag_grid_col_def_dict    = json.loads(response.context_data['ag_grid_col_def_json'])
+        from_api_fields         = set(each['field'] for each in ag_grid_col_def_dict)
+        required_fields         = set([
+                                    'pms'
+                                    ,'windows_username'
+                                    ,'is_admin'
+                                    ,'active'
+                                    ,None
+                                ])
+        if len(from_api_fields) > len(required_fields):
+            raise ValueError(f"orgchartportal_manage_users_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {from_api_fields - required_fields}")
+        self.assertTrue(from_api_fields == required_fields
+            ,f'orgchartportal_manage_users_view: context variable ag_grid_col_def_json is missing some fields: {required_fields -  from_api_fields}')
+
+        ## Make sure users_data_json has ALL the user records, since this api is an admin api
+        users_data_json         = json.loads(response.context_data['users_data_json'])
+        from_api_users_data     = set(each['windows_username'] for each in users_data_json)
+        required_users_data     = set(each.windows_username for each in TblUsers.objects.using('OrgChartRead').all())
+        self.assertEqual(from_api_users_data, required_users_data
+            ,f"orgchartportal_manage_users_view: context variable users_data_json either has more data than allowed ({from_api_users_data - required_users_data}) or has less data than allowed ({required_users_data - from_api_users_data})")
+
+    def __assert_additional_context_qa_manage_permissions(self, response):
+        ## Make sure the ag_grid_col_def_json got all the required fields
+        ag_grid_col_def_dict    = json.loads(response.context_data['ag_grid_col_def_json'])
+        from_api_fields         = set(each['field'] for each in ag_grid_col_def_dict)
+        required_fields         = set([
+                                    'user_id__windows_username'
+                                    ,'wu__wu'
+                                    ,'wu__subdiv'
+                                    ,'wu__wu_desc'
+                                    ,None
+                                ])
+        if len(from_api_fields) > len(required_fields):
+            raise ValueError(f"orgchartportal_manage_permissions_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {from_api_fields - required_fields}")
+        self.assertTrue(from_api_fields == required_fields
+            ,f'orgchartportal_manage_permissions_view: context variable ag_grid_col_def_json is missing some fields: {required_fields -  from_api_fields}')
+
+        ## Make sure permissions_json has ALL the permission records, since this api is an admin api
+        permissions_json        = json.loads(response.context_data['permissions_json'])
+        from_api_permissions    = set(f"{each['user_id__windows_username']}-{each['wu__wu']}" for each in permissions_json)
+        required_permissions    = set(f"{each.user_id.windows_username}-{each.wu.wu}" for each in TblPermissionsWorkUnit.objects.using('OrgChartRead').all())
+        self.assertEqual(from_api_permissions, required_permissions
+            ,f"orgchartportal_manage_permissions_view: context variable permissions_json either has more data than allowed ({from_api_permissions - required_permissions}) or has less data than allowed ({required_permissions - from_api_permissions})")
+
+        from_api_user_list      = set(response.context_data['user_list'])
+        from_api_division_list  = set(response.context_data['division_list'])
+        from_api_wu_desc_list   = set(each['wu'] for each in response.context_data['wu_desc_list'])
+
+        required_user_list      = set(each.windows_username  for each in TblUsers.objects.using('OrgChartRead').all())
+        required_division_list  = set(each.subdiv            for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).distinct()) ## subidv not null filters out the WU 9999 On-Loan
+        required_wu_desc_list   = set(each.wu                for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False)) ## subidv not null filters out the WU 9999 On-Loan
+
+        self.assertEqual(from_api_user_list, required_user_list
+            ,f"orgchartportal_manage_permissions_view: context variable user_list either has more data than allowed ({from_api_user_list - required_user_list}) or has less data than allowed ({required_user_list - from_api_user_list})")
+        self.assertEqual(from_api_division_list, required_division_list
+            ,f"orgchartportal_manage_permissions_view: context variable division_list either has more data than allowed ({from_api_division_list - required_division_list}) or has less data than allowed ({required_division_list - from_api_division_list})")
+        self.assertEqual(from_api_wu_desc_list, required_wu_desc_list
+            ,f"orgchartportal_manage_permissions_view: context variable wu_desc_list either has more data than allowed ({from_api_wu_desc_list - required_wu_desc_list}) or has less data than allowed ({required_wu_desc_list - from_api_wu_desc_list})")
+
     def test_views_response_status_200(self):
         """Test normal user"""
         remove_admin_status()
@@ -290,11 +386,11 @@ class TestViewPagesResponse(HttpGetTestCase):
         """
         # Test normal user
         remove_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_normal)
 
         # Test admin user
         grant_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_admin)
 
 
 
