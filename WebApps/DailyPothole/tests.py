@@ -2,12 +2,14 @@ from django.test import Client
 import unittest
 from .models import *
 from django.contrib.auth.models import User
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+from dateutil.relativedelta import relativedelta
 from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
-from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase
+from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase, HttpGetTestCase
+import json
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
 
@@ -100,12 +102,11 @@ def tear_down(windows_username=TEST_WINDOWS_USERNAME):
 
 
 # Create your tests here.
-class TestViewPagesResponse(unittest.TestCase):
+class TestViewPagesResponse(HttpGetTestCase):
     @classmethod
     def setUpClass(self):
         tear_down()
         set_up_permissions()
-        self.client                 = Client()
 
         self.regular_views = [
             'dailypothole_home_view',
@@ -124,98 +125,223 @@ class TestViewPagesResponse(unittest.TestCase):
             'dailypothole_csv_export_view',
         ]
 
+        self.additional_context_requirements_normal = [
+            {
+                'view'                      : 'dailypothole_pothole_data_entry_view'
+                ,'additional_context_keys'  : [
+                                                'operation_boro_permissions'
+                                                ,'today'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_pothole_data_entry
+            }
+            ## Rest qa_fct are left None because those are admin views and aren't meant to return data
+           ,{
+                'view'                      : 'dailypothole_pothole_data_grid_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'pothole_data_json'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+            ,{
+                'view'                      : 'dailypothole_complaints_input_view'
+                ,'additional_context_keys'  : [
+                                                'complaints'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+            ,{
+                'view'                      : 'dailypothole_users_panel_view'
+                ,'additional_context_keys'  : [
+                                                'users'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+            ,{
+                'view'                      : 'dailypothole_user_permissions_panel_view'
+                ,'additional_context_keys'  : [
+                                                'user_permissions'
+                                                ,'user_list'
+                                                ,'operation_list'
+                                                ,'boro_list'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+            ,{
+                'view'                      : 'dailypothole_csv_export_view'
+                ,'additional_context_keys'  : [
+                                                'operation_list'
+                                            ]
+                ,'qa_fct'                   : None
+            }
+        ]
+
+        self.additional_context_requirements_admin = [
+            {
+                'view'                      : 'dailypothole_pothole_data_entry_view'
+                ,'additional_context_keys'  : [
+                                                'operation_boro_permissions'
+                                                ,'today'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_pothole_data_entry
+            }
+           ,{
+                'view'                      : 'dailypothole_pothole_data_grid_view'
+                ,'additional_context_keys'  : [
+                                                'ag_grid_col_def_json'
+                                                ,'pothole_data_json'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_datagrid
+            }
+            ,{
+                'view'                      : 'dailypothole_complaints_input_view'
+                ,'additional_context_keys'  : [
+                                                'complaints'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_complaints_input
+            }
+            ,{
+                'view'                      : 'dailypothole_users_panel_view'
+                ,'additional_context_keys'  : [
+                                                'users'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_users_panel
+            }
+            ,{
+                'view'                      : 'dailypothole_user_permissions_panel_view'
+                ,'additional_context_keys'  : [
+                                                'user_permissions'
+                                                ,'user_list'
+                                                ,'operation_list'
+                                                ,'boro_list'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_user_permissions_panel
+            }
+            ,{
+                'view'                      : 'dailypothole_csv_export_view'
+                ,'additional_context_keys'  : [
+                                                'operation_list'
+                                            ]
+                ,'qa_fct'                   : self.__assert_additional_context_qa_csv_export
+            }
+        ]
+
     @classmethod
     def tearDownClass(self):
         tear_down()
 
+    def __assert_additional_context_qa_pothole_data_entry(self, response):
+        # operation_list_from_api = set([each for each in response.context_data['operation_boro_permissions']])
+        operation_list_from_api = response.context_data['operation_boro_permissions']
+        today_from_api          = response.context_data['today']
+
+        ## lazy checking, just checking for existence of required columns types. Someone else can implement this if they want to. - Yi Zong Kuang 2022-04-29
+        for each in operation_list_from_api:
+            self.assertEqual(type(each), type('')
+                ,f'dailypothole_pothole_data_entry_view: context variable operation_boro_permissions key is not str type: {type(each)}')
+            self.assertEqual(type(operation_list_from_api[each]), type([])
+                ,f'dailypothole_pothole_data_entry_view: context variable operation_boro_permissions value is not list type: {type(operation_list_from_api[each])}')
+        self.assertEqual(today_from_api, datetime.now().strftime('%Y-%m-%d')
+            ,f'dailypothole_pothole_data_entry_view: context variable today {today_from_api} is not actual_today {datetime.now().strftime("%Y-%m-%d")}')
+
+    def __assert_additional_context_qa_datagrid(self, response):
+        ## Make sure the ag_grid_col_def_json got all the required fields
+        ag_grid_col_def_dict    = json.loads(response.context_data['ag_grid_col_def_json'])
+        fields_from_api         = set(each['field'] for each in ag_grid_col_def_dict)
+        fields_base             = set([
+            'repair_date'
+            ,'operation_boro_id__operation_id__operation'
+            ,'operation_boro_id__boro_id__boro_long'
+            ,'repair_crew_count'
+            ,'holes_repaired'
+            ,'daily_crew_count'
+            ,'last_modified_timestamp'
+            ,'last_modified_by_user_id__username'])
+        if len(fields_from_api) > len(fields_base):
+            raise ValueError(f"dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {fields_from_api - fields_base}")
+        self.assertTrue(fields_from_api == fields_base
+            ,f'dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json is missing some fields: {fields_base -  fields_from_api}')
+
+        ## Make sure pothole_data_json has ALL the records since '2017-07-01', since this api is an admin api
+        pothole_data            = json.loads(response.context_data['pothole_data_json'])
+        unique_dates_from_api   = set([each['repair_date'] for each in pothole_data])
+        then                    = datetime.strptime('2017-07-01', '%Y-%m-%d')
+        today                   = datetime.now()
+        unique_dates_required   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
+        self.assertEqual(unique_dates_from_api, unique_dates_required
+            ,f"dailypothole_pothole_data_grid_view: context variable pothole_data_json either has more dates than allowed ({unique_dates_from_api - unique_dates_required}) or has less dates than allowed ({unique_dates_required - unique_dates_from_api})")
+
+    def __assert_additional_context_qa_complaints_input(self, response):
+        ## Make sure complaints has ALL the records since 2 weeks ago, since this api is an admin api
+        complaints_data         = response.context_data['complaints']
+        unique_dates_from_api   = set([each.complaint_date.strftime('%Y-%m-%d') for each in complaints_data])
+        then                    = (datetime.now() - relativedelta(weeks=2))
+        today                   = datetime.now()
+        unique_dates_required   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
+        self.assertEqual(unique_dates_from_api, unique_dates_required
+            ,f"dailypothole_complaints_input_view: context variable complaints either has more dates than allowed ({unique_dates_from_api - unique_dates_required}) or has less dates than allowed ({unique_dates_required - unique_dates_from_api})")
+
+    def __assert_additional_context_qa_users_panel(self, response):
+        ## Make sure users has ALL the usernames, since this api is an admin api
+        users_from_api  = response.context_data['users']
+        users_from_api  = set(each.username for each in users_from_api) ## it's okay to use set, since username should be unique in the database anyway
+        users_required  = set(each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username'))
+        self.assertEqual(users_from_api, users_required
+            ,f"dailypothole_users_panel_view: context variable users either has more users than allowed ({users_from_api - users_required}) or has less users than allowed ({users_required - users_from_api})")
+
+    def __assert_additional_context_qa_user_permissions_panel(self, response):
+        user_permissions_from_api   = set(each.permission_id    for each in response.context_data['user_permissions'])
+        user_list_from_api          = set(response.context_data['user_list'])
+        operation_list_from_api     = set(response.context_data['operation_list'])
+        boro_list_from_api          = set(response.context_data['boro_list'])
+
+        user_permissions_required   = set(each.permission_id    for each in TblPermission.objects.using('DailyPothole').all())
+        user_list_required          = set(each.username         for each in TblUser.objects.using('DailyPothole').all())        ## it's okay to use set, since username should be unique in the database anyway
+        operation_list_required     = set(each.operation        for each in TblOperation.objects.using('DailyPothole').all())  ## it's okay to use set, since username should be unique in the database anyway
+        boro_list_required          = set(each.boro_long        for each in TblBoro.objects.using('DailyPothole').all())       ## it's okay to use set, since username should be unique in the database anyway
+
+        self.assertEqual(user_permissions_from_api, user_permissions_required
+            ,f"dailypothole_user_permissions_panel_view: context variable user_permissions either has more data than allowed ({user_permissions_from_api - user_permissions_required}) or has less data than allowed ({user_permissions_required - user_permissions_from_api})")
+        self.assertEqual(user_list_from_api, user_list_required
+            ,f"dailypothole_user_permissions_panel_view: context variable user_list either has more data than allowed ({user_list_from_api - user_list_required}) or has less data than allowed ({user_list_required - user_list_from_api})")
+        self.assertEqual(operation_list_from_api, operation_list_required
+            ,f"dailypothole_user_permissions_panel_view: context variable operation_list either has more data than allowed ({operation_list_from_api - operation_list_required}) or has less data than allowed ({operation_list_required - operation_list_from_api})")
+        self.assertEqual(boro_list_from_api, boro_list_required
+            ,f"dailypothole_user_permissions_panel_view: context variable boro_list either has more data than allowed ({boro_list_from_api - boro_list_required}) or has less data than allowed ({boro_list_required - boro_list_from_api})")
+
+    def __assert_additional_context_qa_csv_export(self, response):
+        operation_list_from_api = set(response.context_data['operation_list'])
+        operation_list_required = set(each.operation for each in TblOperation.objects.using('DailyPothole').all())
+        self.assertEqual(operation_list_from_api, operation_list_required
+            ,f"dailypothole_csv_export_view: context variable operation_list either has more data than allowed ({operation_list_from_api - operation_list_required}) or has less data than allowed ({operation_list_required - operation_list_from_api})")
+
     def test_views_response_status_200(self):
         """Test normal user"""
         remove_admin_status()
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-
-        for view in self.admin_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+        self.assert_response_status_200()
 
         """Test admin user"""
         grant_admin_status()
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
-
-        for view in self.admin_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+        self.assert_response_status_200()
 
     def test_views_response_user_admin_restriction(self):
         """Test normal user, should only have acess to regular views"""
         remove_admin_status()
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin client\n    {response.context['get_error']}")
-
-        for view in self.admin_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for a non-admin client\n    {response.context['get_error']}")
-            self.assertTrue("not an Admin" in response.context['get_error'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['get_error']}")
+        self.assert_user_access_on_normal_and_admin_view()
 
         """Test admin user, should have access to all views"""
         grant_admin_status()
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin client\n    {response.context['get_error']}")
-
-        for view in self.admin_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin client\n    {response.context['get_error']}")
-
-    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None):
-        django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
-        response_context_keys = response.context_data.keys()
-
-        for response_context_key in response_context_keys:
-            self.assertTrue( (response_context_key in (view_defined_additional_context_keys + APP_DEFINED_HTTP_GET_CONTEXT_KEYS + django_default_context_keys) ),
-                f"{view} response got back a context key that shouldn't exist. Please add this new key to the test suite or change the view: '{response_context_key}'")
-
-        for additional_context_key in view_defined_additional_context_keys:
-            self.assertTrue(additional_context_key in response_context_keys,
-                f"{view} response is missing this view defined context key '{additional_context_key}'")
-
-    def __assert_additional_context_data(self):
-        for view in self.regular_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view == 'dailypothole_pothole_data_entry_view':
-                view_defined_additional_context_keys = [
-                    'today'
-                    ,'operation_boro_permissions'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
-
-        for view in self.admin_views:
-            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            if view == 'dailypothole_pothole_data_grid_view':
-                view_defined_additional_context_keys = [
-                    'ag_grid_col_def_json'
-                    ,'pothole_data_json'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
-            if view == 'dailypothole_csv_export_view':
-                view_defined_additional_context_keys = [
-                    'operation_list'
-                ]
-                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=view_defined_additional_context_keys)
+        self.assert_admin_access_on_normal_and_admin_view()
 
     def test_views_response_data(self):
         """Some views have additional context data, need to test for those here"""
         # Test normal user
         remove_admin_status()
-        self.__assert_additional_context_data()
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_normal)
 
         # Test admin user
         grant_admin_status()
-        self.__assert_additional_context_data()
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_admin)
 
 
 class TestAPIUpdatePotholesData(HttpPostTestCase):
