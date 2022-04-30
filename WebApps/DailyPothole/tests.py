@@ -248,7 +248,7 @@ class TestViewPagesResponse(HttpGetTestCase):
         ## Make sure the ag_grid_col_def_json got all the required fields
         ag_grid_col_def_dict    = json.loads(response.context_data['ag_grid_col_def_json'])
         fields_from_api         = set(each['field'] for each in ag_grid_col_def_dict)
-        fields_base             = set([
+        fields_required         = set([
             'repair_date'
             ,'operation_boro_id__operation_id__operation'
             ,'operation_boro_id__boro_id__boro_long'
@@ -257,10 +257,10 @@ class TestViewPagesResponse(HttpGetTestCase):
             ,'daily_crew_count'
             ,'last_modified_timestamp'
             ,'last_modified_by_user_id__username'])
-        if len(fields_from_api) > len(fields_base):
-            raise ValueError(f"dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {fields_from_api - fields_base}")
-        self.assertTrue(fields_from_api == fields_base
-            ,f'dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json is missing some fields: {fields_base -  fields_from_api}')
+        if len(fields_from_api) > len(fields_required):
+            raise ValueError(f"dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {fields_from_api - fields_required}")
+        self.assertTrue(fields_from_api == fields_required
+            ,f'dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json is missing some fields: {fields_required -  fields_from_api}')
 
         ## Make sure pothole_data_json has ALL the records since '2017-07-01', since this api is an admin api
         pothole_data            = json.loads(response.context_data['pothole_data_json'])
