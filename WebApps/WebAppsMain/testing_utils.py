@@ -7,10 +7,9 @@ from django.test import Client
 
 
 class HttpGetTestCase(unittest.TestCase):
-    client                  = Client()
-    regular_views           = []        ## Required by sub class. Set it in def setUpClass()
-    admin_views             = []        ## Required by sub class. Set it in def setUpClass()
-    additional_context_req  = []        ## Required by sub class. Set it in def setUpClass()
+    client                          = Client()
+    regular_views                   = []        ## Required by sub class. Set it in def setUpClass()
+    admin_views                     = []        ## Required by sub class. Set it in def setUpClass()
 
     def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None, additional_context_keys_data_qa_fct=None):
         """
