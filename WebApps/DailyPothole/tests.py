@@ -231,24 +231,23 @@ class TestViewPagesResponse(HttpGetTestCase):
         tear_down()
 
     def __assert_additional_context_qa_pothole_data_entry(self, response):
-        # operation_list_from_api = set([each for each in response.context_data['operation_boro_permissions']])
-        operation_list_from_api = response.context_data['operation_boro_permissions']
-        today_from_api          = response.context_data['today']
+        from_api_operation_list = response.context_data['operation_boro_permissions']
+        from_api_today          = response.context_data['today']
 
         ## lazy checking, just checking for existence of required columns types. Someone else can implement this if they want to. - Yi Zong Kuang 2022-04-29
-        for each in operation_list_from_api:
+        for each in from_api_operation_list:
             self.assertEqual(type(each), type('')
                 ,f'dailypothole_pothole_data_entry_view: context variable operation_boro_permissions key is not str type: {type(each)}')
-            self.assertEqual(type(operation_list_from_api[each]), type([])
-                ,f'dailypothole_pothole_data_entry_view: context variable operation_boro_permissions value is not list type: {type(operation_list_from_api[each])}')
-        self.assertEqual(today_from_api, datetime.now().strftime('%Y-%m-%d')
-            ,f'dailypothole_pothole_data_entry_view: context variable today {today_from_api} is not actual_today {datetime.now().strftime("%Y-%m-%d")}')
+            self.assertEqual(type(from_api_operation_list[each]), type([])
+                ,f'dailypothole_pothole_data_entry_view: context variable operation_boro_permissions value is not list type: {type(from_api_operation_list[each])}')
+        self.assertEqual(from_api_today, datetime.now().strftime('%Y-%m-%d')
+            ,f'dailypothole_pothole_data_entry_view: context variable today {from_api_today} is not actual_today {datetime.now().strftime("%Y-%m-%d")}')
 
     def __assert_additional_context_qa_datagrid(self, response):
         ## Make sure the ag_grid_col_def_json got all the required fields
         ag_grid_col_def_dict    = json.loads(response.context_data['ag_grid_col_def_json'])
-        fields_from_api         = set(each['field'] for each in ag_grid_col_def_dict)
-        fields_required         = set([
+        from_api_fields         = set(each['field'] for each in ag_grid_col_def_dict)
+        required_fields         = set([
             'repair_date'
             ,'operation_boro_id__operation_id__operation'
             ,'operation_boro_id__boro_id__boro_long'
@@ -257,63 +256,63 @@ class TestViewPagesResponse(HttpGetTestCase):
             ,'daily_crew_count'
             ,'last_modified_timestamp'
             ,'last_modified_by_user_id__username'])
-        if len(fields_from_api) > len(fields_required):
-            raise ValueError(f"dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {fields_from_api - fields_required}")
-        self.assertTrue(fields_from_api == fields_required
-            ,f'dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json is missing some fields: {fields_required -  fields_from_api}')
+        if len(from_api_fields) > len(required_fields):
+            raise ValueError(f"dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json got back more fields than expected. These are the unexpected fields: {from_api_fields - required_fields}")
+        self.assertTrue(from_api_fields == required_fields
+            ,f'dailypothole_pothole_data_grid_view: context variable ag_grid_col_def_json is missing some fields: {required_fields -  from_api_fields}')
 
         ## Make sure pothole_data_json has ALL the records since '2017-07-01', since this api is an admin api
         pothole_data            = json.loads(response.context_data['pothole_data_json'])
-        unique_dates_from_api   = set([each['repair_date'] for each in pothole_data])
+        from_api_unique_dates   = set([each['repair_date'] for each in pothole_data])
         then                    = datetime.strptime('2017-07-01', '%Y-%m-%d')
         today                   = datetime.now()
-        unique_dates_required   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
-        self.assertEqual(unique_dates_from_api, unique_dates_required
-            ,f"dailypothole_pothole_data_grid_view: context variable pothole_data_json either has more dates than allowed ({unique_dates_from_api - unique_dates_required}) or has less dates than allowed ({unique_dates_required - unique_dates_from_api})")
+        required_unique_dates   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
+        self.assertEqual(from_api_unique_dates, required_unique_dates
+            ,f"dailypothole_pothole_data_grid_view: context variable pothole_data_json either has more dates than allowed ({from_api_unique_dates - required_unique_dates}) or has less dates than allowed ({required_unique_dates - from_api_unique_dates})")
 
     def __assert_additional_context_qa_complaints_input(self, response):
         ## Make sure complaints has ALL the records since 2 weeks ago, since this api is an admin api
         complaints_data         = response.context_data['complaints']
-        unique_dates_from_api   = set([each.complaint_date.strftime('%Y-%m-%d') for each in complaints_data])
+        from_api_unique_dates   = set([each.complaint_date.strftime('%Y-%m-%d') for each in complaints_data])
         then                    = (datetime.now() - relativedelta(weeks=2))
         today                   = datetime.now()
-        unique_dates_required   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
-        self.assertEqual(unique_dates_from_api, unique_dates_required
-            ,f"dailypothole_complaints_input_view: context variable complaints either has more dates than allowed ({unique_dates_from_api - unique_dates_required}) or has less dates than allowed ({unique_dates_required - unique_dates_from_api})")
+        required_unique_dates   = set( (then + timedelta(x)).strftime('%Y-%m-%d') for x in range((today - then).days + 1) ) # +1 to include today in the range
+        self.assertEqual(from_api_unique_dates, required_unique_dates
+            ,f"dailypothole_complaints_input_view: context variable complaints either has more dates than allowed ({from_api_unique_dates - required_unique_dates}) or has less dates than allowed ({required_unique_dates - from_api_unique_dates})")
 
     def __assert_additional_context_qa_users_panel(self, response):
         ## Make sure users has ALL the usernames, since this api is an admin api
-        users_from_api  = response.context_data['users']
-        users_from_api  = set(each.username for each in users_from_api) ## it's okay to use set, since username should be unique in the database anyway
-        users_required  = set(each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username'))
-        self.assertEqual(users_from_api, users_required
-            ,f"dailypothole_users_panel_view: context variable users either has more users than allowed ({users_from_api - users_required}) or has less users than allowed ({users_required - users_from_api})")
+        users  = response.context_data['users']
+        from_api_users  = set(each.username for each in users) ## it's okay to use set, since username should be unique in the database anyway
+        required_users  = set(each.username for each in TblUser.objects.using('DailyPothole').all().order_by('username'))
+        self.assertEqual(from_api_users, required_users
+            ,f"dailypothole_users_panel_view: context variable users either has more users than allowed ({from_api_users - required_users}) or has less users than allowed ({required_users - from_api_users})")
 
     def __assert_additional_context_qa_user_permissions_panel(self, response):
-        user_permissions_from_api   = set(each.permission_id    for each in response.context_data['user_permissions'])
-        user_list_from_api          = set(response.context_data['user_list'])
-        operation_list_from_api     = set(response.context_data['operation_list'])
-        boro_list_from_api          = set(response.context_data['boro_list'])
+        from_api_user_permissions   = set(each.permission_id    for each in response.context_data['user_permissions'])
+        from_api_user_list          = set(response.context_data['user_list'])
+        from_api_operation_list     = set(response.context_data['operation_list'])
+        from_api_boro_list          = set(response.context_data['boro_list'])
 
-        user_permissions_required   = set(each.permission_id    for each in TblPermission.objects.using('DailyPothole').all())
-        user_list_required          = set(each.username         for each in TblUser.objects.using('DailyPothole').all())        ## it's okay to use set, since username should be unique in the database anyway
-        operation_list_required     = set(each.operation        for each in TblOperation.objects.using('DailyPothole').all())  ## it's okay to use set, since username should be unique in the database anyway
-        boro_list_required          = set(each.boro_long        for each in TblBoro.objects.using('DailyPothole').all())       ## it's okay to use set, since username should be unique in the database anyway
+        required_user_permissions   = set(each.permission_id    for each in TblPermission.objects.using('DailyPothole').all())
+        required_user_list          = set(each.username         for each in TblUser.objects.using('DailyPothole').all())        ## it's okay to use set, since username should be unique in the database anyway
+        required_operation_list     = set(each.operation        for each in TblOperation.objects.using('DailyPothole').all())  ## it's okay to use set, since username should be unique in the database anyway
+        required_boro_list          = set(each.boro_long        for each in TblBoro.objects.using('DailyPothole').all())       ## it's okay to use set, since username should be unique in the database anyway
 
-        self.assertEqual(user_permissions_from_api, user_permissions_required
-            ,f"dailypothole_user_permissions_panel_view: context variable user_permissions either has more data than allowed ({user_permissions_from_api - user_permissions_required}) or has less data than allowed ({user_permissions_required - user_permissions_from_api})")
-        self.assertEqual(user_list_from_api, user_list_required
-            ,f"dailypothole_user_permissions_panel_view: context variable user_list either has more data than allowed ({user_list_from_api - user_list_required}) or has less data than allowed ({user_list_required - user_list_from_api})")
-        self.assertEqual(operation_list_from_api, operation_list_required
-            ,f"dailypothole_user_permissions_panel_view: context variable operation_list either has more data than allowed ({operation_list_from_api - operation_list_required}) or has less data than allowed ({operation_list_required - operation_list_from_api})")
-        self.assertEqual(boro_list_from_api, boro_list_required
-            ,f"dailypothole_user_permissions_panel_view: context variable boro_list either has more data than allowed ({boro_list_from_api - boro_list_required}) or has less data than allowed ({boro_list_required - boro_list_from_api})")
+        self.assertEqual(from_api_user_permissions, required_user_permissions
+            ,f"dailypothole_user_permissions_panel_view: context variable user_permissions either has more data than allowed ({from_api_user_permissions - required_user_permissions}) or has less data than allowed ({required_user_permissions - from_api_user_permissions})")
+        self.assertEqual(from_api_user_list, required_user_list
+            ,f"dailypothole_user_permissions_panel_view: context variable user_list either has more data than allowed ({from_api_user_list - required_user_list}) or has less data than allowed ({required_user_list - from_api_user_list})")
+        self.assertEqual(from_api_operation_list, required_operation_list
+            ,f"dailypothole_user_permissions_panel_view: context variable operation_list either has more data than allowed ({from_api_operation_list - required_operation_list}) or has less data than allowed ({required_operation_list - from_api_operation_list})")
+        self.assertEqual(from_api_boro_list, required_boro_list
+            ,f"dailypothole_user_permissions_panel_view: context variable boro_list either has more data than allowed ({from_api_boro_list - required_boro_list}) or has less data than allowed ({required_boro_list - from_api_boro_list})")
 
     def __assert_additional_context_qa_csv_export(self, response):
-        operation_list_from_api = set(response.context_data['operation_list'])
-        operation_list_required = set(each.operation for each in TblOperation.objects.using('DailyPothole').all())
-        self.assertEqual(operation_list_from_api, operation_list_required
-            ,f"dailypothole_csv_export_view: context variable operation_list either has more data than allowed ({operation_list_from_api - operation_list_required}) or has less data than allowed ({operation_list_required - operation_list_from_api})")
+        from_api_operation_list = set(response.context_data['operation_list'])
+        required_operation_list = set(each.operation for each in TblOperation.objects.using('DailyPothole').all())
+        self.assertEqual(from_api_operation_list, required_operation_list
+            ,f"dailypothole_csv_export_view: context variable operation_list either has more data than allowed ({from_api_operation_list - required_operation_list}) or has less data than allowed ({required_operation_list - from_api_operation_list})")
 
     def test_views_response_status_200(self):
         """Test normal user"""
