@@ -827,8 +827,9 @@ class TestAPIGetEmpGridStats(HttpPostTestCase):
         self.assert_post_key_lookup_equivalence(key_name='office_title_completed', key_value=type(response_content['post_data']['office_title_completed']), db_value=type(99.99))
         try:
             test = datetime.strptime(response_content['post_data']['list_last_updated_on_est'], "%m/%d/%Y %I:%M:%S %p")
-        except:
-            self.assertTrue(False, f"{response_content['post_data']['list_last_updated_on_est']} is not a valid datetime string in the format of '%m/%d/%Y %I:%M:%S %p'")
+        except Exception as e:
+            self.assertTrue(False
+                ,f"{response_content['post_data']['list_last_updated_on_est']} is not a valid datetime string in the format of '%m/%d/%Y %I:%M:%S %p': {e}")
         self.assert_post_key_lookup_equivalence(key_name='list_last_updated_by', key_value=type(response_content['post_data']['list_last_updated_by']), db_value=type(''))
         self.assert_post_key_lookup_equivalence(key_name='inactive_supervisor_list', key_value=type(response_content['post_data']['inactive_supervisor_list']), db_value=type([]))
         self.assert_post_key_lookup_equivalence(key_name='empty_or_invalid_floor_combo_list', key_value=type(response_content['post_data']['empty_or_invalid_floor_combo_list']), db_value=type([]))
@@ -890,6 +891,57 @@ class TestAPIEmpGridGetCsvExport(HttpPostTestCase):
         ## For admins, the post_success must be true, and post_msg should be "User is Admin"
         self.assertTrue(response_content['post_data']['csv_bytes'] is not None
             ,f"response_content['post_data']['csv_bytes'] should not be null, it should return some byte data in string form")
+
+    def test_data_validation(self):
+        pass ## This api doesn't take in any params
+
+
+class TestAPIGetCommissionerPMS(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_get_commissioner_pms'
+        self.test_pms   = TEST_COMMISSIONER_PMS
+        self.valid_payload = {}
+        self.post_response_json_key_specifications = [
+            {'name': 'dot_commissioner_pms', 'null': False}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For normal user, a 7 digit string should be returned as the commissioner pms
+        self.assert_post_key_lookup_equivalence(key_name='dot_commissioner_pms', key_value=type(response_content['post_data']['dot_commissioner_pms']), db_value=type(''))
+        self.assertTrue(len(response_content['post_data']['dot_commissioner_pms']) == 7
+            ,f"response_content['post_data']['dot_commissioner_pms'] is not len 7")
+        try:
+            test = int(response_content['post_data']['dot_commissioner_pms'])
+        except Exception as e:
+            self.assertTrue(False
+                ,f"response_content['post_data']['dot_commissioner_pms'] is not all digits: {e}")
+
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admin, a 7 digit string should be returned as the commissioner pms
+        self.assert_post_key_lookup_equivalence(key_name='dot_commissioner_pms', key_value=type(response_content['post_data']['dot_commissioner_pms']), db_value=type(''))
+        self.assertTrue(len(response_content['post_data']['dot_commissioner_pms']) == 7
+            ,f"response_content['post_data']['dot_commissioner_pms'] is not len 7")
+        try:
+            test = int(response_content['post_data']['dot_commissioner_pms'])
+        except Exception as e:
+            self.assertTrue(False
+                ,f"response_content['post_data']['dot_commissioner_pms'] is not all digits: {e}")
 
     def test_data_validation(self):
         pass ## This api doesn't take in any params

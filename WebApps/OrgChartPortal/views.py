@@ -1211,6 +1211,56 @@ class OrgChartPageView(generic.ListView):
             return context
 
 
+def GetCommissionerPMS(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetCommissionerPMS(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
+        })
+
+
+    ## Get the data
+    try:
+        # ## Check for Active Admins
+        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        # if not is_admin:
+        #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
+
+
+        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
+            civil_title='Commissioner-DOT'
+            ,lv__in=get_active_lv_list()
+        )
+
+        if emp_data.count() == 0:
+            raise ValueError(f"Cannot find an active DOT Commissioner in the database")
+        elif emp_data.count() > 1:
+            raise ValueError(f"Found more than one active DOT Commissioners in the database (Found {emp_data.count()})")
+
+        dot_commissioner = emp_data.first()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "dot_commissioner_pms": dot_commissioner.pms
+            },
+        })
+    except Exception as e:
+        get_error = f"Exception: OrgChartPortal: GetCommissionerPMS(): {e}"
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : get_error,
+            "post_data"     : None,
+        })
+
+
 def OrgChartGetEmpCsv(request):
     ## Authenticate User
     remote_user = None
@@ -1419,61 +1469,6 @@ def OrgChartGetEmpCsv(request):
             "post_success"  : False,
             "post_msg"      : get_error,
             "post_data"     : None,
-        })
-
-
-def GetCommissionerPMS(request):
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: OrgChartPortal: GetCommissionerPMS(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
-        })
-
-
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
-    ## Get the data
-    try:
-        # ## Check for Active Admins
-        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        # if not is_admin:
-        #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
-
-
-        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
-            civil_title='Commissioner-DOT'
-            ,lv__in=get_active_lv_list()
-        )
-
-        if emp_data.count() == 0:
-            raise ValueError(f"Cannot find an active DOT Commissioner in the database")
-        elif emp_data.count() > 1:
-            raise ValueError(f"Found more than one active DOT Commissioners in the database (Found {emp_data.count()})")
-
-        dot_commissioner = emp_data.first()
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": dot_commissioner.pms,
-        })
-    except Exception as e:
-        get_error = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": get_error
         })
 
 
