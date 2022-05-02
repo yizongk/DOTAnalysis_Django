@@ -1257,7 +1257,7 @@ class TestAPIDeleteUser(HttpPostTestCase):
             except ObjectDoesNotExist as e:
                 ... ## Good, do nothing
             except Exception as e:
-                raise ValueError(f"TestAPIDeleteUser: test_with_valid_data(): {e}")
+                raise ValueError(f"test_with_valid_data(): {e}")
             else:
                 self.assertTrue(False, f"{saved_object.username} still exists in the database, unable to delete user")
 
