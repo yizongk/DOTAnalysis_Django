@@ -20,25 +20,15 @@ from dateutil import tz
 ## Check if remote user is admin and is active
 def user_is_active_admin(username=None):
     try:
-        admin_query = TblUsers.objects.using('OrgChartWrite').filter(
+        user = TblUsers.objects.using('OrgChartWrite').get(
             windows_username=username
-            ,active=True
-            ,is_admin=True
         )
-        if admin_query.count() > 0:
-            return {
-                "isAdmin": True,
-                "err": "",
-            }
-        return {
-            "isAdmin": False,
-            "err": '{} is not an active Admin'.format(username),
-        }
+        if user.active:
+            return user.is_admin
+        else:
+            return False
     except Exception as e:
-        return {
-            "isAdmin": None,
-            "err": 'Exception: user_is_active_admin(): {}'.format(e),
-        }
+        raise ValueError(f"user_is_active_admin(): {e}")
 
 
 class HomePageView(TemplateView):
@@ -51,7 +41,7 @@ class HomePageView(TemplateView):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
-            self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+            self.client_is_admin = user_is_active_admin(self.request.user)
             context["client_is_admin"]  = self.client_is_admin
             context["get_success"]      = self.get_success
             context["get_error"]        = self.get_error
@@ -212,7 +202,7 @@ def get_active_permitted_emp_qryset(username=None, fields_list=None, read_only=T
         if username is None:
             raise ValueError(f"@username cannot be None, must provide the client's username")
 
-        client_is_admin = user_is_active_admin(username)['isAdmin']
+        client_is_admin = user_is_active_admin(username)
         emp_data = get_active_emp_qryset(
             fields_list=fields_list
             ,custom_annotate_fct=custom_annotate_fct
@@ -538,7 +528,7 @@ def UpdateEmployeeData(request):
             raise ValueError(f"new_value for {column_name} is not {type('')} type, the current type is {type(new_value)}")
 
         # Check for permission to edit the target employee row
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             allowed_wu_list = get_allowed_list_of_wu(remote_user)
 
@@ -599,7 +589,7 @@ def GetClientWUPermissions(request):
 
     ## Get the data
     try:
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if is_admin:
             return JsonResponse({
                 "post_success": True,
@@ -648,7 +638,7 @@ def GetClientTeammates(request):
 
     ## Get the data
     try:
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if is_admin:
             return JsonResponse({
                 "post_success": True,
@@ -724,7 +714,7 @@ def GetEmpGridStats(request):
         active_permitted_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=annotate_emp_full_name)
         active_permitted_emp = active_permitted_emp.order_by('wu__wu')
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         def get_supervisor_completed():
             try:
@@ -969,7 +959,7 @@ def EmpGridGetCsvExport(request):
         from io import StringIO
         dummy_in_mem_file = StringIO()
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         fields_list = [
             'pms'
@@ -1048,7 +1038,7 @@ class EmpGridPageView(generic.ListView):
 
     def get_queryset(self):
         ## Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)['isAdmin']
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1122,6 +1112,7 @@ class EmpGridPageView(generic.ListView):
             self.site_type_dropdown_list_json   = json.dumps(list(site_type_dropdown_list)  , cls=DjangoJSONEncoder)
 
         except Exception as e:
+            raise
             self.get_success = False
             self.get_error = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             return None
@@ -1172,11 +1163,7 @@ class OrgChartPageView(generic.ListView):
 
     def get_queryset(self):
         ## Check for Active Admins
-        is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["isAdmin"] == True:
-            self.client_is_admin = True
-        else:
-            self.client_is_admin = False
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1228,7 +1215,7 @@ def GetCommissionerPMS(request):
     ## Get the data
     try:
         # ## Check for Active Admins
-        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        # is_admin = user_is_active_admin(remote_user)
         # if not is_admin:
         #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
 
@@ -1289,7 +1276,7 @@ def OrgChartGetEmpCsv(request):
         root_pms = json_blob['root_pms']
 
         ## Check for Active Admins
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         emp_data = TblEmployees.objects.using('OrgChartRead').exclude(
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
@@ -1481,7 +1468,7 @@ class AdminPanelPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1526,7 +1513,7 @@ class ManageUsersPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1616,7 +1603,7 @@ def AddUser(request):
         is_admin            = json_blob['is_admin']
 
 
-        if not user_is_active_admin(remote_user)["isAdmin"]:
+        if not user_is_active_admin(remote_user):
             raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
 
@@ -1713,7 +1700,7 @@ def UpdateUser(request):
         new_value           = json_blob['new_value']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
@@ -1816,7 +1803,7 @@ def DeleteUser(request):
         elif windows_username == '':
             raise ValueError("windows_username cannot be empty string")
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not an admin and does not have the permission to delete a user".format(remote_user))
 
@@ -1866,7 +1853,7 @@ class ManagePermissionsPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1961,7 +1948,7 @@ def AddUserPermission(request):
         perm_identifier     = json_blob['perm_identifier']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to add a new user permission".format(remote_user))
 
@@ -2081,7 +2068,7 @@ def DeleteUserPermission(request):
         perm_delete_by      = json_blob['perm_delete_by']
         perm_identifier     = json_blob['perm_identifier']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
 
