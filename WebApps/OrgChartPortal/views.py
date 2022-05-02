@@ -604,7 +604,9 @@ def GetClientWUPermissions(request):
             return JsonResponse({
                 "post_success": True,
                 "post_msg": 'User is Admin',
-                "post_data": None,
+                "post_data": {
+                    "wu_permissions": None
+                },
             })
         else:
             wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
@@ -618,7 +620,9 @@ def GetClientWUPermissions(request):
             return JsonResponse({
                 "post_success": True,
                 "post_msg": None,
-                "post_data": wu_permissions_list_json,
+                "post_data": {
+                    "wu_permissions": wu_permissions_list_json
+                },
             })
 
 

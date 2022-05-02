@@ -393,7 +393,6 @@ class TestViewPagesResponse(HttpGetTestCase):
         self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_admin)
 
 
-
 class TestAPIUpdateEmployeeData(HttpPostTestCase):
     @classmethod
     def setUpClass(self):
@@ -403,7 +402,6 @@ class TestAPIUpdateEmployeeData(HttpPostTestCase):
 
         tear_down()
         set_up_permissions()
-        get_or_create_user()
         self.test_pms   = TEST_PMS
 
         self.__null_out_test_pms_obj(self)
@@ -704,3 +702,47 @@ class TestAPIUpdateEmployeeData(HttpPostTestCase):
         saved_change_obj = self.__get_latest_changes_obj_by(by_pms=proposed_by_pms, to_pms=proposed_to_pms, column_name=proposed_column_name)
         self.assert_post_key_update_equivalence(key_name=f"tblChanges: track change of '{proposed_column_name}' failed", key_value=proposed_new_value, db_value=saved_change_obj.new_value)
 
+
+class TestAPIGetClientWUPermissions(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_get_client_wu_permissions_list'
+        self.post_response_json_key_specifications = [
+            {'name': 'wu_permissions', 'null': True}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+        self.client_usr_obj = get_or_create_user()
+        self.valid_payload = {}
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## Check if data was queried correctly
+        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                user_id__windows_username=self.client_usr_obj.windows_username
+                ,user_id__active=True
+                ,is_active=True
+            )
+        wu_permissions_required = set(each.wu.wu for each in wu_permissions_query)
+
+        self.assert_post_key_lookup_equivalence(key_name='wu_permissions', key_value=set(each['wu__wu'] for each in response_content['post_data']['wu_permissions']), db_value=wu_permissions_required)
+
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.assert_post_key_lookup_equivalence(key_name='post_msg', key_value=response_content['post_msg'], db_value="User is Admin")
+
+    def test_data_validation(self):
+        pass ## This api doesn't take in any params
