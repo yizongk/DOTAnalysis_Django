@@ -7,7 +7,7 @@ from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 import json
-from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS
+from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS, TEST_COMMISSIONER_PMS
 from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase, HttpGetTestCase
 from django.db.models import Max, Q
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
@@ -893,4 +893,60 @@ class TestAPIEmpGridGetCsvExport(HttpPostTestCase):
 
     def test_data_validation(self):
         pass ## This api doesn't take in any params
+
+
+class TestAPIOrgChartGetEmpCsv(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_org_chart_get_emp_csv'
+        self.test_pms   = TEST_COMMISSIONER_PMS
+        self.valid_payload = {
+            'root_pms': self.test_pms
+        }
+        self.post_response_json_key_specifications = [
+            {'name': 'emp_csv', 'null': False}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.assertTrue(response_content['post_data']['emp_csv'] is not None
+            ,f"For a normal user, response_content['post_data']['emp_csv'] should not be null, it should return some byte data in string form")
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.assertTrue(response_content['post_data']['emp_csv'] is not None
+            ,f"For an admin, response_content['post_data']['emp_csv'] should not be null, it should return some byte data in string form")
+
+    def test_data_validation(self):
+        payload = self.valid_payload
+        parameters = [
+            # Parameter name  # Accepted type
+            "root_pms"        # str -> string of len 7 with all digits
+        ]
+        for param_name in parameters:
+            if param_name == 'root_pms':
+                valid   = [self.test_pms]
+                invalid = ['a', 1, 2.3, False, None]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 

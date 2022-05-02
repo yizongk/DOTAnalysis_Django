@@ -1219,8 +1219,9 @@ def OrgChartGetEmpCsv(request):
     else:
         print('Warning: OrgChartPortal: OrgChartGetEmpCsv(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUNAUTHENTICATE USER!",
+            "post_success"  : False,
+            "post_msg"      : "OrgChartPortal: OrgChartGetEmpCsv():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
     ## Read the json request body
@@ -1228,8 +1229,9 @@ def OrgChartGetEmpCsv(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: OrgChartGetEmpCsv():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     ## Get the data
@@ -1405,15 +1407,18 @@ def OrgChartGetEmpCsv(request):
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": dummy_in_mem_file.getvalue(),
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "emp_csv": dummy_in_mem_file.getvalue()
+            },
         })
     except Exception as e:
-        get_error = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
+        get_error = f"Exception: OrgChartPortal: OrgChartGetEmpCsv(): {e}"
         return JsonResponse({
-            "post_success": False,
-            "post_msg": get_error
+            "post_success"  : False,
+            "post_msg"      : get_error,
+            "post_data"     : None,
         })
 
 
