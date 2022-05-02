@@ -1581,8 +1581,9 @@ def AddUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1593,9 +1594,9 @@ def AddUser(request):
     else:
         print('Warning: AddUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "AddUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1604,8 +1605,9 @@ def AddUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"AddUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1615,7 +1617,7 @@ def AddUser(request):
 
 
         if not user_is_active_admin(remote_user)["isAdmin"]:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
 
         if windows_username is None:
@@ -1650,21 +1652,25 @@ def AddUser(request):
         return JsonResponse({
             "post_success"      : True,
             "post_msg"          : None,
-            "windows_username"  : new_user.windows_username,
-            "pms"               : new_user.pms.pms,
-            "is_admin"          : new_user.is_admin,
+            "post_data"         : {
+                "windows_username"  : new_user.windows_username,
+                "pms"               : new_user.pms.pms,
+                "is_admin"          : str(new_user.is_admin),
+                "active"            : str(new_user.active)
+            },
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success"      : False,
-            "post_msg"          : f"OrgChartPortal: AddUser():\n\nError: {e}",
-            "windows_username"  : new_user.windows_username
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
+            "post_data"     : None,
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
             # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 

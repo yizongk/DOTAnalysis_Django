@@ -1002,3 +1002,101 @@ class TestAPIOrgChartGetEmpCsv(HttpPostTestCase):
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
+
+class TestAPIAddUser(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.user_obj               = grant_admin_status()
+        self.api_name               = 'orgchartportal_add_user'
+        self.post_response_json_key_specifications = [
+            {'name': 'windows_username' , 'null': False}
+            ,{'name': 'pms'             , 'null': False}
+            ,{'name': 'is_admin'        , 'null': False}
+            ,{'name': 'active'          , 'null': False}
+        ]
+
+        self.valid_username         = 'SomeTestUsername'
+        self.valid_pms              = TEST_COMMISSIONER_PMS
+
+        self.valid_payloads = [
+            {
+                'windows_username'  : self.valid_username,
+                'pms'               : self.valid_pms,
+                'is_admin'          : 'False',
+            }
+            ,{
+                'windows_username'  : self.valid_username,
+                'pms'               : self.valid_pms,
+                'is_admin'          : 'True',
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        self.remove_test_user_if_exists(self)
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def remove_test_user_if_exists(self):
+        try:
+            new_user = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=self.valid_username, pms__exact=self.valid_pms)
+        except:
+            ...#Do nothing
+        else:
+            new_user.delete(using='OrgChartWrite')
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.remove_test_user_if_exists()
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            saved_object = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=self.valid_username)
+
+            self.assert_post_key_update_equivalence(key_name='windows_username' , key_value=payload['windows_username'] , db_value=saved_object.windows_username)
+            self.assert_post_key_update_equivalence(key_name='pms'              , key_value=payload['pms']              , db_value=saved_object.pms)
+            self.assert_post_key_update_equivalence(key_name='is_admin'         , key_value=payload['is_admin']         , db_value=str(saved_object.is_admin))
+            self.assertTrue(str(saved_object.active)=='True'
+                ,f"the newly added user {saved_object.windows_username}'s active field is not True, it must be True. Current value: '{str(saved_object.active)}'")
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "windows_username"  # str -> username
+            ,"pms"              # str -> 7 len, all digits
+            ,"is_admin"         # str -> 'True' or 'False'
+        ]
+        for param_name in parameters:
+            if param_name == 'windows_username':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'pms':
+                valid   = [self.valid_pms]
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, 'a0', '12345678', '123456']
+            elif param_name == 'is_admin':
+                valid   = ['False', 'True']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.remove_test_user_if_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.remove_test_user_if_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)

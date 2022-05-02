@@ -287,13 +287,13 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.windows_username}' added successfully!`);
+                        alert(`'${json_response.post_data.windows_username}' added successfully!`);
                         gridOptions.api.applyTransaction({
                             add     : [{
-                                        pms             : json_response.pms,
-                                        windows_username: json_response.windows_username,
-                                        is_admin        : json_response.is_admin.toLowerCase(),
-                                        active          : 'true'
+                                        pms             : json_response.post_data.pms,
+                                        windows_username: json_response.post_data.windows_username,
+                                        is_admin        : json_response.post_data.is_admin.toLowerCase(),
+                                        active          : json_response.post_data.active.toLowerCase(),
                                     }],
                             addIndex: 0
                         });
