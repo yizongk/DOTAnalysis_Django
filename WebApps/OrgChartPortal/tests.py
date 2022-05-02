@@ -43,6 +43,7 @@ def grant_admin_status(windows_username=TEST_WINDOWS_USERNAME):
     try:
         user = get_or_create_user(windows_username=windows_username)
         user.is_admin=True
+        user.active=True
         user.save(using='OrgChartWrite')
         return user
     except Exception as e:
@@ -835,7 +836,6 @@ class TestAPIGetEmpGridStats(HttpPostTestCase):
         self.assert_post_key_lookup_equivalence(key_name='empty_or_invalid_floor_combo_list', key_value=type(response_content['post_data']['empty_or_invalid_floor_combo_list']), db_value=type([]))
         self.assert_post_key_lookup_equivalence(key_name='empty_or_invalid_site_type_combo_list', key_value=type(response_content['post_data']['empty_or_invalid_site_type_combo_list']), db_value=type([]))
 
-
     def test_with_valid_data(self):
         remove_admin_status()
         payload             = self.valid_payload
@@ -1192,5 +1192,94 @@ class TestAPIUpdateUser(HttpPostTestCase):
 
             for data in invalid:
                 grant_admin_status()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIDeleteUser(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name               = 'orgchartportal_delete_user'
+        self.post_response_json_key_specifications = [
+            {'name': 'windows_username'  , 'null': False}
+        ]
+
+        self.valid_username         = 'some_random_name'
+        self.valid_pms              = TEST_COMMISSIONER_PMS
+
+        self.valid_payloads = [
+            {
+                'windows_username': self.valid_username,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        try:
+            test_user = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=self.valid_username)
+        except ObjectDoesNotExist as e:
+            ... ## Good, do nothing
+        except:
+            raise
+        else:
+            test_user.delete(using='OrgChartWrite')
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def add_test_user_if_not_exists(self):
+        test_user = TblUsers.objects.using('OrgChartWrite').get_or_create(
+            windows_username=self.valid_username
+            ,pms=TblEmployees.objects.using('OrgChartWrite').get(pms__exact=self.valid_pms)
+        )[0]
+        test_user.save(using='OrgChartWrite')
+
+    def test_with_valid_data(self):
+        for payload in self.valid_payloads:
+            grant_admin_status()
+            self.add_test_user_if_not_exists()
+            response_content = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was deleted correctly
+            try:
+                saved_object = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=self.valid_username)
+            except ObjectDoesNotExist as e:
+                ... ## Good, do nothing
+            except Exception as e:
+                raise ValueError(f"test_with_valid_data(): {e}")
+            else:
+                self.assertTrue(False, f"{saved_object.windows_username} still exists in the database, unable to delete user")
+
+            ## Check that a string was returned for windows_username
+            self.assert_post_key_lookup_equivalence(key_name='windows_username', key_value=response_content['post_data']['windows_username'], db_value=payload['windows_username'])
+
+    def test_data_validation(self):
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "windows_username"  # str -> windows username
+        ]
+        for param_name in parameters:
+            if param_name == 'windows_username':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None, 'whateverhappened?']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                grant_admin_status()
+                self.add_test_user_if_not_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                grant_admin_status()
+                self.add_test_user_if_not_exists()
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 

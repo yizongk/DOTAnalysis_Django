@@ -1779,8 +1779,9 @@ def DeleteUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1791,9 +1792,9 @@ def DeleteUser(request):
     else:
         print('Warning: DeleteUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1802,8 +1803,9 @@ def DeleteUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DeleteUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1816,7 +1818,7 @@ def DeleteUser(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to delete a user".format(remote_user))
 
         try:
             user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
@@ -1832,9 +1834,11 @@ def DeleteUser(request):
             raise e
 
         return JsonResponse({
-            "post_success"      : True,
-            "post_msg"          : None,
-            "windows_username"  : windows_username
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "windows_username": windows_username
+            },
         })
 
     except Exception as e:
@@ -1842,6 +1846,7 @@ def DeleteUser(request):
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}",
             # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 

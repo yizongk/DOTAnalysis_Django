@@ -224,7 +224,7 @@
                         api_url             : "{% url 'orgchartportal_delete_user' %}",
                         http_request_method : "POST",
                         successCallbackFct  : function(json_response) {
-                                                alert(`'${json_response.windows_username}' removed successfully!`);
+                                                alert(`'${json_response.post_data.windows_username}' removed successfully!`);
                                                 gridOptions.api.applyTransaction({ remove: [selected_row] });
                                                 return;
                                             }
