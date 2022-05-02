@@ -964,21 +964,10 @@ def EmpGridGetCsvExport(request):
         })
 
 
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Exception: OrgChartPortal: EmpGridGetCsvExport():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
     try:
         import csv
         from io import StringIO
         dummy_in_mem_file = StringIO()
-
-        # some_post_param   = json_blob['some_post_param']
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
 
