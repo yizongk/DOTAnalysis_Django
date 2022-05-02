@@ -30,10 +30,14 @@ def get_or_create_user(windows_username=TEST_WINDOWS_USERNAME):
         pms.wu=wu
         pms.save(using='OrgChartWrite')
 
-        return TblUsers.objects.using('OrgChartWrite').get_or_create(
+        user = TblUsers.objects.using('OrgChartWrite').get_or_create(
             windows_username=windows_username
             ,pms=pms
         )[0]
+        user.active = True
+        user.save(using='OrgChartWrite')
+
+        return user
     except Exception as e:
         raise ValueError(f"get_or_create_user(): {e}")
 
