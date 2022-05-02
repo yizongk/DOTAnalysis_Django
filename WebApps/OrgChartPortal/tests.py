@@ -816,7 +816,6 @@ class TestAPIGetEmpGridStats(HttpPostTestCase):
         tear_down()
         set_up_permissions()
 
-        self.client_usr_obj = get_or_create_user()
         self.valid_payload = {}
 
     @classmethod
@@ -855,4 +854,43 @@ class TestAPIGetEmpGridStats(HttpPostTestCase):
     def test_data_validation(self):
         pass ## This api doesn't take in any params
 
+
+class TestAPIEmpGridGetCsvExport(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_emp_grid_get_csv_export'
+        self.post_response_json_key_specifications = [
+            {'name': 'csv_bytes', 'null': False}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+        self.client_usr_obj = get_or_create_user()
+        self.valid_payload = {}
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## Check any byte data returned
+        self.assertTrue(response_content['post_data']['csv_bytes'] is not None
+            ,f"response_content['post_data']['csv_bytes'] should not be null, it should return some byte data in string form")
+
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.assertTrue(response_content['post_data']['csv_bytes'] is not None
+            ,f"response_content['post_data']['csv_bytes'] should not be null, it should return some byte data in string form")
+
+    def test_data_validation(self):
+        pass ## This api doesn't take in any params
 

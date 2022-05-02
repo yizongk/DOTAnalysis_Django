@@ -1020,7 +1020,9 @@ def EmpGridGetCsvExport(request):
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
-            "post_csv_bytes": dummy_in_mem_file.getvalue(),
+            "post_data": {
+                "csv_bytes": dummy_in_mem_file.getvalue()
+            },
         })
     except Exception as e:
         return JsonResponse({
