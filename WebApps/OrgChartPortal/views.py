@@ -688,24 +688,6 @@ def GetClientTeammates(request):
         })
 
 
-def GetRemoteUserEmpObj(remote_user):
-    try:
-        try:
-            remote_user_obj = TblUsers.objects.using('OrgChartRead').get(windows_username__exact=remote_user)
-            remote_user_pms  = remote_user_obj.pms.pms
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"The client '{remote_user}' is not a user of the system")
-
-        try:
-            remote_user_emp_obj = TblEmployees.objects.using('OrgChartRead').get(pms__exact=remote_user_pms)
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"The client '{remote_user}' with the pms '{remote_user_pms}' doesn't exist in the employees table")
-
-        return remote_user_emp_obj
-    except Exception as e:
-        raise ValueError(f"GetRemoteUserEmpObj(): {e}")
-
-
 def GetEmpGridStats(request):
     ## Authenticate User
     remote_user = None
