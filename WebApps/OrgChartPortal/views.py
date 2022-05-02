@@ -1678,8 +1678,9 @@ def UpdateUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1690,9 +1691,9 @@ def UpdateUser(request):
     else:
         print('Warning: UpdateUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1701,8 +1702,9 @@ def UpdateUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1713,7 +1715,7 @@ def UpdateUser(request):
 
         is_admin = user_is_active_admin(remote_user)["isAdmin"]
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
 
         valid_editable_ag_column_names = ['Is Admin', 'Active']
@@ -1755,11 +1757,13 @@ def UpdateUser(request):
             raise ValueError(f"Can't find a user with this windows_username '{to_windows_username}'")
 
         return JsonResponse({
-            "post_success"          : True,
-            "post_msg"              : None,
-            "to_windows_username"   : to_windows_username,
-            "column_name"           : column_name,
-            "new_value"             : new_value,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "to_windows_username"   : to_windows_username,
+                "column_name"           : column_name,
+                "new_value"             : new_value,
+            },
         })
 
     except Exception as e:
@@ -1767,6 +1771,7 @@ def UpdateUser(request):
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}",
             # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 

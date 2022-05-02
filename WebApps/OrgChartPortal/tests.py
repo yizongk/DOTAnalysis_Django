@@ -1100,3 +1100,97 @@ class TestAPIAddUser(HttpPostTestCase):
             for data in invalid:
                 self.remove_test_user_if_exists()
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUpdateUser(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.user_obj               = grant_admin_status()
+        self.api_name               = 'orgchartportal_update_user'
+        self.post_response_json_key_specifications = [
+            {'name': 'to_windows_username'  , 'null': False}
+            ,{'name': 'column_name'         , 'null': False}
+            ,{'name': 'new_value'           , 'null': False}
+        ]
+
+        self.valid_payloads = [
+            {
+                'to_windows_username'   : self.user_obj.windows_username,
+                'column_name'           : 'Is Admin',
+                'new_value'             : 'True',
+            }
+            ,{
+                'to_windows_username'   : self.user_obj.windows_username,
+                'column_name'           : 'Is Admin',
+                'new_value'             : 'False',
+            }
+            ,{
+                'to_windows_username'   : self.user_obj.windows_username,
+                'column_name'           : 'Active',
+                'new_value'             : 'True',
+            }
+            ,{
+                'to_windows_username'   : self.user_obj.windows_username,
+                'column_name'           : 'Active',
+                'new_value'             : 'False',
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        for payload in self.valid_payloads:
+            grant_admin_status()
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            saved_object = TblUsers.objects.using('OrgChartWrite').get(windows_username__exact=self.user_obj.windows_username)
+
+            if payload['column_name'] == 'Is Admin':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=str(saved_object.is_admin))
+            elif payload['column_name'] == 'Active':
+                self.assert_post_key_update_equivalence(key_name=payload['column_name'], key_value=payload['new_value'], db_value=str(saved_object.active))
+            else:
+                raise ValueError(f"{payload['column']} is not recognized as a valid column value in the payload")
+
+    def test_data_validation(self):
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name        # Accepted type
+            'to_windows_username'   # str -> windows username
+            ,'column_name'          # str -> 'Is Admin' or 'Active' only
+            ,'new_value'            # str -> 'True' or 'False' only
+        ]
+        for param_name in parameters:
+            if param_name == 'to_windows_username':
+                valid   = [self.user_obj.windows_username]
+                invalid = [1, 2.3, False, None, 'sdfds']
+            elif param_name == 'column_name':
+                valid   = ['Is Admin', 'Active']
+                invalid = [1, 2.3, False, None, 'sdfds']
+            elif param_name == 'new_value':
+                valid   = ['False', 'True']
+                invalid = ['a', 1, 2.3, None, False]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                grant_admin_status()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                grant_admin_status()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
