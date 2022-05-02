@@ -797,3 +797,62 @@ class TestAPIGetClientTeammates(HttpPostTestCase):
 
     def test_data_validation(self):
         pass ## This api doesn't take in any params
+
+
+class TestAPIGetEmpGridStats(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_get_emp_grid_stats'
+        self.post_response_json_key_specifications = [
+            {'name': 'supervisor_completed'                     , 'null': True}
+            ,{'name': 'office_title_completed'                  , 'null': True}
+            ,{'name': 'list_last_updated_on_est'                , 'null': True}
+            ,{'name': 'list_last_updated_by'                    , 'null': True}
+            ,{'name': 'inactive_supervisor_list'                , 'null': True}
+            ,{'name': 'empty_or_invalid_floor_combo_list'       , 'null': True}
+            ,{'name': 'empty_or_invalid_site_type_combo_list'   , 'null': True}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+        self.client_usr_obj = get_or_create_user()
+        self.valid_payload = {}
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def __assert_stats_types(self, response_content):
+        self.assert_post_key_lookup_equivalence(key_name='supervisor_completed', key_value=type(response_content['post_data']['supervisor_completed']), db_value=type(99.99))
+        self.assert_post_key_lookup_equivalence(key_name='office_title_completed', key_value=type(response_content['post_data']['office_title_completed']), db_value=type(99.99))
+        try:
+            test = datetime.strptime(response_content['post_data']['list_last_updated_on_est'], "%m/%d/%Y %I:%M:%S %p")
+        except:
+            self.assertTrue(False, f"{response_content['post_data']['list_last_updated_on_est']} is not a valid datetime string in the format of '%m/%d/%Y %I:%M:%S %p'")
+        self.assert_post_key_lookup_equivalence(key_name='list_last_updated_by', key_value=type(response_content['post_data']['list_last_updated_by']), db_value=type(''))
+        self.assert_post_key_lookup_equivalence(key_name='inactive_supervisor_list', key_value=type(response_content['post_data']['inactive_supervisor_list']), db_value=type([]))
+        self.assert_post_key_lookup_equivalence(key_name='empty_or_invalid_floor_combo_list', key_value=type(response_content['post_data']['empty_or_invalid_floor_combo_list']), db_value=type([]))
+        self.assert_post_key_lookup_equivalence(key_name='empty_or_invalid_site_type_combo_list', key_value=type(response_content['post_data']['empty_or_invalid_site_type_combo_list']), db_value=type([]))
+
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## Check if data type was returned correctly. No data accuracy check here at the moment.
+        self.__assert_stats_types(response_content=response_content)
+
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.__assert_stats_types(response_content=response_content)
+
+    def test_data_validation(self):
+        pass ## This api doesn't take in any params
+
+
