@@ -746,3 +746,54 @@ class TestAPIGetClientWUPermissions(HttpPostTestCase):
 
     def test_data_validation(self):
         pass ## This api doesn't take in any params
+
+
+class TestAPIGetClientTeammates(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        self.api_name   = 'orgchartportal_get_client_teammates_list'
+        self.post_response_json_key_specifications = [
+            {'name': 'teammates', 'null': True}
+        ]
+
+        tear_down()
+        set_up_permissions()
+
+        self.client_usr_obj = get_or_create_user()
+        self.valid_payload = {}
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        remove_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## Check if data was queried correctly
+        wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                user_id__windows_username=self.client_usr_obj.windows_username
+                ,user_id__active=True
+            )
+        wu_permissions_list = wu_permissions_query.values('wu__wu')
+        teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+            wu__wu__in=wu_permissions_list
+            ,user_id__active=True
+            ,is_active=True
+        )
+
+        teammates_required = set(each.user_id.pms.pms for each in teammates_query)
+
+        self.assert_post_key_lookup_equivalence(key_name='teammates', key_value=sorted(set(each['user_id__pms__pms'] for each in response_content['post_data']['teammates'])), db_value=sorted(teammates_required))
+
+
+        grant_admin_status()
+        payload             = self.valid_payload
+        response_content    = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+        ## For admins, the post_success must be true, and post_msg should be "User is Admin"
+        self.assert_post_key_lookup_equivalence(key_name='post_msg', key_value=response_content['post_msg'], db_value="User is Admin")
+
+    def test_data_validation(self):
+        pass ## This api doesn't take in any params

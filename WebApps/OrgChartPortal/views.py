@@ -653,7 +653,9 @@ def GetClientTeammates(request):
             return JsonResponse({
                 "post_success": True,
                 "post_msg": 'User is Admin',
-                "post_data": None,
+                "post_data": {
+                    "teammates": None
+                },
             })
         else:
             wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
@@ -667,14 +669,16 @@ def GetClientTeammates(request):
                 wu__wu__in=wu_permissions_list
                 ,user_id__active=True
                 ,is_active=True
-            ).order_by('user_id__pms')
+            ).order_by('user_id__pms__pms')
 
-            teammates_list_json = list(teammates_query.values('user_id__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))
+            teammates_list_json = list(teammates_query.values('user_id__pms__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))
 
             return JsonResponse({
                 "post_success": True,
                 "post_msg": None,
-                "post_data": teammates_list_json,
+                "post_data": {
+                    "teammates": teammates_list_json
+                },
             })
     except Exception as e:
         get_error = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
