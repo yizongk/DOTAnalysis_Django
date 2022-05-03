@@ -2041,8 +2041,9 @@ def DeleteUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -2053,9 +2054,9 @@ def DeleteUserPermission(request):
     else:
         print('Warning: DeleteUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2064,8 +2065,9 @@ def DeleteUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: DeleteUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -2075,20 +2077,42 @@ def DeleteUserPermission(request):
 
         is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to remove user permission".format(remote_user))
 
         if windows_username is None:
             raise ValueError(f"windows_username '{windows_username}' cannot be null")
         elif windows_username == '':
             raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
+        else:
+            try:
+                TblUsers.objects.using('OrgChartRead').get(
+                    windows_username=windows_username
+                    ,active=True
+                )
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"windows_username '{windows_username}' not an active user")
 
         valid_action_by = ['division', 'wu']
         if perm_delete_by not in valid_action_by:
             raise ValueError(f"perm_delete_by '{perm_delete_by}' must be one of these options {valid_action_by}")
 
         if perm_delete_by == 'division':
-            ...
-            #@TODO implement this
+            if perm_identifier is None:
+                raise ValueError(f"division '{perm_identifier}' cannot be null")
+            elif perm_identifier == '':
+                raise ValueError(f"division '{perm_identifier}' cannot be empty string")
+
+            try:
+                wu_permissions = TblPermissionsWorkUnit.objects.using("OrgChartWrite").filter(
+                    user_id__windows_username__exact=windows_username
+                    ,wu__subdiv__exact=perm_identifier
+                )
+                for each_permission in wu_permissions:
+                    each_permission.delete(using='OrgChartWrite')
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"Could not find any valid user permissions with this windows_username and division: '{windows_username}' - '{perm_identifier}'")
+            except Exception as e:
+                raise e
 
         elif perm_delete_by == 'wu':
             if perm_identifier is None:
@@ -2101,7 +2125,7 @@ def DeleteUserPermission(request):
                     user_id__windows_username=windows_username
                     ,wu__wu=perm_identifier
                 )
-                wu_permission.delete()
+                wu_permission.delete(using='OrgChartWrite')
             except ObjectDoesNotExist as e:
                 raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{perm_identifier}'")
             except Exception as e:
@@ -2111,16 +2135,19 @@ def DeleteUserPermission(request):
             raise ValueError(f"Unrecognized perm_delete_by '{perm_delete_by}'. Must be one of these options {valid_action_by}")
 
         return JsonResponse({
-            "post_success"      : True,
-            "post_msg"          : None,
-            "windows_username"  : windows_username,
-            "perm_identifier"   : perm_identifier,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "windows_username"  : windows_username,
+                "perm_identifier"   : perm_identifier,
+            },
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
             # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None
         })
 
 

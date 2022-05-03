@@ -171,7 +171,7 @@
                         api_url             : "{% url 'orgchartportal_delete_user_permission' %}",
                         http_request_method : "POST",
                         successCallbackFct  : function(json_response) {
-                                                alert(`('${json_response.windows_username}' - '${json_response.perm_identifier}') removed successfully!`);
+                                                alert(`('${json_response.post_data.windows_username}' - '${json_response.post_data.perm_identifier}') removed successfully!`);
                                                 gridOptions.api.applyTransaction({ remove: [selected_row] });
                                                 return;
                                             }
