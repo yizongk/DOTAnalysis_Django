@@ -1,14 +1,10 @@
-from django.test import Client
-import unittest
 from .models import *
-from django.contrib.auth.models import User
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-from django.contrib import auth
 from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
-from WebAppsMain.settings import TEST_WINDOWS_USERNAME, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS, APP_DEFINED_HTTP_GET_CONTEXT_KEYS
-from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase, HttpGetTestCase
+from WebAppsMain.settings import TEST_WINDOWS_USERNAME
+from WebAppsMain.testing_utils import HttpPostTestCase, HttpGetTestCase
 import json
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
