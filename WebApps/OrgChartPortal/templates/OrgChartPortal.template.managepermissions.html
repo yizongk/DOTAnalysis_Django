@@ -209,13 +209,13 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
+                        alert(`'${json_response.post_data.windows_username}' - '${json_response.post_data.perm_identifier}' Work Unit Permissions added successfully!`);
 
-                        let new_wu_perms = json_response.wu_added_list;
+                        let new_wu_perms = json_response.post_data.wu_added_list;
                         new_wu_perms.forEach(x => {
                             gridOptions.api.applyTransaction({
                                 add     : [{
-                                            user_id__windows_username   : json_response.windows_username,
+                                            user_id__windows_username   : json_response.post_data.windows_username,
                                             wu__wu                      : x.wu,
                                             wu__subdiv                  : x.subdiv,
                                             wu__wu_desc                 : x.wu_desc
@@ -258,13 +258,13 @@
 
                 sendModalFormDataToServer( json_blob=json_blob, api_url="{% url 'orgchartportal_add_user_permission' %}", http_request_method="POST",
                     successCallbackFct=function(json_response) {
-                        alert(`'${json_response.windows_username}' - '${json_response.perm_identifier}' Work Unit Permissions added successfully!`);
+                        alert(`'${json_response.post_data.windows_username}' - '${json_response.post_data.perm_identifier}' Work Unit Permissions added successfully!`);
 
-                        let new_wu_perms = json_response.wu_added_list;
+                        let new_wu_perms = json_response.post_data.wu_added_list;
                         new_wu_perms.forEach(x => {
                             gridOptions.api.applyTransaction({
                                 add     : [{
-                                            user_id__windows_username   : json_response.windows_username,
+                                            user_id__windows_username   : json_response.post_data.windows_username,
                                             wu__wu                      : x.wu,
                                             wu__subdiv                  : x.subdiv,
                                             wu__wu_desc                 : x.wu_desc

@@ -10,6 +10,7 @@ import json
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS, TEST_COMMISSIONER_PMS
 from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase, HttpGetTestCase
 from django.db.models import Max, Q
+import copy
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
 
 
@@ -1287,3 +1288,139 @@ class TestAPIDeleteUser(HttpPostTestCase):
                 self.add_test_user_if_not_exists()
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
 
+
+class TestAPIAddUserPermission(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name                           = 'orgchartportal_add_user_permission'
+        self.valid_username                     = TEST_WINDOWS_USERNAME
+        self.valid_add_by_division_identifier   = 'Legal'
+        self.valid_add_by_wu_identifier         = '1004'
+        self.post_response_json_key_specifications = [
+            {'name': 'windows_username' , 'null': False}
+            ,{'name': 'perm_identifier' , 'null': False}
+            ,{'name': 'wu_added_list'   , 'null': False}
+        ]
+
+        self.valid_payloads = [
+            {
+                'windows_username'  : self.valid_username,
+                'perm_add_by'       : 'division',
+                'perm_identifier'   : self.valid_add_by_division_identifier
+            }
+            ,{
+                'windows_username'  : self.valid_username,
+                'perm_add_by'       : 'wu',
+                'perm_identifier'   : self.valid_add_by_wu_identifier
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            tear_down_permissions(windows_username=self.valid_username)
+            self.__clean_up_any_permissions_added_in_this_test() ## Need to remove additional permissions that is added in this api
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            if payload['perm_add_by'] == 'wu':
+                saved_object = TblPermissionsWorkUnit.objects.using('OrgChartRead').get(
+                    user_id__windows_username__exact    = payload['windows_username']
+                    ,wu__wu__exact                      = payload['perm_identifier']
+                )
+
+                self.assert_post_key_update_equivalence(key_name='is_active', key_value=True, db_value=saved_object.is_active)
+            elif payload['perm_add_by'] == 'division':
+                saved_objects = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
+                    user_id__windows_username__exact    = payload['windows_username']
+                    ,wu__subdiv__exact                  = payload['perm_identifier']
+                )
+                saved_wu_permissions = set(each.wu.wu for each in saved_objects)
+
+                required_wus_objects = TblWorkUnits.objects.using('OrgChartRead').filter(
+                    subdiv__exact=payload['perm_identifier']
+                )
+                required_wus = set(each.wu for each in required_wus_objects)
+
+                self.assertTrue(sorted(required_wus)==sorted(saved_wu_permissions)
+                    ,f"Permissions added did not match request. In request but not in db [{required_wus-saved_wu_permissions}], and added to db but not in request [{saved_wu_permissions-required_wus}]")
+            else:
+                self.assertTrue(False
+                    ,f"payload['perm_add_by'] value '{payload['perm_add_by']}' not implemented in test. Wrong data or please add implementation")
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'windows_username'  # str -> username
+            ,'perm_add_by'      # str -> Either 'division' or 'wu'
+            ,'perm_identifier'  # str -> a subdiv name, or a wu
+        ]
+        for param_name in parameters:
+            if param_name == 'windows_username':
+                valid   = [self.valid_username]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'perm_add_by':
+                valid   = ['division', 'wu']
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, '']
+            elif param_name == 'perm_identifier':
+                valid   = [self.valid_add_by_division_identifier, self.valid_add_by_wu_identifier]
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                if param_name == 'perm_add_by' and data == 'division':
+                    ## for division, the perm_id must be a sub div name
+                    payload = copy.deepcopy(payload)
+                    payload['perm_identifier'] = self.valid_add_by_division_identifier
+                if param_name == 'perm_add_by' and data == 'wu':
+                    ## for wu, the perm_id must be a wu
+                    payload = copy.deepcopy(payload)
+                    payload['perm_identifier'] = self.valid_add_by_wu_identifier
+                if param_name == 'perm_identifier' and data == self.valid_add_by_division_identifier:
+                    ## for perm_id with division, the add_by must be 'division'
+                    payload = copy.deepcopy(payload)
+                    payload['perm_add_by'] = 'division'
+                if param_name == 'perm_identifier' and data == self.valid_add_by_wu_identifier:
+                    ## for perm_id with wu, the add_by must be 'wu'
+                    payload = copy.deepcopy(payload)
+                    payload['perm_add_by'] = 'wu'
+
+                tear_down_permissions(windows_username=self.valid_username)
+                self.__clean_up_any_permissions_added_in_this_test() ## Need to remove additional permissions that is added in this api
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                tear_down_permissions(windows_username=self.valid_username)
+                self.__clean_up_any_permissions_added_in_this_test() ## Need to remove additional permissions that is added in this api
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+    def __clean_up_any_permissions_added_in_this_test(self):
+        permissions = TblPermissionsWorkUnit.objects.using('OrgChartWrite').filter(
+            Q(user_id__windows_username__exact=self.valid_username)
+            & (
+                Q(wu__subdiv__exact=self.valid_add_by_division_identifier)
+                | Q(wu__wu__exact=self.valid_add_by_wu_identifier)
+            )
+        )
+
+        for each in permissions:
+            each.delete(using='OrgChartWrite')
