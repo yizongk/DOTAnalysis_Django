@@ -66,7 +66,7 @@ class Users(models.Model):
     first_name = models.CharField(db_column='First_Name', max_length=255)
     last_name = models.CharField(db_column='Last_Name', max_length=255)
     login = models.CharField(db_column='Login', max_length=255, unique=True)
-    active_user = models.BooleanField(db_column='Active_User', blank=True, null=True)
+    active_user = models.BooleanField(db_column='Active_User', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
@@ -119,6 +119,7 @@ class UserPermissions(models.Model):
     # category_id = models.IntegerField(db_column='Category_ID', blank=True, null=True)
     user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)
     category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
@@ -133,7 +134,7 @@ class IndicatorList(models.Model):
     # unit_id = models.IntegerField(db_column='Unit_ID')
     # data_type_id = models.IntegerField(db_column='Data_Type_ID')
     # val_multiplier_id = models.IntegerField(db_column='Val_Multiplier_ID')
-    active = models.BooleanField(db_column='Active', blank=True, null=True)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
     # summary_type_id = models.IntegerField(db_column='Summary_Type_ID')
     category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)
     unit = models.ForeignKey(to=Unit, on_delete=models.DO_NOTHING)
@@ -184,7 +185,7 @@ INSERT INTO dbo.Admins
 class Admins(models.Model):
     admin_id = models.AutoField(db_column='Admin_ID', primary_key=True)
     user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)
-    active = models.BooleanField(db_column='Active', blank=False, null=False)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
