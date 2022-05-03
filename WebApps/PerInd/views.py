@@ -21,12 +21,7 @@ def get_admin_category_permissions():
             "category_names": [x.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        return {
-            "success": False,
-            "err": "Exception: get_user_category_permissions(): {}".format(e),
-            "pk_list": [],
-            "category_names": [],
-        }
+        raise ValueError(f"get_admin_category_permissions(): {e}")
 
 def get_user_category_permissions(username):
     try:
@@ -52,20 +47,12 @@ def user_is_active_admin(username):
             user__login=username,
             active=True, ## Filters for active Admins
         )
-        if admin_query.count() > 0:
-            return {
-                "success": True,
-                "err": "",
-            }
-        return {
-            "success": False,
-            "err": '{} is not an active Admin'.format(username),
-        }
+        if admin_query.count() == 1:
+            return True
+        else:
+            return False
     except Exception as e:
-        return {
-            "success": None,
-            "err": 'Exception: user_is_active_admin(): {}'.format(e),
-        }
+        raise ValueError(f"user_is_active_admin(): {e}")
 
 def user_is_active_user(username):
     try:
@@ -73,35 +60,22 @@ def user_is_active_user(username):
             login=username,
             active_user=True, ## Filters for active users
         )
-        if user_query.count() > 0:
-            return {
-                "success": True,
-                "err": "",
-            }
-        return {
-            "success": False,
-            "err": '{} is not an active User or is not registered'.format(username),
-        }
+        if user_query.count() == 1:
+            return True
+        else:
+            return False
     except Exception as e:
-        return {
-            "success": None,
-            "err": 'Exception: user_is_active_user(): {}'.format(e),
-        }
+        raise ValueError(f"user_is_active_user(): {e}")
 
 ## Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
     try:
         is_active_admin = user_is_active_admin(username)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             category_info = get_admin_category_permissions()
-        elif is_active_admin["success"] == False:
+        else:
             ## If not admin, do standard filter with categories
             category_info = get_user_category_permissions(username)
-        elif is_active_admin["success"] is None:
-            return {
-                    "success": False,
-                    "err": "Permission denied: Cannot determine if user is Admin or not: {}".format(is_active_admin["err"]),
-                }
 
         if category_info["success"] == True:
             category_pk_list = category_info["pk_list"]
@@ -159,10 +133,10 @@ class HomePageView(TemplateView):
         try:
             ## Call the base implementation first to get a context
             context = super().get_context_data(**kwargs)
-            self.client_is_admin = user_is_active_admin(self.request.user)["success"]
+            self.client_is_admin        = user_is_active_admin(self.request.user)
             context["client_is_admin"]  = self.client_is_admin
             context["get_success"]      = self.get_success
-            context["get_error"]          = self.get_error
+            context["get_error"]        = self.get_error
             return context
         except Exception as e:
             context["client_is_admin"]  = False
@@ -266,26 +240,21 @@ class WebGridPageView(generic.ListView):
 
         ## Get authorized list of Categories of Indicator Data, also check for Active Admins or Users
         is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             self.client_is_admin = True
             user_cat_permissions = get_admin_category_permissions()
 
-        elif is_active_admin["success"] == False:
+        else:
             self.client_is_admin = False
             is_active_user = user_is_active_user(self.request.user)
 
-            if is_active_user["success"] == True:
+            if is_active_user:
                  ## If not admin, do standard filter with categories
                 user_cat_permissions = get_user_category_permissions(self.request.user)
             else:
                 self.get_success = False
                 self.get_error = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
                 return None
-
-        elif is_active_admin["success"] is None:
-            self.get_success = False
-            self.get_error = "Exception: WebGridPageView(): get_queryset(): {}".format(is_active_admin["err"])
-            return None
 
         if user_cat_permissions["success"] == True:
             category_pk_list = user_cat_permissions["pk_list"]
@@ -613,7 +582,7 @@ def PerIndApiUpdateData(request):
 
     ## Make sure User is an Active User
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] != True:
+    if not is_active_user:
         return JsonResponse({
             "post_success": False,
             "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user),
@@ -730,14 +699,14 @@ def PerIndApiGetCsv(request):
 
     ## Get list authorized Categories of Indicator Data, and log the category_permissions
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         client_is_admin = True
         user_cat_permissions = get_admin_category_permissions()
-    elif is_active_admin["success"] == False:
+    else:
         client_is_admin = False
 
         is_active_user = user_is_active_user(request.user)
-        if is_active_user["success"] == True:
+        if is_active_user:
             ## If not admin, do standard filter with categories
             user_cat_permissions = get_user_category_permissions(request.user)
         else:
@@ -746,13 +715,6 @@ def PerIndApiGetCsv(request):
                 "post_msg": "PerIndApiGetCsv(): {}".format(is_active_user["err"]),
                 "post_data": None,
             })
-
-    elif is_active_admin["success"] is None:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiGetCsv(): {}".format(is_active_admin["err"]),
-            "post_data": None,
-        })
 
     ## Get list authorized Categories of Indicator Data, and log the category_permissions
     if user_cat_permissions["success"] == True:
@@ -974,7 +936,7 @@ class PastDueIndicatorsPageView(generic.ListView):
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             self.client_is_admin = True
         else:
             self.get_success = False
@@ -1210,7 +1172,7 @@ class AdminPanelPageView(generic.ListView):
     def get_queryset(self):
         ## Check for Active User
         is_active_user = user_is_active_user(self.request.user)
-        if is_active_user["success"] == True:
+        if is_active_user:
             pass
         else:
             self.get_success = False
@@ -1219,7 +1181,7 @@ class AdminPanelPageView(generic.ListView):
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             self.client_is_admin = True
         else:
             self.get_success = False
@@ -1262,7 +1224,7 @@ class UserPermissionsPanelPageView(generic.ListView):
     def get_queryset(self):
         ## Check for Active User
         is_active_user = user_is_active_user(self.request.user)
-        if is_active_user["success"] == True:
+        if is_active_user:
             pass
         else:
             self.get_success = False
@@ -1271,7 +1233,7 @@ class UserPermissionsPanelPageView(generic.ListView):
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             self.client_is_admin = True
         else:
             self.get_success = False
@@ -1390,7 +1352,7 @@ def UserPermissionsPanelApiUpdateData(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -1401,7 +1363,7 @@ def UserPermissionsPanelApiUpdateData(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
@@ -1495,7 +1457,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -1505,7 +1467,7 @@ def UserPermissionsPanelApiAddRow(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
@@ -1628,7 +1590,7 @@ def UserPermissionsPanelApiDeleteRow(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -1638,7 +1600,7 @@ def UserPermissionsPanelApiDeleteRow(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
@@ -1705,7 +1667,7 @@ class UsersPanelPageView(generic.ListView):
     def get_queryset(self):
         ## Check for Active User
         is_active_user = user_is_active_user(self.request.user)
-        if is_active_user["success"] == True:
+        if is_active_user:
             pass
         else:
             self.get_success = False
@@ -1714,7 +1676,7 @@ class UsersPanelPageView(generic.ListView):
 
         ## Check for Active Admins
         is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["success"] == True:
+        if is_active_admin:
             self.client_is_admin = True
         else:
             self.get_success = False
@@ -1776,7 +1738,7 @@ def UsersPanelApiAddRow(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -1786,7 +1748,7 @@ def UsersPanelApiAddRow(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
@@ -1889,7 +1851,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -1899,7 +1861,7 @@ def UsersPanelApiDeleteRow(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
@@ -2010,7 +1972,7 @@ def UsersPanelApiUpdateData(request):
 
     ## Check active user
     is_active_user = user_is_active_user(request.user)
-    if is_active_user["success"] == True:
+    if is_active_user:
         pass
     else:
         return JsonResponse({
@@ -2021,7 +1983,7 @@ def UsersPanelApiUpdateData(request):
 
     ## Check active admin
     is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin["success"] == True:
+    if is_active_admin:
         pass
     else:
         return JsonResponse({
