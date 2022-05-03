@@ -1513,7 +1513,7 @@ class TestAPIDeleteUserPermission(HttpPostTestCase):
             except ObjectDoesNotExist as e:
                 ... ## Good, do nothing
             except Exception as e:
-                raise ValueError(f"TestAPIDeleteUser: test_with_valid_data(): {e}")
+                raise ValueError(f"test_with_valid_data(): {e}")
             else:
                 self.assertTrue(False, f"permission_id {saved_object.permission_id} still exists in the database, unable to delete permission")
 
