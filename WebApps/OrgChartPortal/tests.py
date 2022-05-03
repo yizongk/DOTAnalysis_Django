@@ -1,14 +1,9 @@
-from django.test import Client
-import unittest
 from .models import *
-from django.contrib.auth.models import User
-from datetime import datetime, timedelta
-from django.contrib import auth
-from django.utils import timezone
+from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 import json
 from WebAppsMain.settings import TEST_WINDOWS_USERNAME, TEST_PMS, TEST_SUPERVISOR_PMS, TEST_COMMISSIONER_PMS
-from WebAppsMain.testing_utils import get_to_api, HttpPostTestCase, HttpGetTestCase
+from WebAppsMain.testing_utils import HttpPostTestCase, HttpGetTestCase
 from django.db.models import Max, Q
 import copy
 ### DO NOT RUN THIS IN PROD ENVIRONMENT
