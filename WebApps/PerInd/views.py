@@ -9,6 +9,7 @@ from django.utils import timezone
 import pytz ## For converting datetime objects from one timezone to another timezone
 from django.db.models import Q
 import json
+from WebAppsMain.api_decorators import post_request_decorator
 ## Create your views here.
 
 def get_admin_category_permissions():
@@ -457,95 +458,47 @@ class WebGridPageView(generic.ListView):
         return context
 
 ## Post request
-def PerIndApiUpdateData(request):
-
-    ## Read the json request body
+@post_request_decorator
+def PerIndApiUpdateData(request, json_blob, remote_user):
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: PerIndApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
-    ## Check json request param is not empty string
-    try:
+        ## Check json request param is not empty string
         id = json_blob['id']
         table = json_blob['table']
         column = json_blob['column']
         new_value = json_blob['new_value']
 
         if id == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "id cannot be an empty string",
-            })
+            raise ValueError(f"id cannot be an empty string")
 
         if table == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "table cannot be an empty string",
-            })
+            raise ValueError(f"table cannot be an empty string")
 
         if column == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "column cannot be an empty string",
-            })
+            raise ValueError(f"column cannot be an empty string")
 
         if new_value == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "new_value cannot be an empty string",
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: PerIndApiUpdateData():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
-        })
+            raise ValueError(f"new_value cannot be an empty string")
 
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: PerIndApiUpdateData(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiUpdateData():\n\nUNAUTHENTICATE USER!",
-        })
+        ## Make sure User is an active User
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"'{remote_user}' is not an active User!")
 
-    ## Make sure User is an active User
-    is_active_user = user_is_active_user(request.user)
-    if not is_active_user:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active User!".format(remote_user),
-        })
+        ## Authenticate permission for user
+        user_perm_chk = user_has_permission_to_edit(remote_user, id)
+        if not user_perm_chk["success"]:
+            raise ValueError(f"PerIndApiUpdateData():\n\nUSER '{remote_user}' has no permission to edit record #{id}")
 
-    ## Authenticate permission for user
-    user_perm_chk = user_has_permission_to_edit(remote_user, id)
-    if user_perm_chk["success"] == False:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiUpdateData():\n\nUSER '{}' has no permission to edit record #{}: PerIndApiUpdateData(): {}".format(remote_user, id, user_perm_chk["err"]),
-        })
+        ## Make sure new_value is convertable to float
+        try:
+            new_value = float(new_value)
+        except Exception as e:
+            raise ValueError(f"Unable to convert new_value '{new_value}' to float type, did not save the value: {e}")
 
+        if table == "IndicatorData":
+            row = IndicatorData.objects.using('PerInd').get(record_id=id)
 
-    ## Make sure new_value is convertable to float
-    try:
-        new_value = float(new_value)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: PerIndApiUpdateData():\n\nUnable to convert new_value '{}' to float type, did not save the value".format(new_value),
-        })
-
-    if table == "IndicatorData":
-        row = IndicatorData.objects.using('PerInd').get(record_id=id)
-
-        if column=="val":
-            try:
+            if column=="val":
                 row.val = new_value
 
                 ## Update [last updated by] to current remote user, also make sure it's active user
@@ -568,26 +521,17 @@ def PerIndApiUpdateData(request):
                     "updated_timestamp": local_updated_timestamp_str_response,
                     "updated_by": remote_user,
                 })
-            except Exception as e:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "Error: PerIndApiUpdateData():\n\nWhile trying to save to the database: {}".format(e),
-                })
+            else:
+                raise ValueError(f"The api does not support operation with this column: '{column}'")
         else:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this column: '{}'".format(column),
-            })
-    else:
+            raise ValueError(f"The api does not support operation with this table: '{table}'")
+
+        raise ValueError(f"Warning\n\n\Did not know what to do with the request. The request:\n\nid: '{id}'\n table: '{table}'\n column: '{column}'\n new_value: '{new_value}'\n")
+    except Exception as e:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Error: PerIndApiUpdateData():\n\nThe api does not support operation with this table: '{}'".format(table),
+            "post_msg": f"PerIndApiUpdateData(): {e}",
         })
-
-    return JsonResponse({
-        "post_success": False,
-        "post_msg": "Warning: PerIndApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
-    })
 
 ## Post request
 def PerIndApiGetCsv(request):
