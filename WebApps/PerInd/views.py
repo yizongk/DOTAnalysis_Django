@@ -1280,7 +1280,8 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
             "post_data"     : None,
         })
 
-def UsersPanelApiDeleteRow(request):
+@post_request_decorator
+def UsersPanelApiDeleteRow(request, json_blob, remote_user):
     """
         Expects the post request to post a JSON object, and that it will contain user_id. Like so:
         {
@@ -1290,105 +1291,45 @@ def UsersPanelApiDeleteRow(request):
 
         Delete will fail if there are any UserPermissions record associated with the Users.
     """
-
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UsersPanelApiDeleteRow(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiDeleteRow():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Check active user
-    is_active_user = user_is_active_user(request.user)
-    if is_active_user:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiDeleteRow(): {}".format(is_active_user["err"]),
-        })
-
-    ## Check active admin
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiDeleteRow(): {}".format(is_active_admin["err"]),
-        })
-
-    ## Read the json request body
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiDeleteRow():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
+        ## Check active user
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
-    ## Make sure user_id is convertable to a unsign int
-    try:
+        ## Check active admin
+        is_active_admin = user_is_active_admin(request.user)
+        if not is_active_admin:
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+
+        ## Make sure user_id is convertable to a unsign int
         user_id = json_blob['user_id']
 
         try:
             user_id = int(user_id)
         except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "user_id cannot be converted to an int: '{}'".format(user_id),
-            })
+            raise ValueError(f"user_id cannot be converted to an int: '{user_id}'")
 
-        if user_id <= 0:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "user_id is less than or equal to zero: '{}'".format(user_id),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
-        })
-
-    ## Get user row reference
-    try:
+        ## Get user row reference
         user_row = Users.objects.using('PerInd').get(user_id=user_id)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiDeleteRow():\n\nFailed to get user object reference from database for user_id '{}': '{}'".format(user_id, e),
-        })
 
-    ## Check that there is no UserPermissions rows associated with given user_id
-    try:
+        ## Check that there is no UserPermissions rows associated with given user_id
         if UserPermissions.objects.using('PerInd').filter(user__user_id__exact=user_id).exists():
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)".format(user_row.login),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiDeleteRow(): {}".format(e),
-        })
+            raise ValueError(f"Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{user_row.login}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)")
 
-    ## Remove the permission row
-    try:
+        ## Remove the permission row
         user_row.delete()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : "",
+        })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiDeleteRow():\n\nFailed to remove user_id '{}' from database: '{}'".format(user_id, e),
+            "post_success"  : False,
+            "post_msg"      : f"UsersPanelApiDeleteRow(): {e}",
+            "post_data"     : None,
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": "",
-    })
 
 def UsersPanelApiUpdateData(request):
     ## Read the json request body
