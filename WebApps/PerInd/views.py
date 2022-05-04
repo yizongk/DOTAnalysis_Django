@@ -1143,7 +1143,8 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
         })
 
 ## For JS datatable delete row
-def UserPermissionsPanelApiDeleteRow(request):
+@post_request_decorator
+def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
     """
         Expects the post request to post a JSON object, and that it will contain user_permission_id. Like so:
         {
@@ -1151,84 +1152,37 @@ def UserPermissionsPanelApiDeleteRow(request):
         }
         Will delete row in the Permissions table with the given user_permission_id
     """
-
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UserPermissionsPanelApiDeleteRow(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiDeleteRow():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Check active user
-    is_active_user = user_is_active_user(request.user)
-    if is_active_user:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiDeleteRow(): {}".format(is_active_user["err"]),
-        })
-
-    ## Check active admin
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiDeleteRow(): {}".format(is_active_admin["err"]),
-        })
-
-    ## Read the json request body
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
+        ## Check active user
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
 
-    ## Make sure user_permission_id is convertable to a unsign int
-    try:
+        ## Check active admin
+        is_active_admin = user_is_active_admin(request.user)
+        if not is_active_admin:
+            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+
+        ## Make sure user_permission_id is convertable to a unsign int
         user_permission_id = json_blob['user_permission_id']
 
-        try:
-            user_permission_id = int(user_permission_id)
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "user_permission_id cannot be converted to an int: '{}'".format(user_permission_id),
-            })
+        user_permission_id = int(user_permission_id)
 
-        if user_permission_id <= 0:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "user_permission_id is less than or equal to zero: '{}'".format(user_permission_id),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
-        })
-
-    ## Remove the permission row
-    try:
+        ## Remove the permission row
         permission_row = UserPermissions.objects.using('PerInd').get(user_permission_id=user_permission_id)
         permission_row.delete()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None,
+        })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiDeleteRow():\n\nFailed to remove user_permission_id '{}' from database: '{}'".format(user_permission_id, e),
+            "post_success"  : False,
+            "post_msg"      : f"UserPermissionsPanelApiDeleteRow(): {e}",
+            "post_data"     : None,
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": "",
-    })
 
 class UsersPanelPageView(generic.ListView):
     template_name       = 'PerInd.template.userspanel.html'
