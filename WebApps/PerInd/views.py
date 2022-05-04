@@ -1141,25 +1141,22 @@ class AdminPanelPageView(generic.ListView):
     client_is_admin = False
 
     def get_queryset(self):
-        ## Check for Active User
-        is_active_user = user_is_active_user(self.request.user)
-        if is_active_user:
-            pass
-        else:
-            self.get_success = False
-            self.get_error = "AdminPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            return
+        try:
+            ## Check for Active User
+            is_active_user = user_is_active_user(self.request.user)
+            if not is_active_user:
+                raise ValueError(f"{self.request.user} is not a active user and is not authorized to see this page")
 
-        ## Check for Active Admins
-        is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin:
-            self.client_is_admin = True
-        else:
+            ## Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+            if not self.client_is_admin:
+                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+        except Exception as e:
             self.get_success = False
-            self.get_error = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            return
+            raise ValueError(f"AdminPanelPageView(): get_queryset(): {e}")
 
         self.get_success = True
+        return
 
     def get_context_data(self, **kwargs):
         try:
