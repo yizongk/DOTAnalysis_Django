@@ -130,18 +130,12 @@ class HomePageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = user_is_active_admin(self.request.user)
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = False
-            return context
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = user_is_active_admin(self.request.user)
+        return context
 
 class AboutPageView(TemplateView):
     template_name   = 'PerInd.template.about.html'
@@ -150,17 +144,11 @@ class AboutPageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = user_is_active_admin(self.request.user)
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = False
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = user_is_active_admin(self.request.user)
+        return context
 
 class ContactPageView(TemplateView):
     template_name   = 'PerInd.template.contact.html'
@@ -169,17 +157,11 @@ class ContactPageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = user_is_active_admin(self.request.user)
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = False
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = user_is_active_admin(self.request.user)
+        return context
 
 ## Method Flowchart (the order of execution) for generic.ListView
 ##     setup()
@@ -380,137 +362,99 @@ class WebGridPageView(generic.ListView):
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
 
-            ## Construct current context filter and sort GET param string, for front end to keep states
-            ctx_title_filter_param = ""
-            ctx_yyyy_filter_param = ""
-            ctx_mm_filter_param = ""
-            ctx_fiscal_year_filter_param = ""
-            ctx_cat_filter_param = ""
+        ## Construct current context filter and sort GET param string, for front end to keep states
+        ctx_title_filter_param = ""
+        ctx_yyyy_filter_param = ""
+        ctx_mm_filter_param = ""
+        ctx_fiscal_year_filter_param = ""
+        ctx_cat_filter_param = ""
 
-            ## Construct Filter GET Param
-            for each in self.req_title_list_filter:
-                ctx_title_filter_param = "{}TitleListFilter={}&".format(ctx_title_filter_param, each)
-            ### At this point, your ctx_title_filter_param  is something like "TitleListFilter=Facebook&TitleListFilter=Instagram&"
-            for each in self.req_yr_list_filter:
-                ctx_yyyy_filter_param = "{}YYYYListFilter={}&".format(ctx_yyyy_filter_param, each)
-            for each in self.req_mn_list_filter:
-                ctx_mm_filter_param = "{}MMListFilter={}&".format(ctx_mm_filter_param, each)
-            for each in self.req_fy_list_filter:
-                ctx_fiscal_year_filter_param = "{}FiscalYearListFilter={}&".format(ctx_fiscal_year_filter_param, each)
-            if self.client_is_admin == True:
-                for each in self.req_cat_list_filter:
-                    ctx_cat_filter_param = "{}CategoriesListFilter={}&".format(ctx_cat_filter_param, each)
+        ## Construct Filter GET Param
+        for each in self.req_title_list_filter:
+            ctx_title_filter_param = "{}TitleListFilter={}&".format(ctx_title_filter_param, each)
+        ### At this point, your ctx_title_filter_param  is something like "TitleListFilter=Facebook&TitleListFilter=Instagram&"
+        for each in self.req_yr_list_filter:
+            ctx_yyyy_filter_param = "{}YYYYListFilter={}&".format(ctx_yyyy_filter_param, each)
+        for each in self.req_mn_list_filter:
+            ctx_mm_filter_param = "{}MMListFilter={}&".format(ctx_mm_filter_param, each)
+        for each in self.req_fy_list_filter:
+            ctx_fiscal_year_filter_param = "{}FiscalYearListFilter={}&".format(ctx_fiscal_year_filter_param, each)
+        if self.client_is_admin == True:
+            for each in self.req_cat_list_filter:
+                ctx_cat_filter_param = "{}CategoriesListFilter={}&".format(ctx_cat_filter_param, each)
 
-            ## Construct <a></a> GET parameter for the sorting columns
-            ### Defaults
-            ctx_title_sort_dir = "SortDir=asc&"
-            ctx_yyyy_sort_dir = "SortDir=asc&"
-            ctx_mm_sort_dir = "SortDir=asc&"
-            ctx_fiscal_year_sort_dir = "SortDir=asc&"
-            ctx_cat_sort_dir = "SortDir=asc&"
-            ### Getting off of defaults on a need to basis
-            if self.req_sort_by == 'indicator__indicator_title':
-                if self.req_sort_dir == 'asc':
-                    ctx_title_sort_dir = "SortDir=desc&"
-            elif self.req_sort_by == 'year_month__yyyy':
-                if self.req_sort_dir == 'asc':
-                    ctx_yyyy_sort_dir = "SortDir=desc&"
-            elif self.req_sort_by == 'year_month__mm':
-                if self.req_sort_dir == 'asc':
-                    ctx_mm_sort_dir = "SortDir=desc&"
-            elif self.req_sort_by == 'year_month__fiscal_year':
-                if self.req_sort_dir == 'asc':
-                    ctx_fiscal_year_sort_dir = "SortDir=desc&"
-            elif self.req_sort_by == 'indicator__category__category_name':
-                if self.req_sort_dir == 'asc':
-                    ctx_cat_sort_dir = "SortDir=desc&"
-
-
-            self.title_sort_anchor_GET_param = "SortBy=indicator__indicator_title&{}{}{}{}{}{}".format(ctx_title_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
-            self.yyyy_sort_anchor_GET_param = "SortBy=year_month__yyyy&{}{}{}{}{}{}".format(ctx_yyyy_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
-            self.mm_sort_anchor_GET_param = "SortBy=year_month__mm&{}{}{}{}{}{}".format(ctx_mm_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
-            self.fiscal_year_sort_anchor_GET_param = "SortBy=year_month__fiscal_year&{}{}{}{}{}{}".format(ctx_fiscal_year_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
-            self.cat_sort_anchor_GET_param = "SortBy=indicator__category__category_name&{}{}{}{}{}{}".format(ctx_cat_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
-            ### At this point, your self.title_sort_anchor_GET_param is something like
-            ### "SortBy=indicator__indicator_title&SortDir=desc&title_list=Facebook&title_list=Instagram&yr_list=2019&yr_list=2020&mn_list=2&mn_list=1"
-
-            ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
-            self.ctx_pagination_param = "SortBy={}&SortDir={}&{}{}{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        ## Construct <a></a> GET parameter for the sorting columns
+        ### Defaults
+        ctx_title_sort_dir = "SortDir=asc&"
+        ctx_yyyy_sort_dir = "SortDir=asc&"
+        ctx_mm_sort_dir = "SortDir=asc&"
+        ctx_fiscal_year_sort_dir = "SortDir=asc&"
+        ctx_cat_sort_dir = "SortDir=asc&"
+        ### Getting off of defaults on a need to basis
+        if self.req_sort_by == 'indicator__indicator_title':
+            if self.req_sort_dir == 'asc':
+                ctx_title_sort_dir = "SortDir=desc&"
+        elif self.req_sort_by == 'year_month__yyyy':
+            if self.req_sort_dir == 'asc':
+                ctx_yyyy_sort_dir = "SortDir=desc&"
+        elif self.req_sort_by == 'year_month__mm':
+            if self.req_sort_dir == 'asc':
+                ctx_mm_sort_dir = "SortDir=desc&"
+        elif self.req_sort_by == 'year_month__fiscal_year':
+            if self.req_sort_dir == 'asc':
+                ctx_fiscal_year_sort_dir = "SortDir=desc&"
+        elif self.req_sort_by == 'indicator__category__category_name':
+            if self.req_sort_dir == 'asc':
+                ctx_cat_sort_dir = "SortDir=desc&"
 
 
-            ## Finally, setting the context variables
-            ## Add my own variables to the context for the front end to shows
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        self.title_sort_anchor_GET_param = "SortBy=indicator__indicator_title&{}{}{}{}{}{}".format(ctx_title_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        self.yyyy_sort_anchor_GET_param = "SortBy=year_month__yyyy&{}{}{}{}{}{}".format(ctx_yyyy_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        self.mm_sort_anchor_GET_param = "SortBy=year_month__mm&{}{}{}{}{}{}".format(ctx_mm_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        self.fiscal_year_sort_anchor_GET_param = "SortBy=year_month__fiscal_year&{}{}{}{}{}{}".format(ctx_fiscal_year_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        self.cat_sort_anchor_GET_param = "SortBy=indicator__category__category_name&{}{}{}{}{}{}".format(ctx_cat_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
+        ### At this point, your self.title_sort_anchor_GET_param is something like
+        ### "SortBy=indicator__indicator_title&SortDir=desc&title_list=Facebook&title_list=Instagram&yr_list=2019&yr_list=2020&mn_list=2&mn_list=1"
 
-            context["category_permissions"] = self.category_permissions
+        ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
+        self.ctx_pagination_param = "SortBy={}&SortDir={}&{}{}{}{}{}".format(self.req_sort_by, self.req_sort_dir, ctx_title_filter_param, ctx_yyyy_filter_param, ctx_mm_filter_param, ctx_fiscal_year_filter_param, ctx_cat_filter_param)
 
-            context["sort_dir"] = self.req_sort_dir
-            context["sort_by"] = self.req_sort_by
 
-            context["uniq_titles"] = self.uniq_titles
-            context["uniq_years"] = self.uniq_years
-            context["uniq_fiscal_years"] = self.uniq_fiscal_years
-            context["uniq_months"] = self.uniq_months
-            context["uniq_categories"] = self.uniq_categories
+        ## Finally, setting the context variables
+        ## Add my own variables to the context for the front end to shows
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            context["ctx_title_list_filter"] = self.req_title_list_filter
-            context["ctx_yr_list_filter"] = self.req_yr_list_filter
-            context["ctx_mn_list_filter"] = self.req_mn_list_filter
-            context["ctx_fy_list_filter"] = self.req_fy_list_filter
-            context["ctx_cat_list_filter"] = self.req_cat_list_filter
+        context["category_permissions"] = self.category_permissions
 
-            context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
-            context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param
-            context["mm_sort_anchor_GET_param"] = self.mm_sort_anchor_GET_param
-            context["fiscal_year_sort_anchor_GET_param"] = self.fiscal_year_sort_anchor_GET_param
-            context["cat_sort_anchor_GET_param"] = self.cat_sort_anchor_GET_param
+        context["sort_dir"] = self.req_sort_dir
+        context["sort_by"] = self.req_sort_by
 
-            context["ctx_pagination_param"] = self.ctx_pagination_param
+        context["uniq_titles"] = self.uniq_titles
+        context["uniq_years"] = self.uniq_years
+        context["uniq_fiscal_years"] = self.uniq_fiscal_years
+        context["uniq_months"] = self.uniq_months
+        context["uniq_categories"] = self.uniq_categories
 
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "get_context_data(): {}".format(e)
+        context["ctx_title_list_filter"] = self.req_title_list_filter
+        context["ctx_yr_list_filter"] = self.req_yr_list_filter
+        context["ctx_mn_list_filter"] = self.req_mn_list_filter
+        context["ctx_fy_list_filter"] = self.req_fy_list_filter
+        context["ctx_cat_list_filter"] = self.req_cat_list_filter
 
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = False
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
+        context["title_sort_anchor_GET_param"] = self.title_sort_anchor_GET_param
+        context["yyyy_sort_anchor_GET_param"] = self.yyyy_sort_anchor_GET_param
+        context["mm_sort_anchor_GET_param"] = self.mm_sort_anchor_GET_param
+        context["fiscal_year_sort_anchor_GET_param"] = self.fiscal_year_sort_anchor_GET_param
+        context["cat_sort_anchor_GET_param"] = self.cat_sort_anchor_GET_param
 
-            context["indicator_data_entries"] = None
+        context["ctx_pagination_param"] = self.ctx_pagination_param
 
-            context["category_permissions"] = ""
-
-            context["sort_dir"] = ""
-            context["sort_by"] = ""
-
-            context["uniq_titles"] = []
-            context["uniq_years"] = []
-            context["uniq_fiscal_years"] = []
-            context["uniq_months"] = []
-            context["uniq_categories"] = []
-
-            context["ctx_title_list_filter"] = ""
-            context["ctx_yr_list_filter"] = ""
-            context["ctx_mn_list_filter"] = ""
-            context["ctx_fy_list_filter"] = ""
-            context["ctx_cat_list_filter"] = ""
-
-            context["title_sort_anchor_GET_param"] = ""
-            context["yyyy_sort_anchor_GET_param"] = ""
-            context["mm_sort_anchor_GET_param"] = ""
-            context["fiscal_year_sort_anchor_GET_param"] = ""
-            context["cat_sort_anchor_GET_param"] = ""
-
-            context["ctx_pagination_param"] = ""
-
-            return context
+        return context
 
 ## Post request
 def PerIndApiUpdateData(request):
@@ -571,12 +515,12 @@ def PerIndApiUpdateData(request):
             "post_msg": "PerIndApiUpdateData():\n\nUNAUTHENTICATE USER!",
         })
 
-    ## Make sure User is an Active User
+    ## Make sure User is an active User
     is_active_user = user_is_active_user(request.user)
     if not is_active_user:
         return JsonResponse({
             "post_success": False,
-            "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active user!".format(remote_user),
+            "post_msg": "Warning: PerIndApiUpdateData(): USER '{}' is not an active User!".format(remote_user),
         })
 
     ## Authenticate permission for user
@@ -1057,67 +1001,46 @@ class PastDueIndicatorsPageView(generic.ListView):
         return indicator_data_entries
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
 
-            ## Construct current context filter and sort GET param string, for front end to keep states
-            ctx_cat_filter_param = ""
+        ## Construct current context filter and sort GET param string, for front end to keep states
+        ctx_cat_filter_param = ""
 
-            ## Construct Filter GET Param
-            for each in self.req_cat_list_filter:
-                ctx_cat_filter_param = "{}CategoriesListFilter={}&".format(ctx_cat_filter_param, each)
-                ### At this point, your ctx_cat_filter_param  is something like "CategoriesListFilter=1&CategoriesListFilter=2&"
+        ## Construct Filter GET Param
+        for each in self.req_cat_list_filter:
+            ctx_cat_filter_param = "{}CategoriesListFilter={}&".format(ctx_cat_filter_param, each)
+            ### At this point, your ctx_cat_filter_param  is something like "CategoriesListFilter=1&CategoriesListFilter=2&"
 
-            ## Construct <a></a> GET parameter for the sorting columns
-            ### Defaults
-            ctx_cat_sort_dir = "SortDir=asc&"
-            ### Getting off of defaults on a need to basis
-            if self.req_sort_by == 'indicator__category__category_name':
-                if self.req_sort_dir == 'asc':
-                    ctx_cat_sort_dir = "SortDir=desc&"
+        ## Construct <a></a> GET parameter for the sorting columns
+        ### Defaults
+        ctx_cat_sort_dir = "SortDir=asc&"
+        ### Getting off of defaults on a need to basis
+        if self.req_sort_by == 'indicator__category__category_name':
+            if self.req_sort_dir == 'asc':
+                ctx_cat_sort_dir = "SortDir=desc&"
 
-            self.cat_sort_anchor_GET_param = "SortBy=indicator__category__category_name&{}{}".format(ctx_cat_sort_dir, ctx_cat_filter_param)
+        self.cat_sort_anchor_GET_param = "SortBy=indicator__category__category_name&{}{}".format(ctx_cat_sort_dir, ctx_cat_filter_param)
 
-            ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
-            self.ctx_pagination_param = "SortBy={}&SortDir={}&{}".format(self.req_sort_by, self.req_sort_dir, ctx_cat_filter_param)
+        ## Construct the context filter and sort param (This is your master param, as it contains all the Sort By and Filter By information, except Paging By information. The paging part of the param is handled in the front end PerInd.template.webgrid.html)
+        self.ctx_pagination_param = "SortBy={}&SortDir={}&{}".format(self.req_sort_by, self.req_sort_dir, ctx_cat_filter_param)
 
 
-            ## Finally, setting the context variables
-            ## Add my own variables to the context for the front end to shows
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        ## Finally, setting the context variables
+        ## Add my own variables to the context for the front end to shows
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            context["sort_dir"] = self.req_sort_dir
-            context["sort_by"] = self.req_sort_by
+        context["sort_dir"] = self.req_sort_dir
+        context["sort_by"] = self.req_sort_by
 
-            context["uniq_categories"] = self.uniq_categories
-            context["ctx_cat_list_filter"] = self.req_cat_list_filter
-            context["cat_sort_anchor_GET_param"] = self.cat_sort_anchor_GET_param
-            context["ctx_pagination_param"] = self.ctx_pagination_param
+        context["uniq_categories"] = self.uniq_categories
+        context["ctx_cat_list_filter"] = self.req_cat_list_filter
+        context["cat_sort_anchor_GET_param"] = self.cat_sort_anchor_GET_param
+        context["ctx_pagination_param"] = self.ctx_pagination_param
 
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = False
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
-
-            context["indicator_data_entries"] = None
-
-            context["sort_dir"] = ""
-            context["sort_by"] = ""
-
-            context["uniq_categories"] = []
-            context["ctx_cat_list_filter"] = ""
-            context["cat_sort_anchor_GET_param"] = ""
-            context["ctx_pagination_param"] = ""
-
-            return context
+        return context
 
 class AdminPanelPageView(generic.ListView):
     template_name   = 'PerInd.template.adminpanel.html'
@@ -1131,38 +1054,28 @@ class AdminPanelPageView(generic.ListView):
             ## Check for Active User
             is_active_user = user_is_active_user(self.request.user)
             if not is_active_user:
-                raise ValueError(f"{self.request.user} is not a active user and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
 
             ## Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
             if not self.client_is_admin:
                 raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
         except Exception as e:
-            self.get_success = False
-            raise ValueError(f"AdminPanelPageView(): get_queryset(): {e}")
+            self.get_success    = False
+            self.get_error      = f"AdminPanelPageView(): get_queryset(): {e}"
+            return
 
         self.get_success = True
         return
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = False
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
-
-            return context
+        return context
 
 class UserPermissionsPanelPageView(generic.ListView):
     template_name       = 'PerInd.template.userpermissionspanel.html'
@@ -1175,97 +1088,52 @@ class UserPermissionsPanelPageView(generic.ListView):
     users_list = []
     categories_list = []
     def get_queryset(self):
-        ## Check for Active User
-        is_active_user = user_is_active_user(self.request.user)
-        if is_active_user:
-            pass
-        else:
-            self.get_success = False
-            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            return UserPermissions.objects.using('PerInd').none()
-
-        ## Check for Active Admins
-        is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin:
-            self.client_is_admin = True
-        else:
-            self.get_success = False
-            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            return UserPermissions.objects.using('PerInd').none()
-
-        ## Get the permissions data
         try:
+            ## Check for Active User
+            is_active_user = user_is_active_user(self.request.user)
+            if not is_active_user:
+                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+
+            ## Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+            if not self.client_is_admin:
+                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+
+            ## Get the permissions data
             permission_data_entries = UserPermissions.objects.using('PerInd').all().order_by('user__login')
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            return UserPermissions.objects.using('PerInd').none()
 
-        # ## EXAMPLE: Get the active users login list in json format
-        # try:
-        #     user_objs = Users.objects.using('PerInd').filter(
-        #         active_user=True
-        #     ).order_by('login')
-
-        #     py_list_obj = [x.login for x in user_objs]
-        #     json_obj = json.dumps(py_list_obj)
-        #     self.user_logins_json = json_obj
-        # except Exception as e:
-        #     self.get_success = False
-        #     self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-        #     return UserPermissions.objects.using('PerInd').none()
-
-
-        ## Get the active users login list
-        try:
+            ## Get the active users login list
             user_objs = Users.objects.using('PerInd').filter(
                 active_user=True
             ).order_by('login')
 
             self.users_list = user_objs
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
-            return UserPermissions.objects.using('PerInd').none()
 
-        ## Get the category list
-        try:
+            ## Get the category list
             category_objs = Category.objects.using('PerInd').all().order_by('category_name')
             self.categories_list = category_objs
+
         except Exception as e:
-            self.get_success = False
-            self.get_error = "UserPermissionsPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success    = False
+            self.get_error      = f"UserPermissionsPanelPageView(): get_queryset(): {e}"
             return UserPermissions.objects.using('PerInd').none()
 
         self.get_success = True
         return permission_data_entries
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
 
-            ## Finally, setting the context variables
-            ## Add my own variables to the context for the front end to shows
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        ## Finally, setting the context variables
+        ## Add my own variables to the context for the front end to shows
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            context["users_list"]       = self.users_list
-            context["categories_list"]  = self.categories_list
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
-
-            context["users_list"]       = []
-            context["categories_list"]  = []
-            return context
+        context["users_list"]       = self.users_list
+        context["categories_list"]  = self.categories_list
+        return context
 
 ## Post request - for single cell edits
 def UserPermissionsPanelApiUpdateData(request):
@@ -1462,7 +1330,7 @@ def UserPermissionsPanelApiAddRow(request):
         if not Users.objects.using('PerInd').filter(login__exact=login_selection, active_user__exact=True).exists():
             return JsonResponse({
                 "post_success": False,
-                "post_msg": "'{}' doesn't exists or it's not an active user".format(login_selection),
+                "post_msg": "'{}' doesn't exists or it's not an active User".format(login_selection),
             })
     except Exception as e:
         return JsonResponse({
@@ -1611,56 +1479,38 @@ class UsersPanelPageView(generic.ListView):
     context_object_name = 'users_data_entries'
 
     client_is_admin = False
-    get_success = True
-    get_error = ""
+    get_success     = True
+    get_error       = ""
 
     def get_queryset(self):
-        ## Check for Active User
-        is_active_user = user_is_active_user(self.request.user)
-        if is_active_user:
-            pass
-        else:
-            self.get_success = False
-            self.get_error = "UsersPanelPageView(): get_queryset(): {}".format(is_active_user["err"])
-            return Users.objects.using('PerInd').none()
-
-        ## Check for Active Admins
-        is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin:
-            self.client_is_admin = True
-        else:
-            self.get_success = False
-            self.get_error = "UsersPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
-            return Users.objects.using('PerInd').none()
-
-        ## Get the permissions data
         try:
+            ## Check for Active User
+            is_active_user = user_is_active_user(self.request.user)
+            if not is_active_user:
+                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+
+            ## Check for Active Admins
+            self.client_is_admin = user_is_active_admin(self.request.user)
+            if not self.client_is_admin:
+                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+
+            ## Get the permissions data
             users_data_entries = Users.objects.using('PerInd').all().order_by('login')
         except Exception as e:
-            self.get_success = False
-            self.get_error = "UsersPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success    = False
+            self.get_error      = f"UsersPanelPageView(): get_queryset(): {e}"
             return Users.objects.using('PerInd').none()
 
         self.get_success = True
         return users_data_entries
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            self.get_success    = False
-            self.get_error      = f"get_context_data(): {e}"
-
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
-            return context
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 def UsersPanelApiAddRow(request):
     """
