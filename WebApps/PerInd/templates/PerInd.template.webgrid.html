@@ -565,34 +565,20 @@
             };
 
             function downloadWebGridAsCsv() {
-                $.ajaxSetup({
-                    beforeSend: function (xhr, settings) {
-                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                            // Only send the token to relative URLs i.e. locally.
-                            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-                        }
-                    }
-                });
-
-                $.ajax({
-                    url: "/PerInd/get_csv_cur_ctx_api",
-                    type: "POST",
-                    data: {
-                        SortDir: "{{ sort_dir }}",
-                        SortBy: "{{ sort_by }}",
-                        TitleListFilter: {{ ctx_title_list_filter|safe }},
-                        YYYYListFilter: {{ ctx_yr_list_filter|safe }},
-                        MMListFilter: {{ ctx_mn_list_filter|safe }},
-                        FiscalYearListFilter: {{ ctx_fy_list_filter|safe }},
-                        CategoriesListFilter: {{ ctx_cat_list_filter|safe }},
-                    },
-                })
-                .done(function (json_response) {
-                    // console.log("JSON RESPONSE", json_response);
-                    if (json_response["post_success"] == false) {
-                        console.log(`Error: Ajax calling get_csv_cur_ctx_api: Server Response: ${json_response["post_msg"]}`);
-                        alert(`Something went wrong while trying to download the csv.\nPlease contact ykuang@dot.nyc.gov if this error continues:\n\nAjax calling get_csv_cur_ctx_api: Server Response: ${json_response["post_msg"]}`);
-                    } else { // Api call successful
+                let json_blob = {
+                    SortDir: "{{ sort_dir }}",
+                    SortBy: "{{ sort_by }}",
+                    TitleListFilter: {{ ctx_title_list_filter|safe }},
+                    YYYYListFilter: {{ ctx_yr_list_filter|safe }},
+                    MMListFilter: {{ ctx_mn_list_filter|safe }},
+                    FiscalYearListFilter: {{ ctx_fy_list_filter|safe }},
+                    CategoriesListFilter: {{ ctx_cat_list_filter|safe }},
+                }
+                sentJsonBlobToApi({
+                    json_blob           : json_blob,
+                    api_url             : "{% url 'get_csv_cur_ctx_api' %}",
+                    http_request_method : "POST",
+                    successCallbackFct  : function (json_response) {
                         // Initiate download
                         // download(data=json_response["post_data"], filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
 
@@ -607,14 +593,7 @@
                             'PerformanceIndicatorData.csv'
                         );
                     }
-                    return true;
                 })
-                .fail(function (jqXHR) {
-                    var errorMessage = `Server might be down, try to reload the web page to confirm. Otherwise, try again and if error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
-                    console.log(`Ajax Post: Error Occured: ${errorMessage}`);
-                    alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
-                    return false;
-                });
             };
         })
     </script>
