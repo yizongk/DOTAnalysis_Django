@@ -1033,12 +1033,12 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
 
         id          = json_blob['id']
         table       = json_blob['table']
@@ -1091,12 +1091,12 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
 
         ## Check login_selection and category_selection is not empty string
         login_selection     = json_blob['login_selection']
@@ -1156,12 +1156,12 @@ def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
 
         ## Make sure user_permission_id is convertable to a unsign int
         user_permission_id = json_blob['user_permission_id']
@@ -1237,12 +1237,12 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
 
         ## Check json request param is not empty string
         first_name_input    = json_blob['first_name_input']
@@ -1315,7 +1315,7 @@ def UsersPanelApiDeleteRow(request, json_blob, remote_user):
 
         ## Check that there is no UserPermissions rows associated with given user_id
         if UserPermissions.objects.using('PerInd').filter(user__user_id__exact=user_id).exists():
-            raise ValueError(f"Error: UsersPanelApiDeleteRow():\n\nCannot delete User '{user_row.login}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)")
+            raise ValueError(f"Cannot delete User '{user_row.login}', there are rows in User Permissions that is associated with the User\n(Please delete the associated User Permissions first)")
 
         ## Remove the permission row
         user_row.delete()
@@ -1331,126 +1331,60 @@ def UsersPanelApiDeleteRow(request, json_blob, remote_user):
             "post_data"     : None,
         })
 
-def UsersPanelApiUpdateData(request):
-    ## Read the json request body
+@post_request_decorator
+def UsersPanelApiUpdateData(request, json_blob, remote_user):
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
+        ## Check active user
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
 
-    try:
-        id = json_blob['id']
-        table = json_blob['table']
-        column = json_blob['column']
-        new_value = json_blob['new_value']
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiUpdateData():\n\nError: {}".format(e),
-        })
+        ## Check active admin
+        is_active_admin = user_is_active_admin(request.user)
+        if not is_active_admin:
+            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
 
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UsersPanelApiUpdateData(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiUpdateData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
-        })
+        id          = json_blob['id']
+        table       = json_blob['table']
+        column      = json_blob['column']
+        new_value   = json_blob['new_value']
 
-    ## Check active user
-    is_active_user = user_is_active_user(request.user)
-    if is_active_user:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiUpdateData(): {}".format(is_active_user["err"]),
-            "post_data": None,
-        })
-
-    ## Check active admin
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiUpdateData(): {}".format(is_active_admin["err"]),
-            "post_data": None,
-        })
-
-    ## Save the data
-    if table == "Users":
-
-        ## Make sure new_value is convertable to its respective data type. If it's a string, make sure it's not empty or just whitespace
-        if column == "Active_User":
-            if new_value == "True":
-                new_value = True
-            elif new_value == "False":
-                new_value = False
+        ## Save the data
+        if table == "Users":
+            ## Make sure new_value is convertable to its respective data type. If it's a string, make sure it's not empty or just whitespace
+            if column == "Active_User":
+                if new_value == "True":
+                    new_value = True
+                elif new_value == "False":
+                    new_value = False
+                else:
+                    raise ValueError(f"Unable to convert new_value '{new_value}' to bool type, did not save the value")
             else:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to bool type, did not save the value".format(new_value),
-                })
-        else:
-            try:
                 new_value = str(new_value)
                 new_value = new_value.strip()
                 if new_value == "":
-                    return JsonResponse({
-                        "post_success": False,
-                        "post_msg": "Error: UsersPanelApiUpdateData():\n\nnew_value cannot be a empty string",
-                    })
-            except Exception as e:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "Error: UsersPanelApiUpdateData():\n\nUnable to convert new_value '{}' to str type, did not save the value: {}".format(new_value, e),
-                })
+                    raise ValueError(f"new_value cannot be a empty string")
 
-        ## Save the value
-        try:
+            ## Save the value
             row = Users.objects.using('PerInd').get(user_id=id)
             if column == "Active_User":
                 row.active_user = new_value
                 row.save(using='PerInd')
-                return JsonResponse({
-                    "post_success": True,
-                    "post_msg": "",
-                })
-            if column == "First_Name":
+            elif column == "First_Name":
                 row.first_name = new_value
                 row.save(using='PerInd')
-                return JsonResponse({
-                    "post_success": True,
-                    "post_msg": "",
-                })
-            if column == "Last_Name":
+            elif column == "Last_Name":
                 row.last_name = new_value
                 row.save(using='PerInd')
-                return JsonResponse({
-                    "post_success": True,
-                    "post_msg": "",
-                })
             else:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "Warning: UsersPanelApiUpdateData():\n\nUpdating to column '{}' for table '{}' not supported\n".format(column, table),
-                })
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "Error: UsersPanelApiUpdateData():\n\nWhile trying to update {}.{} record to '{}' for user_id '{}': {}".format(table, column, new_value, id, e),
-            })
-
-    return JsonResponse({
-        "post_success": False,
-        "post_msg": "Warning: UsersPanelApiUpdateData():\n\nDid not know what to do with the request. The request:\n\nid: '{}'\n table: '{}'\n column: '{}'\n new_value: '{}'\n".format(id, table, column, new_value),
-    })
+                raise ValueError(f"Updating to column '{column}' for table '{table}' not supported")
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+        })
+    except Exception as e:
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : f"UsersPanelApiUpdateData(): {e}",
+            "post_data"     : None,
+        })
