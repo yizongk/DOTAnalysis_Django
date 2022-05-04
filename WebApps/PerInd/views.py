@@ -512,7 +512,7 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
 
                 local_updated_timestamp_str_response = updated_timestamp.astimezone(pytz.timezone('America/New_York')).strftime("%B %d, %Y, %I:%M %p")
 
-                row.save()
+                row.save(using='PerInd')
 
                 return JsonResponse({
                     "post_success": True,
@@ -1058,7 +1058,7 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
             if column == "Login":
                 user_obj = Users.objects.using('PerInd').get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
                 row.user = user_obj
-                row.save()
+                row.save(using='PerInd')
 
                 return JsonResponse({
                     "post_success"  : True,
@@ -1123,7 +1123,7 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
         user_obj        = Users.objects.using('PerInd').get(login=login_selection, active_user=True)
         category_obj    = Category.objects.using('PerInd').get(category_name=category_selection)
         new_permission  = UserPermissions(user=user_obj, category=category_obj)
-        new_permission.save()
+        new_permission.save(using='PerInd')
 
         return JsonResponse({
             "post_success": True,
@@ -1222,7 +1222,8 @@ class UsersPanelPageView(generic.ListView):
         context["client_is_admin"]  = self.client_is_admin
         return context
 
-def UsersPanelApiAddRow(request):
+@post_request_decorator
+def UsersPanelApiAddRow(request, json_blob, remote_user):
     """
         Expects the post request to post a JSON object, and that it will contain first_name_input, last_name_input and login_input. Like so:
         {
@@ -1232,108 +1233,52 @@ def UsersPanelApiAddRow(request):
         }
         Will create a new row in the Users table with the given first name, last name and login. Default the active_user to True
     """
-
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UsersPanelApiAddRow(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Check active user
-    is_active_user = user_is_active_user(request.user)
-    if is_active_user:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiAddRow(): {}".format(is_active_user["err"]),
-        })
-
-    ## Check active admin
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UsersPanelApiAddRow(): {}".format(is_active_admin["err"]),
-        })
-
-    ## Read the json request body
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
+        ## Check active user
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
 
-    ## Check json request param is not empty string
-    try:
-        first_name_input = json_blob['first_name_input']
-        last_name_input = json_blob['last_name_input']
-        login_input = json_blob['login_input']
+        ## Check active admin
+        is_active_admin = user_is_active_admin(request.user)
+        if not is_active_admin:
+            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+
+        ## Check json request param is not empty string
+        first_name_input    = json_blob['first_name_input']
+        last_name_input     = json_blob['last_name_input']
+        login_input         = json_blob['login_input']
 
         if first_name_input == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "first_name_input cannot be an empty string",
-            })
-
+            raise ValueError(f"first_name_input cannot be an empty string")
         if last_name_input == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "last_name_input cannot be an empty string",
-            })
-
+            raise ValueError(f"last_name_input cannot be an empty string")
         if login_input == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "login_input cannot be an empty string",
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
-        })
+            raise ValueError(f"login_input cannot be an empty string")
 
-    ## Check for duplication of login
-    try:
+        ## Check for duplication of login
         if Users.objects.using('PerInd').filter(login__exact=login_input).exists():
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "'{}' already exists in the Users table".format(login_input),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiAddRow(): {}".format(e),
-        })
+            raise ValueError(f"'{login_input}' already exists in the Users table")
 
-    ## Create the row!
-    try:
+        ## Create the row!
         new_user = Users(first_name=first_name_input, last_name=last_name_input, login=login_input, active_user=True)
-        new_user.save()
+        new_user.save(using='PerInd')
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": "",
+            "user_id": new_user.user_id,
+            "first_name": new_user.first_name,
+            "last_name": new_user.last_name,
+            "active_user": new_user.active_user,
+            "login": new_user.login,
+        })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UsersPanelApiAddRow(): {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UsersPanelApiAddRow(): {e}",
+            "post_data"     : None,
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": "",
-        "user_id": new_user.user_id,
-        "first_name": new_user.first_name,
-        "last_name": new_user.last_name,
-        "active_user": new_user.active_user,
-        "login": new_user.login,
-    })
 
 def UsersPanelApiDeleteRow(request):
     """
@@ -1534,21 +1479,21 @@ def UsersPanelApiUpdateData(request):
             row = Users.objects.using('PerInd').get(user_id=id)
             if column == "Active_User":
                 row.active_user = new_value
-                row.save()
+                row.save(using='PerInd')
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                 })
             if column == "First_Name":
                 row.first_name = new_value
-                row.save()
+                row.save(using='PerInd')
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
                 })
             if column == "Last_Name":
                 row.last_name = new_value
-                row.save()
+                row.save(using='PerInd')
                 return JsonResponse({
                     "post_success": True,
                     "post_msg": "",
