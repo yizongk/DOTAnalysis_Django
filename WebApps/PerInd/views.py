@@ -1076,7 +1076,8 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
         })
 
 ## For form add row
-def UserPermissionsPanelApiAddRow(request):
+@post_request_decorator
+def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
     """
         Expects the post request to post a JSON object, and that it will contain login_selection and category_selection. Like so:
         {
@@ -1086,128 +1087,60 @@ def UserPermissionsPanelApiAddRow(request):
         Will create a new row in the Permissions table with the selected login and category
     """
 
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: UserPermissionsPanelApiAddRow(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiAddRow():\n\nUNAUTHENTICATE USER!",
-        })
-
-    ## Check active user
-    is_active_user = user_is_active_user(request.user)
-    if is_active_user:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_user["err"]),
-        })
-
-    ## Check active admin
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        pass
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "UserPermissionsPanelApiAddRow(): {}".format(is_active_admin["err"]),
-        })
-
-    ## Read the json request body
     try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
+        ## Check active user
+        is_active_user = user_is_active_user(request.user)
+        if not is_active_user:
+            raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
 
-    ## Check login_selection and category_selection is not empty string
-    try:
-        login_selection = json_blob['login_selection']
-        category_selection = json_blob['category_selection']
+        ## Check active admin
+        is_active_admin = user_is_active_admin(request.user)
+        if not is_active_admin:
+            raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+
+        ## Check login_selection and category_selection is not empty string
+        login_selection     = json_blob['login_selection']
+        category_selection  = json_blob['category_selection']
 
         if login_selection == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "login_selection cannot be an empty string".format(login_selection, category_selection),
-            })
+            raise ValueError(f"login_selection cannot be an empty string")
 
         if category_selection == "":
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "category_selection cannot be an empty string".format(login_selection, category_selection),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow():\n\nThe POSTed json obj does not have the following variable: {}".format(e),
-        })
+            raise ValueError(f"category_selection cannot be an empty string")
 
-    ## Check that the login_selection and category_selection exists
-    try:
+        ## Check that the login_selection and category_selection exists
         if not Users.objects.using('PerInd').filter(login__exact=login_selection, active_user__exact=True).exists():
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "'{}' doesn't exists or it's not an active User".format(login_selection),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
-        })
+            raise ValueError(f"'{login_selection}' doesn't exists or it's not an active User")
 
-    try:
-         if not Category.objects.using('PerInd').filter(category_name__exact=category_selection).exists():
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "'{}' doesn't exists as a Category".format(category_selection),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
-        })
+        if not Category.objects.using('PerInd').filter(category_name__exact=category_selection).exists():
+            raise ValueError(f"'{category_selection}' doesn't exists as a Category")
 
-    ## Check for duplication of login and category
-    try:
+        ## Check for duplication of login and category
         if UserPermissions.objects.using('PerInd').filter(user__login__exact=login_selection, category__category_name__exact=category_selection).exists():
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "'{}' already has access to '{}'".format(login_selection, category_selection),
-            })
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
-        })
+            raise ValueError(f"'{login_selection}' already has access to '{category_selection}'")
 
-    ## Create the row!
-    try:
-        user_obj = Users.objects.using('PerInd').get(login=login_selection, active_user=True)
-        category_obj = Category.objects.using('PerInd').get(category_name=category_selection)
-        new_permission = UserPermissions(user=user_obj, category=category_obj)
+        ## Create the row!
+        user_obj        = Users.objects.using('PerInd').get(login=login_selection, active_user=True)
+        category_obj    = Category.objects.using('PerInd').get(category_name=category_selection)
+        new_permission  = UserPermissions(user=user_obj, category=category_obj)
         new_permission.save()
+
+        return JsonResponse({
+            "post_success": True,
+            "post_msg": None,
+            "permission_id": new_permission.user_permission_id,
+            "first_name": user_obj.first_name,
+            "last_name": user_obj.last_name,
+            "active_user": user_obj.active_user,
+            "login": user_obj.login,
+            "category_name": category_obj.category_name,
+        })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "Error: UserPermissionsPanelApiAddRow(): {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UserPermissionsPanelApiAddRow(): {e}",
+            "post_data"     : None,
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": "",
-        "permission_id": new_permission.user_permission_id,
-        "first_name": user_obj.first_name,
-        "last_name": user_obj.last_name,
-        "active_user": user_obj.active_user,
-        "login": user_obj.login,
-        "category_name": category_obj.category_name,
-    })
 
 ## For JS datatable delete row
 def UserPermissionsPanelApiDeleteRow(request):
