@@ -534,85 +534,59 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
         })
 
 ## Post request
-def PerIndApiGetCsv(request):
+@post_request_decorator
+def PerIndApiGetCsv(request, json_blob, remote_user):
     """
     Download WebGrid view with all current context as xlsx.
     Expects all the filter and sort context in the request. (Don't need pagination context)
     """
-    import csv
-    from io import StringIO
-
-    dummy_in_mem_file = StringIO()
-    csv_queryset = None
-    client_is_admin = False
-
-    ## Collect GET url parameter info
-    req_sort_dir = ""
-    req_sort_by = ""
-
-    temp_sort_dir = request.POST.get('SortDir')
-    if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
-        req_sort_dir = temp_sort_dir
-
-    temp_sort_by = request.POST.get('SortBy')
-    if (temp_sort_by is not None and temp_sort_by != ''):
-        req_sort_by = temp_sort_by
-
-    req_title_list_filter = request.POST.getlist('TitleListFilter[]')
-    req_yr_list_filter = request.POST.getlist('YYYYListFilter[]')
-    req_mn_list_filter = request.POST.getlist('MMListFilter[]')
-    req_fy_list_filter = request.POST.getlist('FiscalYearListFilter[]')
-    req_cat_list_filter = request.POST.getlist('CategoriesListFilter[]')
-
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: PerIndApiUpdateData(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiUpdateData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
-        })
-
-    ## Get list authorized Categories of Indicator Data, and log the category_permissions
-    is_active_admin = user_is_active_admin(request.user)
-    if is_active_admin:
-        client_is_admin = True
-        user_cat_permissions = get_admin_category_permissions()
-    else:
-        client_is_admin = False
-
-        is_active_user = user_is_active_user(request.user)
-        if is_active_user:
-            ## If not admin, do standard filter with categories
-            user_cat_permissions = get_user_category_permissions(request.user)
-        else:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "PerIndApiGetCsv(): {}".format(is_active_user["err"]),
-                "post_data": None,
-            })
-
-    ## Get list authorized Categories of Indicator Data, and log the category_permissions
-    if user_cat_permissions["success"] == True:
-        category_pk_list = user_cat_permissions["pk_list"]
-    elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiGetCsv(): {}".format(user_cat_permissions['err']),
-            "post_data": None,
-        })
-    else:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiGetCsv(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success']),
-            "post_data": None,
-        })
-
-    ## Default filters on the WebGrid dataset
     try:
+        import csv
+        from io import StringIO
+
+        dummy_in_mem_file       = StringIO()
+        csv_queryset            = None
+        client_is_admin         = False
+
+        ## Collect GET url parameter info
+        req_sort_dir            = ""
+        req_sort_by             = ""
+
+        temp_sort_dir           = json_blob['SortDir']
+        if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
+            req_sort_dir = temp_sort_dir
+
+        temp_sort_by            = json_blob['SortBy']
+        if (temp_sort_by is not None and temp_sort_by != ''):
+            req_sort_by = temp_sort_by
+
+        req_title_list_filter   = json_blob['TitleListFilter']
+        req_yr_list_filter      = json_blob['YYYYListFilter']
+        req_mn_list_filter      = json_blob['MMListFilter']
+        req_fy_list_filter      = json_blob['FiscalYearListFilter']
+        req_cat_list_filter     = json_blob['CategoriesListFilter']
+
+        ## Get list authorized Categories of Indicator Data, and log the category_permissions
+        client_is_admin = user_is_active_admin(request.user)
+        if client_is_admin:
+            user_cat_permissions = get_admin_category_permissions()
+        else:
+            is_active_user = user_is_active_user(request.user)
+            if is_active_user:
+                ## If not admin, do standard filter with categories
+                user_cat_permissions = get_user_category_permissions(request.user)
+            else:
+                raise ValueError(f"{is_active_user['err']}")
+
+        ## Get list authorized Categories of Indicator Data, and log the category_permissions
+        if user_cat_permissions["success"] == True:
+            category_pk_list = user_cat_permissions["pk_list"]
+        elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
+            raise ValueError(f"{user_cat_permissions['err']}")
+        else:
+            raise ValueError(f"user_cat_permissions['success'] has an unrecognized value: {user_cat_permissions['success']}")
+
+        ## Default filters on the WebGrid dataset
         csv_queryset = IndicatorData.objects.using('PerInd').filter(
             indicator__category__pk__in=category_pk_list, ## Filters for authorized Categories
             indicator__active=True, ## Filters for active Indicator titles
@@ -628,83 +602,56 @@ def PerIndApiGetCsv(request):
                 year_month__yyyy__gt=timezone.now().year,
             )
         )
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiGetCsv(): Failed to get any data from queryset: {}\n\nErr Msg: {}".format(user_perm_chk["err"], e),
-            "post_data": None,
-        })
 
-    ## Query for the queryset with matching filter and sort criteria
-    ## Filter by Titles
-    if len(req_title_list_filter) >= 1:
-        try:
-            qs = Q()
-            for i in req_title_list_filter:
-                qs = qs | Q(indicator__indicator_title=i)
-            csv_queryset = csv_queryset.filter(qs)
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "PerIndApiGetCsv(): Failed to filter Titles from queryset\n\nErr Msg: {}".format(e),
-                "post_data": None,
-            })
-    ## Filter by YYYYs
-    if len(req_yr_list_filter) >= 1:
-        try:
-            qs = Q()
-            for i in req_yr_list_filter:
-                qs = qs | Q(year_month__yyyy=i)
-            csv_queryset = csv_queryset.filter(qs)
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "PerIndApiGetCsv(): Failed to filter YYYY from queryset\n\nErr Msg: {}".format(e),
-                "post_data": None,
-            })
-    ## Filter by MMs
-    if len(req_mn_list_filter) >= 1:
-        try:
-            qs = Q()
-            for i in req_mn_list_filter:
-                qs = qs | Q(year_month__mm=i)
-            csv_queryset = csv_queryset.filter(qs)
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "PerIndApiGetCsv(): Failed to filter MM from queryset\n\nErr Msg: {}".format(e),
-                "post_data": None,
-            })
-    ## Filter by Fiscal Years
-    if len(req_fy_list_filter) >= 1:
-        try:
-            qs = Q()
-            for i in req_fy_list_filter:
-                qs = qs | Q(year_month__fiscal_year=i)
-            csv_queryset = csv_queryset.filter(qs)
-        except Exception as e:
-            return JsonResponse({
-                "post_success": False,
-                "post_msg": "PerIndApiGetCsv(): Failed to filter FY from queryset\n\nErr Msg: {}".format(e),
-                "post_data": None,
-            })
-    ## Filter by Categories
-    if client_is_admin == True:
-        if len(req_cat_list_filter) >= 1:
+        ## Query for the queryset with matching filter and sort criteria
+        ## Filter by Titles
+        if len(req_title_list_filter) >= 1:
             try:
                 qs = Q()
-                for i in req_cat_list_filter:
-                    qs = qs | Q(indicator__category__category_name=i)
+                for i in req_title_list_filter:
+                    qs = qs | Q(indicator__indicator_title=i)
                 csv_queryset = csv_queryset.filter(qs)
             except Exception as e:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "PerIndApiGetCsv(): Failed to filter Categories from queryset\n\nErr Msg: {}".format(e),
-                    "post_data": None,
-                })
+                raise ValueError(f"Failed to filter Titles from queryset\n\nErr Msg: {e}")
+        ## Filter by YYYYs
+        if len(req_yr_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in req_yr_list_filter:
+                    qs = qs | Q(year_month__yyyy=i)
+                csv_queryset = csv_queryset.filter(qs)
+            except Exception as e:
+                raise ValueError(f"Failed to filter YYYY from queryset\n\nErr Msg: {e}")
+        ## Filter by MMs
+        if len(req_mn_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in req_mn_list_filter:
+                    qs = qs | Q(year_month__mm=i)
+                csv_queryset = csv_queryset.filter(qs)
+            except Exception as e:
+                raise ValueError(f"PerIndApiGetCsv(): Failed to filter MM from queryset\n\nErr Msg: {e}")
+        ## Filter by Fiscal Years
+        if len(req_fy_list_filter) >= 1:
+            try:
+                qs = Q()
+                for i in req_fy_list_filter:
+                    qs = qs | Q(year_month__fiscal_year=i)
+                csv_queryset = csv_queryset.filter(qs)
+            except Exception as e:
+                raise ValueError(f"PerIndApiGetCsv(): Failed to filter FY from queryset\n\nErr Msg: {e}")
+        ## Filter by Categories
+        if client_is_admin == True:
+            if len(req_cat_list_filter) >= 1:
+                try:
+                    qs = Q()
+                    for i in req_cat_list_filter:
+                        qs = qs | Q(indicator__category__category_name=i)
+                    csv_queryset = csv_queryset.filter(qs)
+                except Exception as e:
+                    raise ValueError(f"PerIndApiGetCsv(): Failed to filter Categories from queryset\n\nErr Msg: {e}")
 
-    ## Sort dataset from sort direction and sort column
-    try:
+        ## Sort dataset from sort direction and sort column
         ## Default sort
         if req_sort_by == '':
             csv_queryset = csv_queryset.order_by('indicator__category__category_name', '-year_month__fiscal_year', '-year_month__mm', 'indicator__indicator_title')
@@ -719,64 +666,64 @@ def PerIndApiGetCsv(request):
                     "post_msg": "PerIndApiGetCsv(): Failed to sort, unrecognize req_sort_dir: {}".format(req_sort_dir),
                     "post_data": None,
                 })
+
+        ## Convert to CSV
+        writer = csv.writer(dummy_in_mem_file)
+        writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Calendar Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
+        ## More on select_related: https://docs.djangoproject.com/en/3.1/ref/models/querysets/ and https://medium.com/@hansonkd/performance-problems-in-the-django-orm-1f62b3d04785
+        for each in csv_queryset.select_related():
+            if each.year_month.mm == 1:
+                month_name = 'Jan'
+            elif each.year_month.mm == 2:
+                month_name = 'Feb'
+            elif each.year_month.mm == 3:
+                month_name = 'Mar'
+            elif each.year_month.mm == 4:
+                month_name = 'Apr'
+            elif each.year_month.mm == 5:
+                month_name = 'May'
+            elif each.year_month.mm == 6:
+                month_name = 'Jun'
+            elif each.year_month.mm == 7:
+                month_name = 'Jul'
+            elif each.year_month.mm == 8:
+                month_name = 'Aug'
+            elif each.year_month.mm == 9:
+                month_name = 'Sep'
+            elif each.year_month.mm == 10:
+                month_name = 'Oct'
+            elif each.year_month.mm == 11:
+                month_name = 'Nov'
+            elif each.year_month.mm == 12:
+                month_name = 'Dec'
+            else:
+                month_name = 'Unknown Month'
+
+            eachrow = [
+                each.indicator.category.category_name,
+                each.indicator,
+                each.year_month.fiscal_year,
+                each.year_month.yyyy,
+                month_name,
+                each.val,
+                each.indicator.unit.unit_type,
+                each.indicator.val_multiplier.multiplier_scale,
+                each.updated_date.strftime("%m/%d/%Y"),
+                each.update_user,
+            ]
+            writer.writerow(eachrow)
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : dummy_in_mem_file.getvalue(),
+        })
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "PerIndApiGetCsv(): Failed to sort from queryset\n\nErr Msg: {}".format(e),
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : f"PerIndApiGetCsv(): {e}",
+            "post_data"     : None,
         })
-
-    ## Convert to CSV
-    writer = csv.writer(dummy_in_mem_file)
-    writer.writerow(['Category', 'Indicator Title', 'Fiscal Year', 'Calendar Year', 'Month', 'Indicator Value', 'Units', 'Multiplier', 'Updated Date', 'Last Updated By', ])
-    ## More on select_related: https://docs.djangoproject.com/en/3.1/ref/models/querysets/ and https://medium.com/@hansonkd/performance-problems-in-the-django-orm-1f62b3d04785
-    for each in csv_queryset.select_related():
-        if each.year_month.mm == 1:
-            month_name = 'Jan'
-        elif each.year_month.mm == 2:
-            month_name = 'Feb'
-        elif each.year_month.mm == 3:
-            month_name = 'Mar'
-        elif each.year_month.mm == 4:
-            month_name = 'Apr'
-        elif each.year_month.mm == 5:
-            month_name = 'May'
-        elif each.year_month.mm == 6:
-            month_name = 'Jun'
-        elif each.year_month.mm == 7:
-            month_name = 'Jul'
-        elif each.year_month.mm == 8:
-            month_name = 'Aug'
-        elif each.year_month.mm == 9:
-            month_name = 'Sep'
-        elif each.year_month.mm == 10:
-            month_name = 'Oct'
-        elif each.year_month.mm == 11:
-            month_name = 'Nov'
-        elif each.year_month.mm == 12:
-            month_name = 'Dec'
-        else:
-            month_name = 'Unknown Month'
-
-        eachrow = [
-            each.indicator.category.category_name,
-            each.indicator,
-            each.year_month.fiscal_year,
-            each.year_month.yyyy,
-            month_name,
-            each.val,
-            each.indicator.unit.unit_type,
-            each.indicator.val_multiplier.multiplier_scale,
-            each.updated_date.strftime("%m/%d/%Y"),
-            each.update_user,
-        ]
-        writer.writerow(eachrow)
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": "PerIndApiGetCsv(): Success, check for variable 'post_data' in the response JSON for the csv file",
-        "post_data": dummy_in_mem_file.getvalue(),
-    })
 
 ## For admin access only
 class PastDueIndicatorsPageView(generic.ListView):
