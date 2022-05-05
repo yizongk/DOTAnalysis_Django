@@ -38,19 +38,13 @@ class HomePageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
-            self.client_is_admin = user_is_active_admin(self.request.user)
-            context["client_is_admin"]  = self.client_is_admin
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            return context
-        except Exception as e:
-            context["client_is_admin"]  = False
-            context["get_success"]      = False
-            context["get_error"]        = None
-            return context
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        self.client_is_admin = user_is_active_admin(self.request.user)
+        context["client_is_admin"]  = self.client_is_admin
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        return context
 
 
 class AboutPageView(TemplateView):
@@ -60,17 +54,11 @@ class AboutPageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = None
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 class ContactPageView(TemplateView):
@@ -80,17 +68,11 @@ class ContactPageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = None
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 def get_allowed_list_of_wu(username=None):
@@ -1121,37 +1103,19 @@ class EmpGridPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]                      = self.get_success
-            context["get_error"]                        = self.get_error
-            context["client_is_admin"]                  = self.client_is_admin
+        context["get_success"]                      = self.get_success
+        context["get_error"]                        = self.get_error
+        context["client_is_admin"]                  = self.client_is_admin
 
-            context["emp_entry_columns_json"]           = self.emp_entry_columns_json
-            context["emp_entries_json"]                 = self.emp_entries_json
-            context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
-            context["site_dropdown_list_json"]          = self.site_dropdown_list_json
-            context["site_floor_dropdown_list_json"]    = self.site_floor_dropdown_list_json
-            context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
-            return context
-        except Exception as e:
-            self.get_success                            = False
-            self.get_error                                = "Exception: get_context_data(): {}".format(e)
-
-            context                                     = super().get_context_data(**kwargs)
-            context["get_success"]                      = self.get_success
-            context["get_error"]                          = self.get_error
-
-            context["client_is_admin"]                  = False
-
-            context["emp_entry_columns_json"]           = None
-            context["emp_entries_json"]                 = None
-            context["supervisor_dropdown_list_json"]    = None
-            context["site_dropdown_list_json"]          = None
-            context["site_floor_dropdown_list_json"]    = None
-            context["site_type_dropdown_list_json"]     = None
-            return context
+        context["emp_entry_columns_json"]           = self.emp_entry_columns_json
+        context["emp_entries_json"]                 = self.emp_entries_json
+        context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
+        context["site_dropdown_list_json"]          = self.site_dropdown_list_json
+        context["site_floor_dropdown_list_json"]    = self.site_floor_dropdown_list_json
+        context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
+        return context
 
 
 class OrgChartPageView(generic.ListView):
@@ -1178,24 +1142,13 @@ class OrgChartPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "Exception: get_context_data(): {}".format(e)
-
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
-
-            return context
+        return context
 
 
 def GetCommissionerPMS(request):
@@ -1484,21 +1437,11 @@ class AdminPanelPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                     = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
-
-            context                     = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]          = self.get_error
-            context["client_is_admin"]  = False
-            return context
+        context                     = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 class ManageUsersPageView(generic.ListView):
@@ -1543,25 +1486,14 @@ class ManageUsersPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["users_data_json"]      = self.users_data_json
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = f"Exception: ManageUsersPageView(): get_context_data(): {e}"
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
 
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            context["ag_grid_col_def_json"] = None
-            context["users_data_json"]      = None
-            return context
+        context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+        context["users_data_json"]      = self.users_data_json
+        return context
 
 
 def AddUser(request):
@@ -1884,31 +1816,17 @@ class ManagePermissionsPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["permissions_json"]     = self.permissions_json
-            context["user_list"]            = self.user_list
-            context["division_list"]        = self.division_list
-            context["wu_desc_list"]         = self.wu_desc_list
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
 
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["permissions_json"]     = self.permissions_json
-            context["user_list"]            = self.user_list
-            context["division_list"]        = self.division_list
-            context["wu_desc_list"]         = self.wu_desc_list
-            return context
+        context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+        context["permissions_json"]     = self.permissions_json
+        context["user_list"]            = self.user_list
+        context["division_list"]        = self.division_list
+        context["wu_desc_list"]         = self.wu_desc_list
+        return context
 
 
 def AddUserPermission(request):
@@ -2160,18 +2078,8 @@ class HowToUsePageView(TemplateView):
     client_is_admin                 = False
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
-
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            return context
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
+        return context
