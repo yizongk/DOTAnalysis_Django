@@ -1426,7 +1426,7 @@ class AdminPanelPageView(generic.ListView):
         ## Get the core data
         try:
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success = False
@@ -1475,7 +1475,7 @@ class ManageUsersPageView(generic.ListView):
                 self.ag_grid_col_def_json = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.users_data_json      = json.dumps(list(users_data)     , cls=DjangoJSONEncoder)
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1805,7 +1805,7 @@ class ManagePermissionsPageView(generic.ListView):
                 self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('subdiv').distinct()] ## subidv not null filters out the WU 9999 On-Loan
                 self.wu_desc_list           = list(TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('wu', 'wu_desc')) ## subidv not null filters out the WU 9999 On-Loan
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False

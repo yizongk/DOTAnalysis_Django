@@ -61,6 +61,24 @@ def remove_admin_status(windows_username=TEST_WINDOWS_USERNAME):
         raise ValueError(f"remove_admin_status(): {e}")
 
 
+def grant_active_user_status(windows_username=TEST_WINDOWS_USERNAME):
+    """Set user as active"""
+    try:
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        ...#TODO
+    except Exception as e:
+        raise ValueError(f"grant_active_user_status(): {e}")
+
+
+def remove_active_user_status(windows_username=TEST_WINDOWS_USERNAME):
+    """Set user as inactive"""
+    try:
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        ...#TODO
+    except Exception as e:
+        raise ValueError(f"remove_active_user_status(): {e}")
+
+
 def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, work_units=[DEFAULT_WORK_UNIT]):
     """
         set up permissions for a user. If user is admin, the permissions added will probably mean nothing.
@@ -156,7 +174,7 @@ class TestViewPagesResponse(HttpGetTestCase):
             'orgchartportal_manage_permissions_view',
         ]
 
-        self.additional_context_requirements_normal = [
+        self.additional_context_requirements = [
             {
                 'view'                      : 'orgchartportal_empgrid_view'
                 ,'additional_context_keys'  : [
@@ -169,41 +187,7 @@ class TestViewPagesResponse(HttpGetTestCase):
                                             ]
                 ,'qa_fct'                   : self.__assert_additional_context_qa_empgrid
             }
-            ## Rest qa_fct are left None because those are admin views and aren't meant to return data
-            ,{
-                'view'                      : 'orgchartportal_manage_users_view'
-                ,'additional_context_keys'  : [
-                                                'ag_grid_col_def_json'
-                                                ,'users_data_json'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-            ,{
-                'view'                      : 'orgchartportal_manage_permissions_view'
-                ,'additional_context_keys'  : [
-                                                'ag_grid_col_def_json'
-                                                ,'permissions_json'
-                                                ,'user_list'
-                                                ,'division_list'
-                                                ,'wu_desc_list'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-        ]
-
-        self.additional_context_requirements_admin = [
-            {
-                'view'                      : 'orgchartportal_empgrid_view'
-                ,'additional_context_keys'  : [
-                                                'emp_entry_columns_json'
-                                                ,'emp_entries_json'
-                                                ,'supervisor_dropdown_list_json'
-                                                ,'site_dropdown_list_json'
-                                                ,'site_floor_dropdown_list_json'
-                                                ,'site_type_dropdown_list_json'
-                                            ]
-                ,'qa_fct'                   : self.__assert_additional_context_qa_empgrid
-            }
+            ## The below are admin views
             ,{
                 'view'                      : 'orgchartportal_manage_users_view'
                 ,'additional_context_keys'  : [
@@ -372,11 +356,24 @@ class TestViewPagesResponse(HttpGetTestCase):
         self.assert_response_status_200()
 
     def test_views_response_user_admin_restriction(self):
-        """Test normal user, should only have acess to regular views"""
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        # """Test inactive user (Normal), should have NO access to regular or admin views"""
+        # remove_admin_status()
+        # remove_active_user_status()
+        # self.assert_inactive_user_no_access_on_normal_and_admin_view()
+
+        # """Test inactive user (Admin), should have NO access to regular or admin views"""
+        # grant_admin_status()
+        # remove_active_user_status()
+        # self.assert_inactive_user_no_access_on_normal_and_admin_view()
+
+        """Test active user (Normal), should only have access to regular views"""
+        grant_active_user_status()
         remove_admin_status()
         self.assert_user_access_on_normal_and_admin_view()
 
-        """Test admin user, should have access to all views"""
+        """Test active user (Admin), should have access to regular and admin views"""
+        grant_active_user_status()
         grant_admin_status()
         self.assert_admin_access_on_normal_and_admin_view()
 
@@ -387,11 +384,11 @@ class TestViewPagesResponse(HttpGetTestCase):
         """
         # Test normal user
         remove_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_normal)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
         # Test admin user
         grant_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_admin)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
 
 class TestAPIUpdateEmployeeData(HttpPostTestCase):
