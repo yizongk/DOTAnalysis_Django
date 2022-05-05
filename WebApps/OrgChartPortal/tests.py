@@ -47,7 +47,7 @@ def grant_admin_status(windows_username=TEST_WINDOWS_USERNAME):
         user.save(using='OrgChartWrite')
         return user
     except Exception as e:
-            raise ValueError(f"grant_admin_status(): {e}")
+        raise ValueError(f"grant_admin_status(): {e}")
 
 
 def remove_admin_status(windows_username=TEST_WINDOWS_USERNAME):
@@ -58,7 +58,7 @@ def remove_admin_status(windows_username=TEST_WINDOWS_USERNAME):
         user.save(using='OrgChartWrite')
         return user
     except Exception as e:
-            raise ValueError(f"remove_admin_status(): {e}")
+        raise ValueError(f"remove_admin_status(): {e}")
 
 
 def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, work_units=[DEFAULT_WORK_UNIT]):
@@ -97,7 +97,7 @@ def tear_down_permissions(windows_username=TEST_WINDOWS_USERNAME):
         for each in permissions:
             each.delete(using='OrgChartWrite')
     except Exception as e:
-            raise ValueError(f"tear_down_permissions_for_user(): {e}")
+        raise ValueError(f"tear_down_permissions_for_user(): {e}")
 
 
 def tear_down(windows_username=TEST_WINDOWS_USERNAME):
