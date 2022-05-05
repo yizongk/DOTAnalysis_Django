@@ -12,6 +12,7 @@ import json
 from WebAppsMain.api_decorators import post_request_decorator
 ## Create your views here.
 
+
 def get_admin_category_permissions():
     try:
         user_permissions_list = Category.objects.using('PerInd').all()
@@ -22,6 +23,7 @@ def get_admin_category_permissions():
     except Exception as e:
         raise ValueError(f"get_admin_category_permissions(): {e}")
 
+
 def get_user_category_permissions(username):
     try:
         user_permissions_list = UserPermissions.objects.using('PerInd').filter(user__login=username)
@@ -31,6 +33,7 @@ def get_user_category_permissions(username):
         }
     except Exception as e:
         raise ValueError(f"get_user_category_permissions(): {e}")
+
 
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
@@ -46,6 +49,7 @@ def user_is_active_admin(username):
     except Exception as e:
         raise ValueError(f"user_is_active_admin(): {e}")
 
+
 def user_is_active_user(username):
     try:
         user_query = Users.objects.using('PerInd').filter(
@@ -58,6 +62,7 @@ def user_is_active_user(username):
             return False
     except Exception as e:
         raise ValueError(f"user_is_active_user(): {e}")
+
 
 ## Given a record id, checks if user has permission to edit the record
 def user_has_permission_to_edit(username, record_id):
@@ -81,6 +86,7 @@ def user_has_permission_to_edit(username, record_id):
     except Exception as e:
         raise ValueError(f"user_has_permission_to_edit(): {e}")
 
+
 class HomePageView(TemplateView):
     template_name   = 'PerInd.template.home.html'
     get_success     = True
@@ -95,6 +101,7 @@ class HomePageView(TemplateView):
         context["client_is_admin"]  = user_is_active_admin(self.request.user)
         return context
 
+
 class AboutPageView(TemplateView):
     template_name   = 'PerInd.template.about.html'
     get_success     = True
@@ -108,6 +115,7 @@ class AboutPageView(TemplateView):
         context["client_is_admin"]  = user_is_active_admin(self.request.user)
         return context
 
+
 class ContactPageView(TemplateView):
     template_name   = 'PerInd.template.contact.html'
     get_success     = True
@@ -120,6 +128,7 @@ class ContactPageView(TemplateView):
         context["get_error"]        = self.get_error
         context["client_is_admin"]  = user_is_active_admin(self.request.user)
         return context
+
 
 ## Method Flowchart (the order of execution) for generic.ListView
 ##     setup()
@@ -401,6 +410,7 @@ class WebGridPageView(generic.ListView):
 
         return context
 
+
 ## Post request
 @post_request_decorator
 def PerIndApiUpdateData(request, json_blob, remote_user):
@@ -476,6 +486,7 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
             "post_success": False,
             "post_msg": f"PerIndApiUpdateData(): {e}",
         })
+
 
 ## Post request
 @post_request_decorator
@@ -659,6 +670,7 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
             "post_msg"      : f"PerIndApiGetCsv(): {e}",
             "post_data"     : None,
         })
+
 
 ## For admin access only
 class PastDueIndicatorsPageView(generic.ListView):
@@ -868,6 +880,7 @@ class PastDueIndicatorsPageView(generic.ListView):
 
         return context
 
+
 class AdminPanelPageView(generic.ListView):
     template_name   = 'PerInd.template.adminpanel.html'
 
@@ -902,6 +915,7 @@ class AdminPanelPageView(generic.ListView):
         context["client_is_admin"]  = self.client_is_admin
 
         return context
+
 
 class UserPermissionsPanelPageView(generic.ListView):
     template_name       = 'PerInd.template.userpermissionspanel.html'
@@ -961,6 +975,7 @@ class UserPermissionsPanelPageView(generic.ListView):
         context["categories_list"]  = self.categories_list
         return context
 
+
 ## Post request - for single cell edits
 @post_request_decorator
 def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
@@ -1009,6 +1024,7 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
             "post_msg"      : f"UserPermissionsPanelApiUpdateData(): {e}",
             "post_data"     : None,
         })
+
 
 ## For form add row
 @post_request_decorator
@@ -1077,6 +1093,7 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
             "post_data"     : None,
         })
 
+
 ## For JS datatable delete row
 @post_request_decorator
 def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
@@ -1119,6 +1136,7 @@ def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
             "post_data"     : None,
         })
 
+
 class UsersPanelPageView(generic.ListView):
     template_name       = 'PerInd.template.userspanel.html'
     context_object_name = 'users_data_entries'
@@ -1156,6 +1174,7 @@ class UsersPanelPageView(generic.ListView):
         context["get_error"]        = self.get_error
         context["client_is_admin"]  = self.client_is_admin
         return context
+
 
 @post_request_decorator
 def UsersPanelApiAddRow(request, json_blob, remote_user):
@@ -1215,6 +1234,7 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
             "post_data"     : None,
         })
 
+
 @post_request_decorator
 def UsersPanelApiDeleteRow(request, json_blob, remote_user):
     """
@@ -1265,6 +1285,7 @@ def UsersPanelApiDeleteRow(request, json_blob, remote_user):
             "post_msg"      : f"UsersPanelApiDeleteRow(): {e}",
             "post_data"     : None,
         })
+
 
 @post_request_decorator
 def UsersPanelApiUpdateData(request, json_blob, remote_user):
