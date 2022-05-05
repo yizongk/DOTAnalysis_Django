@@ -67,22 +67,34 @@ class HttpGetTestCase(unittest.TestCase):
         """Pass if normal user get access to normal view, and denied access to admin views"""
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin client\n    {response.context['get_error']}")
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin user\n    {response.context['get_error']}")
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for a non-admin client\n    {response.context['get_error']}")
-            self.assertTrue("not an Admin" in response.context['get_error'], f"'{view}' did not have error message on an admin view when client is non-admin\n    {response.context['get_error']}")
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for a non-admin user\n    {response.context['get_error']}")
+            self.assertTrue("not an admin" in response.context['get_error'], f"'{view}' does not have correct error message on an admin view when user is non-admin (must contain 'not an admin' in the error message)\n    {response.context['get_error']}")
 
     def assert_admin_access_on_normal_and_admin_view(self):
         """Pass if admin user get access to normal view, and access to admin views"""
         for view in self.regular_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin client\n    {response.context['get_error']}")
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin user\n    {response.context['get_error']}")
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
-            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin client\n    {response.context['get_error']}")
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin user\n    {response.context['get_error']}")
+
+    def assert_inactive_user_no_access_on_normal_and_admin_view(self):
+        """Pass if inactive user (admin or not) get denied access to normal view and admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on a regular view for an inactive user\n    {response.context['get_error']}")
+            self.assertTrue("not an active user" in response.context['get_error'], f"'{view}' does not have correct error message on a regular view when user is inactive (must contain 'not an active user' in the error message)\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for an non-admin user\n    {response.context['get_error']}")
+            self.assertTrue("not an active user" in response.context['get_error'], f"'{view}' does not have correct error message on an admin view when user is inactive (must contain 'not an active user' in the error message)\n    {response.context['get_error']}")
 
     def assert_additional_context_data(self, additional_requirements=None):
         """
@@ -114,6 +126,11 @@ class HttpGetTestCase(unittest.TestCase):
 
         for view in self.admin_views:
             response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+
+            ## When caller is a normal non-admin user, don't check the additional_requirements
+            if response.context['get_error'] is not None and "not an admin" in response.context['get_error']:
+                continue
+
             if additional_requirements is not None and view in [each['view'] for each in additional_requirements]:
                 len_of_fouund_requirements = len([x for x in additional_requirements if view == x['view']])
                 if (len_of_fouund_requirements != 1):
