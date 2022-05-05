@@ -16,9 +16,7 @@ def get_admin_category_permissions():
     try:
         user_permissions_list = Category.objects.using('PerInd').all()
         return {
-            "success": True,
             "pk_list": [x.category_id for x in user_permissions_list],
-            "err": '',
             "category_names": [x.category_name for x in user_permissions_list],
         }
     except Exception as e:
@@ -28,18 +26,11 @@ def get_user_category_permissions(username):
     try:
         user_permissions_list = UserPermissions.objects.using('PerInd').filter(user__login=username)
         return {
-            "success": True,
             "pk_list": [x.category.category_id for x in user_permissions_list],
-            "err": '',
             "category_names": [x.category.category_name for x in user_permissions_list],
         }
     except Exception as e:
-        return {
-            "success": False,
-            "err": "get_user_category_permissions(): {}".format(e),
-            "pk_list": [],
-            "category_names": [],
-        }
+        raise ValueError(f"get_user_category_permissions(): {e}")
 
 ## Check if remote user is admin and is active
 def user_is_active_admin(username):
@@ -78,51 +69,17 @@ def user_has_permission_to_edit(username, record_id):
             ## If not admin, do standard filter with categories
             category_info = get_user_category_permissions(username)
 
-        if category_info["success"] == True:
-            category_pk_list = category_info["pk_list"]
-        elif (category_info["success"] == False) or (category_info["success"] is None):
-            return {
-                "success": False,
-                "err": "Permission denied: user_cat_permissions['success'] has an unrecognized value: {}".format(category_info['err']),
-            }
-        else:
-            return {
-                "success": False,
-                "err": "Permission denied: user_cat_permissions['success'] has an unrecognized value: {}".format(category_info['success']),
-            }
-
         category_id_permission_list = category_info["pk_list"]
-        record_category_info = IndicatorData.objects.using('PerInd').values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
-        record_category_id = record_category_info["indicator__category__category_id"]
-        record_category_name = record_category_info["indicator__category__category_name"]
+
+        record_category_info        = IndicatorData.objects.using('PerInd').values('indicator__category__category_id', 'indicator__category__category_name').get(record_id=record_id) ## Take a look at https://docs.djangoproject.com/en/3.0/ref/models/querysets/ on "values()" section
+        record_category_id          = record_category_info["indicator__category__category_id"]
         if len(category_id_permission_list) != 0:
             if record_category_id in category_id_permission_list:
-                return {
-                    "success": True,
-                    "err": "",
-                }
-            else:
-                return {
-                    "success": False,
-                    "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
-                }
-        elif category_info["success"] == False:
-            raise ## re-raise the error that happend in get_user_category_permissions(), because ["success"] is only False when an exception happens in get_user_category_permissions()
-        else: ## Else successful query, but no permissions results found
-            return {
-                "success": False,
-                "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
-            }
+                return True
 
-        return {
-            "success": False,
-            "err": "Permission denied: '{}' does not have permission to edit {} Category.".format(username, record_category_name),
-        }
+        return False
     except Exception as e:
-        return {
-            "success": None,
-            "err": 'user_has_permission_to_edit(): {}'.format(e),
-        }
+        raise ValueError(f"user_has_permission_to_edit(): {e}")
 
 class HomePageView(TemplateView):
     template_name   = 'PerInd.template.home.html'
@@ -227,34 +184,21 @@ class WebGridPageView(generic.ListView):
             self.req_cat_list_filter = self.request.GET.getlist('CategoriesListFilter')
 
             ## Get authorized list of Categories of Indicator Data, also check for Active Admins or Users
-            is_active_admin = user_is_active_admin(self.request.user)
-            if is_active_admin:
-                self.client_is_admin = True
+            self.client_is_admin = user_is_active_admin(self.request.user)
+            if self.client_is_admin:
                 user_cat_permissions = get_admin_category_permissions()
 
             else:
-                self.client_is_admin = False
+                ## If not admin, do standard filter with categories
                 is_active_user = user_is_active_user(self.request.user)
 
                 if is_active_user:
-                    ## If not admin, do standard filter with categories
                     user_cat_permissions = get_user_category_permissions(self.request.user)
                 else:
-                    self.get_success = False
-                    self.get_error = "WebGridPageView(): get_queryset(): {}".format(is_active_user["err"])
-                    return None
+                    raise ValueError(f"User '{self.request.user}' is not an active user")
 
-            if user_cat_permissions["success"] == True:
-                category_pk_list = user_cat_permissions["pk_list"]
-                self.category_permissions = user_cat_permissions["category_names"]
-            elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
-                self.get_success = False
-                self.get_error = "WebGridPageView(): get_queryset(): {}".format(user_cat_permissions['err'])
-                return None
-            else:
-                self.get_success = False
-                self.get_error = "WebGridPageView(): get_queryset(): user_cat_permissions['success'] has an unrecognized value: {}".format(user_cat_permissions['success'])
-                return None
+            category_pk_list            = user_cat_permissions["pk_list"]
+            self.category_permissions   = user_cat_permissions["category_names"]
 
             ## Default filters on the WebGrid dataset
             indicator_data_entries = IndicatorData.objects.using('PerInd').filter(
@@ -485,9 +429,9 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
             raise ValueError(f"'{remote_user}' is not an active User!")
 
         ## Authenticate permission for user
-        user_perm_chk = user_has_permission_to_edit(remote_user, id)
-        if not user_perm_chk["success"]:
-            raise ValueError(f"PerIndApiUpdateData():\n\nUSER '{remote_user}' has no permission to edit record #{id}")
+        can_edit = user_has_permission_to_edit(remote_user, id)
+        if not can_edit:
+            raise ValueError(f"USER '{remote_user}' has no permission to edit record #{id}")
 
         ## Make sure new_value is convertable to float
         try:
@@ -571,20 +515,15 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
         if client_is_admin:
             user_cat_permissions = get_admin_category_permissions()
         else:
+            ## If not admin, do standard filter with categories
             is_active_user = user_is_active_user(request.user)
             if is_active_user:
-                ## If not admin, do standard filter with categories
                 user_cat_permissions = get_user_category_permissions(request.user)
             else:
-                raise ValueError(f"{is_active_user['err']}")
+                raise ValueError(f"User '{request.user}' is not an active user")
 
         ## Get list authorized Categories of Indicator Data, and log the category_permissions
-        if user_cat_permissions["success"] == True:
-            category_pk_list = user_cat_permissions["pk_list"]
-        elif (user_cat_permissions["success"] == False) or (user_cat_permissions["success"] is None):
-            raise ValueError(f"{user_cat_permissions['err']}")
-        else:
-            raise ValueError(f"user_cat_permissions['success'] has an unrecognized value: {user_cat_permissions['success']}")
+        category_pk_list = user_cat_permissions["pk_list"]
 
         ## Default filters on the WebGrid dataset
         csv_queryset = IndicatorData.objects.using('PerInd').filter(
@@ -630,7 +569,7 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
                     qs = qs | Q(year_month__mm=i)
                 csv_queryset = csv_queryset.filter(qs)
             except Exception as e:
-                raise ValueError(f"PerIndApiGetCsv(): Failed to filter MM from queryset\n\nErr Msg: {e}")
+                raise ValueError(f"Failed to filter MM from queryset\n\nErr Msg: {e}")
         ## Filter by Fiscal Years
         if len(req_fy_list_filter) >= 1:
             try:
@@ -639,7 +578,7 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
                     qs = qs | Q(year_month__fiscal_year=i)
                 csv_queryset = csv_queryset.filter(qs)
             except Exception as e:
-                raise ValueError(f"PerIndApiGetCsv(): Failed to filter FY from queryset\n\nErr Msg: {e}")
+                raise ValueError(f"Failed to filter FY from queryset\n\nErr Msg: {e}")
         ## Filter by Categories
         if client_is_admin == True:
             if len(req_cat_list_filter) >= 1:
@@ -649,7 +588,7 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
                         qs = qs | Q(indicator__category__category_name=i)
                     csv_queryset = csv_queryset.filter(qs)
                 except Exception as e:
-                    raise ValueError(f"PerIndApiGetCsv(): Failed to filter Categories from queryset\n\nErr Msg: {e}")
+                    raise ValueError(f"Failed to filter Categories from queryset\n\nErr Msg: {e}")
 
         ## Sort dataset from sort direction and sort column
         ## Default sort
@@ -661,11 +600,7 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
             elif req_sort_dir == "desc":
                 csv_queryset = csv_queryset.order_by('-{}'.format(req_sort_by))
             else:
-                return JsonResponse({
-                    "post_success": False,
-                    "post_msg": "PerIndApiGetCsv(): Failed to sort, unrecognize req_sort_dir: {}".format(req_sort_dir),
-                    "post_data": None,
-                })
+                raise ValueError(f"Failed to sort, unrecognize req_sort_dir: {req_sort_dir}")
 
         ## Convert to CSV
         writer = csv.writer(dummy_in_mem_file)
