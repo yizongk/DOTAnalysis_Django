@@ -45,6 +45,24 @@ def remove_admin_status(windows_username=TEST_WINDOWS_USERNAME):
         raise ValueError(f"remove_admin_status(): {e}")
 
 
+def grant_active_user_status(windows_username=TEST_WINDOWS_USERNAME):
+    """Set user as active"""
+    try:
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        ...#TODO
+    except Exception as e:
+        raise ValueError(f"grant_active_user_status(): {e}")
+
+
+def remove_active_user_status(windows_username=TEST_WINDOWS_USERNAME):
+    """Set user as inactive"""
+    try:
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        ...#TODO
+    except Exception as e:
+        raise ValueError(f"remove_active_user_status(): {e}")
+
+
 def set_up_permissions(windows_username=TEST_WINDOWS_USERNAME, operation_boro_pairs=[(DEFAULT_OPERATION, DEFAULT_BORO)]):
     """
         set up permissions for a user. If user is admin, the permissions added will probably mean nothing.
@@ -121,7 +139,7 @@ class TestViewPagesResponse(HttpGetTestCase):
             'dailypothole_csv_export_view',
         ]
 
-        self.additional_context_requirements_normal = [
+        self.additional_context_requirements = [
             {
                 'view'                      : 'dailypothole_pothole_data_entry_view'
                 ,'additional_context_keys'  : [
@@ -130,57 +148,7 @@ class TestViewPagesResponse(HttpGetTestCase):
                                             ]
                 ,'qa_fct'                   : self.__assert_additional_context_qa_pothole_data_entry
             }
-            ## Rest qa_fct are left None because those are admin views and aren't meant to return data
-           ,{
-                'view'                      : 'dailypothole_pothole_data_grid_view'
-                ,'additional_context_keys'  : [
-                                                'ag_grid_col_def_json'
-                                                ,'pothole_data_json'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-            ,{
-                'view'                      : 'dailypothole_complaints_input_view'
-                ,'additional_context_keys'  : [
-                                                'complaints'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-            ,{
-                'view'                      : 'dailypothole_users_panel_view'
-                ,'additional_context_keys'  : [
-                                                'users'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-            ,{
-                'view'                      : 'dailypothole_user_permissions_panel_view'
-                ,'additional_context_keys'  : [
-                                                'user_permissions'
-                                                ,'user_list'
-                                                ,'operation_list'
-                                                ,'boro_list'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-            ,{
-                'view'                      : 'dailypothole_csv_export_view'
-                ,'additional_context_keys'  : [
-                                                'operation_list'
-                                            ]
-                ,'qa_fct'                   : None
-            }
-        ]
-
-        self.additional_context_requirements_admin = [
-            {
-                'view'                      : 'dailypothole_pothole_data_entry_view'
-                ,'additional_context_keys'  : [
-                                                'operation_boro_permissions'
-                                                ,'today'
-                                            ]
-                ,'qa_fct'                   : self.__assert_additional_context_qa_pothole_data_entry
-            }
+            ## The below are admin views
            ,{
                 'view'                      : 'dailypothole_pothole_data_grid_view'
                 ,'additional_context_keys'  : [
@@ -320,11 +288,24 @@ class TestViewPagesResponse(HttpGetTestCase):
         self.assert_response_status_200()
 
     def test_views_response_user_admin_restriction(self):
-        """Test normal user, should only have acess to regular views"""
+        #TODO IMPLEMENT THIS WHEN NEW USER AND APP PERMISSION MANAGEMENT IS IN PLACE
+        # """Test inactive user (Normal), should have NO access to regular or admin views"""
+        # remove_admin_status()
+        # remove_active_user_status()
+        # self.assert_inactive_user_no_access_on_normal_and_admin_view()
+
+        # """Test inactive user (Admin), should have NO access to regular or admin views"""
+        # grant_admin_status()
+        # remove_active_user_status()
+        # self.assert_inactive_user_no_access_on_normal_and_admin_view()
+
+        """Test active user (Normal), should only have access to regular views"""
+        grant_active_user_status()
         remove_admin_status()
         self.assert_user_access_on_normal_and_admin_view()
 
-        """Test admin user, should have access to all views"""
+        """Test active user (Admin), should have access to regular and admin views"""
+        grant_active_user_status()
         grant_admin_status()
         self.assert_admin_access_on_normal_and_admin_view()
 
@@ -332,11 +313,11 @@ class TestViewPagesResponse(HttpGetTestCase):
         """Some views have additional context data, need to test for those here"""
         # Test normal user
         remove_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_normal)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
         # Test admin user
         grant_admin_status()
-        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements_admin)
+        self.assert_additional_context_data(additional_requirements=self.additional_context_requirements)
 
 
 class TestAPIUpdatePotholesData(HttpPostTestCase):

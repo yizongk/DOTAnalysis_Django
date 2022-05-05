@@ -602,7 +602,7 @@ class PotholeDataGridPageView(generic.ListView):
                 self.ag_grid_col_def_json   = json.dumps(list(ag_grid_col_def)  , cls=DjangoJSONEncoder)
                 self.pothole_data_json      = json.dumps(list(pothole_data)     , cls=DjangoJSONEncoder)
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -935,7 +935,7 @@ class ComplaintsInputPageView(generic.ListView):
                     complaint_date__range=[then, now]
                 ).order_by('complaint_date')
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1587,7 +1587,7 @@ class ReportsPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1620,7 +1620,7 @@ class AdminPanelPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1910,7 +1910,7 @@ class UsersPanelPageView(generic.ListView):
             if self.client_is_admin:
                 users_data = TblUser.objects.using('DailyPothole').all().order_by('username')
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -2233,7 +2233,7 @@ class UserPermissionsPanelPageView(generic.ListView):
                 self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
                 self.boro_list      = [each.boro_long for each in TblBoro.objects.using('DailyPothole').all()]
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -2654,7 +2654,7 @@ class CsvExportPageView(generic.ListView):
             self.client_is_admin = user_is_active_admin(self.request.user)
 
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
             self.operation_list = [each.operation for each in TblOperation.objects.using('DailyPothole').all()]
 
