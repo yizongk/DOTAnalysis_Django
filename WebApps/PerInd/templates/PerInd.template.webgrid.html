@@ -521,8 +521,8 @@
                         td_node = promised_data.td_node
                         api_json_response = promised_data.api_json_response
 
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(api_json_response["updated_timestamp"]);
-                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(api_json_response["updated_by"]);
+                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdatedDate"]').text(api_json_response.post_data.updated_timestamp);
+                        $('[data-id="' + td_node.data('id') + '"][data-table="IndicatorData"][data-column="UpdateUser"]').text(api_json_response.post_data.updated_by);
                     })
                     .catch(promise => {
                         console.log(promise);

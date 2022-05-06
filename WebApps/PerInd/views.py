@@ -94,6 +94,10 @@ class HomePageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
+        if not user_is_active_user(self.request.user):
+            self.get_success    = False
+            self.get_error      = f"'{self.request.user}' is not an active user"
+
         ## Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         context["get_success"]      = self.get_success
@@ -109,6 +113,10 @@ class AboutPageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
+        if not user_is_active_user(self.request.user):
+            self.get_success    = False
+            self.get_error      = f"'{self.request.user}' is not an active user"
+
         context = super().get_context_data(**kwargs)
         context["get_success"]      = self.get_success
         context["get_error"]        = self.get_error
@@ -123,6 +131,10 @@ class ContactPageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
+        if not user_is_active_user(self.request.user):
+            self.get_success    = False
+            self.get_error      = f"'{self.request.user}' is not an active user"
+
         context = super().get_context_data(**kwargs)
         context["get_success"]      = self.get_success
         context["get_error"]        = self.get_error
@@ -177,6 +189,9 @@ class WebGridPageView(generic.ListView):
 
     def get_queryset(self):
         try:
+            if not user_is_active_user(self.request.user):
+                raise ValueError(f"'{self.request.user}' is not an active user")
+
             ## Collect GET url parameter info
             temp_sort_dir = self.request.GET.get('SortDir')
             if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -416,10 +431,26 @@ class WebGridPageView(generic.ListView):
 def PerIndApiUpdateData(request, json_blob, remote_user):
     try:
         ## Check json request param is not empty string
-        id = json_blob['id']
-        table = json_blob['table']
-        column = json_blob['column']
-        new_value = json_blob['new_value']
+        id          = json_blob['id']
+        table       = json_blob['table']
+        column      = json_blob['column']
+        new_value   = json_blob['new_value']
+
+        if type(id) is not int:
+            raise ValueError(f"id must be int type. Current type is {type(id)}")
+
+        if type(table) is not str:
+            raise ValueError(f"table must be string type. Current type is {type(table)}")
+
+        if type(column) is not str:
+            raise ValueError(f"column must be string type. Current type is {type(column)}")
+
+        if type(new_value) is not str:
+            raise ValueError(f"new_value must be string type. Current type is {type(new_value)}")
+        else:
+            if float(new_value) < 0:
+                raise ValueError(f"new_value cannot be negative: {new_value}")
+
 
         if id == "":
             raise ValueError(f"id cannot be an empty string")
@@ -436,7 +467,7 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
         ## Make sure User is an active User
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"'{remote_user}' is not an active User!")
+            raise ValueError(f"'{remote_user}' is not an active user!")
 
         ## Authenticate permission for user
         can_edit = user_has_permission_to_edit(remote_user, id)
@@ -470,10 +501,12 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
 
                 return JsonResponse({
                     "post_success": True,
-                    "post_msg": "",
-                    "value_saved": "",
-                    "updated_timestamp": local_updated_timestamp_str_response,
-                    "updated_by": remote_user,
+                    "post_msg": None,
+                    "post_data": {
+                        "value_saved"       : new_value,
+                        "updated_timestamp" : local_updated_timestamp_str_response,
+                        "updated_by"        : remote_user,
+                    },
                 })
             else:
                 raise ValueError(f"The api does not support operation with this column: '{column}'")
@@ -483,8 +516,9 @@ def PerIndApiUpdateData(request, json_blob, remote_user):
         raise ValueError(f"Warning\n\n\Did not know what to do with the request. The request:\n\nid: '{id}'\n table: '{table}'\n column: '{column}'\n new_value: '{new_value}'\n")
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": f"PerIndApiUpdateData(): {e}",
+            "post_success"  : False,
+            "post_msg"      : f"PerIndApiUpdateData(): {e}",
+            "post_data"     : None,
         })
 
 
@@ -697,10 +731,13 @@ class PastDueIndicatorsPageView(generic.ListView):
     def get_queryset(self):
         ## Collect GET url parameter info
         try:
+            if not user_is_active_user(self.request.user):
+                raise ValueError(f"'{self.request.user}' is not an active user")
+
             ## Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
             if not self.client_is_admin:
-                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an admin and is not authorized to see this page")
 
             temp_sort_dir = self.request.GET.get('SortDir')
             if (temp_sort_dir is not None and temp_sort_dir != '') and (temp_sort_dir == 'asc' or temp_sort_dir == 'desc'):
@@ -893,12 +930,12 @@ class AdminPanelPageView(generic.ListView):
             ## Check for Active User
             is_active_user = user_is_active_user(self.request.user)
             if not is_active_user:
-                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an active user and is not authorized to see this page")
 
             ## Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
             if not self.client_is_admin:
-                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an admin and is not authorized to see this page")
         except Exception as e:
             self.get_success    = False
             self.get_error      = f"AdminPanelPageView(): get_queryset(): {e}"
@@ -932,12 +969,12 @@ class UserPermissionsPanelPageView(generic.ListView):
             ## Check for Active User
             is_active_user = user_is_active_user(self.request.user)
             if not is_active_user:
-                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an active user and is not authorized to see this page")
 
             ## Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
             if not self.client_is_admin:
-                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an admin and is not authorized to see this page")
 
             ## Get the permissions data
             permission_data_entries = UserPermissions.objects.using('PerInd').all().order_by('user__login')
@@ -983,12 +1020,12 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         id          = json_blob['id']
         table       = json_blob['table']
@@ -1042,12 +1079,12 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         ## Check login_selection and category_selection is not empty string
         login_selection     = json_blob['login_selection']
@@ -1061,7 +1098,7 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
 
         ## Check that the login_selection and category_selection exists
         if not Users.objects.using('PerInd').filter(login__exact=login_selection, active_user__exact=True).exists():
-            raise ValueError(f"'{login_selection}' doesn't exists or it's not an active User")
+            raise ValueError(f"'{login_selection}' doesn't exists or it's not an active user")
 
         if not Category.objects.using('PerInd').filter(category_name__exact=category_selection).exists():
             raise ValueError(f"'{category_selection}' doesn't exists as a Category")
@@ -1108,12 +1145,12 @@ def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         ## Make sure user_permission_id is convertable to a unsign int
         user_permission_id = json_blob['user_permission_id']
@@ -1150,12 +1187,12 @@ class UsersPanelPageView(generic.ListView):
             ## Check for Active User
             is_active_user = user_is_active_user(self.request.user)
             if not is_active_user:
-                raise ValueError(f"{self.request.user} is not an active User and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an active user and is not authorized to see this page")
 
             ## Check for Active Admins
             self.client_is_admin = user_is_active_admin(self.request.user)
             if not self.client_is_admin:
-                raise ValueError(f"{self.request.user} is not an Admin and is not authorized to see this page")
+                raise ValueError(f"{self.request.user} is not an admin and is not authorized to see this page")
 
             ## Get the permissions data
             users_data_entries = Users.objects.using('PerInd').all().order_by('login')
@@ -1191,12 +1228,12 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         ## Check json request param is not empty string
         first_name_input    = json_blob['first_name_input']
@@ -1250,12 +1287,12 @@ def UsersPanelApiDeleteRow(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         ## Make sure user_id is convertable to a unsign int
         user_id = json_blob['user_id']
@@ -1293,12 +1330,12 @@ def UsersPanelApiUpdateData(request, json_blob, remote_user):
         ## Check active user
         is_active_user = user_is_active_user(request.user)
         if not is_active_user:
-            raise ValueError(f"{request.user} is not an active User and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an active user and is not authorized to see this page")
 
         ## Check active admin
         is_active_admin = user_is_active_admin(request.user)
         if not is_active_admin:
-            raise ValueError(f"{request.user} is not an Admin and is not authorized to see this page")
+            raise ValueError(f"{request.user} is not an admin and is not authorized to see this page")
 
         id          = json_blob['id']
         table       = json_blob['table']
