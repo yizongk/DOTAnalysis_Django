@@ -112,10 +112,8 @@ DATABASES['default'] = {
     # 'ENGINE': 'django.db.backends.sqlite3',
     # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     'ENGINE':       'sql_server.pyodbc',
-    'HOST' :        PerInd_SQLServerHost,
-    'NAME' :        PerInd_SQLServerDbName,
-    'USER' :        PerInd_SQLServerUID,
-    'PASSWORD' :    PerInd_SQLServerPWD,
+    'HOST' :        Default_SQLServerHost,
+    'NAME' :        Default_SQLServerDbName,
     'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
     'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
 
