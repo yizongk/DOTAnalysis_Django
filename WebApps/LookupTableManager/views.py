@@ -31,8 +31,11 @@ def get_active_emp_qryset(
             , 'active'
         ]
     ):
-    qryset = TblWorkUnits.objects.using('LookupTableManager').all()
-    return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
+    try:
+        qryset = TblWorkUnits.objects.using('LookupTableManager').all()
+        return qryset.values(*fields_list)
+    except Exception as e:
+        raise ValueError(f"get_active_emp_qryset(): {e}")
 
 
 # Create your views here.
@@ -41,15 +44,9 @@ class HomePageView(TemplateView):
     client_is_admin = False
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
-            # self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-            context["client_is_admin"] = self.client_is_admin
-            return context
-        except Exception as e:
-            context["client_is_admin"] = False
-            return context
+        context = super().get_context_data(**kwargs)
+        context["client_is_admin"] = self.client_is_admin
+        return context
 
 
 class AboutPageView(TemplateView):
@@ -61,67 +58,49 @@ class ContactPageView(TemplateView):
 
 
 class LookUpView(ListView):
-    # queryset = TblWorkUnits.objects.all()
-    model = TblWorkUnits
-    template_name = 'LookupTableManager.template.table.html'
-    context_object_name = 'Workunit'
-    Workunit = None
+    template_name   = 'LookupTableManager.template.table.html'
 
-    req_success = False
-    err_msg = ""
+    get_success     = False
+    get_error       = None
     client_is_admin = False
+
+    work_units      = None
+    column_defs     = None
 
     def get_queryset(self):
         self.client_is_admin = user_is_active_admin(self.request.user)
         try:
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError(f"'{self.request.user}' is not an Admin, and is not authorized to see this page.")
             else:
-                columnDefs = [
-                    {'headerName': 'WU', 'field': 'wu'}
-                    ,{'headerName': 'DIV', 'field': 'div'}
-                    ,{'headerName': 'WorkUnitDescription', 'field': 'wu_desc'}
-                    ,{'headerName': 'DivisionGroup', 'field': 'div_group'}
-                    ,{'headerName': 'SubDivision', 'field': 'subdiv'}
-                    ,{'headerName': 'Active', 'field': 'active'}
-                    ]
-                fields_list = [each['field'] for each in columnDefs]
-                Workunit = get_active_emp_qryset(fields_list= fields_list)
-                self.Workunit = json.dumps(list(Workunit), cls=DjangoJSONEncoder)
+                ag_grid_col_def = [
+                    {'headerName': 'WU'                     , 'field': 'wu'         , 'suppressMovable': True , 'lockPinned': True, 'cellClass': 'left-pinned' , 'pinned': 'left' , 'width': 80}
+                    ,{'headerName': 'DIV'                   , 'field': 'div'        , 'suppressMovable': True , 'lockPinned': True, 'width': 150}
+                    ,{'headerName': 'WorkUnitDescription'   , 'field': 'wu_desc'    , 'suppressMovable': True , 'lockPinned': True, 'width': 300}
+                    ,{'headerName': 'DivisionGroup'         , 'field': 'div_group'  , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'SubDivision'           , 'field': 'subdiv'     , 'suppressMovable': True , 'lockPinned': True}
+                    ,{'headerName': 'Active'                , 'field': 'active'     , 'suppressMovable': True , 'lockPinned': True}
+                ]
+                fields_list                 = [each['field'] for each in ag_grid_col_def]
+                self.work_units             = json.dumps(list(get_active_emp_qryset(fields_list= fields_list))  , cls=DjangoJSONEncoder)
+                self.column_defs            = json.dumps(list(ag_grid_col_def)                                  , cls=DjangoJSONEncoder)
         except Exception as e:
-            self.req_success = False
-            self.err_msg = "Exception: AdminPanelPageView(): get_queryset(): {}".format(e)
+            self.get_success = False
+            self.get_error = f"LookUpView(): get_queryset(): {e}"
             return None
 
-        self.req_success = True
+        self.get_success = True
         return None
 
     def get_context_data(self,**kwargs):
-        try:
-            columnDefs = [
-                {'headerName': 'WU', 'field': 'wu'}
-                ,{'headerName': 'DIV', 'field': 'div'}
-                ,{'headerName': 'WorkUnitDescription', 'field': 'wu_desc'}
-                ,{'headerName': 'DivisionGroup', 'field': 'div_group'}
-                ,{'headerName': 'SubDivision', 'field': 'subdiv'}
-                ,{'headerName': 'Active', 'field': 'active'}
-            ]
-            context                         = super().get_context_data(**kwargs)
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
-            context["client_is_admin"]      = self.client_is_admin
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
 
-            context["Workunit"]             = self.Workunit
-            context["columnDefs"]           = columnDefs
-            return{'datadisplay': context["Workunit"], 'columnDefs': context["columnDefs"], 'req_success':context["req_success"], 'err_msg':context["err_msg"], 'client_is_admin':context["client_is_admin"]}
-        except Exception as e:
-            self.req_success = False
-            self.err_msg ="Exception: Table: get_queryset(): {}".format(e)
-            context                         = super().get_context_data(**kwargs)
-            context["client_is_admin"]      = False
-            context["req_success"]          = self.req_success
-            context["err_msg"]              = self.err_msg
-            return context
+        context["work_units"]           = self.work_units
+        context["column_defs"]          = self.column_defs
+        return context
 
 
 def UpdateWU(request): #UPDATE API
