@@ -57,10 +57,10 @@
     <table class="table table-striped table-hover" id="WebGridTable">
         <thead>
             <tr>
-                <th>Full Name (First, Last)</th>
-                <th>Active User</th>
                 <th>Login</th>
+                <th>Full Name (First, Last)</th>
                 <th>Category</th>
+                <th>Active</th>
                 <th>Delete?</th>
             </tr>
         </thead>
@@ -68,10 +68,10 @@
         <tbody>
             {% for entry in permission_data_entries %}
             <tr>
+                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.user.login }}</td>
                 <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.user.first_name }}, {{ entry.user.last_name }}</td>
-                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Active_User">{{ entry.user.active_user }}</td>
-                <td data-id="{{ entry.user_permission_id }}" data-table="Users" data-column="Login">{{ entry.user.login }}</td>
-                <td data-id="{{ entry.user_permission_id }}" data-table="Category" data-column="Category_Name">{{ entry.category.category_name }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.category.category_name }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="UserPermissions" data-column="Active">{{ entry.active }}</td>
                 <td class="text-center" data-id="{{ entry.user_permission_id }}" ></td>
             </tr>
             {% endfor %}

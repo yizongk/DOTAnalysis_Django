@@ -1045,26 +1045,38 @@ def UserPermissionsPanelApiUpdateData(request, json_blob, remote_user):
         column      = json_blob['column']
         new_value   = json_blob['new_value']
 
+        if type(id) is not int:
+            raise ValueError(f"id must be int: {type(id)}")
+        if type(table) is not str:
+            raise ValueError(f"table must be str: {type(table)}")
+        if type(column) is not str:
+            raise ValueError(f"column must be str: {type(column)}")
+        if type(new_value) is not str:
+            raise ValueError(f"new_value must be str: {type(new_value)}")
+
         ## Save the data
-        if table == "Users":
+        if table == "UserPermissions":
             ## Make sure new_value is convertable to its respective data type
-            if column == "Active_User":
-                new_value = bool(new_value)
+            if column == "Active":
+                if new_value == 'True':
+                    new_value = True
+                elif new_value == 'False':
+                    new_value = False
+                else:
+                    raise ValueError(f"new_value '{new_value}' is not a valid value for {table}.{column}")
             else:
-                new_value = str(new_value)
+                raise ValueError(f"'{column}' is not an editable column for table '{table}'")
 
             ## Save the value
             row = UserPermissions.objects.using('PerInd').get(user_permission_id=id)
-            if column == "Login":
-                user_obj = Users.objects.using('PerInd').get(login=new_value, active_user=True) ## Will throw exception if no user is found with the criteria: "Users matching query does not exist.""
-                row.user = user_obj
-                row.save(using='PerInd')
+            row.active = new_value
+            row.save(using='PerInd')
 
-                return JsonResponse({
-                    "post_success"  : True,
-                    "post_msg"      : "",
-                    "post_data"     : None,
-                })
+            return JsonResponse({
+                "post_success"  : True,
+                "post_msg"      : None,
+                "post_data"     : None,
+            })
         else:
             raise ValueError(f"update to table '{table}' is not implemented")
 

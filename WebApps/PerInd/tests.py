@@ -463,3 +463,88 @@ class TestAPIPerIndApiGetCsv(HttpPostTestCase):
 
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUserPermissionsPanelApiUpdateData(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        set_up_permissions()
+        self.api_name               = 'user_permissions_panel_api_update_data'
+        self.post_response_json_key_specifications = []
+
+        self.valid_permission_id    = UserPermissions.objects.using('PerInd').filter(
+                                        user__login__exact=TEST_WINDOWS_USERNAME
+                                    )[0].user_permission_id
+
+        self.valid_table            = 'UserPermissions'
+        self.valid_column           = 'Active'
+        self.new_value              = 'True'
+
+        self.valid_payloads = [
+            {
+                'id'        : self.valid_permission_id,
+                'table'     : self.valid_table,
+                'column'    : self.valid_column,
+                'new_value' : self.new_value
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            saved_object = UserPermissions.objects.using('PerInd').get(
+                user_permission_id=self.valid_permission_id
+            )
+
+            self.assert_post_key_update_equivalence(key_name=payload['column'], key_value=payload['new_value'], db_value=str(saved_object.active))
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            'id'                # str/int -> string formatted int or int: primary key of a row in the Permission table
+            ,'table'            # str -> Table name
+            ,'column'           # str -> Column name of the table
+            ,'new_value'        # str -> the new value to be saved
+        ]
+        for param_name in parameters:
+            if param_name == 'id':
+                valid   = [self.valid_permission_id]
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 5.46, -1, None, False, True, '']
+            elif param_name == 'table':
+                valid   = [self.valid_table]
+                invalid = [1, 2.3, False, None, 'sdf', '']
+            elif param_name == 'column':
+                valid   = [self.valid_column]
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, True, '']
+            elif param_name == 'new_value':
+                valid   = [self.new_value]
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 1000, -1, None, False, True, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
