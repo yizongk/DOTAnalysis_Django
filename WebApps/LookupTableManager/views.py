@@ -22,16 +22,17 @@ def user_is_active_admin(username=None): #User Authentication
 
 
 def get_active_emp_qryset(
-    fields_list = [
-        'wu'
-        ,'div'
-        ,'wu_desc'
-        ,'div_group'
-        ,'subdiv'
-        , 'active'
-        ]):
-        qryset = TblWorkUnits.objects.using('LookupTableManager').all()
-        return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
+        fields_list = [
+            'wu'
+            ,'div'
+            ,'wu_desc'
+            ,'div_group'
+            ,'subdiv'
+            , 'active'
+        ]
+    ):
+    qryset = TblWorkUnits.objects.using('LookupTableManager').all()
+    return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
 
 
 # Create your views here.
@@ -162,12 +163,14 @@ def UpdateWU(request): #UPDATE API
         WUvariable      = json_blob['wu']
         column_name     = json_blob['column_name']
         new_value       = json_blob['new_value']
+
         if WUvariable is None or WUvariable == '':
             raise ValueError(f"wu: '{WUvariable}' cannot be None or Empty string")
         if column_name is None or column_name == '':
             raise ValueError(f"column_name: '{column_name}' cannot be None or Empty string")
         if new_value is None or new_value == '':
             raise ValueError(f"new_value: '{new_value}' cannot be None or Empty string")
+
         ## Data validation
         valid_editable_col = {
             'DIV': 'div'
@@ -176,12 +179,23 @@ def UpdateWU(request): #UPDATE API
             , 'SubDivision': 'subdiv'
             , 'Active': 'active'
         }
+
         if column_name not in list(valid_editable_col.keys()):
             raise ValueError(f"column_name '{column_name}' is not a valid editable column")
+
+        if column_name == 'Active':
+            if new_value == 'true':
+                new_value = True
+            elif new_value == 'false':
+                new_value = False
+            else:
+                raise ValueError(f"new_value is not a valid input for '{column_name}': '{new_value}'")
+
         # Check for Approved Admins
         is_admin = user_is_active_admin(remote_user)
         if  is_admin == False:
             raise ValueError(f"'{remote_user}' is not an Approved Admin and cannot use this Update API")
+
         try:
             workunit = TblWorkUnits.objects.using('LookupTableManager').get(wu = WUvariable)
         except ObjectDoesNotExist as e:
@@ -199,6 +213,7 @@ def UpdateWU(request): #UPDATE API
             elif column_name == 'Active':
                 workunit.active = new_value
             workunit.save(using= 'LookupTableManager')
+
         return JsonResponse({
             "post_success"  : True,
             "post_msg"      : None,
@@ -211,5 +226,5 @@ def UpdateWU(request): #UPDATE API
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
-            "post_msg"      : f"LookupTableManager: UpdateWU():\n\nError: {e}",
+            "post_msg"      : f"UpdateWU(): {e}",
         })
