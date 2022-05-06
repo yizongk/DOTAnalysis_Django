@@ -1,11 +1,11 @@
-from ast import Raise
-from multiprocessing import context
-from re import S
-from turtle import update
-from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
-from .models import TblUsers
+from .models import *
+import json
+from django.views.generic import ListView
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import JsonResponse
+
 
 def user_is_active_admin(username=None): #User Authentication 
     try:
@@ -20,6 +20,20 @@ def user_is_active_admin(username=None): #User Authentication
     except Exception as e:
        raise ValueError(f"user_is_active_admin(): {e}")
         
+
+def get_active_emp_qryset(
+    fields_list = [
+        'wu'
+        ,'div'
+        ,'wu_desc'
+        ,'div_group'
+        ,'subdiv'
+        , 'active'
+        ]):
+        qryset = TblWorkUnits.objects.using('LookupTableManager').all()
+        return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
+
+
 # Create your views here.
 class HomePageView(TemplateView):
     template_name = 'LookupTableManager.template.home.html'
@@ -36,33 +50,14 @@ class HomePageView(TemplateView):
             context["client_is_admin"] = False
             return context
 
+
 class AboutPageView(TemplateView):
     template_name = 'LookupTableManager.template.about.html'
+
 
 class ContactPageView(TemplateView):
     template_name = 'LookupTableManager.template.contact.html'
 
-# Abrar- class for the AG-Grid
-###########################################################################################################################################################
-
-from .models import TblWorkUnits
-import json
-from django.views.generic import ListView
-from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponse, JsonResponse
-import requests
-
-def get_active_emp_qryset(
-    fields_list = [
-        'wu'
-        ,'div'
-        ,'wu_desc'
-        ,'div_group'
-        ,'subdiv'
-        , 'active'
-        ]):
-        qryset = TblWorkUnits.objects.using('LookupTableManager').all()
-        return qryset.values(*fields_list) #returns a <QuerySet [{;wu;: '1000', 'div': 'Executive', 'workunitdescription': ...}]
 
 class LookUpView(ListView): 
     # queryset = TblWorkUnits.objects.all()
@@ -127,7 +122,8 @@ class LookUpView(ListView):
             context["err_msg"]              = self.err_msg
             return context
 
-def UpdateWU (request): #UPDATE API
+
+def UpdateWU(request): #UPDATE API
     """
     Return a json response in this format. My front end error handling works with this format.
     {
