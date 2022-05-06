@@ -580,12 +580,12 @@
                     http_request_method : "POST",
                     successCallbackFct  : function (json_response) {
                         // Initiate download
-                        // download(data=json_response["post_data"], filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
+                        // download(data=json_response.post_data.csv_bytes, filename="text.csv", type="text/csv"); // Working but chosen to use FileSaver.js's saveAs().
 
                         // From FileSaver.js
                         saveAs(
                             new Blob(
-                                [s2ab(json_response["post_data"])],
+                                [s2ab(json_response.post_data.csv_bytes)],
                                 {
                                     type: "application/octet-stream"
                                 }

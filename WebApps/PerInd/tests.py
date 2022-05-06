@@ -295,7 +295,7 @@ class TestAPIPerIndApiUpdateData(HttpPostTestCase):
             ,{'name': 'updated_by'          , 'null': False}
         ]
 
-        self.valid_id                   = IndicatorData.objects.using('PerInd').filter(indicator__category__category_name__exact=DEFAULT_CATEGORY).order_by('record_id')[0].record_id
+        self.valid_id                   = IndicatorData.objects.using('PerInd').filter(indicator__category__category_name__exact=DEFAULT_CATEGORY, indicator__active=True).order_by('record_id')[0].record_id
         self.valid_table                = 'IndicatorData'
         self.valid_column               = 'val'
         self.valid_new_value            = '10.1'
@@ -357,6 +357,103 @@ class TestAPIPerIndApiUpdateData(HttpPostTestCase):
                 invalid = ['a', 1, 2.3, -12, None, False, '']
             elif param_name == 'new_value':
                 valid   = [self.valid_new_value]
+                invalid = ['a', 1, 2.3, -12, None, False, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIPerIndApiGetCsv(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        set_up_permissions()
+        self.user_obj                   = get_or_create_user()
+        self.api_name                   = 'get_csv_cur_ctx_api'
+        self.post_response_json_key_specifications = [
+            {'name': 'csv_bytes', 'null': False}
+        ]
+
+        self.SortDir                = "asc"
+        self.SortBy                 = "indicator__indicator_title"
+        self.TitleListFilter        = [
+                                        IndicatorList.objects.using('PerInd').filter(category__category_name__exact=DEFAULT_CATEGORY, active=True)[0].indicator_title
+                                    ]
+        self.YYYYListFilter         = [
+                                        "2020"
+                                    ]
+        self.MMListFilter           = [
+                                        "8"
+                                    ]
+        self.FiscalYearListFilter   = [
+                                        "2021"
+                                    ]
+        self.CategoriesListFilter   = [
+                                        DEFAULT_CATEGORY
+                                    ]
+
+        self.valid_payloads = [
+            {
+                "SortDir"               : self.SortDir,
+                "SortBy"                : self.SortBy,
+                "TitleListFilter"       : self.TitleListFilter,
+                "YYYYListFilter"        : self.YYYYListFilter,
+                "MMListFilter"          : self.MMListFilter,
+                "FiscalYearListFilter"  : self.FiscalYearListFilter,
+                "CategoriesListFilter"  : self.CategoriesListFilter
+            },
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_with_valid_data(self):
+        for payload in self.valid_payloads:
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+    def test_data_validation(self):
+        f"""Testing {self.api_name} data validation"""
+
+        ## For PotholeData
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name        # Accepted type
+            "SortDir"               # str   -> ['asc', 'desc']
+            ,"SortBy"               # str   -> one of the column name referenced from indicator_data object
+            ,"TitleListFilter"      # list  -> must be a list of active indicator titles
+            ,"YYYYListFilter"       # list  -> str formatted 4 digit years
+            ,"MMListFilter"         # list  -> str formatted 1 or 2 digit months
+            ,"FiscalYearListFilter" # list  -> str formatted 4 digit years
+            ,"CategoriesListFilter" # list  -> must be a list of valid categories
+        ]
+        for param_name in parameters:
+
+            if param_name == 'SortDir':
+                valid   = [self.SortDir]
+                invalid = ['a', -12, True]
+            elif param_name == 'SortBy':
+                valid   = [self.SortBy]
+                invalid = ['a', 1, 2.3, -12, False]
+            elif param_name == 'TitleListFilter':
+                valid   = [self.TitleListFilter]
+                invalid = ['a', 1, 2.3, -12, None, False, '']
+            elif param_name == 'YYYYListFilter':
+                valid   = [self.YYYYListFilter]
+                invalid = ['a', 1, 2.3, -12, None, False, '']
+            elif param_name == 'MMListFilter':
+                valid   = [self.MMListFilter]
+                invalid = ['a', 1, 2.3, -12, None, False, '']
+            elif param_name == 'FiscalYearListFilter':
+                valid   = [self.FiscalYearListFilter]
+                invalid = ['a', 1, 2.3, -12, None, False, '']
+            elif param_name == 'CategoriesListFilter':
+                valid   = [self.CategoriesListFilter]
                 invalid = ['a', 1, 2.3, -12, None, False, '']
             else:
                 raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")

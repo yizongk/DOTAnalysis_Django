@@ -555,6 +555,17 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
         req_fy_list_filter      = json_blob['FiscalYearListFilter']
         req_cat_list_filter     = json_blob['CategoriesListFilter']
 
+        if type(req_title_list_filter) is not list:
+            raise ValueError(f"req_title_list_filter must be a list: {type(req_title_list_filter)}")
+        if type(req_yr_list_filter) is not list:
+            raise ValueError(f"req_yr_list_filter must be a list: {type(req_yr_list_filter)}")
+        if type(req_mn_list_filter) is not list:
+            raise ValueError(f"req_mn_list_filter must be a list: {type(req_mn_list_filter)}")
+        if type(req_fy_list_filter) is not list:
+            raise ValueError(f"req_fy_list_filter must be a list: {type(req_fy_list_filter)}")
+        if type(req_cat_list_filter) is not list:
+            raise ValueError(f"req_cat_list_filter must be a list: {type(req_cat_list_filter)}")
+
         ## Get list authorized Categories of Indicator Data, and log the category_permissions
         client_is_admin = user_is_active_admin(request.user)
         if client_is_admin:
@@ -696,7 +707,9 @@ def PerIndApiGetCsv(request, json_blob, remote_user):
         return JsonResponse({
             "post_success"  : True,
             "post_msg"      : None,
-            "post_data"     : dummy_in_mem_file.getvalue(),
+            "post_data"     : {
+                "csv_bytes": dummy_in_mem_file.getvalue()
+            },
         })
     except Exception as e:
         return JsonResponse({
