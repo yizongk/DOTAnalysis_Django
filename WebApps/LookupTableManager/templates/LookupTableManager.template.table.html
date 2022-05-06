@@ -1,0 +1,136 @@
+{% extends 'LookupTableManager.template.base.html' %}
+
+{% load static %}
+{% block custom_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'WebAppsMain/css/dot_color_scheme.css' %}" />
+<script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+<script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/HTMLElementGenerators.js' %}"></script>
+<script type="text/javascript" charset="utf8" src="{% static 'WebAppsMain/js/AGGridCustomExtensions.js' %}"></script>
+<link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+<link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-alpine.css">
+{% endblock %}
+{% block content %}
+<div class="status_info err_msg">{% if not req_success %} Error: '{{ err_msg }}'<br>Please try reloading the page again!<br>Please contact ykuang@dot.nyc.gov with a screenshot if this error continues. {% else %}{% endif %}</div>
+    <div style="height: 43vw; width: auto;">
+        <br>
+        <div id="AGGrid" class="ag-theme-alpine" style="height: 100%; width: 100%;"> </div>
+    </div>
+{% endblock content %}
+
+{% block custom_js %}
+    <script>
+        $( document ).ready(function()
+        {
+            function csrfSafeMethod(method) {// these HTTP methods do not require CSRF protection
+                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+            };
+
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        // Only send the token to relative URLs i.e. locally.
+                        xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                    }
+                }
+            });
+
+            function ajaxCall({post_params=null, success_callback=null}={}) {
+                $.ajax({
+                url: "{% url 'LookupTableManager_update_wu' %}",
+                type: "POST",
+                data: JSON.stringify(post_params),
+                contentType: "application/json",
+                success: success_callback,
+                error: function (err) {
+                    console.log("something went wrong with AJAX", err)
+                },
+                })
+                return false;
+            };
+            var col_def = {{ columnDefs|safe}};
+            var data_display = {{ datadisplay|safe}};
+
+            function cellValueSetter(ag_node) {
+                // console.log('got here')
+                // Link to doc: https://www.ag-grid.com/javascript-data-grid/value-setters/#value-setter
+                // Returns true if value is considered updated successfully, and false if value was not updated (including if the value was not changed)
+                // Check Columns that cannot be blank
+                if ( ag_node.newValue == null || ag_node.newValue.toString().trim() === '' ) {
+                    if ( ag_node.colDef.headerName == 'DIV') {alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'WorkUnitDescription') {alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'DivisionGroup') {alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'SubDivision') {alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else if ( ag_node.colDef.headerName == 'Active') {alert(`${ag_node.colDef.headerName} cannot be null or empty`); return false; }
+                    else { return false; }
+                };
+
+                let post_params = {
+                    'wu'            : ag_node.data.wu, // or ag_node.
+                    'column_name'   : ag_node.colDef.headerName,
+                    'new_value'     : ag_node.newValue,
+                    };
+
+                console.log(post_params);
+                function success_callback(json_res, ) {
+                    console.log(json_res);
+                    ag_node.data[json_res.post_data.column_name] = json_res.post_data.new_value
+                    ag_node.api.refreshCells({
+                        rowNodes: [ag_node.node],
+                        columns:  [json_res.post_data.column_name],
+                        force: true,
+                    });
+                };
+                console.log(ajaxCall({post_params: post_params, success_callback: success_callback})); //returns false
+            };
+
+            class ActiveCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                // Quick deep copy, only works with basic data type
+                let dropdown = ['True', 'False']
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                    select_id                       : 'user_active_select',
+                };
+                this.initBase(super_params);
+            }};
+
+            var editable_col = [                                            // @TODO
+                'DIV'
+                ,'WorkUnitDescription'
+                , 'DivisionGroup'
+                , 'SubDivision'
+                , 'Active'
+                , 'Is Admin'
+            ];
+            for (i in col_def) {
+                ag_col = col_def[i];
+
+                // If column was specified to be editable
+                if (editable_col.includes(ag_col.headerName) ) {
+                    ag_col['editable']      = true;
+                    ag_col['valueSetter']   = cellValueSetter;    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
+                }
+                if (ag_col.headerName == 'Active') {
+                    ag_col['cellEditor']   = 'ActiveCellEditor';    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
+                }
+            };
+            var gridOptions = {
+                columnDefs: col_def,
+                rowData: data_display,
+                defaultColDef: {
+                    sortable: true,
+                    filter: true,
+                },
+                enableCellChangeFlash: true,
+                components: {
+                    ActiveCellEditor                    : ActiveCellEditor,
+                },
+            };
+            const eGridDiv = document.getElementById('AGGrid');
+            // // create the grid passing in the div to use together with the columns & data we want to use
+            new agGrid.Grid(eGridDiv, gridOptions);
+        });
+    </script>
+{% endblock custom_js %}

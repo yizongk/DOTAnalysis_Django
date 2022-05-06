@@ -312,6 +312,36 @@ else:
         },
     }
 
+if LookupTableManager_UseWinAuth:
+    DATABASES['LookupTableManager'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        LookupTableManager_SQLServerHost,
+        'NAME' :        LookupTableManager_SQLServerDbName,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+else:
+    DATABASES['LookupTableManager'] = {
+        'ENGINE':       'sql_server.pyodbc',
+        'HOST' :        LookupTableManager_SQLServerHost,
+        'NAME' :        LookupTableManager_SQLServerDbName,
+        'USER' :        LookupTableManager_SQLServerUID,
+        'PASSWORD' :    LookupTableManager_SQLServerPWD,
+        'AUTOCOMMIT' :  True,               # Set this to False if you want to disable Django's transaction management and implement your own.
+        'ATOMIC_REQUESTS' : True,           # All views/request are not wrapped in a transcation on the database, if response is produced without fails, will commit the transaction, else rolls back the transaction, ref: https://docs.djangoproject.com/en/3.0/topics/db/transactions/
+
+        'OPTIONS' : {
+            'driver' :      'SQL Server Native Client 11.0',
+        },
+    }
+
+
+
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -370,6 +400,7 @@ MAPS_APP_VERSION                = '1.1.3'
 DAILY_POTHOLE_VERSION           = '1.5.9'
 ORG_CHART_PORTAL_VERSION        = '1.15.8'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.4'
+LOOKUP_TABLE_MANAGER_VERSION    = '1.0.1'
 
 
 APP_DEFINED_HTTP_POST_JSON_KEYS     = ["post_success", "post_msg", "post_data"]
