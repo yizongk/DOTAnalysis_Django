@@ -1139,14 +1139,16 @@ def UserPermissionsPanelApiAddRow(request, json_blob, remote_user):
         new_permission.save(using='PerInd')
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "permission_id": new_permission.user_permission_id,
-            "first_name": user_obj.first_name,
-            "last_name": user_obj.last_name,
-            "active_user": user_obj.active_user,
-            "login": user_obj.login,
-            "category_name": category_obj.category_name,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "permission_id": new_permission.user_permission_id,
+                "first_name": user_obj.first_name,
+                "last_name": user_obj.last_name,
+                "active_user": f"{user_obj.active_user}",
+                "login": user_obj.login,
+                "category_name": category_obj.category_name,
+            },
         })
     except Exception as e:
         return JsonResponse({

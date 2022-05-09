@@ -548,3 +548,84 @@ class TestAPIUserPermissionsPanelApiUpdateData(HttpPostTestCase):
 
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUserPermissionsPanelApiAddRow(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name               = 'user_permissions_panel_api_add_row'
+        self.post_response_json_key_specifications = [
+            {'name': 'permission_id'    , 'null': False}
+            ,{'name': 'first_name'      , 'null': False}
+            ,{'name': 'last_name'       , 'null': False}
+            ,{'name': 'active_user'     , 'null': False}
+            ,{'name': 'login'           , 'null': False}
+            ,{'name': 'category_name'   , 'null': False}
+        ]
+
+        self.valid_login_selection      = TEST_WINDOWS_USERNAME
+        self.valid_category_selection   = DEFAULT_CATEGORY
+
+        self.valid_payloads = [
+            {
+                'login_selection'       : self.valid_login_selection,
+                'category_selection'    : self.valid_category_selection,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            tear_down_permissions() ## Remove the existing permission of our test user
+            response_json = self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            saved_object = UserPermissions.objects.using('PerInd').get(
+                user_permission_id=response_json['post_data']['permission_id']
+            )
+
+            self.assert_post_key_update_equivalence(key_name='login_selection', key_value=payload['login_selection'], db_value=str(saved_object.user.login))
+            self.assert_post_key_update_equivalence(key_name='category_selection', key_value=payload['category_selection'], db_value=str(saved_object.category.category_name))
+            self.assert_post_key_update_equivalence(key_name='active', key_value=True, db_value=str(saved_object.active))
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name        # Accepted type
+            'login_selection'       # str -> windows username
+            ,'category_selection'   # str -> a category name
+        ]
+        for param_name in parameters:
+            if param_name == 'login_selection':
+                valid   = [self.valid_login_selection]
+                invalid = ['a', 1, 2.3, '-1', '-1.2', '11.567', '2.2', '4.45', None, False, True, '']
+            elif param_name == 'category_selection':
+                valid   = [self.valid_category_selection]
+                invalid = ['a', '-1', '-1.2', '11.567', '2.2', '4.45', 1000, -1, None, False, True, '']
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                tear_down_permissions() ## Remove the existing permission of our test user
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                tear_down_permissions() ## Remove the existing permission of our test user
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
