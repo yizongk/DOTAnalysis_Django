@@ -68,9 +68,9 @@
         <tbody>
             {% for entry in permission_data_entries %}
             <tr>
-                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.user.login }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="Login">{{ entry.user.login }}</td>
                 <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.user.first_name }}, {{ entry.user.last_name }}</td>
-                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="">{{ entry.category.category_name }}</td>
+                <td data-id="{{ entry.user_permission_id }}" data-table="" data-column="Category_Name">{{ entry.category.category_name }}</td>
                 <td data-id="{{ entry.user_permission_id }}" data-table="UserPermissions" data-column="Active">{{ entry.active }}</td>
                 <td class="text-center" data-id="{{ entry.user_permission_id }}" ></td>
             </tr>
@@ -220,16 +220,16 @@
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {
                                 $(childNode).attr("data-table", "")
-                                $(childNode).attr("data-column", "")
-                            } else if (index == 1) {
-                                $(childNode).attr("data-table", "Users")
-                                $(childNode).attr("data-column", "Active_User")
-                            } else if (index == 2) {
-                                $(childNode).attr("data-table", "Users")
                                 $(childNode).attr("data-column", "Login")
-                            } else if (index == 3) {
-                                $(childNode).attr("data-table", "Category")
+                            } else if (index == 1) {
+                                $(childNode).attr("data-table", "")
+                                $(childNode).attr("data-column", "Users")
+                            } else if (index == 2) {
+                                $(childNode).attr("data-table", "")
                                 $(childNode).attr("data-column", "Category_Name")
+                            } else if (index == 3) {
+                                $(childNode).attr("data-table", "UserPermissions")
+                                $(childNode).attr("data-column", "Active")
                             } else if (index == 4) {
                                 // Nothing to add for the Delete icon
                             } else {

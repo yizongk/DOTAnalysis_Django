@@ -1182,6 +1182,11 @@ def UserPermissionsPanelApiDeleteRow(request, json_blob, remote_user):
         ## Make sure user_permission_id is convertable to a unsign int
         user_permission_id = json_blob['user_permission_id']
 
+        if type(user_permission_id) is not str:
+            raise ValueError(f"'user_permission_id' must be a str: {type(user_permission_id)}")
+        elif not user_permission_id.isnumeric():
+            raise ValueError(f"'user_permission_id' must be a numeric str: '{user_permission_id}'")
+
         user_permission_id = int(user_permission_id)
 
         ## Remove the permission row
