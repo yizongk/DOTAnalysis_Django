@@ -40,15 +40,57 @@
         var col_def         = {{ column_defs|safe}};
         var data_display    = {{ work_units|safe}};
 
+        var valid_divs      = {{ valid_divs|safe}};
+        var valid_div_groups= {{ valid_div_groups|safe}};
+        var valid_sub_divs  = {{ valid_sub_divs|safe}};
+
+        class DivCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let dropdown = valid_divs
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                    select_id                       : 'work_unit_select_div',
+                };
+                this.initBase(super_params);
+            }
+        };
+
+        class DivGroupCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let dropdown = valid_div_groups
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                    select_id                       : 'work_unit_select_div_group',
+                };
+                this.initBase(super_params);
+            }
+        };
+
+        class SubDivCellEditor extends BaseAGGridCellSelectEditor {
+            init(ag_cell) {
+                let dropdown = valid_sub_divs
+                let super_params = {
+                    ag_cell                         : ag_cell,
+                    select_array                    : dropdown,
+                    selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
+                    select_id                       : 'work_unit_select_sub_div',
+                };
+                this.initBase(super_params);
+            }
+        };
+
         class ActiveCellEditor extends BaseAGGridCellSelectEditor {
             init(ag_cell) {
-                // Quick deep copy, only works with basic data type
                 let dropdown = ['true', 'false']
                 let super_params = {
                     ag_cell                         : ag_cell,
                     select_array                    : dropdown,
                     selected_val_bubble_up_sort_fct : function(x, y) { return x == `${ag_cell.value}` ? -1 : y == `${ag_cell.value}` ? 1 : 0; },
-                    select_id                       : 'user_active_select',
+                    select_id                       : 'work_unit_select_active',
                 };
                 this.initBase(super_params);
             }
@@ -109,6 +151,18 @@
                 if (ag_col.headerName == 'Active') {
                     ag_col['cellEditor'] = 'ActiveCellEditor';    // Now when you double click on any cells that was marked as editable, it will trigger the function cellValueSetter()
                 }
+
+                if (ag_col.headerName == 'DIV') {
+                    ag_col['cellEditor'] = 'DivCellEditor';
+                }
+
+                if (ag_col.headerName == 'DivisionGroup') {
+                    ag_col['cellEditor'] = 'DivGroupCellEditor';
+                }
+
+                if (ag_col.headerName == 'SubDivision') {
+                    ag_col['cellEditor'] = 'SubDivCellEditor';
+                }
             }
         };
 
@@ -121,7 +175,10 @@
             },
             enableCellChangeFlash   : true,
             components              : {
-                ActiveCellEditor: ActiveCellEditor,
+                ActiveCellEditor        : ActiveCellEditor,
+                DivCellEditor           : DivCellEditor,
+                DivGroupCellEditor      : DivGroupCellEditor,
+                SubDivCellEditor        : SubDivCellEditor,
             },
         };
 

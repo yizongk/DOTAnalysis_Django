@@ -121,6 +121,10 @@ class WorkUnitsView(ListView):
     work_units      = None
     column_defs     = None
 
+    valid_divs      = VALID_WU_DIV
+    valid_div_groups= VALID_WU_DIVISION_GROUP
+    valid_sub_divs  = VALID_WU_SUB_DIVISION
+
     def get_queryset(self):
         self.client_is_admin = user_is_active_admin(self.request.user)
         try:
@@ -154,6 +158,10 @@ class WorkUnitsView(ListView):
 
         context["work_units"]           = self.work_units
         context["column_defs"]          = self.column_defs
+
+        context["valid_divs"]           = self.valid_divs
+        context["valid_div_groups"]     = self.valid_div_groups
+        context["valid_sub_divs"]       = self.valid_sub_divs
         return context
 
 
