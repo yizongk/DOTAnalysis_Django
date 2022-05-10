@@ -57,8 +57,8 @@ class ContactPageView(TemplateView):
     template_name = 'LookupTableManager.template.contact.html'
 
 
-class LookUpView(ListView):
-    template_name   = 'LookupTableManager.template.table.html'
+class WorkUnitsView(ListView):
+    template_name   = 'LookupTableManager.template.workunits.html'
 
     get_success     = False
     get_error       = None
@@ -86,7 +86,7 @@ class LookUpView(ListView):
                 self.column_defs            = json.dumps(list(ag_grid_col_def)                                  , cls=DjangoJSONEncoder)
         except Exception as e:
             self.get_success = False
-            self.get_error = f"LookUpView(): get_queryset(): {e}"
+            self.get_error = f"WorkUnitsView(): get_queryset(): {e}"
             return None
 
         self.get_success = True
