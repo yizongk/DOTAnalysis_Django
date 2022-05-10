@@ -204,6 +204,11 @@ def UpdateWU(request): #UPDATE API
         })
 
     try:
+        # Check for Approved Admins
+        is_admin = user_is_active_admin(remote_user)
+        if not is_admin:
+            raise ValueError(f"'{remote_user}' is not an Admin, and cannot use this api")
+
         wu              = json_blob['wu']
         column_name     = json_blob['column_name']
         new_value       = json_blob['new_value']
@@ -247,11 +252,6 @@ def UpdateWU(request): #UPDATE API
                 raise ValueError(f"new_value is not a valid input for '{column_name}': '{new_value}'")
         else:
             raise ValueError(f"column_name '{column_name}' data validation is not implemented")
-
-        # Check for Approved Admins
-        is_admin = user_is_active_admin(remote_user)
-        if  is_admin == False:
-            raise ValueError(f"'{remote_user}' is not an Approved Admin and cannot use this Update API")
 
         try:
             workunit = TblWorkUnits.objects.using('LookupTableManager').get(wu = wu)
