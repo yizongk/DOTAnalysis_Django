@@ -7,6 +7,60 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 
 
+VALID_WU_DIV = [
+    "Bridges"
+    ,"Executive"
+    ,"FCPM"
+    ,"Ferries"
+    ,"Fleet Services"
+    ,"HR&FM"
+    ,"IT&T"
+    ,"Legal"
+    ,"On-Loan"
+    ,"PMCC"
+    ,"RRM"
+    ,"SIM"
+    ,"TP&M"
+    ,"Traffic Ops"
+]
+
+VALID_WU_DIVISION_GROUP = [
+    "Bridges"
+    ,"Executive"
+    ,"FCPM"
+    ,"Ferries"
+    ,"Fleet"
+    ,"HR&FM"
+    ,"IT&T"
+    ,"Permits"
+    ,"RRM"
+    ,"SIM"
+    ,"TP&M"
+    ,"Traffic Ops"
+]
+
+VALID_WU_SUB_DIVISION = [
+    "ACCO"
+    ,"Audit Bureau"
+    ,"BCPM"
+    ,"Boro Commissioners"
+    ,"Bridges"
+    ,"Commissioner's Office"
+    ,"Facilities Management"
+    ,"Ferries"
+    ,"Fleet Services"
+    ,"Grants & Fiscal Mgmt"
+    ,"Human Resources"
+    ,"IT&T"
+    ,"Legal"
+    ,"Permits and CMC"
+    ,"RRM"
+    ,"SIM"
+    ,"TPM"
+    ,"Traffic Ops"
+]
+
+
 def user_is_active_admin(username=None): #User Authentication
     try:
         admin_query = TblUsers.objects.using('LookupTableManager').filter(
@@ -119,6 +173,7 @@ def UpdateWU(request): #UPDATE API
             "post_success"  : False,
             "post_msg"      : f"{request.method} HTTP request not supported",
         })
+
     ## Authenticate User
     remote_user = None
     if request.user.is_authenticated:
@@ -130,6 +185,7 @@ def UpdateWU(request): #UPDATE API
             "post_msg"      : "UpdateWU():\n\nUNAUTHENTICATE USER!",
             "post_data"     : None,
         })
+
     ## Read the json request body
     try:
         json_blob = json.loads(request.body)
@@ -138,13 +194,14 @@ def UpdateWU(request): #UPDATE API
             "post_success"  : False,
             "post_msg"      : f"LookupTableManager: UpdateWU():\n\n Unable to load request.body as a json object: {e}",
         })
+
     try:
-        WUvariable      = json_blob['wu']
+        wu              = json_blob['wu']
         column_name     = json_blob['column_name']
         new_value       = json_blob['new_value']
 
-        if WUvariable is None or WUvariable == '':
-            raise ValueError(f"wu: '{WUvariable}' cannot be None or Empty string")
+        if wu is None or wu == '':
+            raise ValueError(f"wu: '{wu}' cannot be None or Empty string")
         if column_name is None or column_name == '':
             raise ValueError(f"column_name: '{column_name}' cannot be None or Empty string")
         if new_value is None or new_value == '':
@@ -152,23 +209,36 @@ def UpdateWU(request): #UPDATE API
 
         ## Data validation
         valid_editable_col = {
-            'DIV': 'div'
-            ,'WorkUnitDescription': 'wu_desc'
-            , 'DivisionGroup': 'div_group'
-            , 'SubDivision': 'subdiv'
-            , 'Active': 'active'
+            'DIV'                   : 'div'
+            ,'WorkUnitDescription'  : 'wu_desc'
+            , 'DivisionGroup'       : 'div_group'
+            , 'SubDivision'         : 'subdiv'
+            , 'Active'              : 'active'
         }
 
         if column_name not in list(valid_editable_col.keys()):
             raise ValueError(f"column_name '{column_name}' is not a valid editable column")
 
-        if column_name == 'Active':
+        if column_name == 'DIV':
+            if new_value not in VALID_WU_DIV:
+                raise ValueError(f"'{new_value}' is not a valid option for '{column_name}'")
+        elif column_name == 'WorkUnitDescription':
+            pass ## This column is meant as free text
+        elif column_name == 'DivisionGroup':
+            if new_value not in VALID_WU_DIVISION_GROUP:
+                raise ValueError(f"'{new_value}' is not a valid option for '{column_name}'")
+        elif column_name == 'SubDivision':
+            if new_value not in VALID_WU_SUB_DIVISION:
+                raise ValueError(f"'{new_value}' is not a valid option for '{column_name}'")
+        elif column_name == 'Active':
             if new_value == 'true':
                 new_value = True
             elif new_value == 'false':
                 new_value = False
             else:
                 raise ValueError(f"new_value is not a valid input for '{column_name}': '{new_value}'")
+        else:
+            raise ValueError(f"column_name '{column_name}' data validation is not implemented")
 
         # Check for Approved Admins
         is_admin = user_is_active_admin(remote_user)
@@ -176,9 +246,9 @@ def UpdateWU(request): #UPDATE API
             raise ValueError(f"'{remote_user}' is not an Approved Admin and cannot use this Update API")
 
         try:
-            workunit = TblWorkUnits.objects.using('LookupTableManager').get(wu = WUvariable)
+            workunit = TblWorkUnits.objects.using('LookupTableManager').get(wu = wu)
         except ObjectDoesNotExist as e:
-            raise ValueError(f"Cannot find Work Unit record with '{WUvariable}'")
+            raise ValueError(f"Cannot find Work Unit record with '{wu}'")
         else:
             ## Set the data to the specific column
             if column_name == 'DIV':
@@ -197,7 +267,7 @@ def UpdateWU(request): #UPDATE API
             "post_success"  : True,
             "post_msg"      : None,
             "post_data"     : {
-                'wu': WUvariable
+                'wu': wu
                 ,'column_name': valid_editable_col[column_name]
                 ,'new_value': new_value
             },
