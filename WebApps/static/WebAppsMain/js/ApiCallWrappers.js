@@ -89,10 +89,10 @@ async function sentJsonBlobToApi(
 
                 failCallbackFct(json_response, props)
                 // Set status light and error message to red and response error msg
-                handleError({set_error: true, error_msg: json_response["post_msg"]});
+                handleError({set_error: true, error_message: json_response["post_msg"]});
             } else { // Api call successful
                 successCallbackFct(json_response, props);
-                handleError({set_error: false, error_msg: "", clear_error_on_success: clear_existing_err_on_success});
+                handleError({set_error: false, error_message: "", clear_error_on_success: clear_existing_err_on_success});
             }
 
             return json_response['post_data'];
@@ -100,7 +100,7 @@ async function sentJsonBlobToApi(
         .fail(function (jqXHR) {
             var errorMessage = `Server might be down, try to reload the web page to confirm. If error is still happening, contact ykuang@dot.nyc.gov\n xhr response: ${jqXHR.status}\n xhr response text: ${jqXHR.responseText}`;
             ajaxFailCallbackFct(jqXHR, props)
-            handleError({set_error: true, error_msg: errorMessage});
+            handleError({set_error: true, error_message: errorMessage});
 
             console.log(`Ajax Post: Error Occured: ${errorMessage}`);
             alert(`Ajax Post: Error Occured:\n\n${errorMessage}`);
