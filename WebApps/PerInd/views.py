@@ -1384,6 +1384,15 @@ def UsersPanelApiUpdateData(request, json_blob, remote_user):
         column      = json_blob['column']
         new_value   = json_blob['new_value']
 
+        if type(id) is not str:
+            raise ValueError(f"id must be a str type: {type(id)}")
+        if type(table) is not str:
+            raise ValueError(f"table must be a str type: {type(table)}")
+        if type(column) is not str:
+            raise ValueError(f"column must be a str type: {type(column)}")
+        if type(new_value) is not str:
+            raise ValueError(f"new_value must be a str type: {type(new_value)}")
+
         ## Save the data
         if table == "Users":
             ## Make sure new_value is convertable to its respective data type. If it's a string, make sure it's not empty or just whitespace
@@ -1413,9 +1422,13 @@ def UsersPanelApiUpdateData(request, json_blob, remote_user):
                 row.save(using='PerInd')
             else:
                 raise ValueError(f"Updating to column '{column}' for table '{table}' not supported")
+        else:
+            raise ValueError(f"Unrecognize table: '{table}'")
+
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None,
         })
     except Exception as e:
         return JsonResponse({
