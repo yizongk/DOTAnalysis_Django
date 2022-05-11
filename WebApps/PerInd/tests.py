@@ -805,3 +805,92 @@ class TestAPIUsersPanelApiAddRow(HttpPostTestCase):
             for data in invalid:
                 self.remove_test_user_if_exists()
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUsersPanelApiDeleteRow(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.api_name               = 'users_panel_api_delete_row'
+        self.post_response_json_key_specifications = []
+
+        self.valid_first_name       = 'some_random_first_name'
+        self.valid_last_name        = 'some_random_last_name'
+        self.valid_username         = 'some_random_login'
+
+        self.valid_payloads = [
+            {
+                'user_id': None,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        try:
+            test_user = Users.objects.using('PerInd').get(login__exact=self.valid_username)
+        except ObjectDoesNotExist as e:
+            ... ## Good, do nothing
+        except:
+            raise
+        else:
+            test_user.delete(using='PerInd')
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def add_test_user_if_not_exists(self):
+        test_user = Users.objects.using('PerInd').get_or_create(
+            login=self.valid_username
+            ,first_name=self.valid_first_name
+            ,last_name=self.valid_last_name
+        )[0]
+        test_user.save(using='PerInd')
+        return test_user
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            user_obj = self.add_test_user_if_not_exists()
+            payload['user_id'] = user_obj.user_id
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was deleted correctly
+            try:
+                saved_object = Users.objects.using('PerInd').get(login__exact=self.valid_username)
+            except ObjectDoesNotExist as e:
+                ... ## Good, do nothing
+            except Exception as e:
+                raise ValueError(f"test_with_valid_data(): {e}")
+            else:
+                self.assertTrue(False, f"{saved_object.login} still exists in the database, unable to delete user")
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "user_id"           # str -> user id
+        ]
+        for param_name in parameters:
+            if param_name == 'user_id':
+                valid   = [self.add_test_user_if_not_exists().user_id]
+                invalid = [1, 2.3, False, None]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.add_test_user_if_not_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.add_test_user_if_not_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)

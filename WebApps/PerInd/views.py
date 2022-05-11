@@ -1355,7 +1355,8 @@ def UsersPanelApiDeleteRow(request, json_blob, remote_user):
 
         return JsonResponse({
             "post_success"  : True,
-            "post_msg"      : "",
+            "post_msg"      : None,
+            "post_data"     : None,
         })
     except Exception as e:
         return JsonResponse({
