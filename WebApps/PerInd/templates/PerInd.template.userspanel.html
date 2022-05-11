@@ -207,12 +207,12 @@
                         alert(`'${loginInput}' added to Users table successfully!`)
 
                         // Add the newly added row to the grid, and redraw
-                        var rowNode = table.row.add( [ json_response.first_name, json_response.last_name, json_response.active_user, json_response.login, ] )
+                        var rowNode = table.row.add( [ json_response.post_data.first_name, json_response.post_data.last_name, json_response.post_data.active_user, json_response.post_data.login, ] )
                         .draw()
                         .node();
 
                         // Add user_id to all child cells
-                        $(rowNode).children().attr("data-id", json_response.user_id);
+                        $(rowNode).children().attr("data-id", json_response.post_data.user_id);
                         // Add the proper data-... attribute to the row
                         $(rowNode).children().each( (index, childNode) => {
                             if (index == 0) {

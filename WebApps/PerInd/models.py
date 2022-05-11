@@ -57,16 +57,12 @@ class Unit(models.Model):
         return self.unit_type
 
 
-"""
-ALTER TABLE [Users]
-ADD CONSTRAINT [AK_Users_Login] UNIQUE (Login);
-"""
 class Users(models.Model):
     user_id = models.AutoField(db_column='User_ID', primary_key=True)
     first_name = models.CharField(db_column='First_Name', max_length=255)
     last_name = models.CharField(db_column='Last_Name', max_length=255)
     login = models.CharField(db_column='Login', max_length=255, unique=True)
-    active_user = models.BooleanField(db_column='Active_User', blank=True, null=True)
+    active_user = models.BooleanField(db_column='Active_User', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
@@ -87,20 +83,7 @@ class ValMultiplier(models.Model):
     def __str__(self):
         return self.multiplier_scale
 
-"""
-ALTER TABLE Year_Month
-ADD [Fiscal_Year] INT DEFAULT 0 NOT NULL
-GO
-UPDATE Year_Month
-SET [Fiscal_Year] = (
-	CASE
-		WHEN MM IN (1, 2, 3, 4, 5, 6) THEN [YYYY]
-		WHEN MM IN (7, 8, 9, 10, 11, 12) THEN [YYYY] + 1
-		ELSE 0
-	END
-)
-GO
-"""
+
 class YearMonth(models.Model):
     year_month_id = models.AutoField(db_column='Year_Month_ID', primary_key=True)
     yyyy = models.IntegerField(db_column='YYYY')
@@ -119,6 +102,7 @@ class UserPermissions(models.Model):
     # category_id = models.IntegerField(db_column='Category_ID', blank=True, null=True)
     user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)
     category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False
@@ -133,7 +117,7 @@ class IndicatorList(models.Model):
     # unit_id = models.IntegerField(db_column='Unit_ID')
     # data_type_id = models.IntegerField(db_column='Data_Type_ID')
     # val_multiplier_id = models.IntegerField(db_column='Val_Multiplier_ID')
-    active = models.BooleanField(db_column='Active', blank=True, null=True)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
     # summary_type_id = models.IntegerField(db_column='Summary_Type_ID')
     category = models.ForeignKey(to=Category, on_delete=models.DO_NOTHING)
     unit = models.ForeignKey(to=Unit, on_delete=models.DO_NOTHING)
@@ -149,9 +133,7 @@ class IndicatorList(models.Model):
     def __str__(self):
         return self.indicator_title
 
-"""
-ALTER TABLE Indicator_Data ADD CONSTRAINT AK_IndicatorData_IndicatorID_And_YearMonthID_Must_Be_Unique_Combination UNIQUE(Indicator_ID, Year_Month_ID)
-"""
+
 class IndicatorData(models.Model):
     record_id = models.AutoField(db_column='Record_ID', primary_key=True)
     # indicator_id = models.IntegerField(db_column='Indicator_ID')
@@ -170,21 +152,10 @@ class IndicatorData(models.Model):
         ordering = ['indicator__indicator_title', 'year_month__yyyy', 'year_month__mm']
 
 
-"""
-CREATE TABLE Admins (
-	[Admin_ID] int NOT NULL IDENTITY PRIMARY KEY,
-	[User_ID] int NOT NULL FOREIGN KEY REFERENCES Users([User_ID]),
-	[Active] bit NOT NULL,
-    CONSTRAINT [AK__Admins__User_ID] UNIQUE (User_ID)
-)
-
-INSERT INTO dbo.Admins
-([User_ID], [Active]) VALUEs (67, 1)
-"""
 class Admins(models.Model):
     admin_id = models.AutoField(db_column='Admin_ID', primary_key=True)
     user = models.ForeignKey(to=Users, on_delete=models.DO_NOTHING)
-    active = models.BooleanField(db_column='Active', blank=False, null=False)
+    active = models.BooleanField(db_column='Active', blank=False, null=False, default=True)
 
     class Meta:
         managed = False

@@ -20,25 +20,15 @@ from dateutil import tz
 ## Check if remote user is admin and is active
 def user_is_active_admin(username=None):
     try:
-        admin_query = TblUsers.objects.using('OrgChartWrite').filter(
+        user = TblUsers.objects.using('OrgChartWrite').get(
             windows_username=username
-            ,active=True
-            ,is_admin=True
         )
-        if admin_query.count() > 0:
-            return {
-                "isAdmin": True,
-                "err": "",
-            }
-        return {
-            "isAdmin": False,
-            "err": '{} is not an active Admin'.format(username),
-        }
+        if user.active:
+            return user.is_admin
+        else:
+            return False
     except Exception as e:
-        return {
-            "isAdmin": None,
-            "err": 'Exception: user_is_active_admin(): {}'.format(e),
-        }
+        raise ValueError(f"user_is_active_admin(): {e}")
 
 
 class HomePageView(TemplateView):
@@ -48,19 +38,13 @@ class HomePageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            ## Call the base implementation first to get a context
-            context = super().get_context_data(**kwargs)
-            self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
-            context["client_is_admin"]  = self.client_is_admin
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            return context
-        except Exception as e:
-            context["client_is_admin"]  = False
-            context["get_success"]      = False
-            context["get_error"]        = None
-            return context
+        ## Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        self.client_is_admin = user_is_active_admin(self.request.user)
+        context["client_is_admin"]  = self.client_is_admin
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        return context
 
 
 class AboutPageView(TemplateView):
@@ -70,17 +54,11 @@ class AboutPageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = None
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 class ContactPageView(TemplateView):
@@ -90,17 +68,11 @@ class ContactPageView(TemplateView):
     client_is_admin = None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            context["get_success"]      = False
-            context["get_error"]        = None
-            context["client_is_admin"]  = None
-            return context
+        context = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 def get_allowed_list_of_wu(username=None):
@@ -108,6 +80,7 @@ def get_allowed_list_of_wu(username=None):
         wu_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
             user_id__windows_username=username
             ,user_id__active=True
+            ,is_active=True
         ).order_by('wu__wu')
 
         if wu_query.count() > 0:
@@ -127,7 +100,7 @@ def get_active_tblemployee_qryset(read_only=True):
         Lv status 'L' is usually Inactive, but when it is due to 'B10' Leave Status Reason (Look up from payroll history), that employee is actually Active
     """
     try:
-        latest_pay_date = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
+        latest_pay_date     = TblPayrollHistory.objects.using('HRReportingRead').aggregate(Max('paydate'))['paydate__max']
         active_L_pms_qryset = TblPayrollHistory.objects.using('HRReportingRead').filter(
             lv__exact='L'
             ,lv_reason_code__exact='B10'
@@ -211,7 +184,7 @@ def get_active_permitted_emp_qryset(username=None, fields_list=None, read_only=T
         if username is None:
             raise ValueError(f"@username cannot be None, must provide the client's username")
 
-        client_is_admin = user_is_active_admin(username)['isAdmin']
+        client_is_admin = user_is_active_admin(username)
         emp_data = get_active_emp_qryset(
             fields_list=fields_list
             ,custom_annotate_fct=custom_annotate_fct
@@ -376,6 +349,8 @@ class EmpUpdateAndTrack:
                 if employee_row.actual_floor_id is not None and employee_row.actual_floor_id.floor_id == new_floor_obj.floor_id:
                     ## Return False because new value is same as old value
                     return False
+                elif employee_row.actual_site_id is None:
+                    raise ValueError(f"Cannot set the floor for employee when their site is null")
                 elif employee_row.actual_site_id.site_id != new_floor_obj.site_id.site_id:
                     ## Floor_Id must be associated with employee's current Site_Id
                     raise ValueError(f"Floor ({new_floor_obj.floor}-{self.new_value}) is not a valid floor for ({employee_row.actual_site_id.site}-{employee_row.actual_site_id.site_id})")
@@ -476,8 +451,9 @@ def UpdateEmployeeData(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData(): {} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData(): {request.method} HTTP request not supported",
+            "post_data"     : None
         })
 
     ## Authenticate User
@@ -487,9 +463,9 @@ def UpdateEmployeeData(request):
     else:
         print('Warning: UpdateEmployeeData(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateEmployeeData():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
     ## Read the json request body
@@ -497,8 +473,9 @@ def UpdateEmployeeData(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None
         })
 
     try:
@@ -525,11 +502,15 @@ def UpdateEmployeeData(request):
         if column_name not in list(valid_editable_column_names_mapping.keys()):
             raise ValueError(f"{column_name} is not an editable column")
 
-        if new_value == '':
-            raise ValueError(f"new_value for {column_name} cannot be None or empty text")
+        if new_value is None:
+            raise ValueError(f"new_value for {column_name} cannot be None")
+        elif new_value == '':
+            raise ValueError(f"new_value for {column_name} cannot be empty text")
+        elif type(new_value) is not str:
+            raise ValueError(f"new_value for {column_name} is not {type('')} type, the current type is {type(new_value)}")
 
         # Check for permission to edit the target employee row
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
             allowed_wu_list = get_allowed_list_of_wu(remote_user)
 
@@ -557,18 +538,19 @@ def UpdateEmployeeData(request):
         if not atomic_update.save():
             raise ValueError(f"No change in data, no update needed.")
 
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : None
+        })
 
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateEmployeeData():\n\nError: {}".format(e),
-            # "post_msg": "UpdateEmployeeData():\n\nError: {}. The exception type is:{}".format(e,  e.__class__.__name__),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateEmployeeData():\n\nError: {e}",
+            # "post_msg"      : f"UpdateEmployeeData():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None
         })
-
-    return JsonResponse({
-        "post_success": True,
-        "post_msg": None,
-    })
 
 
 def GetClientWUPermissions(request):
@@ -589,17 +571,20 @@ def GetClientWUPermissions(request):
 
     ## Get the data
     try:
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if is_admin:
             return JsonResponse({
                 "post_success": True,
                 "post_msg": 'User is Admin',
-                "post_data": None,
+                "post_data": {
+                    "wu_permissions": None
+                },
             })
         else:
             wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
                     user_id__windows_username=remote_user
                     ,user_id__active=True
+                    ,is_active=True
                 ).order_by('wu__wu')
 
             wu_permissions_list_json = list(wu_permissions_query.values('wu__wu', 'wu__wu_desc', 'wu__subdiv'))
@@ -607,7 +592,9 @@ def GetClientWUPermissions(request):
             return JsonResponse({
                 "post_success": True,
                 "post_msg": None,
-                "post_data": wu_permissions_list_json,
+                "post_data": {
+                    "wu_permissions": wu_permissions_list_json
+                },
             })
 
 
@@ -633,12 +620,14 @@ def GetClientTeammates(request):
 
     ## Get the data
     try:
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if is_admin:
             return JsonResponse({
                 "post_success": True,
                 "post_msg": 'User is Admin',
-                "post_data": None,
+                "post_data": {
+                    "teammates": None
+                },
             })
         else:
             wu_permissions_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
@@ -651,14 +640,17 @@ def GetClientTeammates(request):
             teammates_query = TblPermissionsWorkUnit.objects.using('OrgChartRead').filter(
                 wu__wu__in=wu_permissions_list
                 ,user_id__active=True
-            ).order_by('user_id__pms')
+                ,is_active=True
+            ).order_by('user_id__pms__pms')
 
-            teammates_list_json = list(teammates_query.values('user_id__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))
+            teammates_list_json = list(teammates_query.values('user_id__pms__pms').annotate(user_id__pms__first_name=Min('user_id__pms__first_name'), user_id__pms__last_name=Min('user_id__pms__last_name')))
 
             return JsonResponse({
                 "post_success": True,
                 "post_msg": None,
-                "post_data": teammates_list_json,
+                "post_data": {
+                    "teammates": teammates_list_json
+                },
             })
     except Exception as e:
         get_error = "Exception: OrgChartPortal: GetClientTeammates(): {}".format(e)
@@ -666,24 +658,6 @@ def GetClientTeammates(request):
             "post_success": False,
             "post_msg": get_error
         })
-
-
-def GetRemoteUserEmpObj(remote_user):
-    try:
-        try:
-            remote_user_obj = TblUsers.objects.using('OrgChartRead').get(windows_username__exact=remote_user)
-            remote_user_pms  = remote_user_obj.pms.pms
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"The client '{remote_user}' is not a user of the system")
-
-        try:
-            remote_user_emp_obj = TblEmployees.objects.using('OrgChartRead').get(pms__exact=remote_user_pms)
-        except ObjectDoesNotExist as e:
-            raise ValueError(f"The client '{remote_user}' with the pms '{remote_user_pms}' doesn't exist in the employees table")
-
-        return remote_user_emp_obj
-    except Exception as e:
-        raise ValueError(f"GetRemoteUserEmpObj(): {e}")
 
 
 def GetEmpGridStats(request):
@@ -722,7 +696,7 @@ def GetEmpGridStats(request):
         active_permitted_emp = get_active_permitted_emp_qryset(username=remote_user, fields_list=fields_list, read_only=True, custom_annotate_fct=annotate_emp_full_name)
         active_permitted_emp = active_permitted_emp.order_by('wu__wu')
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         def get_supervisor_completed():
             try:
@@ -962,23 +936,12 @@ def EmpGridGetCsvExport(request):
         })
 
 
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "Exception: OrgChartPortal: EmpGridGetCsvExport():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
     try:
         import csv
         from io import StringIO
         dummy_in_mem_file = StringIO()
 
-        # some_post_param   = json_blob['some_post_param']
-
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         fields_list = [
             'pms'
@@ -1029,7 +992,9 @@ def EmpGridGetCsvExport(request):
         return JsonResponse({
             "post_success": True,
             "post_msg": None,
-            "post_csv_bytes": dummy_in_mem_file.getvalue(),
+            "post_data": {
+                "csv_bytes": dummy_in_mem_file.getvalue()
+            },
         })
     except Exception as e:
         return JsonResponse({
@@ -1055,7 +1020,7 @@ class EmpGridPageView(generic.ListView):
 
     def get_queryset(self):
         ## Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)['isAdmin']
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1129,6 +1094,7 @@ class EmpGridPageView(generic.ListView):
             self.site_type_dropdown_list_json   = json.dumps(list(site_type_dropdown_list)  , cls=DjangoJSONEncoder)
 
         except Exception as e:
+            raise
             self.get_success = False
             self.get_error = "Exception: EmpGridPageView(): get_queryset(): {}".format(e)
             return None
@@ -1137,37 +1103,19 @@ class EmpGridPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]                      = self.get_success
-            context["get_error"]                        = self.get_error
-            context["client_is_admin"]                  = self.client_is_admin
+        context["get_success"]                      = self.get_success
+        context["get_error"]                        = self.get_error
+        context["client_is_admin"]                  = self.client_is_admin
 
-            context["emp_entry_columns_json"]           = self.emp_entry_columns_json
-            context["emp_entries_json"]                 = self.emp_entries_json
-            context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
-            context["site_dropdown_list_json"]          = self.site_dropdown_list_json
-            context["site_floor_dropdown_list_json"]    = self.site_floor_dropdown_list_json
-            context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
-            return context
-        except Exception as e:
-            self.get_success                            = False
-            self.get_error                                = "Exception: get_context_data(): {}".format(e)
-
-            context                                     = super().get_context_data(**kwargs)
-            context["get_success"]                      = self.get_success
-            context["get_error"]                          = self.get_error
-
-            context["client_is_admin"]                  = False
-
-            context["emp_entry_columns_json"]           = None
-            context["emp_entries_json"]                 = None
-            context["supervisor_dropdown_list_json"]    = None
-            context["site_dropdown_list_json"]          = None
-            context["site_floor_dropdown_list_json"]    = None
-            context["site_type_dropdown_list_json"]     = None
-            return context
+        context["emp_entry_columns_json"]           = self.emp_entry_columns_json
+        context["emp_entries_json"]                 = self.emp_entries_json
+        context["supervisor_dropdown_list_json"]    = self.supervisor_dropdown_list_json
+        context["site_dropdown_list_json"]          = self.site_dropdown_list_json
+        context["site_floor_dropdown_list_json"]    = self.site_floor_dropdown_list_json
+        context["site_type_dropdown_list_json"]     = self.site_type_dropdown_list_json
+        return context
 
 
 class OrgChartPageView(generic.ListView):
@@ -1179,11 +1127,7 @@ class OrgChartPageView(generic.ListView):
 
     def get_queryset(self):
         ## Check for Active Admins
-        is_active_admin = user_is_active_admin(self.request.user)
-        if is_active_admin["isAdmin"] == True:
-            self.client_is_admin = True
-        else:
-            self.client_is_admin = False
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1198,24 +1142,63 @@ class OrgChartPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
 
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "Exception: get_context_data(): {}".format(e)
+        return context
 
-            context = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = False
 
-            return context
+def GetCommissionerPMS(request):
+    ## Authenticate User
+    remote_user = None
+    if request.user.is_authenticated:
+        remote_user = request.user.username
+    else:
+        print('Warning: OrgChartPortal: GetCommissionerPMS(): UNAUTHENTICATE USER!')
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
+        })
+
+
+    ## Get the data
+    try:
+        # ## Check for Active Admins
+        # is_admin = user_is_active_admin(remote_user)
+        # if not is_admin:
+        #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
+
+
+        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
+            civil_title='Commissioner-DOT'
+            ,lv__in=get_active_lv_list()
+        )
+
+        if emp_data.count() == 0:
+            raise ValueError(f"Cannot find an active DOT Commissioner in the database")
+        elif emp_data.count() > 1:
+            raise ValueError(f"Found more than one active DOT Commissioners in the database (Found {emp_data.count()})")
+
+        dot_commissioner = emp_data.first()
+
+        return JsonResponse({
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "dot_commissioner_pms": dot_commissioner.pms
+            },
+        })
+    except Exception as e:
+        get_error = f"Exception: OrgChartPortal: GetCommissionerPMS(): {e}"
+        return JsonResponse({
+            "post_success"  : False,
+            "post_msg"      : get_error,
+            "post_data"     : None,
+        })
 
 
 def OrgChartGetEmpCsv(request):
@@ -1226,8 +1209,9 @@ def OrgChartGetEmpCsv(request):
     else:
         print('Warning: OrgChartPortal: OrgChartGetEmpCsv(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUNAUTHENTICATE USER!",
+            "post_success"  : False,
+            "post_msg"      : "OrgChartPortal: OrgChartGetEmpCsv():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
     ## Read the json request body
@@ -1235,8 +1219,9 @@ def OrgChartGetEmpCsv(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: OrgChartGetEmpCsv():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: OrgChartGetEmpCsv():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     ## Get the data
@@ -1244,7 +1229,7 @@ def OrgChartGetEmpCsv(request):
         root_pms = json_blob['root_pms']
 
         ## Check for Active Admins
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
 
         emp_data = TblEmployees.objects.using('OrgChartRead').exclude(
             Q(supervisor_pms__isnull=True) | Q(supervisor_pms__exact='')
@@ -1412,70 +1397,18 @@ def OrgChartGetEmpCsv(request):
 
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": dummy_in_mem_file.getvalue(),
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "emp_csv": dummy_in_mem_file.getvalue()
+            },
         })
     except Exception as e:
-        get_error = "Exception: OrgChartPortal: OrgChartGetEmpCsv(): {}".format(e)
+        get_error = f"Exception: OrgChartPortal: OrgChartGetEmpCsv(): {e}"
         return JsonResponse({
-            "post_success": False,
-            "post_msg": get_error
-        })
-
-
-def GetCommissionerPMS(request):
-    ## Authenticate User
-    remote_user = None
-    if request.user.is_authenticated:
-        remote_user = request.user.username
-    else:
-        print('Warning: OrgChartPortal: GetCommissionerPMS(): UNAUTHENTICATE USER!')
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUNAUTHENTICATE USER!",
-        })
-
-
-    ## Read the json request body
-    try:
-        json_blob = json.loads(request.body)
-    except Exception as e:
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: GetCommissionerPMS():\n\nUnable to load request.body as a json object: {}".format(e),
-        })
-
-    ## Get the data
-    try:
-        # ## Check for Active Admins
-        # is_admin = user_is_active_admin(remote_user)["isAdmin"]
-        # if not is_admin:
-        #     raise ValueError(f"'{remote_user}' is not admin. Only admins can access the GetCommissionerPMS() api")
-
-
-        emp_data = TblEmployees.objects.using('OrgChartRead').filter(
-            civil_title='Commissioner-DOT'
-            ,lv__in=get_active_lv_list()
-        )
-
-        if emp_data.count() == 0:
-            raise ValueError(f"Cannot find an active DOT Commissioner in the database")
-        elif emp_data.count() > 1:
-            raise ValueError(f"Found more than one active DOT Commissioners in the database (Found {emp_data.count()})")
-
-        dot_commissioner = emp_data.first()
-
-        return JsonResponse({
-            "post_success": True,
-            "post_msg": None,
-            "post_data": dot_commissioner.pms,
-        })
-    except Exception as e:
-        get_error = "Exception: OrgChartPortal: GetCommissionerPMS(): {}".format(e)
-        return JsonResponse({
-            "post_success": False,
-            "post_msg": get_error
+            "post_success"  : False,
+            "post_msg"      : get_error,
+            "post_data"     : None,
         })
 
 
@@ -1488,12 +1421,12 @@ class AdminPanelPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
             if not self.client_is_admin:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success = False
@@ -1504,21 +1437,11 @@ class AdminPanelPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                     = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]        = self.get_error
-            context["client_is_admin"]  = self.client_is_admin
-            return context
-        except Exception as e:
-            self.get_success = False
-            self.get_error = "Exception: AdminPanelPageView(): get_context_data(): {}".format(e)
-
-            context                     = super().get_context_data(**kwargs)
-            context["get_success"]      = self.get_success
-            context["get_error"]          = self.get_error
-            context["client_is_admin"]  = False
-            return context
+        context                     = super().get_context_data(**kwargs)
+        context["get_success"]      = self.get_success
+        context["get_error"]        = self.get_error
+        context["client_is_admin"]  = self.client_is_admin
+        return context
 
 
 class ManageUsersPageView(generic.ListView):
@@ -1533,7 +1456,7 @@ class ManageUsersPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1552,7 +1475,7 @@ class ManageUsersPageView(generic.ListView):
                 self.ag_grid_col_def_json = json.dumps(list(ag_grid_col_def), cls=DjangoJSONEncoder)
                 self.users_data_json      = json.dumps(list(users_data)     , cls=DjangoJSONEncoder)
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1563,33 +1486,23 @@ class ManageUsersPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["users_data_json"]      = self.users_data_json
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = f"Exception: ManageUsersPageView(): get_context_data(): {e}"
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
 
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            context["ag_grid_col_def_json"] = None
-            context["users_data_json"]      = None
-            return context
+        context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+        context["users_data_json"]      = self.users_data_json
+        return context
 
 
 def AddUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1600,9 +1513,9 @@ def AddUser(request):
     else:
         print('Warning: AddUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "AddUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1611,8 +1524,9 @@ def AddUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"AddUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1621,8 +1535,8 @@ def AddUser(request):
         is_admin            = json_blob['is_admin']
 
 
-        if not user_is_active_admin(remote_user)["isAdmin"]:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+        if not user_is_active_admin(remote_user):
+            raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
 
         if windows_username is None:
@@ -1657,21 +1571,25 @@ def AddUser(request):
         return JsonResponse({
             "post_success"      : True,
             "post_msg"          : None,
-            "windows_username"  : new_user.windows_username,
-            "pms"               : new_user.pms.pms,
-            "is_admin"          : new_user.is_admin,
+            "post_data"         : {
+                "windows_username"  : new_user.windows_username,
+                "pms"               : new_user.pms.pms,
+                "is_admin"          : str(new_user.is_admin),
+                "active"            : str(new_user.active)
+            },
         })
     except ObjectDoesNotExist as e:
         return JsonResponse({
-            "post_success"      : False,
-            "post_msg"          : f"OrgChartPortal: AddUser():\n\nError: {e}",
-            "windows_username"  : new_user.windows_username
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
+            "post_data"     : None,
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: AddUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 
@@ -1679,8 +1597,9 @@ def UpdateUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1691,9 +1610,9 @@ def UpdateUser(request):
     else:
         print('Warning: UpdateUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "UpdateUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1702,8 +1621,9 @@ def UpdateUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "UpdateUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"UpdateUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1712,9 +1632,9 @@ def UpdateUser(request):
         new_value           = json_blob['new_value']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to add a new user".format(remote_user))
 
 
         valid_editable_ag_column_names = ['Is Admin', 'Active']
@@ -1756,18 +1676,21 @@ def UpdateUser(request):
             raise ValueError(f"Can't find a user with this windows_username '{to_windows_username}'")
 
         return JsonResponse({
-            "post_success"          : True,
-            "post_msg"              : None,
-            "to_windows_username"   : to_windows_username,
-            "column_name"           : column_name,
-            "new_value"             : new_value,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "to_windows_username"   : to_windows_username,
+                "column_name"           : column_name,
+                "new_value"             : new_value,
+            },
         })
 
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: UpdateUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 
@@ -1775,8 +1698,9 @@ def DeleteUser(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1787,9 +1711,9 @@ def DeleteUser(request):
     else:
         print('Warning: DeleteUser(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUser():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUser():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1798,8 +1722,9 @@ def DeleteUser(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUser():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"DeleteUser():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1810,9 +1735,9 @@ def DeleteUser(request):
         elif windows_username == '':
             raise ValueError("windows_username cannot be empty string")
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to delete a user".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to delete a user".format(remote_user))
 
         try:
             user = TblUsers.objects.using("OrgChartWrite").get(windows_username=windows_username)
@@ -1828,16 +1753,19 @@ def DeleteUser(request):
             raise e
 
         return JsonResponse({
-            "post_success"      : True,
-            "post_msg"          : None,
-            "windows_username"  : windows_username
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "windows_username": windows_username
+            },
         })
 
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUser():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None,
         })
 
 
@@ -1857,7 +1785,7 @@ class ManagePermissionsPageView(generic.ListView):
 
     def get_queryset(self):
         # Check for Active Admins
-        self.client_is_admin = user_is_active_admin(self.request.user)["isAdmin"]
+        self.client_is_admin = user_is_active_admin(self.request.user)
 
         ## Get the core data
         try:
@@ -1877,7 +1805,7 @@ class ManagePermissionsPageView(generic.ListView):
                 self.division_list          = [each['subdiv'] for each in TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('subdiv').distinct()] ## subidv not null filters out the WU 9999 On-Loan
                 self.wu_desc_list           = list(TblWorkUnits.objects.using('OrgChartRead').filter(subdiv__isnull=False).values('wu', 'wu_desc')) ## subidv not null filters out the WU 9999 On-Loan
             else:
-                raise ValueError("'{}' is not an Admin, and is not authorized to see this page.".format(self.request.user))
+                raise ValueError("'{}' is not an admin, and is not authorized to see this page.".format(self.request.user))
 
         except Exception as e:
             self.get_success    = False
@@ -1888,39 +1816,26 @@ class ManagePermissionsPageView(generic.ListView):
         return None
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["permissions_json"]     = self.permissions_json
-            context["user_list"]            = self.user_list
-            context["division_list"]        = self.division_list
-            context["wu_desc_list"]         = self.wu_desc_list
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
 
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
-            context["permissions_json"]     = self.permissions_json
-            context["user_list"]            = self.user_list
-            context["division_list"]        = self.division_list
-            context["wu_desc_list"]         = self.wu_desc_list
-            return context
+        context["ag_grid_col_def_json"] = self.ag_grid_col_def_json
+        context["permissions_json"]     = self.permissions_json
+        context["user_list"]            = self.user_list
+        context["division_list"]        = self.division_list
+        context["wu_desc_list"]         = self.wu_desc_list
+        return context
 
 
 def AddUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -1931,9 +1846,9 @@ def AddUserPermission(request):
     else:
         print('Warning: AddUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "AddUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -1942,8 +1857,9 @@ def AddUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "AddUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"AddUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -1952,9 +1868,9 @@ def AddUserPermission(request):
         perm_identifier     = json_blob['perm_identifier']
 
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to add a new user permission".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to add a new user permission".format(remote_user))
 
 
         if windows_username is None:
@@ -2022,17 +1938,20 @@ def AddUserPermission(request):
 
 
         return JsonResponse({
-            "post_success"      : True,
-            "post_msg"          : None,
-            "windows_username"  : user.windows_username,
-            "perm_identifier"   : perm_identifier,
-            "wu_added_list"     : list(workunits.values('wu', 'subdiv', 'wu_desc')),
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "windows_username"  : user.windows_username,
+                "perm_identifier"   : perm_identifier,
+                "wu_added_list"     : list(workunits.values('wu', 'subdiv', 'wu_desc')),
+            },
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: AddUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
@@ -2040,8 +1959,9 @@ def DeleteUserPermission(request):
 
     if request.method != "POST":
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "{} HTTP request not supported".format(request.method),
+            "post_success"  : False,
+            "post_msg"      : f"{request.method} HTTP request not supported",
+            "post_data"     : None,
         })
 
 
@@ -2052,9 +1972,9 @@ def DeleteUserPermission(request):
     else:
         print('Warning: DeleteUserPermission(): UNAUTHENTICATE USER!')
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
-            "post_data": None,
+            "post_success"  : False,
+            "post_msg"      : "DeleteUserPermission():\n\nUNAUTHENTICATE USER!",
+            "post_data"     : None,
         })
 
 
@@ -2063,8 +1983,9 @@ def DeleteUserPermission(request):
         json_blob = json.loads(request.body)
     except Exception as e:
         return JsonResponse({
-            "post_success": False,
-            "post_msg": "OrgChartPortal: DeleteUserPermission():\n\nUnable to load request.body as a json object: {}".format(e),
+            "post_success"  : False,
+            "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nUnable to load request.body as a json object: {e}",
+            "post_data"     : None,
         })
 
     try:
@@ -2072,22 +1993,44 @@ def DeleteUserPermission(request):
         perm_delete_by      = json_blob['perm_delete_by']
         perm_identifier     = json_blob['perm_identifier']
 
-        is_admin = user_is_active_admin(remote_user)["isAdmin"]
+        is_admin = user_is_active_admin(remote_user)
         if not is_admin:
-            raise ValueError("'{}' is not admin and does not have the permission to remove user permission".format(remote_user))
+            raise ValueError("'{}' is not an admin and does not have the permission to remove user permission".format(remote_user))
 
         if windows_username is None:
             raise ValueError(f"windows_username '{windows_username}' cannot be null")
         elif windows_username == '':
             raise ValueError(f"windows_username '{windows_username}' cannot be empty string")
+        else:
+            try:
+                TblUsers.objects.using('OrgChartRead').get(
+                    windows_username=windows_username
+                    ,active=True
+                )
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"windows_username '{windows_username}' not an active user")
 
         valid_action_by = ['division', 'wu']
         if perm_delete_by not in valid_action_by:
             raise ValueError(f"perm_delete_by '{perm_delete_by}' must be one of these options {valid_action_by}")
 
         if perm_delete_by == 'division':
-            ...
-            #@TODO implement this
+            if perm_identifier is None:
+                raise ValueError(f"division '{perm_identifier}' cannot be null")
+            elif perm_identifier == '':
+                raise ValueError(f"division '{perm_identifier}' cannot be empty string")
+
+            try:
+                wu_permissions = TblPermissionsWorkUnit.objects.using("OrgChartWrite").filter(
+                    user_id__windows_username__exact=windows_username
+                    ,wu__subdiv__exact=perm_identifier
+                )
+                for each_permission in wu_permissions:
+                    each_permission.delete(using='OrgChartWrite')
+            except ObjectDoesNotExist as e:
+                raise ValueError(f"Could not find any valid user permissions with this windows_username and division: '{windows_username}' - '{perm_identifier}'")
+            except Exception as e:
+                raise e
 
         elif perm_delete_by == 'wu':
             if perm_identifier is None:
@@ -2100,7 +2043,7 @@ def DeleteUserPermission(request):
                     user_id__windows_username=windows_username
                     ,wu__wu=perm_identifier
                 )
-                wu_permission.delete()
+                wu_permission.delete(using='OrgChartWrite')
             except ObjectDoesNotExist as e:
                 raise ValueError(f"Could not find a valid user permission with this windows_username and wu: '{windows_username}' - '{perm_identifier}'")
             except Exception as e:
@@ -2110,16 +2053,19 @@ def DeleteUserPermission(request):
             raise ValueError(f"Unrecognized perm_delete_by '{perm_delete_by}'. Must be one of these options {valid_action_by}")
 
         return JsonResponse({
-            "post_success"      : True,
-            "post_msg"          : None,
-            "windows_username"  : windows_username,
-            "perm_identifier"   : perm_identifier,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "windows_username"  : windows_username,
+                "perm_identifier"   : perm_identifier,
+            },
         })
     except Exception as e:
         return JsonResponse({
             "post_success"  : False,
             "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}",
-            # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is:{e.__class__.__name__}",
+            # "post_msg"      : f"OrgChartPortal: DeleteUserPermission():\n\nError: {e}. The exception type is: {e.__class__.__name__}",
+            "post_data"     : None
         })
 
 
@@ -2132,18 +2078,8 @@ class HowToUsePageView(TemplateView):
     client_is_admin                 = False
 
     def get_context_data(self, **kwargs):
-        try:
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = self.client_is_admin
-            return context
-        except Exception as e:
-            self.get_success                = False
-            self.get_error                  = "Exception: ManagePermissionsPageView(): get_context_data(): {}".format(e)
-
-            context                         = super().get_context_data(**kwargs)
-            context["get_success"]          = self.get_success
-            context["get_error"]            = self.get_error
-            context["client_is_admin"]      = False
-            return context
+        context                         = super().get_context_data(**kwargs)
+        context["get_success"]          = self.get_success
+        context["get_error"]            = self.get_error
+        context["client_is_admin"]      = self.client_is_admin
+        return context

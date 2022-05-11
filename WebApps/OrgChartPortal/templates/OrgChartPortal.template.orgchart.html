@@ -158,7 +158,7 @@
                     successCallbackFct  : function(json_response) {
                         //alert(`data saved successfully!`)
 
-                        let root_pms = json_response.post_data;
+                        let root_pms = json_response.post_data.dot_commissioner_pms;
 
 
                         let json_blob = {
@@ -172,7 +172,7 @@
                             successCallbackFct  : function(json_response) {
                                 //alert(`data saved successfully!`)
 
-                                let emp_data_csv_master = json_response.post_data
+                                let emp_data_csv_master = json_response.post_data.emp_csv
                                 let d3_parsed_csv = d3.csvParse(emp_data_csv_master)
 
                                 // For reference to what to name your id and parent id column: https://github.com/bumbeishvili/org-chart/issues/88

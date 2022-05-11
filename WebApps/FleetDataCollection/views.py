@@ -272,7 +272,7 @@ class AdminPanelPageView(generic.ListView):
             self.client_is_admin = True
         else:
             self.get_success = False
-            self.get_error = "AdminPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_error = "AdminPanelPageView(): get_queryset(): {} is not an admin and is not authorized to see this page".format(self.request.user)
             return
 
         self.get_success = True
@@ -573,7 +573,7 @@ class WuPermissionsPanelPageView(generic.ListView):
             self.client_is_admin = True
         else:
             self.get_success = False
-            self.get_error = "WuPermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_error = "WuPermissionsPanelPageView(): get_queryset(): {} is not an admin and is not authorized to see this page".format(self.request.user)
             return WUPermissions.objects.none()
 
         ## Get the permissions data
@@ -953,7 +953,7 @@ class DomicilePermissionsPanelPageView(generic.ListView):
             self.client_is_admin = True
         else:
             self.get_success = False
-            self.get_error = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an Admin and is not authorized to see this page".format(self.request.user)
+            self.get_error = "DomicilePermissionsPanelPageView(): get_queryset(): {} is not an admin and is not authorized to see this page".format(self.request.user)
             return WUPermissions.objects.none()
 
         ## Get the permissions data

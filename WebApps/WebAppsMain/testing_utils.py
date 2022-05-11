@@ -1,9 +1,149 @@
 import json
 from django.urls import reverse
-from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_HTTP_POST_JSON_KEYS, TEST_WINDOWS_USERNAME
+from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_HTTP_POST_JSON_KEYS, TEST_WINDOWS_USERNAME, DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS, DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
 import copy
 import unittest
 from django.test import Client
+
+
+class HttpGetTestCase(unittest.TestCase):
+    client                          = Client()
+    regular_views                   = []        ## Required by sub class. Set it in def setUpClass()
+    admin_views                     = []        ## Required by sub class. Set it in def setUpClass()
+
+    def __verify_response_with_required_additional_context_data(self, view=None, response=None, view_defined_additional_context_keys=None, additional_context_keys_data_qa_fct=None):
+        """
+            @view is view name
+            @response is the GET response
+            @view_defined_additional_context_keys is the list of additional context keys that needs to be in the response
+            @additional_context_keys_data_qa_fct will be called if @view_defined_additional_context_keys and itself is not null.
+                This is where you can add additional customized assert tests to this function
+                Assumes the function is a class function in class SomeTestSuite(unittest.TestCase)
+                Will pass self and @response to this fct as the only arguments
+                Use it like so:
+
+                    class SomeTestSuite(unittest.TestCase): ## Or another child of unittest.TestCase
+                        @classMethod
+                        def setUpClass(self):
+                            ...
+                            self.additional_context_requirements =   [
+                                                                {
+                                                                    'view': 'some_view_name'
+                                                                    ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                                                                    ,'qa_fct': self.__more_qa_asserts      ## Assumes this fct has a reference to self.assertTrue() etc
+                                                                }
+                                                            ]
+
+                        def __more_qa_asserts(self, response):
+                            self.assertTrue(response[...]=True, '...')
+                            ...
+
+                        self.test_views_response_data()             ## Implicitly will decode @self.additional_context_requirements and use it.
+        """
+        django_default_context_keys = DJANGO_DEFINED_GENERIC_LIST_VIEW_CONTEXT_KEYS + DJANGO_DEFINED_GENERIC_DETAIL_VIEW_CONTEXT_KEYS
+        response_context_keys = response.context_data.keys()
+
+        for response_context_key in response_context_keys:
+            self.assertTrue( (response_context_key in (view_defined_additional_context_keys + APP_DEFINED_HTTP_GET_CONTEXT_KEYS + django_default_context_keys) ),
+                f"{view} response got back a context key that shouldn't exist. Please add this new key to the test suite or change the view: '{response_context_key}'")
+
+        for additional_context_key in view_defined_additional_context_keys:
+            self.assertTrue(additional_context_key in response_context_keys,
+                f"{view} response is missing this view defined required context key '{additional_context_key}'")
+
+        if view_defined_additional_context_keys is not None and additional_context_keys_data_qa_fct is not None:
+            additional_context_keys_data_qa_fct(self, response)
+
+    def assert_response_status_200(self):
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertEqual(response.status_code, 200, f"'{view}' did not return status code 200")
+
+    def assert_user_access_on_normal_and_admin_view(self):
+        """Pass if normal user get access to normal view, and denied access to admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for a non-admin user\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for a non-admin user\n    {response.context['get_error']}")
+            self.assertTrue("not an admin" in response.context['get_error'], f"'{view}' does not have correct error message on an admin view when user is non-admin (must contain 'not an admin' in the error message)\n    {response.context['get_error']}")
+
+    def assert_admin_access_on_normal_and_admin_view(self):
+        """Pass if admin user get access to normal view, and access to admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on a regular view for an admin user\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertTrue(response.context['get_success'], f"'{view}' did not return get_success True on an admin view for an admin user\n    {response.context['get_error']}")
+
+    def assert_inactive_user_no_access_on_normal_and_admin_view(self):
+        """Pass if inactive user (admin or not) get denied access to normal view and admin views"""
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on a regular view for an inactive user\n    {response.context['get_error']}")
+            self.assertTrue("not an active user" in response.context['get_error'], f"'{view}' does not have correct error message on a regular view when user is inactive (must contain 'not an active user' in the error message)\n    {response.context['get_error']}")
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            self.assertFalse(response.context['get_success'], f"'{view}' returned get_success True on an admin view for an non-admin user\n    {response.context['get_error']}")
+            self.assertTrue("not an active user" in response.context['get_error'], f"'{view}' does not have correct error message on an admin view when user is inactive (must contain 'not an active user' in the error message)\n    {response.context['get_error']}")
+
+    def assert_additional_context_data(self, additional_requirements=None):
+        """
+            @additional_requirements : required, specifies the additional context data for each view and optional its qa assert function.
+                It's in this format:
+                    [
+                        {
+                            'view': 'some_view_name'
+                            ,'additional_context_keys': ['key_name_1', 'key_name_2', ...]
+                            ,'qa_fct': some_unittest_class_fct      ## Assumes this fct has a reference to self.assertTrue() etc
+                        }
+                    ]
+        """
+        for view in self.regular_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+            if additional_requirements is not None and view in [each['view'] for each in additional_requirements]:
+                len_of_fouund_requirements = len([x for x in additional_requirements if view == x['view']])
+                if (len_of_fouund_requirements != 1):
+                    raise ValueError(f"HttpGetTestCase: assert_additional_context_data(): argument @additional_requirements got back more than 1 requirement with view name: '{view}' (found {len_of_fouund_requirements}). Should only have one requirement per view name")
+
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
+
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
+
+        for view in self.admin_views:
+            response = get_to_api(client=self.client, api_name=view, remote_user=TEST_WINDOWS_USERNAME)
+
+            ## When caller is a normal non-admin user, don't check the additional_requirements
+            if response.context['get_error'] is not None and "not an admin" in response.context['get_error']:
+                continue
+
+            if additional_requirements is not None and view in [each['view'] for each in additional_requirements]:
+                len_of_fouund_requirements = len([x for x in additional_requirements if view == x['view']])
+                if (len_of_fouund_requirements != 1):
+                    raise ValueError(f"HttpGetTestCase: assert_additional_context_data(): argument @additional_requirements got back more than 1 requirement with view name: '{view}' (found {len_of_fouund_requirements}). Should only have one requirement per view name")
+
+                view_additional_req     = next(x for x in additional_requirements if view == x['view'])
+                additional_context_keys = view_additional_req['additional_context_keys']
+                qa_test                 = view_additional_req['qa_fct']
+
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=additional_context_keys, additional_context_keys_data_qa_fct=qa_test)
+            else:
+                ## verify additional context data as [], so that it can detect unrecognized context variable
+                self.__verify_response_with_required_additional_context_data(view=view, response=response, view_defined_additional_context_keys=[])
 
 
 class HttpPostTestCase(unittest.TestCase):
@@ -31,8 +171,8 @@ class HttpPostTestCase(unittest.TestCase):
 
     """
     client                                  = Client()
-    api_name                                = None
-    post_response_json_key_specifications   = None
+    api_name                                = None      ## Required by sub class. Set it in def setUpClass()
+    post_response_json_key_specifications   = None      ## Required by sub class. Set it in def setUpClass()
 
     def __post_to_api(self, payload):
         """Returns the response after calling the update api, as a dict. Will not pass if status_code is not 200"""
@@ -49,27 +189,50 @@ class HttpPostTestCase(unittest.TestCase):
     def post_and_get_json_response(self, payload):
         return decode_json_response_for_content( self.__post_to_api(payload) )
 
-    def assert_request_param_good(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+    def assert_request_param_good(self, valid_payload, testing_param_name, testing_data, param_is_good_fct=None):
+        """
+            Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully
+
+            if @param_is_good_fct is not None, it will assert @param_is_good_fct is True instead of assert post_success == True
+                @param_is_good_fct is a function that will take in the response content as its only argument, and should return True if response content is good or False otherwise.
+        """
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
         content                     = decode_json_response_for_content(response)
 
-        self.assertEqual(
-            content['post_success'], True,
-            f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}")
+        assert_failed_msg = f"POST request failed. Parameter '{testing_param_name}' should accept: '{testing_data}' ({type(testing_data)})\n{content}"
 
-    def assert_request_param_bad(self, valid_payload, testing_param_name, testing_data):
-        """Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully"""
+        if param_is_good_fct is not None:
+            self.assertTrue(
+                param_is_good_fct(content),
+                assert_failed_msg)
+        else:
+            self.assertEqual(
+                content['post_success'], True,
+                assert_failed_msg)
+
+    def assert_request_param_bad(self, valid_payload, testing_param_name, testing_data, param_is_good_fct=None):
+        """
+            Assumes @valid_payload to contain a full payload that has all valid data and should allow the api to return successfully
+
+            if @param_is_good_fct is not None, it will assert post_msg == @param_is_good_fct instead of assert post_success == True
+        """
         payload                     = copy.deepcopy(valid_payload) ## if not deepcopy, it will default to do a shallow copy
         payload[testing_param_name] = testing_data
         response                    = self.__post_to_api(payload=payload)
         content                     = decode_json_response_for_content(response)
 
-        self.assertEqual(
-            content['post_success'], False,
-            f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}")
+        assert_failed_msg = f"POST request succeded. Parameter '{testing_param_name}' should NOT accept: '{testing_data}' ({type(testing_data)})\n{content}"
+
+        if param_is_good_fct is not None:
+            self.assertTrue(
+                param_is_good_fct(content),
+                assert_failed_msg)
+        else:
+            self.assertEqual(
+                content['post_success'], False,
+                assert_failed_msg)
 
     def assert_response_has_param(self, response_content, response_param_name):
         self.assertTrue(response_param_name in response_content['post_data'],
@@ -133,6 +296,22 @@ class HttpPostTestCase(unittest.TestCase):
     def assert_post_key_lookup_equivalence(self, key_name, key_value, db_value):
         self.assertEqual(str(key_value), str(db_value),
             f"POST post_data key '{key_name}' didn't look up correctly: '{db_value}' database-->response '{key_value}'" )
+
+    def assert_post_with_valid_payload_is_success(self, payload):
+        """
+            POST the payload, assert post_success is True, and assert that the response got back all the required post_data keys and only those keys and nothing else
+            return the response content
+        """
+        response_content = self.post_and_get_json_response(payload)
+
+        ## Check that the request was successful
+        self.assertTrue(response_content['post_success'],
+            f"api call was not successfully with valid data: {response_content['post_msg']}")
+
+        ## Check that the returned JSON Response got all the data it required
+        self.assert_response_satisfy_param_requirements(response_content=response_content)
+
+        return response_content
 
 
 def validate_core_get_api_response_context(response):

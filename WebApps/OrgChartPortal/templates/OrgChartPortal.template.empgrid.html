@@ -992,7 +992,7 @@
                     api_url             : "{% url 'orgchartportal_emp_grid_get_csv_export' %}",
                     http_request_method : "POST",
                     successCallbackFct  : function(json_response) {
-                                            csv_bytes_str = json_response.post_csv_bytes
+                                            csv_bytes_str = json_response.post_data.csv_bytes
                                             var blob = new Blob([csv_bytes_str], {type: "application/octet-stream"});
                                             var fileName = `Employees.csv`;
                                             saveAs(blob, fileName);
@@ -1030,7 +1030,7 @@
                         return
                     }
 
-                    list_of_json_client_wu_permissions_wu_perms_response = json_wu_perms_response["post_data"];
+                    list_of_json_client_wu_permissions_wu_perms_response = json_wu_perms_response["post_data"]["wu_permissions"];
 
                     // Populate side bar
                     list_of_json_client_wu_permissions_wu_perms_response.map(function(each) {
@@ -1059,7 +1059,7 @@
                         return
                     }
 
-                    list_of_json_client_teammates_teammates_response = json_teammates_response["post_data"];
+                    list_of_json_client_teammates_teammates_response = json_teammates_response["post_data"]["teammates"];
 
                     // Populate side bar
                     list_of_json_client_teammates_teammates_response.map(function(each) {
