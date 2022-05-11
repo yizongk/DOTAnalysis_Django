@@ -710,3 +710,98 @@ class TestAPIUserPermissionsPanelApiDeleteRow(HttpPostTestCase):
 
             for data in invalid:
                 self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+
+class TestAPIUsersPanelApiAddRow(HttpPostTestCase):
+    @classmethod
+    def setUpClass(self):
+        tear_down()
+        self.user_obj               = grant_admin_status()
+        self.api_name               = 'users_panel_api_add_row'
+        self.post_response_json_key_specifications = [
+            {'name': 'user_id'      , 'null': False}
+            ,{'name': 'first_name'  , 'null': False}
+            ,{'name': 'last_name'   , 'null': False}
+            ,{'name': 'active_user' , 'null': False}
+            ,{'name': 'login'       , 'null': False}
+        ]
+
+        self.valid_first_name   = 'some_random_fname'
+        self.valid_last_name    = 'some_random_lname'
+        self.valid_login        = 'some_random_login'
+
+        self.valid_payloads = [
+            {
+                'first_name_input'  : self.valid_first_name,
+                'last_name_input'   : self.valid_last_name,
+                'login_input'       : self.valid_login,
+            }
+        ]
+
+    @classmethod
+    def tearDownClass(self):
+        tear_down()
+        self.remove_test_user_if_exists(self)
+
+    def test_api_accept_only_admins(self):
+        remove_admin_status()
+
+        payload = self.valid_payloads[0]
+        content = self.post_and_get_json_response(payload)
+
+        self.assertTrue((content['post_success']==False) and ("not an admin" in content['post_msg']),
+            f"api should have detected that user is not an admin and fail\n{content['post_msg']}")
+
+    def remove_test_user_if_exists(self):
+        try:
+            new_user = Users.objects.using('PerInd').get(login__exact=self.valid_login)
+        except:
+            ...#Do nothing
+        else:
+            new_user.delete(using='PerInd')
+
+    def test_with_valid_data(self):
+        grant_admin_status()
+
+        for payload in self.valid_payloads:
+            self.remove_test_user_if_exists()
+            self.assert_post_with_valid_payload_is_success(payload=payload)
+
+            ## Check if data was saved correctly
+            saved_object = Users.objects.using('PerInd').get(login__exact=self.valid_login)
+
+            self.assert_post_key_update_equivalence(key_name='first_name_input', key_value=payload['first_name_input'], db_value=saved_object.first_name)
+            self.assert_post_key_update_equivalence(key_name='last_name_input', key_value=payload['last_name_input'], db_value=saved_object.last_name)
+            self.assert_post_key_update_equivalence(key_name='login_input', key_value=payload['login_input'], db_value=saved_object.login)
+            self.assert_post_key_update_equivalence(key_name='active_user', key_value=True, db_value=saved_object.active_user)
+
+    def test_data_validation(self):
+        grant_admin_status()
+
+        payload = self.valid_payloads[0]
+        parameters = [
+            # Parameter name    # Accepted type
+            "first_name_input"  # str -> first name
+            ,"last_name_input"  # str -> last name
+            ,"login_input"      # str -> windows username
+        ]
+        for param_name in parameters:
+            if param_name == 'first_name_input':
+                valid   = [self.valid_first_name]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'last_name_input':
+                valid   = [self.valid_last_name]
+                invalid = [1, 2.3, False, None]
+            elif param_name == 'login_input':
+                valid   = [self.valid_login]
+                invalid = [1, 2.3, False, None]
+            else:
+                raise ValueError(f"test_data_validation(): parameter test not implemented: '{param_name}'. Please remove or implement it")
+
+            for data in valid:
+                self.remove_test_user_if_exists()
+                self.assert_request_param_good(valid_payload=payload, testing_param_name=param_name, testing_data=data)
+
+            for data in invalid:
+                self.remove_test_user_if_exists()
+                self.assert_request_param_bad(valid_payload=payload, testing_param_name=param_name, testing_data=data)

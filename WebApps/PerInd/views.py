@@ -1272,6 +1272,13 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
         last_name_input     = json_blob['last_name_input']
         login_input         = json_blob['login_input']
 
+        if type(first_name_input) is not str:
+            raise ValueError(f"first_name_input must be a string: {type(first_name_input)}")
+        if type(last_name_input) is not str:
+            raise ValueError(f"last_name_input must be a string: {type(last_name_input)}")
+        if type(login_input) is not str:
+            raise ValueError(f"login_input must be a string: {type(login_input)}")
+
         if first_name_input == "":
             raise ValueError(f"first_name_input cannot be an empty string")
         if last_name_input == "":
@@ -1288,13 +1295,15 @@ def UsersPanelApiAddRow(request, json_blob, remote_user):
         new_user.save(using='PerInd')
 
         return JsonResponse({
-            "post_success": True,
-            "post_msg": "",
-            "user_id": new_user.user_id,
-            "first_name": new_user.first_name,
-            "last_name": new_user.last_name,
-            "active_user": new_user.active_user,
-            "login": new_user.login,
+            "post_success"  : True,
+            "post_msg"      : None,
+            "post_data"     : {
+                "user_id": new_user.user_id,
+                "first_name": new_user.first_name,
+                "last_name": new_user.last_name,
+                "active_user": new_user.active_user,
+                "login": new_user.login,
+            },
         })
     except Exception as e:
         return JsonResponse({
