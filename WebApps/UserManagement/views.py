@@ -2,20 +2,24 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.views import generic
 from django.http import HttpResponse, JsonResponse
+from .models import *
 
 # Create your views here.
 
 
+APP_NAME = "UserManagement"
+
+
 def user_is_active_admin(username=None):
     try:
-        return None
-        # user = TblUsers.objects.using('OrgChartWrite').get(
-        #     windows_username=username
-        # )
-        # if user.active:
-        #     return user.is_admin
-        # else:
-        #     return False
+        user = WebAppUserMemberships.objects.using('default').get(
+            windows_username__windows_username__exact=username
+            ,web_app_id__web_app_name__exact=APP_NAME
+        )
+        if user.is_active:
+            return user.is_admin
+        else:
+            return False
     except Exception as e:
         raise ValueError(f"user_is_active_admin(): {e}")
 
