@@ -26,5 +26,6 @@ urlpatterns = [
     path('OrgChartPortal/', include('OrgChartPortal.urls')),
     path('DailyPothole/', include('DailyPothole.urls')),
     path('LookupTableManager/', include('LookupTableManager.urls')),
+    path('UserManagement/', include('UserManagement.urls')),
     path('admin/', admin.site.urls),
 ]

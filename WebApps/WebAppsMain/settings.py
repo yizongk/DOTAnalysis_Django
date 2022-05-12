@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'OrgChartPortal.apps.OrgchartportalConfig', # Added by Yi Zong Kuang
     'DailyPothole.apps.DailypotholeConfig', # Added by Yi Zong Kuang
     'LookupTableManager.apps.LookuptablemanagerConfig', # Added by Yi Zong Kuang
+    'UserManagement.apps.UsermanagementConfig', # Added by Yi Zong Kuang
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'MapsApp/templates'),
             os.path.join(BASE_DIR, 'FleetDataCollection/templates'),
             os.path.join(BASE_DIR, 'OrgChartPortal/templates'),
+            os.path.join(BASE_DIR, 'UserManagement/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -99,6 +101,7 @@ SETTINGS_EXPORT = [
     'LOOKUP_TABLE_MANAGER_VERSION',
     'FLEET_DATA_COLLECTION_VERSION',
     'MAPS_APP_VERSION',
+    'USER_MANAGEMENT_VERSION',
 ]
 
 WSGI_APPLICATION = 'WebAppsMain.wsgi.application'
@@ -401,6 +404,7 @@ DAILY_POTHOLE_VERSION           = '1.5.19'
 ORG_CHART_PORTAL_VERSION        = '1.16.3'
 FLEET_DATA_COLLECTION_VERSION   = '1.1.5'
 LOOKUP_TABLE_MANAGER_VERSION    = '1.0.5'
+USER_MANAGEMENT_VERSION         = '0.0.0'
 
 
 APP_DEFINED_HTTP_POST_JSON_KEYS     = ["post_success", "post_msg", "post_data"]

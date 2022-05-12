@@ -1,0 +1,57 @@
+{% extends 'UserManagement.template.base.html' %}
+
+
+{% load static %}
+{% block custom_css %}
+{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+
+<div class="container">
+    <div class="ui huge message">
+        <h1 class="ui huge header">User Management</h1>
+        <p>Welcome!</p>
+    </div>
+
+
+
+
+    {% comment %}
+    <div class="ui link cards">
+
+        <a class="ui card" href="{% url 'UserManagement_empgrid_view' %}">
+            <div class="image" >
+                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
+            </div>
+
+            <div class="content">
+                <div class="header">
+                    Data Entry
+                </div>
+                <div class="ui primary button">Head Over &raquo;</div>
+            </div>
+        </a>
+
+        {% if client_is_admin %}
+            <a class="ui card" href="{% url 'UserManagement_admin_panel_view' %}">
+                <div class="image" >
+                    <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
+                </div>
+
+                <div class="content">
+                    <div class="header">
+                        Admin Panel
+                    </div>
+                    <div class="ui primary button">Head Over &raquo;</div>
+                </div>
+            </a>
+        {% endif %}
+
+    </div>
+    {% endcomment %}
+
+</div>
+
+</html>
+{% endblock content %}
