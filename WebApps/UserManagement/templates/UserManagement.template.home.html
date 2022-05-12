@@ -15,41 +15,26 @@
     </div>
 
 
+    {% if client_is_admin %}
+        <div class="ui link cards">
 
-
-    {% comment %}
-    <div class="ui link cards">
-
-        <a class="ui card" href="{% url 'UserManagement_empgrid_view' %}">
-            <div class="image" >
-                <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/data_entry_logo.png' %}">
-            </div>
-
-            <div class="content">
-                <div class="header">
-                    Data Entry
-                </div>
-                <div class="ui primary button">Head Over &raquo;</div>
-            </div>
-        </a>
-
-        {% if client_is_admin %}
-            <a class="ui card" href="{% url 'UserManagement_admin_panel_view' %}">
+            <a class="ui card" href="{% url 'UserManagement_manage_web_apps_view' %}">
                 <div class="image" >
                     <img class="DOT-theme-color" src="{% static 'WebAppsMain/images/820x485/admin_logo.png' %}">
                 </div>
 
                 <div class="content">
                     <div class="header">
-                        Admin Panel
+                        Manage Web Apps
                     </div>
                     <div class="ui primary button">Head Over &raquo;</div>
                 </div>
             </a>
-        {% endif %}
 
-    </div>
-    {% endcomment %}
+        </div>
+    {% else %}
+        <div class="status_info error_msg">{{user.username}} is not an Admin<div>
+    {% endif %}
 
 </div>
 
