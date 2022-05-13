@@ -117,7 +117,7 @@
                     'new_value'     : ag_node.newValue,
                 },
                 ag_node             : ag_node,
-                post_url            : "{% url 'LookupTableManager_update_wu' %}",
+                post_url            : "{% url 'lookuptablemanager_update_wu' %}",
                 on_success_callback : function(json_res) {
                     ag_node.data[json_res.post_data.column_name] = json_res.post_data.new_value
                     ag_node.api.refreshCells({
