@@ -22,16 +22,16 @@ class ActiveDirectory(models.Model):
 
     ## This model should only accept SELECT statments. The rest of the statements should not be allowed
     def save(self, *args, **kwargs):
-        return
+        raise ValueError(f"Model ActiveDirectory cannot use save(). This model is immutable.")
 
     def delete(self, *args, **kwargs):
-        return
+        raise ValueError(f"Model ActiveDirectory cannot use delete(). This model is immutable.")
 
     def create(self, *args, **kwargs):
-        return
+        raise ValueError(f"Model ActiveDirectory cannot use create(). This model is immutable.")
 
     def update(self, *args, **kwargs):
-        return
+        raise ValueError(f"Model ActiveDirectory cannot use update(). This model is immutable.")
 
 
 class WebApps(models.Model):
