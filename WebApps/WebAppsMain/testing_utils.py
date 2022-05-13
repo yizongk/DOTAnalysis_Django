@@ -4,6 +4,7 @@ from WebAppsMain.settings import APP_DEFINED_HTTP_GET_CONTEXT_KEYS, APP_DEFINED_
 import copy
 import unittest
 from django.test import Client
+from UserManagement.models import ActiveDirectory, WebApps, WebAppUserMemberships
 
 
 class HttpGetTestCase(unittest.TestCase):
@@ -395,3 +396,86 @@ def post_to_api(client, api_name, payload, remote_user=TEST_WINDOWS_USERNAME):
     except Exception as e:
         raise ValueError(f"post_to_api(): POST to {reverse(api_name)}: {e}")
 
+
+####### User and Web App membership helper functions for any tests.py #######
+def get_enabled_user_from_ad(windows_username=TEST_WINDOWS_USERNAME):
+    """return an enabled user from Active Directory and return the user object. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        user_obj = ActiveDirectory.objects.using('default').get(
+            windows_username__exact=windows_username
+            ,enabled__exact=True
+        )
+
+        return user_obj
+    except Exception as e:
+        raise ValueError(f"get_enabled_user_from_ad(): {e}")
+
+
+def get_enabled_user_web_app_membership(windows_username=TEST_WINDOWS_USERNAME, web_app_name=None):
+    """get or create the user-app membership object and return the object. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        if web_app_name is None:
+            raise ValueError(f"@web_app_name cannot be None")
+
+        user    = get_enabled_user_from_ad(windows_username=windows_username)
+        app     = WebApps.objects.using("default").get(
+            web_app_name__exact=web_app_name
+            ,is_active__exact=True
+        )
+
+        app_membership = WebAppUserMemberships.objects.using('default').get_or_create(
+            web_app_id=app
+            ,windows_username=user
+        )[0]
+
+        return app_membership
+    except Exception as e:
+        raise ValueError(f"get_enabled_user_web_app_membership(): {e}")
+
+
+def grant_membership_admin_status(windows_username=TEST_WINDOWS_USERNAME, web_app_name=None):
+    """set up an exist enabled user with admin status. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        app_membership = get_enabled_user_web_app_membership(windows_username=windows_username, web_app_name=web_app_name)
+        app_membership.is_admin = True
+        app_membership.save(using='default')
+
+        return None
+    except Exception as e:
+        raise ValueError(f"grant_membership_admin_status(): {e}")
+
+
+def remove_membership_admin_status(windows_username=TEST_WINDOWS_USERNAME, web_app_name=None):
+    """removes the admin status of an enabled user. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        app_membership = get_enabled_user_web_app_membership(windows_username=windows_username, web_app_name=web_app_name)
+        app_membership.is_admin = False
+        app_membership.save(using='default')
+
+        return None
+    except Exception as e:
+        raise ValueError(f"remove_membership_admin_status(): {e}")
+
+
+def grant_membership_active_status(windows_username=TEST_WINDOWS_USERNAME, web_app_name=None):
+    """Set an enabled user as active. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        app_membership = get_enabled_user_web_app_membership(windows_username=windows_username, web_app_name=web_app_name)
+        app_membership.is_active = True
+        app_membership.save(using='default')
+
+        return None
+    except Exception as e:
+        raise ValueError(f"grant_membership_active_status(): {e}")
+
+
+def remove_membership_active_status(windows_username=TEST_WINDOWS_USERNAME, web_app_name=None):
+    """Set user as inactive. Defaults @windows_username to TEST_WINDOWS_USERNAME"""
+    try:
+        app_membership = get_enabled_user_web_app_membership(windows_username=windows_username, web_app_name=web_app_name)
+        app_membership.is_active = False
+        app_membership.save(using='default')
+
+        return None
+    except Exception as e:
+        raise ValueError(f"remove_membership_active_status(): {e}")
